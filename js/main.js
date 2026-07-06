@@ -36,6 +36,7 @@ async function boot() {
 
   const canvas = document.getElementById('game');
   const world = new World(canvas, scene, images);
+  window.world = world; // debug handle
 
   ui.initStage();
   ui.initTopbarStubs();

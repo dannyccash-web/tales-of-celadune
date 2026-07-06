@@ -49,21 +49,43 @@ export class World {
     return best;
   }
 
-  // Shared collision test. `self` is excluded; player and all NPCs block each other.
-  collides(x, y, self) {
+  // Everything blocking a body at (x, y). `self` is excluded; player and all
+  // NPCs block each other. Each blocker is returned with its center point.
+  blockersAt(x, y, self) {
     const half = COLLIDER / 2;
     const cx = x - half;
     const cy = y - half;
+    const out = [];
     for (const ob of this.scene.obstacles) {
-      if (rectsOverlap(cx, cy, COLLIDER, COLLIDER, ob)) return true;
+      if (rectsOverlap(cx, cy, COLLIDER, COLLIDER, ob)) {
+        out.push({ id: ob, cx: ob.x + ob.w / 2, cy: ob.y + ob.h / 2 });
+      }
     }
-    const bodies = [this.player, ...this.npcs];
-    for (const b of bodies) {
+    for (const b of [this.player, ...this.npcs]) {
       if (b === self) continue;
       if (rectsOverlap(cx, cy, COLLIDER, COLLIDER,
-        { x: b.x - half, y: b.y - half, w: COLLIDER, h: COLLIDER })) return true;
+        { x: b.x - half, y: b.y - half, w: COLLIDER, h: COLLIDER })) {
+        out.push({ id: b, cx: b.x, cy: b.y });
+      }
     }
-    return false;
+    return out;
+  }
+
+  // A move is legal if it hits nothing — or, when a body is already wedged into
+  // something (overlap can happen at spawn or in edge cases), if every remaining
+  // blocker was already blocking and the move increases distance from it.
+  // Prevents mutual deadlocks: overlapping bodies can always back apart.
+  canMove(body, nx, ny) {
+    const next = this.blockersAt(nx, ny, body);
+    if (next.length === 0) return true;
+    const cur = this.blockersAt(body.x, body.y, body);
+    return next.every((n) => {
+      const was = cur.find((c) => c.id === n.id);
+      if (!was) return false;
+      const dNow = Math.hypot(body.x - n.cx, body.y - n.cy);
+      const dNext = Math.hypot(nx - n.cx, ny - n.cy);
+      return dNext > dNow;
+    });
   }
 
   update(dt, input, uiLocked) {
@@ -89,8 +111,8 @@ export class World {
       p.rotation = Math.atan2(dy, dx) - Math.PI / 2;
 
       // Axis-separated movement so the player slides along walls
-      if (!this.collides(nx, p.y, p)) p.x = nx;
-      if (!this.collides(p.x, ny, p)) p.y = ny;
+      if (this.canMove(p, nx, p.y)) p.x = nx;
+      if (this.canMove(p, p.x, ny)) p.y = ny;
 
       // Scene edges: exits lead to adjacent scenes (not built yet); otherwise clamp
       const half = COLLIDER / 2;
@@ -160,7 +182,7 @@ export class World {
       const a = desired + off;
       const nx = body.x + Math.cos(a) * step;
       const ny = body.y + Math.sin(a) * step;
-      if (!this.collides(nx, ny, body)) {
+      if (this.canMove(body, nx, ny)) {
         body.x = nx;
         body.y = ny;
         body.rotation = a - Math.PI / 2; // icon bottom faces travel direction
