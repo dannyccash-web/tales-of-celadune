@@ -33,6 +33,7 @@ export class World {
       patrolIndex: 0,
       waitTimer: 0,
       stuckTimer: 0,
+      avoidSign: 0,
     }));
 
     this.cameraY = 0;
@@ -173,23 +174,45 @@ export class World {
     }
   }
 
-  // Greedy local steering: try the desired heading, then progressively wider
-  // angles to either side, and take the first free direction. Lets NPCs walk
-  // around the player, buildings, trees, and each other.
+  // Local steering with side commitment: try the desired heading first; when
+  // blocked, detour at progressively wider angles — but keep favoring the same
+  // side (body.avoidSign) until the straight path clears. The lookahead probe
+  // is longer than one tick's step so tiny steps can't jitter at corners.
   steer(body, desired, step) {
-    const offsets = [0, 0.5, -0.5, 1.0, -1.0, 1.6, -1.6, 2.2, -2.2];
-    for (const off of offsets) {
-      const a = desired + off;
-      const nx = body.x + Math.cos(a) * step;
-      const ny = body.y + Math.sin(a) * step;
-      if (this.canMove(body, nx, ny)) {
-        body.x = nx;
-        body.y = ny;
-        body.rotation = a - Math.PI / 2; // icon bottom faces travel direction
-        return true;
+    // A direction is usable only if both the immediate step and a longer
+    // lookahead are free: the step check keeps moves legal, the lookahead
+    // stops tiny steps from jittering into corners.
+    const look = Math.max(step, 14);
+    const clear = (a) => {
+      const cos = Math.cos(a);
+      const sin = Math.sin(a);
+      return this.canMove(body, body.x + cos * step, body.y + sin * step)
+        && this.canMove(body, body.x + cos * look, body.y + sin * look);
+    };
+
+    let choice = null;
+    if (clear(desired)) {
+      choice = desired;
+      body.avoidSign = 0;
+    } else {
+      const firstSide = body.avoidSign || 1;
+      outer:
+      for (const side of [firstSide, -firstSide]) {
+        for (const off of [0.5, 1.0, 1.6, 2.2]) {
+          if (clear(desired + off * side)) {
+            choice = desired + off * side;
+            body.avoidSign = side;
+            break outer;
+          }
+        }
       }
     }
-    return false;
+
+    if (choice === null) return false;
+    body.x += Math.cos(choice) * step;
+    body.y += Math.sin(choice) * step;
+    body.rotation = choice - Math.PI / 2; // icon bottom faces travel direction
+    return true;
   }
 
   // Black-silhouette copy of a sprite, cached, used for multiply drop shadows.
