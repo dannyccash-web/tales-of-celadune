@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tales of Celadune</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Alegreya:ital,wght@0,400;0,500;1,400&family=Cinzel:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="stage">
+    <!-- Layer 1 + 2: world background, player, NPCs (canvas) -->
+    <canvas id="game" width="1920" height="1080"></canvas>
+
+    <!-- Layer 3: vignette, multiply blend, fixed to viewport -->
+    <img id="vignette" src="assets/images/Vignette.jpg" alt="">
+
+    <!-- Layer 4: UI, fixed to viewport -->
+    <div id="ui">
+      <div id="topbar">
+        <div class="icon-btn" id="btn-inventory">
+          <div class="diamond"><span>I</span></div>
+          <label>Inventory</label>
+        </div>
+        <div class="icon-btn" id="btn-menu">
+          <div class="diamond"><span>M</span></div>
+          <label>Menu</label>
+        </div>
+      </div>
+
+      <div id="hud">
+        <div class="stat">
+          <span class="stat-label">Health</span>
+          <div class="bar"><div class="bar-fill health" id="health-fill"></div></div>
+          <span class="stat-value" id="health-value">10/10</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Magic</span>
+          <div class="bar"><div class="bar-fill magic" id="magic-fill"></div></div>
+          <span class="stat-value" id="magic-value">5/10</span>
+        </div>
+        <div class="gold">
+          <span id="gold-value">1,234</span>
+          <div class="coin"></div>
+        </div>
+      </div>
+
+      <div id="interact-hint" class="hidden">Press SPACE to talk</div>
+
+      <div id="dialog" class="hidden">
+        <div class="dialog-box" id="dialog-npc">
+          <img id="dialog-portrait" src="assets/images/Mirelle_Portrait.png" alt="">
+          <div class="dialog-text">
+            <h2 id="dialog-name">Mirelle</h2>
+            <h3 id="dialog-role">FARM OWNER</h3>
+            <p id="dialog-line"></p>
+          </div>
+        </div>
+        <div class="dialog-box" id="dialog-responses"></div>
+      </div>
+
+      <div id="toast" class="hidden"></div>
+    </div>
+  </div>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
