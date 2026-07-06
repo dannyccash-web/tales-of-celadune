@@ -233,7 +233,7 @@ html, body {
   height: auto;
 }
 
-.dialog-text { max-width: 1050px; }
+.dialog-text { max-width: 760px; }
 
 .dialog-text h2 {
   font-family: var(--font-medieval);
