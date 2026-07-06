@@ -6,7 +6,7 @@
 <title>Tales of Celadune</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Alegreya:ital,wght@0,400;0,500;1,400&family=Cinzel:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=MedievalSharp&family=Metamorphous&family=Lato:wght@400;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -33,12 +33,12 @@
       <div id="hud">
         <div class="stat">
           <span class="stat-label">Health</span>
-          <div class="bar"><div class="bar-fill health" id="health-fill"></div></div>
+          <div class="bar"><div class="bar-bg"><div class="bar-fill health" id="health-fill"></div></div></div>
           <span class="stat-value" id="health-value">10/10</span>
         </div>
         <div class="stat">
           <span class="stat-label">Magic</span>
-          <div class="bar"><div class="bar-fill magic" id="magic-fill"></div></div>
+          <div class="bar"><div class="bar-bg"><div class="bar-fill magic" id="magic-fill"></div></div></div>
           <span class="stat-value" id="magic-value">5/10</span>
         </div>
         <div class="gold">
@@ -47,18 +47,36 @@
         </div>
       </div>
 
-      <div id="interact-hint" class="hidden">Press SPACE to talk</div>
-
       <div id="dialog" class="hidden">
         <div class="dialog-box" id="dialog-npc">
-          <img id="dialog-portrait" src="assets/images/Mirelle_Portrait.png" alt="">
+          <div id="portrait-frame">
+            <img id="dialog-portrait" src="assets/images/Mirelle_Portrait.png" alt="">
+          </div>
           <div class="dialog-text">
             <h2 id="dialog-name">Mirelle</h2>
             <h3 id="dialog-role">FARM OWNER</h3>
             <p id="dialog-line"></p>
           </div>
         </div>
-        <div class="dialog-box" id="dialog-responses"></div>
+        <div class="dialog-box" id="dialog-response-box">
+          <svg id="dialog-arrow" width="64" height="40" viewBox="0 0 64 40" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="goldgrad" x1="0" y1="1" x2="1" y2="0">
+                <stop offset="0" stop-color="#6b4f28"/>
+                <stop offset="0.55" stop-color="#c9a45c"/>
+                <stop offset="1" stop-color="#eed694"/>
+              </linearGradient>
+            </defs>
+            <g stroke="url(#goldgrad)" stroke-width="2" fill="none" stroke-linejoin="miter">
+              <path d="M9 13 L16 20 L9 27 L2 20 Z"/>
+              <path d="M4 20 H42"/>
+              <path d="M24 5 L61 20 L24 35 Z"/>
+              <path d="M24 11 L45 20 L24 29"/>
+              <path d="M24 16 L34 20 L24 24"/>
+            </g>
+          </svg>
+          <div id="dialog-responses"></div>
+        </div>
       </div>
 
       <div id="toast" class="hidden"></div>

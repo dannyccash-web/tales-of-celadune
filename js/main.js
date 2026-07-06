@@ -31,6 +31,9 @@ async function boot() {
   ];
   const images = await loadImages([...new Set(sources)]);
 
+  // Canvas text (NPC name labels) needs the webfont ready before first draw
+  try { await document.fonts.load('22px MedievalSharp'); } catch { /* fallback font */ }
+
   const canvas = document.getElementById('game');
   const world = new World(canvas, scene, images);
 
@@ -66,8 +69,6 @@ async function boot() {
     const locked = ui.isDialogOpen();
     world.update(dt, input, locked);
     world.render();
-
-    ui.showInteractHint(!locked && !!world.nearestNpcInRange());
 
     if (world.edgeMessage && now - lastEdgeMessage > 3000) {
       ui.toast(world.edgeMessage);

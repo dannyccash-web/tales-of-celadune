@@ -1,15 +1,24 @@
 /* Tales of Celadune — global styles
-   Design resolution: 1920x1080. #stage is scaled to fit the window (letterboxed). */
+   Design resolution: 1920x1080. #stage is scaled to fit the window (letterboxed).
+
+   Fonts (per design PDF):
+   - MedievalSharp: HUD labels (Health, Magic, gold), Inventory/Menu labels, NPC name headings
+   - Metamorphous: dialog body text, response options, diamond icon letters
+   - Lato: role caps (semibold, #f3d19b), bar values (regular)                            */
 
 :root {
   --gold: #c9a45c;
-  --gold-bright: #e6c87e;
+  --gold-bright: #eed694;
+  --gold-dark: #6b4f28;
+  --frame-light: #96763f;
+  --frame-dark: #5d4520;
   --panel-bg: rgba(12, 9, 6, 0.82);
-  --text: #e8dcc4;
-  --health: #c03028;
-  --magic: #3a5fc0;
-  --font-body: 'Alegreya', Georgia, serif;
-  --font-caps: 'Cinzel', 'Times New Roman', serif;
+  --text: #ffffff;
+  --text-dim: #a6a8ab;
+  --role-gold: #f3d19b;
+  --font-medieval: 'MedievalSharp', 'Times New Roman', serif;
+  --font-meta: 'Metamorphous', Georgia, serif;
+  --font-lato: 'Lato', 'Helvetica Neue', sans-serif;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -19,7 +28,7 @@ html, body {
   height: 100%;
   background: #000;
   overflow: hidden;
-  font-family: var(--font-body);
+  font-family: var(--font-meta);
 }
 
 /* ---- Stage: fixed 1920x1080, scaled to fit window ---- */
@@ -66,21 +75,23 @@ html, body {
   top: 50px;
   right: 50px;
   display: flex;
-  gap: 36px;
+  gap: 44px;
 }
 
 .icon-btn {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 14px;
+  gap: 20px;
   cursor: pointer;
 }
 
 .icon-btn .diamond {
-  width: 34px;
-  height: 34px;
-  border: 1px solid var(--gold);
+  width: 36px;
+  height: 36px;
+  border: 3px solid;
+  /* post-rotation, "to top" points up-right: bright corner top-right like the PDF */
+  border-image: linear-gradient(to top, var(--gold-dark), var(--gold-bright)) 1;
   transform: rotate(45deg);
   display: flex;
   align-items: center;
@@ -89,14 +100,14 @@ html, body {
 
 .icon-btn .diamond span {
   transform: rotate(-45deg);
-  font-family: var(--font-caps);
-  font-size: 18px;
-  color: var(--gold-bright);
+  font-family: var(--font-meta);
+  font-size: 22px;
+  color: var(--text);
 }
 
 .icon-btn label {
-  font-family: var(--font-body);
-  font-size: 22px;
+  font-family: var(--font-medieval);
+  font-size: 24px;
   color: var(--text);
   cursor: pointer;
 }
@@ -109,30 +120,41 @@ html, body {
   bottom: 50px;
   display: flex;
   align-items: center;
-  gap: 28px;
+  gap: 24px;
 }
 
 .stat {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 18px;
 }
 
 .stat-label {
+  font-family: var(--font-medieval);
   font-size: 24px;
 }
 
 .stat-value {
-  font-size: 20px;
+  font-family: var(--font-lato);
+  font-size: 17px;
   color: var(--text);
 }
 
+/* Pointed-end bar with gold gradient frame:
+   outer .bar carries the gradient + clip shape, .bar-bg is the dark inset, fill inside */
 .bar {
   width: 300px;
-  height: 22px;
-  border: 1px solid var(--gold);
-  background: rgba(0, 0, 0, 0.55);
-  clip-path: polygon(12px 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 12px 100%, 0 50%);
+  height: 26px;
+  padding: 2px;
+  background: linear-gradient(180deg, var(--gold-bright), #8a6a35);
+  clip-path: polygon(14px 0, calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%, 14px 100%, 0 50%);
+}
+
+.bar-bg {
+  width: 100%;
+  height: 100%;
+  background: #16100a;
+  clip-path: polygon(13px 0, calc(100% - 13px) 0, 100% 50%, calc(100% - 13px) 100%, 13px 100%, 0 50%);
   overflow: hidden;
 }
 
@@ -141,14 +163,15 @@ html, body {
   transition: width 0.25s ease;
 }
 
-.bar-fill.health { background: linear-gradient(180deg, #d9534a, var(--health)); width: 100%; }
-.bar-fill.magic { background: linear-gradient(180deg, #5b7fd4, var(--magic)); width: 50%; }
+.bar-fill.health { background: linear-gradient(90deg, #8f1f1c, #e04138); width: 100%; }
+.bar-fill.magic { background: linear-gradient(90deg, #2c4a9e, #5b83e0); width: 50%; }
 
 .gold {
   margin-left: auto;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
+  font-family: var(--font-medieval);
   font-size: 26px;
 }
 
@@ -160,86 +183,105 @@ html, body {
   box-shadow: 0 0 4px rgba(0,0,0,0.6);
 }
 
-/* Interaction hint */
-#interact-hint {
-  position: absolute;
-  left: 50%;
-  bottom: 130px;
-  transform: translateX(-50%);
-  font-size: 22px;
-  color: var(--gold-bright);
-  background: var(--panel-bg);
-  border: 1px solid var(--gold);
-  padding: 8px 22px;
-}
-
-/* Dialog (placeholder version — full dialog system comes later) */
+/* ---- Dialog (placeholder version — full dialog system comes later) ---- */
 #dialog {
   position: absolute;
   inset: 0;
   background: rgba(0, 0, 0, 0.35);
 }
 
+/* Double gold-gradient frame per the PDF: 2px inner rect + 2px outer rect 7px out */
 .dialog-box {
   position: absolute;
-  left: 200px;
-  right: 200px;
+  left: 205px;
+  right: 205px;
   background: var(--panel-bg);
-  border: 1px solid var(--gold);
-  outline: 1px solid var(--gold);
-  outline-offset: 6px;
-  padding: 40px 50px;
+  border: 2px solid;
+  border-image: linear-gradient(180deg, var(--frame-light), var(--frame-dark)) 1;
 }
 
-#dialog-npc { top: 200px; min-height: 300px; }
-
-#dialog-portrait {
+.dialog-box::before {
+  content: '';
   position: absolute;
-  right: 30px;
-  bottom: 0;
-  height: 430px;
+  inset: -9px;
+  border: 2px solid;
+  border-image: linear-gradient(180deg, #7d5f33, #4d3a1c) 1;
   pointer-events: none;
 }
 
-.dialog-text { max-width: 900px; }
+#dialog-npc {
+  top: 200px;
+  height: 345px;
+  padding: 30px 120px;
+}
+
+/* 500x500 portrait window, anchored to the bottom of the box; image 500px wide,
+   top-justified inside the window */
+#portrait-frame {
+  position: absolute;
+  right: 30px;
+  bottom: 0;
+  width: 500px;
+  height: 500px;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+#dialog-portrait {
+  display: block;
+  width: 500px;
+  height: auto;
+}
+
+.dialog-text { max-width: 1050px; }
 
 .dialog-text h2 {
-  font-family: var(--font-body);
-  font-weight: 500;
-  font-size: 42px;
-  color: #fff;
+  font-family: var(--font-medieval);
+  font-weight: 400;
+  font-size: 40px;
+  color: var(--text);
 }
 
 .dialog-text h3 {
-  font-family: var(--font-caps);
-  font-size: 20px;
-  letter-spacing: 3px;
-  color: var(--gold-bright);
-  margin: 6px 0 18px;
+  font-family: var(--font-lato);
+  font-weight: 600;
+  font-size: 24px;
+  letter-spacing: 4px;
+  color: var(--role-gold);
+  margin: 8px 0 20px;
 }
 
 .dialog-text p {
-  font-size: 28px;
-  line-height: 1.5;
+  font-family: var(--font-meta);
+  font-size: 24px;
+  line-height: 40px;
 }
 
-#dialog-responses { top: 580px; }
+#dialog-response-box {
+  top: 585px;
+  padding: 42px 120px;
+}
+
+/* Arrow lives in its own column and slides between rows; text never indents */
+#dialog-arrow {
+  position: absolute;
+  left: 44px;
+  top: 48px;
+  transition: top 0.15s ease;
+}
 
 #dialog-responses .response {
   display: block;
-  font-size: 26px;
-  line-height: 2;
-  color: rgba(232, 220, 196, 0.55);
+  text-align: left;
+  font-family: var(--font-meta);
+  font-size: 24px;
+  line-height: 53px;
+  color: var(--text-dim);
   cursor: pointer;
 }
 
 #dialog-responses .response.selected {
-  color: #fff;
-}
-
-#dialog-responses .response.selected::before {
-  content: '\27A4  ';
-  color: var(--gold-bright);
+  color: var(--text);
 }
 
 /* Toast messages (scene edges, etc.) */
@@ -249,8 +291,10 @@ html, body {
   left: 50%;
   transform: translateX(-50%);
   background: var(--panel-bg);
-  border: 1px solid var(--gold);
+  border: 2px solid;
+  border-image: linear-gradient(180deg, var(--frame-light), var(--frame-dark)) 1;
   padding: 12px 32px;
-  font-size: 24px;
+  font-family: var(--font-meta);
+  font-size: 22px;
   color: var(--text);
 }

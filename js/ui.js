@@ -22,11 +22,10 @@ export function updateHud(stats) {
   $('gold-value').textContent = stats.gold.toLocaleString();
 }
 
-export function showInteractHint(show) {
-  $('interact-hint').classList.toggle('hidden', !show);
-}
-
 // ---- Placeholder dialog (full dialog system comes later) ----
+
+const RESPONSE_ROW_H = 53; // matches .response line-height
+const ARROW_BASE_TOP = 48; // first row, arrow vertically centered
 
 const dialogState = { open: false, selected: 0, npc: null, onClose: null };
 
@@ -49,7 +48,7 @@ export function openDialog(npc, onClose) {
   box.innerHTML = '';
   npc.dialog.responses.forEach((text, i) => {
     const el = document.createElement('span');
-    el.className = 'response' + (i === 0 ? ' selected' : '');
+    el.className = 'response';
     el.textContent = text;
     el.addEventListener('click', () => { dialogState.selected = i; chooseResponse(); });
     el.addEventListener('mouseenter', () => { dialogState.selected = i; refreshSelection(); });
@@ -57,11 +56,13 @@ export function openDialog(npc, onClose) {
   });
 
   $('dialog').classList.remove('hidden');
+  refreshSelection();
 }
 
 function refreshSelection() {
   const nodes = $('dialog-responses').querySelectorAll('.response');
   nodes.forEach((el, i) => el.classList.toggle('selected', i === dialogState.selected));
+  $('dialog-arrow').style.top = `${ARROW_BASE_TOP + dialogState.selected * RESPONSE_ROW_H}px`;
 }
 
 export function dialogKey(key) {
