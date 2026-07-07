@@ -20,10 +20,13 @@
                                                 # across sessions, don't reuse a name
    cp -r "$WT/.git" "$GD"
    find "$GD" -name "*.lock" -o -name "tmp_obj_*" | xargs -r rm -f
+   git --git-dir="$GD" --work-tree="$WT" fetch origin
+   git --git-dir="$GD" --work-tree="$WT" reset --soft origin/main   # IMPORTANT — see below
    git --git-dir="$GD" --work-tree="$WT" add -A
    git --git-dir="$GD" --work-tree="$WT" commit -m "..."
    git --git-dir="$GD" --work-tree="$WT" push origin main
    ```
+   The `fetch` + `reset --soft origin/main` step matters: the mounted `.git`'s own `refs/heads/main` never gets updated by this whole workaround (only the copy's ref and the remote do), so on the *next* session the copy you make will start from a stale local `main` — a plain `commit` on top of it diverges from what's actually on `origin/main` and `push` gets rejected ("fetch first"). `reset --soft` rewinds the copy's branch pointer to the real remote tip while leaving the index/working tree (i.e. your actual file changes) untouched, so the following `commit` lands correctly on top of history that matches origin. Safe to run every time, even if nothing was stale.
    This leaves the mounted `.git` itself stale (still has its own stuck locks, now behind the new commit) — that's fine, it's only used read-only going forward from Claude sessions. If Danny works on this repo directly on his Mac, the stuck lock files are just normal Finder-deletable files there (this restriction is specific to how Cowork's sandbox mounts the folder), so `rm .git/*.lock` locally clears them.
 
 ## Design rules (from the PDF, page 5)
