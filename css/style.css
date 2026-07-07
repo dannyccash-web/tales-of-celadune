@@ -50,11 +50,14 @@ html, body {
 }
 
 /* ---- Layer 3: vignette ---- */
+/* Oversized by 4px on every edge: scaling the stage to arbitrary window sizes
+   can leave sub-pixel seams at the borders, so the vignette overshoots them */
 #vignette {
   position: absolute;
-  inset: 0;
-  width: 1920px;
-  height: 1080px;
+  left: -4px;
+  top: -4px;
+  width: 1928px;
+  height: 1088px;
   mix-blend-mode: multiply;
   pointer-events: none;
 }

@@ -1,6 +1,8 @@
 // World: owns the current scene, player, NPCs, camera, collision, and canvas rendering.
 // Layers 1 (scrolling background) and 2 (player/NPC icons) are drawn here.
 
+import * as audio from './audio.js';
+
 const VIEW_W = 1920;
 const VIEW_H = 1080;
 const PLAYER_SPEED = 130; // px/sec
@@ -9,6 +11,7 @@ const COLLIDER = 36; // square collider centered on characters
 const INTERACT_RANGE = 90;
 const SHADOW_OFFSET = 3; // px, always to the bottom-right regardless of rotation
 const SHADOW_ALPHA = 0.4;
+const FADE_S = 0.7; // NPC door fade duration
 
 function rectsOverlap(ax, ay, aw, ah, b) {
   return ax < b.x + b.w && ax + aw > b.x && ay < b.y + b.h && ay + ah > b.y;
@@ -30,15 +33,26 @@ export class World {
       walkTimer: 0,
     };
 
-    this.npcs = scene.npcs.map((n) => ({
-      ...n,
-      patrolIndex: 0,
-      waitTimer: 0,
-      stuckTimer: 0,
-      avoidSign: 0,
-    }));
+    this.npcs = scene.npcs.map((n) => {
+      const startsHome = !!n.home && n.routine?.[0]?.do === 'leaveHome';
+      return {
+        ...n,
+        patrolIndex: 0,
+        waitTimer: 0,
+        stuckTimer: 0,
+        avoidSign: 0,
+        routineIndex: 0,
+        timer: 0,
+        pause: 0,
+        fading: null, // 'in' | 'out'
+        alpha: startsHome ? 0 : 1,
+        atHome: startsHome,
+        ...(startsHome ? { x: n.home.door.x, y: n.home.door.y } : {}),
+      };
+    });
 
     this.cameraY = 0;
+    this.interior = null; // interior image while a home dialog is open
     this.edgeMessage = null; // set when player pushes on a scene exit
   }
 
@@ -46,10 +60,21 @@ export class World {
     let best = null;
     let bestDist = INTERACT_RANGE;
     for (const npc of this.npcs) {
+      if (npc.atHome) continue;
       const d = Math.hypot(npc.x - this.player.x, npc.y - this.player.y);
       if (d < bestDist) { best = npc; bestDist = d; }
     }
     return best;
+  }
+
+  // NPC whose home door the player is standing near (for spacebar interaction)
+  homeNpcNearDoor() {
+    for (const npc of this.npcs) {
+      if (!npc.home) continue;
+      const d = Math.hypot(npc.home.door.x - this.player.x, npc.home.door.y - this.player.y);
+      if (d < INTERACT_RANGE) return npc;
+    }
+    return null;
   }
 
   // Everything blocking a body at (x, y). `self` is excluded; player and all
@@ -65,7 +90,7 @@ export class World {
       }
     }
     for (const b of [this.player, ...this.npcs]) {
-      if (b === self) continue;
+      if (b === self || b.atHome) continue;
       if (rectsOverlap(cx, cy, COLLIDER, COLLIDER,
         { x: b.x - half, y: b.y - half, w: COLLIDER, h: COLLIDER })) {
         out.push({ id: b, cx: b.x, cy: b.y });
@@ -145,35 +170,88 @@ export class World {
   updateNpcs(dt, uiLocked) {
     if (uiLocked) return; // world pauses during dialog
     for (const npc of this.npcs) {
-      if (!npc.patrol || npc.patrol.length < 2) continue;
-      if (npc.waitTimer > 0) { npc.waitTimer -= dt; continue; }
-
-      const target = npc.patrol[npc.patrolIndex];
-      const dx = target.x - npc.x;
-      const dy = target.y - npc.y;
-      const dist = Math.hypot(dx, dy);
-      if (dist < 2) {
-        npc.patrolIndex = (npc.patrolIndex + 1) % npc.patrol.length;
-        npc.waitTimer = 2 + Math.random() * 3;
-        npc.stuckTimer = 0;
+      // Door fades run to completion before anything else
+      if (npc.fading) {
+        const dir = npc.fading === 'in' ? 1 : -1;
+        npc.alpha = Math.min(1, Math.max(0, npc.alpha + (dir * dt) / FADE_S));
+        if (npc.alpha === (dir === 1 ? 1 : 0)) {
+          if (dir === -1) npc.atHome = true;
+          npc.fading = null;
+          this.advanceRoutine(npc);
+        }
         continue;
       }
 
-      const step = Math.min(npc.speed * dt, dist);
-      const desired = Math.atan2(dy, dx);
-      const moved = this.steer(npc, desired, step);
+      if (npc.pause > 0) { npc.pause -= dt; continue; }
 
-      if (moved) {
-        npc.stuckTimer = 0;
-      } else {
-        // Fully boxed in (e.g. the player is standing in the way):
-        // wait politely, then try again.
-        npc.stuckTimer += dt;
-        if (npc.stuckTimer > 1.5) {
-          npc.waitTimer = 1 + Math.random();
-          npc.stuckTimer = 0;
-        }
+      if (npc.routine) { this.updateRoutine(npc, dt); continue; }
+
+      // Simple back-and-forth patrol (NPCs without a routine)
+      if (!npc.patrol || npc.patrol.length < 2) continue;
+      if (npc.waitTimer > 0) { npc.waitTimer -= dt; continue; }
+      const target = npc.patrol[npc.patrolIndex];
+      const arrived = this.walkToward(npc, target, dt);
+      if (arrived) {
+        npc.patrolIndex = (npc.patrolIndex + 1) % npc.patrol.length;
+        npc.waitTimer = 2 + Math.random() * 3;
       }
+    }
+  }
+
+  // Steer one tick toward a target; returns true when the NPC has arrived.
+  walkToward(npc, target, dt) {
+    const dx = target.x - npc.x;
+    const dy = target.y - npc.y;
+    const dist = Math.hypot(dx, dy);
+    if (dist < 4) return true;
+
+    const moved = this.steer(npc, Math.atan2(dy, dx), Math.min(npc.speed * dt, dist));
+    if (moved) {
+      npc.stuckTimer = 0;
+    } else {
+      // Fully boxed in (e.g. the player is standing in the way):
+      // wait politely, then try again.
+      npc.stuckTimer += dt;
+      if (npc.stuckTimer > 1.5) {
+        npc.stuckTimer = 0;
+        npc.pause = 1 + Math.random();
+      }
+    }
+    return false;
+  }
+
+  advanceRoutine(npc) {
+    if (!npc.routine) return;
+    npc.timer = 0;
+    npc.routineIndex = (npc.routineIndex + 1) % npc.routine.length;
+  }
+
+  updateRoutine(npc, dt) {
+    const step = npc.routine[npc.routineIndex];
+    switch (step.do) {
+      case 'leaveHome':
+        audio.sfx(audio.SFX.door);
+        npc.x = npc.home.door.x;
+        npc.y = npc.home.door.y;
+        npc.atHome = false;
+        npc.alpha = 0;
+        npc.fading = 'in'; // advanceRoutine fires when the fade completes
+        break;
+      case 'wait':
+        npc.timer += dt;
+        if (npc.timer >= step.s) this.advanceRoutine(npc);
+        break;
+      case 'goto':
+        if (this.walkToward(npc, step, dt)) this.advanceRoutine(npc);
+        break;
+      case 'goHome':
+        if (this.walkToward(npc, npc.home.door, dt)) {
+          audio.sfx(audio.SFX.door);
+          npc.fading = 'out'; // atHome + advance when the fade completes
+        }
+        break;
+      default:
+        this.advanceRoutine(npc);
     }
   }
 
@@ -235,7 +313,8 @@ export class World {
     return sil;
   }
 
-  drawSprite(img, x, y, rotation, flip = false) {
+  drawSprite(img, x, y, rotation, flip = false, alpha = 1) {
+    if (alpha <= 0) return;
     const ctx = this.ctx;
     const screenY = y - this.cameraY;
     const fx = flip ? -1 : 1;
@@ -244,7 +323,7 @@ export class World {
     // falls to the bottom-right no matter which way the icon faces.
     ctx.save();
     ctx.globalCompositeOperation = 'multiply';
-    ctx.globalAlpha = SHADOW_ALPHA;
+    ctx.globalAlpha = SHADOW_ALPHA * alpha;
     ctx.translate(x + SHADOW_OFFSET, screenY + SHADOW_OFFSET);
     ctx.rotate(rotation || 0);
     ctx.scale(fx, 1);
@@ -252,6 +331,7 @@ export class World {
     ctx.restore();
 
     ctx.save();
+    ctx.globalAlpha = alpha;
     ctx.translate(x, screenY);
     ctx.rotate(rotation || 0);
     ctx.scale(fx, 1);
@@ -278,6 +358,13 @@ export class World {
 
   render() {
     const ctx = this.ctx;
+
+    // Inside a home: the interior replaces the whole world view (UI stays)
+    if (this.interior) {
+      ctx.drawImage(this.interior, 0, 0, VIEW_W, VIEW_H);
+      return;
+    }
+
     const bg = this.images[this.scene.background];
 
     // Layer 1: background slice for current camera position
@@ -285,7 +372,8 @@ export class World {
 
     // Layer 2: NPCs, then player on top
     for (const npc of this.npcs) {
-      this.drawSprite(this.images[npc.sprite], npc.x, npc.y, npc.rotation);
+      if (npc.atHome) continue;
+      this.drawSprite(this.images[npc.sprite], npc.x, npc.y, npc.rotation, false, npc.alpha);
     }
     const p = this.player;
     const stepFlip = p.moving

@@ -30,6 +30,7 @@ async function boot() {
     scene.background,
     'assets/images/Player_Overhead_1.png',
     ...scene.npcs.map((n) => n.sprite),
+    ...scene.npcs.filter((n) => n.home).map((n) => n.home.interior),
   ];
   const images = await loadImages([...new Set(sources)]);
 
@@ -53,14 +54,34 @@ async function boot() {
   window.addEventListener('pointerdown', retryTheme);
   window.addEventListener('keydown', retryTheme);
 
-  document.getElementById('btn-start').addEventListener('click', () => {
+  function startGame() {
+    if (state.started) return;
     state.started = true;
     document.getElementById('start-screen').classList.add('hidden');
     audio.play(audio.TRACKS.overworld, 1500);
-  });
+  }
+  document.getElementById('btn-start').addEventListener('click', startGame);
+
+  function interact() {
+    const npc = world.nearestNpcInRange();
+    if (npc) { ui.openDialog(npc); return; }
+
+    const homeNpc = world.homeNpcNearDoor();
+    if (homeNpc) {
+      if (homeNpc.atHome) {
+        world.interior = images[homeNpc.home.interior];
+        ui.openDialog(homeNpc, () => { world.interior = null; });
+      } else {
+        ui.toast('The door is locked.');
+      }
+    }
+  }
 
   window.addEventListener('keydown', (e) => {
-    if (!state.started) return;
+    if (!state.started) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); startGame(); }
+      return;
+    }
     if (ui.isDialogOpen()) {
       e.preventDefault();
       ui.dialogKey(e.key);
@@ -69,8 +90,7 @@ async function boot() {
     if (KEYMAP[e.key]) { input[KEYMAP[e.key]] = true; e.preventDefault(); }
     if (e.key === ' ') {
       e.preventDefault();
-      const npc = world.nearestNpcInRange();
-      if (npc) ui.openDialog(npc);
+      interact();
     }
   });
 

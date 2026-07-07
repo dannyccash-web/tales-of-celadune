@@ -7,6 +7,19 @@ export const TRACKS = {
   overworld: 'assets/audio/celadune_overworld.mp3',
 };
 
+export const SFX = {
+  door: 'assets/audio/dragon-studio-open-door-stock-sfx-454246.mp3',
+};
+
+// One-shot sound effect, independent of the soundtrack. No-op outside the
+// browser so game logic stays testable headless in node.
+export function sfx(src, volume = 0.9) {
+  if (typeof Audio === 'undefined') return;
+  const el = new Audio(src);
+  el.volume = volume;
+  el.play().catch(() => { /* pre-gesture; skip silently */ });
+}
+
 const DEFAULT_VOLUME = 0.8;
 let current = null; // { el, src }
 
