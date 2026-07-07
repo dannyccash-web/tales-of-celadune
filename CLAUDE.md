@@ -12,14 +12,19 @@
 2. GitHub Pages serves `main` branch root → https://dannyccash-web.github.io/tales-of-celadune/
 3. Auth: Danny's GitHub token is stored in the local git remote URL (`git remote -v`) — not in any committed file. Never commit tokens.
 4. Always verify the live URL after pushing (Pages can take ~1 min to update).
-5. **Known quirk of this sandbox's mount of the project folder: it can't unlink files** (confirmed: even a file just created with `touch` can't be `rm`'d). Git relies on lock-file unlinks for `add`/`commit` (`.git/index.lock`, `.git/HEAD.lock`), so a plain `git add -A && git commit` fails with `Unable to create '.git/index.lock': File exists` the moment a prior attempt leaves one behind — and once that happens the stale lock is permanent (can't be removed) and every future default-index commit fails the same way. Workaround: point git at a throwaway index file outside the mount, which sidesteps the mount's lock entirely:
+5. **Known quirk of this sandbox's mount of the project folder: it can't unlink (or rename) files** (confirmed: even a file just created with `touch` can't be `rm`'d or `mv`'d). Git relies on lock-file unlinks for `add`/`commit`/`push` (`.git/index.lock`, `.git/HEAD.lock`, `.git/refs/remotes/origin/*.lock`), so once any git command leaves one of these behind (e.g. a run that got interrupted), it's stuck forever and every future git write in the mounted `.git` fails with `Unable to create '.git/....lock': File exists`. `git status`/`log`/`diff` (read-only) keep working fine regardless — it's only writes that break, and a `GIT_INDEX_FILE` override alone isn't enough since HEAD/ref locks aren't affected by it. Reliable workaround: copy `.git` to a normal, writable filesystem (`/tmp`), strip any lock/tmp files from the copy, and point git at it with `--git-dir` while keeping `--work-tree` on the real project folder:
    ```
-   rm -f /tmp/celadune.index   # /tmp is a normal filesystem, unlink works there
-   GIT_INDEX_FILE=/tmp/celadune.index git add -A
-   GIT_INDEX_FILE=/tmp/celadune.index git commit -m "..."
-   git push origin main        # push itself doesn't need the default index
+   WT="<absolute path to the project folder>"
+   GD="/tmp/celadune_gitdir_$$_$(date +%s)"   # unique name — /tmp on this sandbox
+                                                # has been observed to retain files
+                                                # across sessions, don't reuse a name
+   cp -r "$WT/.git" "$GD"
+   find "$GD" -name "*.lock" -o -name "tmp_obj_*" | xargs -r rm -f
+   git --git-dir="$GD" --work-tree="$WT" add -A
+   git --git-dir="$GD" --work-tree="$WT" commit -m "..."
+   git --git-dir="$GD" --work-tree="$WT" push origin main
    ```
-   You'll still see `warning: unable to unlink '.git/objects/.../tmp_obj_...'` and possibly `.git/HEAD.lock` — these are harmless (the object/ref still lands correctly; verify with `git log --oneline -1` and `git diff --stat HEAD~1 HEAD`), just orphaned temp files the mount wouldn't let git clean up. `git status`/`git log`/`git diff` (read-only) work fine even with stale locks present; it's only `add`/`commit` against the default index that break.
+   This leaves the mounted `.git` itself stale (still has its own stuck locks, now behind the new commit) — that's fine, it's only used read-only going forward from Claude sessions. If Danny works on this repo directly on his Mac, the stuck lock files are just normal Finder-deletable files there (this restriction is specific to how Cowork's sandbox mounts the folder), so `rm .git/*.lock` locally clears them.
 
 ## Design rules (from the PDF, page 5)
 
