@@ -9,7 +9,26 @@ export const TRACKS = {
 
 export const SFX = {
   door: 'assets/audio/dragon-studio-open-door-stock-sfx-454246.mp3',
+  footsteps: 'assets/audio/universfield-footsteps-walking-278819.mp3',
 };
+
+// Looped footsteps while the player is walking. Call every frame with the
+// current walking state; starts/stops the loop on transitions only.
+let steps = null;
+export function setWalking(active) {
+  if (typeof Audio === 'undefined') return;
+  if (active) {
+    if (!steps) {
+      steps = new Audio(SFX.footsteps);
+      steps.loop = true;
+      steps.volume = 0.55;
+    }
+    if (steps.paused) steps.play().catch(() => {});
+  } else if (steps && !steps.paused) {
+    steps.pause();
+    steps.currentTime = 0;
+  }
+}
 
 // One-shot sound effect, independent of the soundtrack. No-op outside the
 // browser so game logic stays testable headless in node.

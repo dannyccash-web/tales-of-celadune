@@ -69,8 +69,12 @@ async function boot() {
     const homeNpc = world.homeNpcNearDoor();
     if (homeNpc) {
       if (homeNpc.atHome) {
+        audio.sfx(audio.SFX.door); // player steps inside
         world.interior = images[homeNpc.home.interior];
-        ui.openDialog(homeNpc, () => { world.interior = null; });
+        ui.openDialog(homeNpc, () => {
+          audio.sfx(audio.SFX.door); // ...and back out
+          world.interior = null;
+        });
       } else {
         ui.toast('The door is locked.');
       }
@@ -108,6 +112,8 @@ async function boot() {
     const locked = ui.isDialogOpen() || !state.started;
     world.update(dt, input, locked);
     world.render();
+
+    audio.setWalking(!locked && world.player.moving);
 
     if (world.edgeMessage && now - lastEdgeMessage > 3000) {
       ui.toast(world.edgeMessage);

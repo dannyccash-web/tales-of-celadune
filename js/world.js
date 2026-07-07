@@ -6,7 +6,7 @@ import * as audio from './audio.js';
 const VIEW_W = 1920;
 const VIEW_H = 1080;
 const PLAYER_SPEED = 130; // px/sec
-const WALK_FLIP_INTERVAL = 0.5; // s — icon mirrors while walking to suggest steps
+const WALK_FLIP_INTERVAL = 0.25; // s — icon mirrors while walking to suggest steps
 const COLLIDER = 36; // square collider centered on characters
 const INTERACT_RANGE = 90;
 const SHADOW_OFFSET = 3; // px, always to the bottom-right regardless of rotation
@@ -339,11 +339,8 @@ export class World {
     ctx.restore();
   }
 
-  drawNameLabel(npc) {
+  drawLabel(text, x, y) {
     const ctx = this.ctx;
-    const img = this.images[npc.sprite];
-    const x = npc.x;
-    const y = npc.y - this.cameraY - img.height / 2 - 14;
     ctx.save();
     ctx.font = '22px MedievalSharp, serif';
     ctx.textAlign = 'center';
@@ -352,8 +349,13 @@ export class World {
     ctx.shadowBlur = 6;
     ctx.shadowOffsetY = 2;
     ctx.fillStyle = '#fff';
-    ctx.fillText(npc.name, x, y);
+    ctx.fillText(text, x, y - this.cameraY);
     ctx.restore();
+  }
+
+  drawNameLabel(npc) {
+    const img = this.images[npc.sprite];
+    this.drawLabel(npc.name, npc.x, npc.y - img.height / 2 - 14);
   }
 
   render() {
@@ -386,5 +388,10 @@ export class World {
     // Name label above the NPC the player could interact with
     const near = this.nearestNpcInRange();
     if (near) this.drawNameLabel(near);
+
+    // Building labels when the player is close by
+    for (const b of this.scene.buildings || []) {
+      if (Math.hypot(b.x - p.x, b.y - p.y) < b.r) this.drawLabel(b.label, b.x, b.y);
+    }
   }
 }
