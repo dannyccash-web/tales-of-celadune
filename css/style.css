@@ -236,6 +236,18 @@ html, body {
   height: auto;
 }
 
+/* Portrait entrance: slides in quickly from the right while fading in.
+   Class is removed + re-added (with a reflow in between) each time a
+   dialog opens so the animation replays every time. */
+@keyframes portrait-slide-in {
+  from { transform: translateX(70px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+#dialog-portrait.portrait-enter {
+  animation: portrait-slide-in 0.28s ease-out;
+}
+
 .dialog-text { max-width: 760px; }
 
 .dialog-text h2 {

@@ -34,7 +34,10 @@ export class World {
     };
 
     this.npcs = scene.npcs.map((n) => {
-      const startsHome = !!n.home && n.routine?.[0]?.do === 'leaveHome';
+      // An NPC starts inside their home if explicitly flagged (`startsHome`) or,
+      // for backward compatibility, if their routine's first step is 'leaveHome'.
+      // NPCs that spawn out in the world (e.g. mid-field) set startsHome: false.
+      const startsHome = n.startsHome ?? (!!n.home && n.routine?.[0]?.do === 'leaveHome');
       return {
         ...n,
         patrolIndex: 0,

@@ -27,7 +27,36 @@ export function updateHud(stats) {
 const RESPONSE_ROW_H = 53; // matches .response line-height
 const ARROW_BASE_TOP = 48; // first row, arrow vertically centered
 
-const dialogState = { open: false, selected: 0, npc: null, onClose: null };
+const dialogState = { open: false, selected: 0, npc: null, onClose: null, typing: false };
+
+// ---- Typewriter effect for the NPC's dialog line ----
+const TYPE_MS_PER_CHAR = 22;
+let typeTimer = null;
+
+function startTyping(text) {
+  clearInterval(typeTimer);
+  const el = $('dialog-line');
+  el.textContent = '';
+  dialogState.typing = true;
+  let i = 0;
+  typeTimer = setInterval(() => {
+    i += 1;
+    el.textContent = text.slice(0, i);
+    if (i >= text.length) {
+      clearInterval(typeTimer);
+      typeTimer = null;
+      dialogState.typing = false;
+    }
+  }, TYPE_MS_PER_CHAR);
+}
+
+function finishTyping() {
+  if (!dialogState.typing) return;
+  clearInterval(typeTimer);
+  typeTimer = null;
+  dialogState.typing = false;
+  $('dialog-line').textContent = dialogState.npc.dialog.line;
+}
 
 export function isDialogOpen() {
   return dialogState.open;
@@ -41,8 +70,15 @@ export function openDialog(npc, onClose) {
 
   $('dialog-name').textContent = npc.name;
   $('dialog-role').textContent = npc.role;
-  $('dialog-line').textContent = npc.dialog.line;
-  $('dialog-portrait').src = npc.portrait;
+  startTyping(npc.dialog.line);
+
+  // Portrait: slide in quickly from the right, fading 0% -> 100% opacity.
+  // Remove + reflow + re-add so the CSS animation replays on every open.
+  const portrait = $('dialog-portrait');
+  portrait.src = npc.portrait;
+  portrait.classList.remove('portrait-enter');
+  void portrait.offsetWidth; // force reflow
+  portrait.classList.add('portrait-enter');
 
   const box = $('dialog-responses');
   box.innerHTML = '';
@@ -70,7 +106,11 @@ export function dialogKey(key) {
   const count = dialogState.npc.dialog.responses.length;
   if (key === 'ArrowUp') { dialogState.selected = (dialogState.selected + count - 1) % count; refreshSelection(); }
   if (key === 'ArrowDown') { dialogState.selected = (dialogState.selected + 1) % count; refreshSelection(); }
-  if (key === ' ' || key === 'Enter') chooseResponse();
+  if (key === ' ' || key === 'Enter') {
+    // First press while typing just reveals the rest of the line.
+    if (dialogState.typing) { finishTyping(); return; }
+    chooseResponse();
+  }
   if (key === 'Escape') closeDialog();
 }
 
@@ -80,6 +120,9 @@ function chooseResponse() {
 }
 
 function closeDialog() {
+  clearInterval(typeTimer);
+  typeTimer = null;
+  dialogState.typing = false;
   dialogState.open = false;
   $('dialog').classList.add('hidden');
   if (dialogState.onClose) dialogState.onClose();

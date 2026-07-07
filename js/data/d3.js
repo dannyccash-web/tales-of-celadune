@@ -51,7 +51,7 @@ export default {
     { x: 450, y: 725, w: 175, h: 175, note: 'small barn 1 + barrels' },
     { x: 625, y: 725, w: 150, h: 175, note: 'small barn 2 + barrels' },
     { x: 1150, y: 725, w: 175, h: 175, note: 'small barn 3 + barrels' },
-    { x: 325, y: 775, w: 75, h: 150, note: 'well + frame' },
+    { x: 325, y: 775, w: 75, h: 125, note: 'well + frame' },
     { x: 1050, y: 1000, w: 200, h: 300, note: 'fenced pen' },
     { x: 1175, y: 1250, w: 125, h: 150, note: 'silo' },
     { x: 925, y: 1325, w: 300, h: 275, note: 'bottom barn (roof extent)' },
@@ -94,18 +94,25 @@ export default {
       portrait: 'assets/images/Mirelle_Portrait.png',
       x: 952, y: 690,
       speed: 40,
+      startsHome: true,
       home: {
         door: { x: 952, y: 700 }, // just outside the farmhouse's south face
         interior: 'assets/images/home_interior.jpg',
       },
-      // Daily loop (also our home-system test): leave home, walk to the scene
-      // center, linger, head back inside, stay a while, repeat.
+      // Daily loop: rest at home, head out to check the Old Barn, draw water
+      // from the well, then back home. All waypoints ride the main east-west
+      // path (y900-990, clear full width) and the x925-1000 barn-lane gap /
+      // x875-1050 gap south of the fields — the only clear north-south cuts
+      // through the building rows, so the route never clips a building.
       routine: [
+        { do: 'wait', s: 10 },
         { do: 'leaveHome' },
         { do: 'goto', x: 952, y: 940 },
-        { do: 'wait', s: 4 },
+        { do: 'goto', x: 1000, y: 1290 }, // Old Barn entrance
+        { do: 'goto', x: 952, y: 940 },
+        { do: 'goto', x: 362, y: 940 },   // the well
+        { do: 'goto', x: 952, y: 940 },
         { do: 'goHome' },
-        { do: 'wait', s: 6 },
       ],
       // Placeholder dialog — real dialog system comes later
       dialog: {
@@ -113,6 +120,90 @@ export default {
         responses: [
           'Kobolds? Tell me more.',
           'What do you grow here?',
+          'Leave.',
+        ],
+      },
+    },
+    {
+      id: 'tuckwell',
+      name: 'Tuckwell',
+      role: 'FARMHAND',
+      sprite: 'assets/images/Tuckwell_Overhead.png',
+      portrait: 'assets/images/Tuckwell_Portrait.png',
+      x: 450, y: 700, // spawns beside the upper-left field
+      speed: 45,
+      startsHome: false,
+      home: {
+        door: { x: 537, y: 925 }, // south face of the Hay Barn (his house)
+        interior: 'assets/images/home_interior.jpg',
+      },
+      // Tours all four crop fields, pausing at each, then home for a longer
+      // rest. Drops to the main path (y900-990, clear full width) right away
+      // via the x400-450 gap between the well and his own house, and does
+      // all the long east-west travel down there — the y700 band above is
+      // narrow near the farmhouse/field corner and, combined with Brenna's
+      // route crossing nearby, could wedge two NPCs together with no room
+      // to pass. The open path has no such pinch point.
+      routine: [
+        { do: 'wait', s: 10 },            // upper-left field (spawn)
+        { do: 'goto', x: 425, y: 700 },
+        { do: 'goto', x: 425, y: 940 },
+        { do: 'goto', x: 1450, y: 940 },   // upper-right field
+        { do: 'wait', s: 10 },
+        { do: 'goto', x: 1550, y: 960 },   // lower-right field
+        { do: 'wait', s: 10 },
+        { do: 'goto', x: 450, y: 980 },    // lower-left field
+        { do: 'wait', s: 10 },
+        { do: 'goHome' },
+        { do: 'wait', s: 15 },
+        { do: 'leaveHome' },
+        { do: 'goto', x: 425, y: 925 },
+        { do: 'goto', x: 425, y: 700 },
+        { do: 'goto', x: 450, y: 700 },    // back to the upper-left field
+      ],
+      dialog: {
+        line: 'Fields don’t tend themselves, friend. Four to walk every day, and the kobolds still get more than their share.',
+        responses: [
+          'How’s the harvest looking?',
+          'Any trouble out there?',
+          'Leave.',
+        ],
+      },
+    },
+    {
+      id: 'brenna',
+      name: 'Brenna',
+      role: 'ANIMAL KEEPER',
+      sprite: 'assets/images/Brenna_Overhead.png',
+      portrait: 'assets/images/Brenna_Portrait.png',
+      x: 1850, y: 940, // spawns out to the east, near the path
+      speed: 45,
+      startsHome: false,
+      home: {
+        door: { x: 700, y: 925 }, // south face of the Tool Shed (her house)
+        interior: 'assets/images/home_interior.jpg',
+      },
+      // Checks the animal pen, then the silo, then home for the night.
+      // Route stays east of x1300 (the lower-right field's edge) while
+      // dipping south, then rides the main path (y900-990) the rest of
+      // the way — both clear full width, so nothing here clips a building.
+      routine: [
+        { do: 'goto', x: 1290, y: 940 },
+        { do: 'goto', x: 1270, y: 1150 }, // animal pen
+        { do: 'wait', s: 10 },
+        { do: 'goto', x: 1270, y: 1215 }, // silo
+        { do: 'wait', s: 10 },
+        { do: 'goto', x: 1270, y: 940 },
+        { do: 'goto', x: 700, y: 940 },
+        { do: 'goHome' },
+        { do: 'wait', s: 15 },
+        { do: 'leaveHome' },
+      ],
+      dialog: {
+        line: 'The animals are settled for now. Silo’s fuller than last season, at least — small mercies.',
+        responses: [
+          'Need a hand with the animals?',
+          'What’s in the silo?',
           'Leave.',
         ],
       },
