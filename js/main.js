@@ -7,7 +7,7 @@ import * as ui from './ui.js';
 import * as audio from './audio.js';
 
 const stats = {
-  health: 5, healthMax: 10, magic: 5, magicMax: 10, gold: 0,
+  health: 5, healthMax: 5, magic: 5, magicMax: 10, gold: 0,
   level: 4, xp: 1240, xpMax: 2000, attack: 14, defense: 9, speed: 11, luck: 6,
 };
 const state = { started: false };
@@ -66,9 +66,32 @@ async function boot() {
   }
   document.getElementById('btn-start').addEventListener('click', startGame);
 
+  // A response can carry an optional effect (dialog.responseEffects, parallel
+  // to dialog.responses) — right now that's just Gaffer's bite, but any
+  // future NPC can hook the same mechanism instead of a new one.
+  function applyResponseEffect(npc, index) {
+    const effect = npc.dialog.responseEffects?.[index];
+    if (!effect) return;
+    if (effect.damage) {
+      stats.health = Math.max(0, stats.health - effect.damage);
+      ui.updateHud(stats);
+      ui.flashHealthDamage();
+    }
+    if (effect.message) ui.toast(effect.message);
+  }
+
+  // Every NPC dialog opens through here so the per-character voice clip
+  // (audio.DIALOGUE_SFX, keyed by npc.id) and response-effect handling are
+  // consistent whether the NPC was approached directly or met at their door.
+  function openNpcDialog(npc, onClose) {
+    const voice = audio.DIALOGUE_SFX[npc.id];
+    if (voice) audio.sfx(voice, 1.0);
+    ui.openDialog(npc, onClose, applyResponseEffect);
+  }
+
   function interact() {
     const npc = world.nearestNpcInRange();
-    if (npc) { ui.openDialog(npc); return; }
+    if (npc) { openNpcDialog(npc); return; }
 
     const item = world.nearestInteractableInRange();
     if (item) {
@@ -88,7 +111,7 @@ async function boot() {
       if (homeNpc.atHome) {
         audio.sfx(audio.SFX.door); // player steps inside
         world.interior = images[homeNpc.home.interior];
-        ui.openDialog(homeNpc, () => {
+        openNpcDialog(homeNpc, () => {
           audio.sfx(audio.SFX.door); // ...and back out
           world.interior = null;
         });

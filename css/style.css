@@ -169,6 +169,20 @@ html, body {
 .bar-fill.health { background: linear-gradient(90deg, #8f1f1c, #e04138); width: 100%; }
 .bar-fill.magic { background: linear-gradient(90deg, #2c4a9e, #5b83e0); width: 50%; }
 
+/* Damage flash: a quick brightness+glow pulse on the red fill, layered on
+   top of the width transition above (so the bar glows *while* it animates
+   down). Class is removed + reflowed + re-added by ui.flashHealthDamage()
+   so it replays on every hit, same trick as the dialog portrait's entrance. */
+@keyframes health-flash {
+  0% { filter: brightness(1) drop-shadow(0 0 0 rgba(255, 70, 60, 0)); }
+  25% { filter: brightness(1.9) drop-shadow(0 0 12px rgba(255, 90, 70, 0.95)); }
+  100% { filter: brightness(1) drop-shadow(0 0 0 rgba(255, 70, 60, 0)); }
+}
+
+.bar-fill.health.flash-damage {
+  animation: health-flash 0.5s ease-out;
+}
+
 .gold {
   margin-left: auto;
   display: flex;

@@ -33,8 +33,8 @@
       <div id="hud">
         <div class="stat">
           <span class="stat-label">Health</span>
-          <div class="bar"><div class="bar-bg"><div class="bar-fill health" id="health-fill"></div></div></div>
-          <span class="stat-value" id="health-value">10/10</span>
+          <div class="bar" id="health-bar"><div class="bar-bg"><div class="bar-fill health" id="health-fill"></div></div></div>
+          <span class="stat-value" id="health-value">5/5</span>
         </div>
         <!-- Magic bar hidden for now — player hasn't learned magic yet. Markup
              kept in place (just hidden) so it's a one-line change to bring back. -->
@@ -96,18 +96,18 @@
                 <div class="slider-track">
                   <div class="bar"><div class="bar-bg"><div class="bar-fill volume" id="music-fill"></div></div></div>
                   <div class="slider-thumb" id="music-thumb"></div>
-                  <input type="range" min="0" max="100" value="80" id="music-slider" class="slider-input">
+                  <input type="range" min="0" max="100" value="75" id="music-slider" class="slider-input">
                 </div>
-                <span class="stat-value" id="music-value">80%</span>
+                <span class="stat-value" id="music-value">75%</span>
               </div>
               <div class="slider-row">
                 <span class="stat-label">Effects</span>
                 <div class="slider-track">
                   <div class="bar"><div class="bar-bg"><div class="bar-fill volume" id="sfx-fill"></div></div></div>
                   <div class="slider-thumb" id="sfx-thumb"></div>
-                  <input type="range" min="0" max="100" value="90" id="sfx-slider" class="slider-input">
+                  <input type="range" min="0" max="100" value="100" id="sfx-slider" class="slider-input">
                 </div>
-                <span class="stat-value" id="sfx-value">90%</span>
+                <span class="stat-value" id="sfx-value">100%</span>
               </div>
             </section>
             <section class="tab-pane hidden" data-pane="stats">

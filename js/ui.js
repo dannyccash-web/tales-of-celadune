@@ -14,12 +14,29 @@ export function initStage() {
   window.addEventListener('resize', fitStage);
 }
 
+// The health bar's pixel width scales with the player's max health instead
+// of being a fixed CSS size, so it visibly grows as healthMax increases
+// later in the game. 30px/point matches the original fixed 300px design at
+// healthMax=10; at the new-game default of 5 that's 150px (half width).
+const HEALTH_PX_PER_POINT = 30;
+
 export function updateHud(stats) {
+  $('health-bar').style.width = `${stats.healthMax * HEALTH_PX_PER_POINT}px`;
   $('health-fill').style.width = `${(stats.health / stats.healthMax) * 100}%`;
   $('health-value').textContent = `${stats.health}/${stats.healthMax}`;
   $('magic-fill').style.width = `${(stats.magic / stats.magicMax) * 100}%`;
   $('magic-value').textContent = `${stats.magic}/${stats.magicMax}`;
   $('gold-value').textContent = stats.gold.toLocaleString();
+}
+
+// Flash + glow the health fill (remove/reflow/add pattern so it replays on
+// every hit, same trick as the dialog portrait's entrance animation). Call
+// this alongside updateHud() whenever the player takes damage.
+export function flashHealthDamage() {
+  const el = $('health-fill');
+  el.classList.remove('flash-damage');
+  void el.offsetWidth; // force reflow
+  el.classList.add('flash-damage');
 }
 
 // ---- Placeholder dialog (full dialog system comes later) ----
@@ -62,11 +79,12 @@ export function isDialogOpen() {
   return dialogState.open;
 }
 
-export function openDialog(npc, onClose) {
+export function openDialog(npc, onClose, onResponse) {
   dialogState.open = true;
   dialogState.selected = 0;
   dialogState.npc = npc;
   dialogState.onClose = onClose || null;
+  dialogState.onResponse = onResponse || null;
 
   $('dialog-name').textContent = npc.name;
   $('dialog-role').textContent = npc.role;
@@ -115,7 +133,10 @@ export function dialogKey(key) {
 }
 
 function chooseResponse() {
-  // Placeholder: every response just closes the dialog for now.
+  // Most responses are still placeholders that just close the dialog, but a
+  // response can carry a real effect (e.g. Gaffer's bite) — the caller that
+  // opened the dialog decides what that means, via onResponse.
+  if (dialogState.onResponse) dialogState.onResponse(dialogState.npc, dialogState.selected);
   closeDialog();
 }
 

@@ -12,13 +12,22 @@ export const SFX = {
   footsteps: 'assets/audio/universfield-footsteps-walking-278819.mp3',
 };
 
+// One "voice" clip per NPC, played once when their dialogue window opens —
+// a quick audio flourish to help define the character. Keyed by npc.id.
+export const DIALOGUE_SFX = {
+  tuckwell: 'assets/audio/u_9kvcihzjc7-squashwo-gua-plants-vs-zombies-hmm-383643.mp3',
+  brenna: 'assets/audio/u_xg7ssi08yr-female-ah-ha-389835.mp3',
+  mirelle: 'assets/audio/freesound_community-long-sigh-104609.mp3',
+  gaffer: 'assets/audio/dragon-studio-goat-sound-effect-390305.mp3',
+};
+
 // ---- Volume controls (wired to the Menu > Audio sliders) ----
 // musicVolume/sfxVolume are 0..1 master levels. Individual sfx() calls pass
 // a relative "weight" (their old hardcoded volume) that gets scaled by
 // sfxVolume, so the slider affects everything without touching call sites.
-const DEFAULT_VOLUME = 0.8; // music default, matches the slider's initial 80%
+const DEFAULT_VOLUME = 0.75; // music default, matches the slider's initial 75%
 let musicVolume = DEFAULT_VOLUME;
-let sfxVolume = 0.9; // matches the slider's initial 90%
+let sfxVolume = 1.0; // matches the slider's initial 100%
 const STEPS_WEIGHT = 0.55;
 
 export function getMusicVolume() { return musicVolume; }

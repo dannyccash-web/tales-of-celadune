@@ -274,6 +274,13 @@ export default {
           'Offer him something to eat.',
           'Leave.',
         ],
+        // Parallel to `responses` — an optional effect applied when that
+        // response is chosen. See main.js's openNpcDialog/onResponse.
+        responseEffects: [
+          { damage: 1, message: 'Gaffer nips you! -1 health.' },
+          null,
+          null,
+        ],
       },
     },
   ],
