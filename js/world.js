@@ -10,7 +10,7 @@ const WALK_FLIP_INTERVAL = 0.25; // s — icon mirrors while walking to suggest 
 const COLLIDER = 36; // square collider centered on characters
 const INTERACT_RANGE = 90;
 const SHADOW_OFFSET = 3; // px, always to the bottom-right regardless of rotation
-const SHADOW_ALPHA = 0.4;
+const SHADOW_ALPHA = 0.46; // multiply blend (see drawSprite) — bumped ~15% up from 0.4
 const FADE_S = 0.7; // NPC door fade duration
 
 function rectsOverlap(ax, ay, aw, ah, b) {
@@ -47,6 +47,8 @@ export class World {
         routineIndex: 0,
         timer: 0,
         pause: 0,
+        moving: false,
+        walkTimer: 0, // drives the same walk-flip mirroring the player uses
         fading: null, // 'in' | 'out'
         alpha: startsHome ? 0 : 1,
         atHome: startsHome,
@@ -172,6 +174,12 @@ export class World {
 
   updateNpcs(dt, uiLocked) {
     if (uiLocked) return; // world pauses during dialog
+    // Recorded before any movement so we can tell, after the fact, which NPCs
+    // actually translated this tick (vs. waiting/fading/paused) — that drives
+    // the same walk-flip mirroring the player uses, without threading extra
+    // state through every branch below.
+    const before = this.npcs.map((n) => ({ x: n.x, y: n.y }));
+
     for (const npc of this.npcs) {
       // Door fades run to completion before anything else
       if (npc.fading) {
@@ -199,6 +207,12 @@ export class World {
         npc.waitTimer = 2 + Math.random() * 3;
       }
     }
+
+    this.npcs.forEach((npc, i) => {
+      const moved = Math.hypot(npc.x - before[i].x, npc.y - before[i].y) > 0.01;
+      npc.moving = moved;
+      npc.walkTimer = moved ? npc.walkTimer + dt : 0;
+    });
   }
 
   // Steer one tick toward a target; returns true when the NPC has arrived.
@@ -378,7 +392,9 @@ export class World {
     // Layer 2: NPCs, then player on top
     for (const npc of this.npcs) {
       if (npc.atHome) continue;
-      this.drawSprite(this.images[npc.sprite], npc.x, npc.y, npc.rotation, false, npc.alpha);
+      const npcFlip = npc.moving
+        && Math.floor(npc.walkTimer / WALK_FLIP_INTERVAL) % 2 === 1;
+      this.drawSprite(this.images[npc.sprite], npc.x, npc.y, npc.rotation, npcFlip, npc.alpha);
     }
     const p = this.player;
     const stepFlip = p.moving

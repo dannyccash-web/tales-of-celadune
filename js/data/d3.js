@@ -37,14 +37,20 @@ export default {
     { x: 0, y: 1675, w: 200, h: 50, note: 'tree edge, bottom-left' },
     { x: 150, y: 1625, w: 250, h: 150, note: 'tree, lower-left' },
 
-    // --- Crop fields (planted rows — walk the paths and grass instead) ---
-    { x: 150, y: 200, w: 600, h: 475, note: 'crop field, upper-left' },
-    { x: 1150, y: 200, w: 575, h: 675, note: 'crop field, upper-right' },
+    // --- Crop fields (planted rows — walk the paths and grass instead).
+    // Each field is split around one walkable dirt lane (a worker path
+    // between rows, ~50px — the narrower row-to-row furrows are too tight
+    // for the 36px collider even where they're technically clear dirt).
+    { x: 150, y: 200, w: 125, h: 475, note: 'crop field, upper-left, west of the lane' },
+    { x: 325, y: 200, w: 425, h: 475, note: 'crop field, upper-left, east of the lane (lane: x275-325)' },
+    { x: 1150, y: 200, w: 275, h: 675, note: 'crop field, upper-right, west of the lane' },
+    { x: 1475, y: 200, w: 250, h: 675, note: 'crop field, upper-right, east of the lane (lane: x1425-1475)' },
     { x: 1725, y: 550, w: 75, h: 325, note: 'crop field, upper-right east strip' },
     { x: 750, y: 750, w: 175, h: 150, note: 'hedge crops, left of barn lane' },
     { x: 1000, y: 750, w: 175, h: 150, note: 'hedge crops, right of barn lane' },
-    { x: 50, y: 1025, w: 825, h: 650, note: 'crop field, lower-left' },
-    { x: 1300, y: 1000, w: 500, h: 675, note: 'crop field, lower-right' },
+    { x: 50, y: 1025, w: 200, h: 650, note: 'crop field, lower-left, west of the lane' },
+    { x: 300, y: 1025, w: 575, h: 650, note: 'crop field, lower-left, east of the lane (lane: x250-300)' },
+    { x: 1350, y: 1000, w: 450, h: 675, note: 'crop field, lower-right (west edge pulled in to x1350 — lane: x1300-1350, joins the corridor by the pen/silo)' },
 
     // --- Buildings & structures ---
     { x: 800, y: 375, w: 300, h: 300, note: 'farmhouse + pergola (Mirelle’s home)' },
@@ -60,16 +66,20 @@ export default {
     { x: 900, y: 1450, w: 50, h: 125, note: 'barrels, left of bottom barn' },
   ],
 
-  // Building labels: drawn on the canvas when the player is within `r` of (x, y)
+  // Building labels: drawn on the canvas when the player is within `r` of (x, y).
+  // Centered directly over each building's door (same x as the door, y offset
+  // ~70px toward the building's interior) — matching Mirelle's Farmhouse. Old
+  // Barn's door faces north, so its label sits *below* the door instead (still
+  // toward the interior, just the opposite direction).
   buildings: [
     { label: 'Mirelle’s Farmhouse', x: 952, y: 630, r: 170 },
-    { label: 'Hay Barn', x: 537, y: 790, r: 130 },
-    { label: 'Tool Shed', x: 700, y: 790, r: 130 },
-    { label: 'Storehouse', x: 1237, y: 790, r: 130 },
+    { label: 'Tuckwell’s House', x: 537, y: 855, r: 130 },
+    { label: 'Brenna’s House', x: 700, y: 855, r: 130 },
+    { label: 'Storehouse', x: 1237, y: 855, r: 130 },
     { label: 'Well', x: 362, y: 835, r: 110 },
     { label: 'Animal Pen', x: 1150, y: 1140, r: 150 },
     { label: 'Silo', x: 1237, y: 1310, r: 120 },
-    { label: 'Old Barn', x: 1075, y: 1450, r: 170 },
+    { label: 'Old Barn', x: 1030, y: 1385, r: 170 },
   ],
 
   // Building entrances (interiors come later) — where building meets path
