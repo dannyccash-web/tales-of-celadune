@@ -12,6 +12,14 @@
 2. GitHub Pages serves `main` branch root → https://dannyccash-web.github.io/tales-of-celadune/
 3. Auth: Danny's GitHub token is stored in the local git remote URL (`git remote -v`) — not in any committed file. Never commit tokens.
 4. Always verify the live URL after pushing (Pages can take ~1 min to update).
+5. **Known quirk of this sandbox's mount of the project folder: it can't unlink files** (confirmed: even a file just created with `touch` can't be `rm`'d). Git relies on lock-file unlinks for `add`/`commit` (`.git/index.lock`, `.git/HEAD.lock`), so a plain `git add -A && git commit` fails with `Unable to create '.git/index.lock': File exists` the moment a prior attempt leaves one behind — and once that happens the stale lock is permanent (can't be removed) and every future default-index commit fails the same way. Workaround: point git at a throwaway index file outside the mount, which sidesteps the mount's lock entirely:
+   ```
+   rm -f /tmp/celadune.index   # /tmp is a normal filesystem, unlink works there
+   GIT_INDEX_FILE=/tmp/celadune.index git add -A
+   GIT_INDEX_FILE=/tmp/celadune.index git commit -m "..."
+   git push origin main        # push itself doesn't need the default index
+   ```
+   You'll still see `warning: unable to unlink '.git/objects/.../tmp_obj_...'` and possibly `.git/HEAD.lock` — these are harmless (the object/ref still lands correctly; verify with `git log --oneline -1` and `git diff --stat HEAD~1 HEAD`), just orphaned temp files the mount wouldn't let git clean up. `git status`/`git log`/`git diff` (read-only) work fine even with stale locks present; it's only `add`/`commit` against the default index that break.
 
 ## Design rules (from the PDF, page 5)
 
