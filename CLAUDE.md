@@ -33,8 +33,15 @@
 - NPCs steer around player/obstacles (side-committed steering, step+lookahead). Test logic headless in node: `new World({getContext:()=>({})}, scene, {})`, then `update()` in a loop. `window.world` is a live debug handle.
 - Testing live: Pages caches JS for 10 min — `fetch(f, {cache:'reload'})` each module, then reload. rAF freezes when the browser window is hidden (drive `world.update` manually under automation).
 
+## Gameplay conventions
+
+- Player speed 130 px/s; icon mirrors horizontally every 0.5s while moving (walk effect) — see WALK_FLIP_INTERVAL in world.js.
+- Soundtrack: js/audio.js, one looped track at a time, `audio.play(src, fadeMs)` cross-fades. Start screen plays celadune_theme.mp3 (retried on first gesture — browser autoplay), Start button cross-fades to celadune_overworld.mp3. Battle/scene tracks later use the same call.
+- Collision maps are hand-traced from a 100px grid overlay on the scene background (PIL script — regenerate with grid+coordinates labels when tracing new scenes). Player must only walk paths/grass/dirt: crop fields, hedges, trees, buildings, barrels, well, pen, silo are all rects in js/data/<scene>.js.
+- Collision test suites live in this workflow: probe walkable/blocked points with `world.blockersAt`, walk exits/lanes with simulated input, and run the 4 NPC steering scenarios (route-around, patrol, overlap-escape, wall-block) headless in node before every collision change.
+
 ## Status / roadmap
 
-- ✅ D3 Farm: 4-layer scene, movement, collision, camera, Mirelle NPC patrol + avoidance, placeholder dialog, PDF-matched UI styling, HUD stubs.
+- ✅ D3 Farm: 4-layer scene, movement, collision (tight map: crops/trees/structures), camera, walk animation, Mirelle NPC patrol + avoidance, placeholder dialog, PDF-matched UI styling, HUD stubs, start screen, theme + overworld soundtrack with crossfade.
 - ⏳ Later: real dialog trees, battle system (kobolds, dagger), inventory/menu, interiors, other 15 scenes, Steam wrap.
 - Player stats currently hardcoded in `js/main.js` (health 10/10, magic 5/10, gold 1,234 — matches mockups).
