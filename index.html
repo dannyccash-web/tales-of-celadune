@@ -79,6 +79,92 @@
         </div>
       </div>
 
+      <div id="menu" class="hidden">
+        <div class="panel-box">
+          <button class="panel-close" data-close="menu" aria-label="Close menu">&times;</button>
+          <div class="panel-tabs">
+            <div class="panel-tab active" data-tab="audio">Audio</div>
+            <div class="panel-tab" data-tab="stats">Stats</div>
+          </div>
+          <div class="panel-content">
+            <section class="tab-pane" data-pane="audio">
+              <h2 class="panel-title">Audio</h2>
+              <div class="slider-row">
+                <span class="stat-label">Music</span>
+                <div class="slider-track">
+                  <div class="bar"><div class="bar-bg"><div class="bar-fill volume" id="music-fill"></div></div></div>
+                  <div class="slider-thumb" id="music-thumb"></div>
+                  <input type="range" min="0" max="100" value="80" id="music-slider" class="slider-input">
+                </div>
+                <span class="stat-value" id="music-value">80%</span>
+              </div>
+              <div class="slider-row">
+                <span class="stat-label">Effects</span>
+                <div class="slider-track">
+                  <div class="bar"><div class="bar-bg"><div class="bar-fill volume" id="sfx-fill"></div></div></div>
+                  <div class="slider-thumb" id="sfx-thumb"></div>
+                  <input type="range" min="0" max="100" value="90" id="sfx-slider" class="slider-input">
+                </div>
+                <span class="stat-value" id="sfx-value">90%</span>
+              </div>
+            </section>
+            <section class="tab-pane hidden" data-pane="stats">
+              <h2 class="panel-title">Stats</h2>
+              <div class="stat-row"><span class="stat-label">Level</span><span class="stat-value" id="stat-level">4</span></div>
+              <div class="stat-row xp-row">
+                <span class="stat-label">Experience</span>
+                <div class="bar"><div class="bar-bg"><div class="bar-fill xp" id="xp-fill"></div></div></div>
+                <span class="stat-value" id="xp-value">1,240 / 2,000</span>
+              </div>
+              <div class="stat-row"><span class="stat-label">Attack</span><span class="stat-value" id="stat-attack">14</span></div>
+              <div class="stat-row"><span class="stat-label">Defense</span><span class="stat-value" id="stat-defense">9</span></div>
+              <div class="stat-row"><span class="stat-label">Speed</span><span class="stat-value" id="stat-speed">11</span></div>
+              <div class="stat-row"><span class="stat-label">Luck</span><span class="stat-value" id="stat-luck">6</span></div>
+            </section>
+          </div>
+        </div>
+      </div>
+
+      <div id="inventory" class="hidden">
+        <div class="panel-box">
+          <button class="panel-close" data-close="inventory" aria-label="Close inventory">&times;</button>
+          <div class="panel-tabs">
+            <div class="panel-tab active" data-tab="equipment">Equipment</div>
+            <div class="panel-tab" data-tab="weapons">Weapons</div>
+            <div class="panel-tab" data-tab="magic">Magic</div>
+          </div>
+          <div class="panel-content">
+            <section class="tab-pane" data-pane="equipment">
+              <h2 class="panel-title">Equipment</h2>
+              <div class="paperdoll">
+                <div class="item-slot slot-head"><div class="slot-icon"></div><span class="slot-label">Headwear</span></div>
+                <div class="item-slot slot-gloves"><div class="slot-icon"></div><span class="slot-label">Gloves</span></div>
+                <div class="item-slot slot-armor"><div class="slot-icon"></div><span class="slot-label">Clothing / Armor</span></div>
+                <div class="item-slot slot-boots"><div class="slot-icon"></div><span class="slot-label">Boots</span></div>
+              </div>
+            </section>
+            <section class="tab-pane hidden" data-pane="weapons">
+              <h2 class="panel-title">Weapons</h2>
+              <div class="weapon-row">
+                <div class="item-slot slot-weapon"><div class="slot-icon"></div><span class="slot-label">Left Hand</span></div>
+                <div class="item-slot slot-weapon"><div class="slot-icon"></div><span class="slot-label">Right Hand</span></div>
+              </div>
+            </section>
+            <section class="tab-pane hidden" data-pane="magic">
+              <h2 class="panel-title">Magic</h2>
+              <div class="magic-grid">
+                <div class="item-slot"><div class="slot-icon"></div><span class="slot-label">Spell 1</span></div>
+                <div class="item-slot"><div class="slot-icon"></div><span class="slot-label">Spell 2</span></div>
+                <div class="item-slot"><div class="slot-icon"></div><span class="slot-label">Spell 3</span></div>
+                <div class="item-slot"><div class="slot-icon"></div><span class="slot-label">Spell 4</span></div>
+                <div class="item-slot"><div class="slot-icon"></div><span class="slot-label">Spell 5</span></div>
+                <div class="item-slot"><div class="slot-icon"></div><span class="slot-label">Spell 6</span></div>
+              </div>
+            </section>
+          </div>
+        </div>
+      </div>
+
       <div id="toast" class="hidden"></div>
 
       <div id="start-screen">

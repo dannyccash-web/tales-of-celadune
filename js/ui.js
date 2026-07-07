@@ -140,7 +140,95 @@ export function toast(message, ms = 2500) {
   toastTimer = setTimeout(() => el.classList.add('hidden'), ms);
 }
 
-export function initTopbarStubs() {
-  $('btn-inventory').addEventListener('click', () => toast('Inventory — coming soon.'));
-  $('btn-menu').addEventListener('click', () => toast('Menu — coming soon.'));
+// ---- Menu / Inventory panels ----
+// Both share the same tabbed-panel structure (see .panel-box in style.css);
+// only one is ever open at a time, mirroring the topbar's two icon buttons.
+
+const panelState = { menu: false, inventory: false };
+
+export function isMenuOpen() { return panelState.menu; }
+export function isInventoryOpen() { return panelState.inventory; }
+export function isAnyPanelOpen() { return panelState.menu || panelState.inventory; }
+
+function setActiveTab(panelEl, tabName) {
+  panelEl.querySelectorAll('.panel-tab').forEach((el) => {
+    el.classList.toggle('active', el.dataset.tab === tabName);
+  });
+  panelEl.querySelectorAll('.tab-pane').forEach((el) => {
+    el.classList.toggle('hidden', el.dataset.pane !== tabName);
+  });
+}
+
+function openPanel(name) {
+  panelState[name] = true;
+  $(name).classList.remove('hidden');
+}
+
+function closePanel(name) {
+  panelState[name] = false;
+  $(name).classList.add('hidden');
+}
+
+export function toggleMenu() {
+  if (panelState.menu) { closePanel('menu'); return; }
+  closePanel('inventory');
+  openPanel('menu');
+}
+
+export function toggleInventory() {
+  if (panelState.inventory) { closePanel('inventory'); return; }
+  closePanel('menu');
+  openPanel('inventory');
+}
+
+export function closeAllPanels() {
+  closePanel('menu');
+  closePanel('inventory');
+}
+
+function initSlider(id, initial, onChange) {
+  const input = $(`${id}-slider`);
+  const fill = $(`${id}-fill`);
+  const thumb = $(`${id}-thumb`);
+  const value = $(`${id}-value`);
+  const apply = (pct) => {
+    fill.style.width = `${pct}%`;
+    thumb.style.left = `${pct}%`;
+    value.textContent = `${pct}%`;
+  };
+  input.value = Math.round(initial * 100);
+  apply(Number(input.value));
+  input.addEventListener('input', () => {
+    const pct = Number(input.value);
+    apply(pct);
+    onChange(pct / 100);
+  });
+}
+
+export function updateStatsPanel(stats) {
+  $('stat-level').textContent = stats.level;
+  $('stat-attack').textContent = stats.attack;
+  $('stat-defense').textContent = stats.defense;
+  $('stat-speed').textContent = stats.speed;
+  $('stat-luck').textContent = stats.luck;
+  $('xp-fill').style.width = `${Math.min(100, (stats.xp / stats.xpMax) * 100)}%`;
+  $('xp-value').textContent = `${stats.xp.toLocaleString()} / ${stats.xpMax.toLocaleString()}`;
+}
+
+export function initPanels(audio) {
+  ['menu', 'inventory'].forEach((name) => {
+    const root = $(name);
+    root.querySelectorAll('.panel-tab').forEach((tabEl) => {
+      tabEl.addEventListener('click', () => setActiveTab(root, tabEl.dataset.tab));
+    });
+    root.querySelector('.panel-close').addEventListener('click', () => closePanel(name));
+    // Clicking the dark backdrop (outside the panel box) closes it too.
+    root.addEventListener('click', (e) => { if (e.target === root) closePanel(name); });
+  });
+
+  $('btn-menu').addEventListener('click', toggleMenu);
+  $('btn-inventory').addEventListener('click', toggleInventory);
+
+  initSlider('music', audio.getMusicVolume(), audio.setMusicVolume);
+  initSlider('sfx', audio.getSfxVolume(), audio.setSfxVolume);
 }

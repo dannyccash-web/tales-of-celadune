@@ -12,6 +12,28 @@ export const SFX = {
   footsteps: 'assets/audio/universfield-footsteps-walking-278819.mp3',
 };
 
+// ---- Volume controls (wired to the Menu > Audio sliders) ----
+// musicVolume/sfxVolume are 0..1 master levels. Individual sfx() calls pass
+// a relative "weight" (their old hardcoded volume) that gets scaled by
+// sfxVolume, so the slider affects everything without touching call sites.
+const DEFAULT_VOLUME = 0.8; // music default, matches the slider's initial 80%
+let musicVolume = DEFAULT_VOLUME;
+let sfxVolume = 0.9; // matches the slider's initial 90%
+const STEPS_WEIGHT = 0.55;
+
+export function getMusicVolume() { return musicVolume; }
+export function getSfxVolume() { return sfxVolume; }
+
+export function setMusicVolume(v) {
+  musicVolume = Math.max(0, Math.min(1, v));
+  if (current) current.el.volume = musicVolume;
+}
+
+export function setSfxVolume(v) {
+  sfxVolume = Math.max(0, Math.min(1, v));
+  if (steps) steps.volume = STEPS_WEIGHT * sfxVolume;
+}
+
 // Looped footsteps while the player is walking. Call every frame with the
 // current walking state; starts/stops the loop on transitions only.
 let steps = null;
@@ -21,8 +43,8 @@ export function setWalking(active) {
     if (!steps) {
       steps = new Audio(SFX.footsteps);
       steps.loop = true;
-      steps.volume = 0.55;
     }
+    steps.volume = STEPS_WEIGHT * sfxVolume;
     if (steps.paused) steps.play().catch(() => {});
   } else if (steps && !steps.paused) {
     steps.pause();
@@ -31,15 +53,15 @@ export function setWalking(active) {
 }
 
 // One-shot sound effect, independent of the soundtrack. No-op outside the
-// browser so game logic stays testable headless in node.
-export function sfx(src, volume = 0.9) {
+// browser so game logic stays testable headless in node. `weight` is the
+// sound's relative volume (0-1); actual output is weight * sfxVolume.
+export function sfx(src, weight = 0.9) {
   if (typeof Audio === 'undefined') return;
   const el = new Audio(src);
-  el.volume = volume;
+  el.volume = weight * sfxVolume;
   el.play().catch(() => { /* pre-gesture; skip silently */ });
 }
 
-const DEFAULT_VOLUME = 0.8;
 let current = null; // { el, src }
 
 function fade(el, target, ms, onDone) {
@@ -67,7 +89,7 @@ export function play(src, fadeMs = 1200) {
   current = { el, src };
 
   el.play().then(() => {
-    fade(el, DEFAULT_VOLUME, fadeMs);
+    fade(el, musicVolume, fadeMs);
   }).catch(() => {
     // Autoplay blocked — forget this attempt so a retry on user gesture works
     if (current && current.el === el) current = old;

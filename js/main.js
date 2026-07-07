@@ -6,7 +6,10 @@ import { World } from './world.js';
 import * as ui from './ui.js';
 import * as audio from './audio.js';
 
-const stats = { health: 10, healthMax: 10, magic: 5, magicMax: 10, gold: 1234 };
+const stats = {
+  health: 10, healthMax: 10, magic: 5, magicMax: 10, gold: 1234,
+  level: 4, xp: 1240, xpMax: 2000, attack: 14, defense: 9, speed: 11, luck: 6,
+};
 const state = { started: false };
 
 const input = { up: false, down: false, left: false, right: false };
@@ -42,8 +45,9 @@ async function boot() {
   window.world = world; // debug handle
 
   ui.initStage();
-  ui.initTopbarStubs();
+  ui.initPanels(audio);
   ui.updateHud(stats);
+  ui.updateStatsPanel(stats);
 
   // Start screen: theme music now (or on first gesture if autoplay is blocked),
   // then cross-fade to the overworld track when the game starts.
@@ -91,6 +95,10 @@ async function boot() {
       ui.dialogKey(e.key);
       return;
     }
+    if (ui.isAnyPanelOpen()) {
+      if (e.key === 'Escape') { e.preventDefault(); ui.closeAllPanels(); }
+      return;
+    }
     if (KEYMAP[e.key]) { input[KEYMAP[e.key]] = true; e.preventDefault(); }
     if (e.key === ' ') {
       e.preventDefault();
@@ -109,7 +117,7 @@ async function boot() {
     const dt = Math.min((now - last) / 1000, 0.05);
     last = now;
 
-    const locked = ui.isDialogOpen() || !state.started;
+    const locked = ui.isDialogOpen() || ui.isAnyPanelOpen() || !state.started;
     world.update(dt, input, locked);
     world.render();
 

@@ -299,6 +299,232 @@ html, body {
   color: var(--text);
 }
 
+/* ---- Menu / Inventory panels ----
+   Full-screen dark backdrop + centered gold-double-framed panel (same frame
+   recipe as .dialog-box), left tab rail + right content area. Empty item
+   slots use .slot-icon (a small gold-bordered diamond) since no item art
+   exists yet — same shape language as the topbar's .diamond icons. */
+#menu, #inventory {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.panel-box {
+  position: relative;
+  width: 1500px;
+  height: 850px;
+  background: var(--panel-bg);
+  border: 2px solid;
+  border-image: linear-gradient(180deg, var(--frame-light), var(--frame-dark)) 1;
+  display: flex;
+}
+
+.panel-box::before {
+  content: '';
+  position: absolute;
+  inset: -9px;
+  border: 2px solid;
+  border-image: linear-gradient(180deg, #7d5f33, #4d3a1c) 1;
+  pointer-events: none;
+}
+
+.panel-close {
+  position: absolute;
+  top: 30px;
+  right: 34px;
+  width: 36px;
+  height: 36px;
+  border: 2px solid;
+  border-image: linear-gradient(180deg, var(--gold-bright), var(--gold-dark)) 1;
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font-meta);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.panel-close:hover { color: var(--gold-bright); }
+
+.panel-tabs {
+  width: 260px;
+  flex-shrink: 0;
+  padding: 70px 0;
+  border-right: 2px solid;
+  border-image: linear-gradient(180deg, var(--frame-light), var(--frame-dark)) 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.panel-tab {
+  font-family: var(--font-medieval);
+  font-size: 26px;
+  color: var(--text-dim);
+  padding: 18px 48px;
+  cursor: pointer;
+  position: relative;
+}
+
+.panel-tab:hover { color: var(--text); }
+
+.panel-tab.active { color: var(--text); }
+
+.panel-tab.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 5px;
+  height: 56%;
+  background: linear-gradient(180deg, var(--gold-bright), var(--gold-dark));
+}
+
+.panel-content {
+  flex: 1;
+  padding: 70px 90px;
+  overflow: auto;
+}
+
+.panel-title {
+  font-family: var(--font-medieval);
+  font-weight: 400;
+  font-size: 36px;
+  color: var(--text);
+  margin-bottom: 44px;
+}
+
+/* Sliders (Audio tab) — reuse the .bar/.bar-bg/.bar-fill hex-clip component
+   from the HUD bars, with a native range input laid transparently on top
+   for interaction and a small gold diamond thumb drawn for feedback. */
+.slider-row {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  margin-bottom: 40px;
+}
+
+.slider-row .stat-label { width: 140px; }
+
+.slider-track {
+  position: relative;
+  width: 320px;
+  height: 26px;
+}
+
+.slider-track .bar { width: 100%; }
+
+.slider-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.slider-thumb {
+  position: absolute;
+  top: 50%;
+  width: 16px;
+  height: 16px;
+  background: linear-gradient(135deg, var(--gold-bright), var(--gold-dark));
+  border: 2px solid #fff2cf;
+  transform: translate(-50%, -50%) rotate(45deg);
+  pointer-events: none;
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.6);
+}
+
+.bar-fill.volume { background: linear-gradient(90deg, #8a6a35, #eed694); }
+.bar-fill.xp { background: linear-gradient(90deg, #6b4f28, #eed694); width: 0%; }
+
+/* Stats tab */
+.stat-row {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  margin-bottom: 30px;
+}
+
+.stat-row .stat-label { width: 220px; }
+
+.stat-row.xp-row .bar { width: 320px; }
+
+/* Item slots (Equipment / Weapons / Magic) */
+.item-slot {
+  width: 160px;
+  height: 160px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 2px solid;
+  border-image: linear-gradient(180deg, var(--frame-light), var(--frame-dark)) 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+
+.slot-icon {
+  width: 32px;
+  height: 32px;
+  border: 2px solid;
+  border-image: linear-gradient(180deg, var(--frame-light), var(--frame-dark)) 1;
+  transform: rotate(45deg);
+  opacity: 0.45;
+}
+
+.slot-label {
+  font-family: var(--font-lato);
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  text-align: center;
+  padding: 0 8px;
+}
+
+/* Equipment tab: a loose paper-doll arrangement (head above, gloves/boots
+   flanking the armor slot) so the grid reads as a body layout even without
+   character art. */
+.paperdoll {
+  display: grid;
+  grid-template-columns: repeat(3, 160px);
+  grid-template-rows: repeat(3, 160px);
+  gap: 24px;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.slot-head   { grid-column: 2; grid-row: 1; }
+.slot-gloves { grid-column: 1; grid-row: 2; }
+.slot-armor  { grid-column: 2; grid-row: 2; }
+.slot-boots  { grid-column: 2; grid-row: 3; }
+
+/* Weapons tab: one slot per hand */
+.weapon-row {
+  display: flex;
+  gap: 50px;
+  margin-top: 20px;
+}
+
+.weapon-row .item-slot { width: 200px; height: 200px; }
+
+/* Magic tab: a simple spell grid */
+.magic-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 150px);
+  gap: 30px;
+  margin-top: 20px;
+}
+
 /* ---- Start screen (placeholder) ---- */
 #start-screen {
   position: absolute;
