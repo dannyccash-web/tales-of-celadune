@@ -35,9 +35,11 @@
 
 ## Gameplay conventions
 
-- Player speed 130 px/s; icon mirrors horizontally every 0.5s while moving (walk effect) — see WALK_FLIP_INTERVAL in world.js.
+- Player speed 130 px/s; icon mirrors horizontally every 0.25s while moving (walk effect) — see WALK_FLIP_INTERVAL in world.js. Footsteps loop plays while walking (`audio.setWalking(bool)` each frame).
+- Door SFX plays when NPCs leave/return home AND when the player enters/exits an interior.
+- Building labels: `buildings: [{label, x, y, r}]` in scene data — drawn on canvas when player within r. Names on D3: Mirelle's Farmhouse, Hay Barn, Tool Shed, Storehouse, Well, Animal Pen, Silo, Old Barn.
 - Soundtrack: js/audio.js, one looped track at a time, `audio.play(src, fadeMs)` cross-fades. Start screen plays celadune_theme.mp3 (retried on first gesture — browser autoplay), Start button cross-fades to celadune_overworld.mp3. Battle/scene tracks later use the same call.
-- Collision maps are hand-traced from a 50px grid overlay on the scene background (PIL script: 50px cyan lines, 100px red lines, labels every 100px; inspect per-quadrant crops for detail).
+- Collision maps are hand-traced from a 25px grid overlay on the scene background (PIL script: 25px pink lines, 50px cyan, 100px red, labels every 100px; inspect per-quadrant crops). CONSERVATIVE RULE (from Danny): if any part of an object touches a 25px cell, the whole cell is blocked — all rect edges are multiples of 25. Note: the well cell juts into the main path, so the westward walk passes south of it (y≈950).
 - Homes: NPC `home: {door, interior}` + `routine` steps (leaveHome/goto/wait/goHome) in scene data. Leaving/entering = door SFX + 0.7s fade (FADE_S). Spacebar at door: locked toast if NPC away, dialog over interior background if home (world.interior swaps Layer 1). NPCs at home don't render, collide, or take dialog focus.
 - SFX are one-shots via `audio.sfx(src)` (no-op in node); soundtrack unchanged (one looped track, crossfade). Player must only walk paths/grass/dirt: crop fields, hedges, trees, buildings, barrels, well, pen, silo are all rects in js/data/<scene>.js.
 - Collision test suites live in this workflow: probe walkable/blocked points with `world.blockersAt`, walk exits/lanes with simulated input, and run the 4 NPC steering scenarios (route-around, patrol, overlap-escape, wall-block) headless in node before every collision change.
