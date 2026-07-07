@@ -56,9 +56,28 @@ export class World {
       };
     });
 
+    // Invisible collectibles: no sprite, just a proximity label + one-time
+    // reward. `collected` lives on the instance (not the scene data) so a
+    // fresh World always starts with everything available.
+    this.interactables = (scene.interactables || []).map((it) => ({ ...it, collected: false }));
+
     this.cameraY = 0;
     this.interior = null; // interior image while a home dialog is open
     this.edgeMessage = null; // set when player pushes on a scene exit
+  }
+
+  // Nearest not-yet-collected interactable within range (defaults to the
+  // same radius as NPC interaction), or null.
+  nearestInteractableInRange() {
+    let best = null;
+    let bestDist = Infinity;
+    for (const it of this.interactables) {
+      if (it.collected) continue;
+      const range = it.range ?? INTERACT_RANGE;
+      const d = Math.hypot(it.x - this.player.x, it.y - this.player.y);
+      if (d < range && d < bestDist) { best = it; bestDist = d; }
+    }
+    return best;
   }
 
   nearestNpcInRange() {
@@ -89,7 +108,12 @@ export class World {
     const cx = x - half;
     const cy = y - half;
     const out = [];
+    const isPlayer = self === this.player;
     for (const ob of this.scene.obstacles) {
+      // npcOnly rects are invisible-to-the-player steering guards: they keep
+      // autonomous NPCs out of a pocket without blocking the player, who
+      // moves deliberately and isn't at risk of getting stuck there.
+      if (ob.npcOnly && isPlayer) continue;
       if (rectsOverlap(cx, cy, COLLIDER, COLLIDER, ob)) {
         out.push({ id: ob, cx: ob.x + ob.w / 2, cy: ob.y + ob.h / 2 });
       }
@@ -411,6 +435,13 @@ export class World {
     // Building labels when the player is close by
     for (const b of this.scene.buildings || []) {
       if (Math.hypot(b.x - p.x, b.y - p.y) < b.r) this.drawLabel(b.label, b.x, b.y);
+    }
+
+    // Hidden-collectible labels: same proximity-reveal pattern, no sprite
+    for (const it of this.interactables) {
+      if (it.collected) continue;
+      const range = it.range ?? INTERACT_RANGE;
+      if (Math.hypot(it.x - p.x, it.y - p.y) < range) this.drawLabel(it.label, it.x, it.y);
     }
   }
 }

@@ -59,11 +59,26 @@ export default {
     { x: 1150, y: 725, w: 175, h: 175, note: 'small barn 3 + barrels' },
     { x: 325, y: 775, w: 75, h: 125, note: 'well + frame' },
     // Fenced pen — hollow (fence perimeter only) so Gaffer has room to
-    // move inside; interior is x1075-1225, y1025-1275, clear.
+    // move inside; interior is x1075-1225, y1025-1200, clear. Re-traced
+    // 2026-07-07: the original trace (south rail at y1275-1300) had the
+    // pen ~75px taller than the actual fence art, which let Gaffer wander
+    // south of the real fence line before ever tripping a collision — the
+    // real fence rectangle (posts + rails, confirmed via pixel-grid crop of
+    // D3_Background.jpg) sits at roughly x1075-1250, y1000-1200.
     { x: 1050, y: 1000, w: 200, h: 25, note: 'fenced pen, north rail' },
-    { x: 1050, y: 1275, w: 200, h: 25, note: 'fenced pen, south rail' },
-    { x: 1050, y: 1000, w: 25, h: 300, note: 'fenced pen, west rail' },
-    { x: 1225, y: 1000, w: 25, h: 300, note: 'fenced pen, east rail' },
+    { x: 1050, y: 1200, w: 200, h: 25, note: 'fenced pen, south rail' },
+    { x: 1050, y: 1000, w: 25, h: 225, note: 'fenced pen, west rail' },
+    { x: 1225, y: 1000, w: 25, h: 225, note: 'fenced pen, east rail' },
+    // Player-only ground: the grass between the (now-correctly-sized) pen and
+    // the silo is open so the player can walk it. NPCs are kept out via the
+    // npcOnly rect below — this exact pocket (bounded by the pen, silo, and
+    // barn) is the one CLAUDE.md already warns about: an NPC crossing near the
+    // pen's NW corner (Tuckwell/Brenna's shared y940 path) can get deflected
+    // south into it and never find its way back out (escaping needs a turn
+    // sharper than steer()'s ~126° limit). Confirmed via headless sim: with
+    // this rect removed, Tuckwell's routine throughput dropped from ~70
+    // loops/10,000s to 8. Doesn't touch Mirelle's x925-1000 barn-lane route.
+    { x: 1050, y: 1225, w: 125, h: 100, npcOnly: true, note: 'NPC-only guard: keeps NPCs out of the pen/silo/barn pocket' },
     { x: 1175, y: 1250, w: 125, h: 150, note: 'silo' },
     { x: 925, y: 1325, w: 300, h: 275, note: 'bottom barn (roof extent)' },
     { x: 1075, y: 1600, w: 100, h: 75, note: 'bottom barn, south porch' },
@@ -90,6 +105,19 @@ export default {
   entrances: [
     { x: 950, y: 675, w: 60, h: 24, to: 'mirelle_home', note: 'farmhouse door, meets vertical path' },
     { x: 1000, y: 1305, w: 60, h: 20, to: 'bottom_barn', note: 'bottom barn door, meets lower vertical path' },
+  ],
+
+  // Hidden collectibles: invisible trigger areas with no sprite — only a
+  // label appears once the player is close (same pattern as building labels),
+  // and spacebar grants the reward once. `range` doubles as both the label
+  // and interact radius, matching INTERACT_RANGE (90) by default.
+  interactables: [
+    {
+      id: 'shiny-field-north',
+      x: 950, y: 320, w: 80, h: 80,
+      label: 'A shiny object',
+      reward: { gold: 3 },
+    },
   ],
 
   // Scene exits: crossing these edges moves the player to the adjacent scene.
@@ -231,13 +259,13 @@ export default {
       x: 1150, y: 1060,
       speed: 30,
       // No home — Gaffer lives in the pen and just wanders its interior
-      // (x1075-1225, y1025-1275, clear — see the hollow pen rects above).
+      // (x1075-1225, y1025-1200, clear — see the hollow pen rects above).
       // Patrol points sit >=25px inside that clear box so the 36px collider
       // never touches the fence rails.
       patrol: [
         { x: 1110, y: 1060 },
         { x: 1190, y: 1060 },
-        { x: 1150, y: 1240 },
+        { x: 1150, y: 1160 },
       ],
       dialog: {
         line: 'Gaffer fixes you with a flat yellow stare, lets out a low bleat, and goes back to chewing on a fence post.',

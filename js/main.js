@@ -7,7 +7,7 @@ import * as ui from './ui.js';
 import * as audio from './audio.js';
 
 const stats = {
-  health: 10, healthMax: 10, magic: 5, magicMax: 10, gold: 1234,
+  health: 5, healthMax: 10, magic: 5, magicMax: 10, gold: 0,
   level: 4, xp: 1240, xpMax: 2000, attack: 14, defense: 9, speed: 11, luck: 6,
 };
 const state = { started: false };
@@ -70,6 +70,19 @@ async function boot() {
     const npc = world.nearestNpcInRange();
     if (npc) { ui.openDialog(npc); return; }
 
+    const item = world.nearestInteractableInRange();
+    if (item) {
+      item.collected = true;
+      if (item.reward?.gold) {
+        stats.gold += item.reward.gold;
+        ui.updateHud(stats);
+        ui.toast(`You found ${item.reward.gold} gold!`);
+      } else {
+        ui.toast('You found something!');
+      }
+      return;
+    }
+
     const homeNpc = world.homeNpcNearDoor();
     if (homeNpc) {
       if (homeNpc.atHome) {
@@ -95,8 +108,16 @@ async function boot() {
       ui.dialogKey(e.key);
       return;
     }
+    // I/M toggle the panels from anywhere in the world, and also switch
+    // straight from one panel to the other (or close) while one is open —
+    // toggleInventory/toggleMenu already handle all three cases.
+    if (e.key === 'i' || e.key === 'I') { e.preventDefault(); ui.toggleInventory(); return; }
+    if (e.key === 'm' || e.key === 'M') { e.preventDefault(); ui.toggleMenu(); return; }
     if (ui.isAnyPanelOpen()) {
-      if (e.key === 'Escape') { e.preventDefault(); ui.closeAllPanels(); }
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' ', 'Escape'].includes(e.key)) {
+        e.preventDefault();
+        ui.panelKey(e.key);
+      }
       return;
     }
     if (KEYMAP[e.key]) { input[KEYMAP[e.key]] = true; e.preventDefault(); }

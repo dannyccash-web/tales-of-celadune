@@ -162,11 +162,71 @@ function setActiveTab(panelEl, tabName) {
 function openPanel(name) {
   panelState[name] = true;
   $(name).classList.remove('hidden');
+  if (name === 'menu') { audioFocusIndex = 0; refreshAudioFocus(); }
 }
 
 function closePanel(name) {
   panelState[name] = false;
   $(name).classList.add('hidden');
+}
+
+// ---- Keyboard-only navigation ----
+// Up/Down cycle the active tab (instant preview, like a click). Space cycles
+// focus between the active tab's adjustable rows (currently just the Audio
+// tab's two sliders — everything else is a read-only placeholder for now).
+// Left/Right adjust whichever row is focused. Escape always closes.
+
+const SLIDER_STEP = 5; // percent, per arrow key press
+let audioFocusIndex = 0; // 0 = music, 1 = sfx
+
+function activePanelName() {
+  if (panelState.menu) return 'menu';
+  if (panelState.inventory) return 'inventory';
+  return null;
+}
+
+function currentTabName(root) {
+  const active = root.querySelector('.panel-tab.active');
+  return active ? active.dataset.tab : null;
+}
+
+function cycleTab(root, dir) {
+  const tabs = Array.from(root.querySelectorAll('.panel-tab'));
+  const idx = tabs.findIndex((el) => el.classList.contains('active'));
+  const next = tabs[(idx + dir + tabs.length) % tabs.length];
+  setActiveTab(root, next.dataset.tab);
+  audioFocusIndex = 0;
+  refreshAudioFocus();
+}
+
+function refreshAudioFocus() {
+  const rows = document.querySelectorAll('#menu .slider-row');
+  rows.forEach((row, i) => row.classList.toggle('focused', i === audioFocusIndex));
+}
+
+function adjustAudioSlider(dir) {
+  const id = ['music', 'sfx'][audioFocusIndex];
+  const input = $(`${id}-slider`);
+  input.value = Math.max(0, Math.min(100, Number(input.value) + dir * SLIDER_STEP));
+  input.dispatchEvent(new Event('input'));
+}
+
+export function panelKey(key) {
+  const name = activePanelName();
+  if (!name) return;
+  const root = $(name);
+
+  if (key === 'Escape') { closeAllPanels(); return; }
+  if (key === 'ArrowUp') { cycleTab(root, -1); return; }
+  if (key === 'ArrowDown') { cycleTab(root, 1); return; }
+
+  const onAudio = currentTabName(root) === 'audio';
+  if (key === ' ' || key === 'Enter') {
+    if (onAudio) { audioFocusIndex = (audioFocusIndex + 1) % 2; refreshAudioFocus(); }
+    return;
+  }
+  if (key === 'ArrowLeft') { if (onAudio) adjustAudioSlider(-1); return; }
+  if (key === 'ArrowRight') { if (onAudio) adjustAudioSlider(1); return; }
 }
 
 export function toggleMenu() {

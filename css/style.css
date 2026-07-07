@@ -412,6 +412,11 @@ html, body {
 
 .slider-row .stat-label { width: 140px; }
 
+/* Keyboard focus indicator (Up/Down cycles tabs, Space cycles between these
+   rows, Left/Right adjusts the focused one) — brightens the label so the
+   player can tell which slider the arrow keys will move. */
+.slider-row.focused .stat-label { color: var(--gold-bright); }
+
 .slider-track {
   position: relative;
   width: 320px;
