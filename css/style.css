@@ -175,7 +175,7 @@ html, body {
   align-items: center;
   gap: 14px;
   font-family: var(--font-medieval);
-  font-size: 26px;
+  font-size: 24px; /* matches .stat-label (Health/Magic) */
 }
 
 .coin {

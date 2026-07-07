@@ -58,7 +58,12 @@ export default {
     { x: 625, y: 725, w: 150, h: 175, note: 'small barn 2 + barrels' },
     { x: 1150, y: 725, w: 175, h: 175, note: 'small barn 3 + barrels' },
     { x: 325, y: 775, w: 75, h: 125, note: 'well + frame' },
-    { x: 1050, y: 1000, w: 200, h: 300, note: 'fenced pen' },
+    // Fenced pen — hollow (fence perimeter only) so Gaffer has room to
+    // move inside; interior is x1075-1225, y1025-1275, clear.
+    { x: 1050, y: 1000, w: 200, h: 25, note: 'fenced pen, north rail' },
+    { x: 1050, y: 1275, w: 200, h: 25, note: 'fenced pen, south rail' },
+    { x: 1050, y: 1000, w: 25, h: 300, note: 'fenced pen, west rail' },
+    { x: 1225, y: 1000, w: 25, h: 300, note: 'fenced pen, east rail' },
     { x: 1175, y: 1250, w: 125, h: 150, note: 'silo' },
     { x: 925, y: 1325, w: 300, h: 275, note: 'bottom barn (roof extent)' },
     { x: 1075, y: 1600, w: 100, h: 75, note: 'bottom barn, south porch' },
@@ -77,7 +82,6 @@ export default {
     { label: 'Brenna’s House', x: 700, y: 855, r: 130 },
     { label: 'Storehouse', x: 1237, y: 855, r: 130 },
     { label: 'Well', x: 362, y: 835, r: 110 },
-    { label: 'Animal Pen', x: 1150, y: 1140, r: 150 },
     { label: 'Silo', x: 1237, y: 1310, r: 120 },
     { label: 'Old Barn', x: 1030, y: 1385, r: 170 },
   ],
@@ -214,6 +218,32 @@ export default {
         responses: [
           'Need a hand with the animals?',
           'What’s in the silo?',
+          'Leave.',
+        ],
+      },
+    },
+    {
+      id: 'gaffer',
+      name: 'Old Gaffer',
+      role: 'GOAT',
+      sprite: 'assets/images/Gaffer_Overhead.png',
+      portrait: 'assets/images/Gaffer_Portrait.png',
+      x: 1150, y: 1060,
+      speed: 30,
+      // No home — Gaffer lives in the pen and just wanders its interior
+      // (x1075-1225, y1025-1275, clear — see the hollow pen rects above).
+      // Patrol points sit >=25px inside that clear box so the 36px collider
+      // never touches the fence rails.
+      patrol: [
+        { x: 1110, y: 1060 },
+        { x: 1190, y: 1060 },
+        { x: 1150, y: 1240 },
+      ],
+      dialog: {
+        line: 'Gaffer fixes you with a flat yellow stare, lets out a low bleat, and goes back to chewing on a fence post.',
+        responses: [
+          'Pet Gaffer.',
+          'Offer him something to eat.',
           'Leave.',
         ],
       },
