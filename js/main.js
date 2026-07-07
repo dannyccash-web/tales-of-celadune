@@ -4,8 +4,10 @@
 import sceneD3 from './data/d3.js';
 import { World } from './world.js';
 import * as ui from './ui.js';
+import * as audio from './audio.js';
 
 const stats = { health: 10, healthMax: 10, magic: 5, magicMax: 10, gold: 1234 };
+const state = { started: false };
 
 const input = { up: false, down: false, left: false, right: false };
 
@@ -42,7 +44,23 @@ async function boot() {
   ui.initTopbarStubs();
   ui.updateHud(stats);
 
+  // Start screen: theme music now (or on first gesture if autoplay is blocked),
+  // then cross-fade to the overworld track when the game starts.
+  audio.play(audio.TRACKS.theme);
+  const retryTheme = () => {
+    if (!state.started && !audio.nowPlaying()) audio.play(audio.TRACKS.theme);
+  };
+  window.addEventListener('pointerdown', retryTheme);
+  window.addEventListener('keydown', retryTheme);
+
+  document.getElementById('btn-start').addEventListener('click', () => {
+    state.started = true;
+    document.getElementById('start-screen').classList.add('hidden');
+    audio.play(audio.TRACKS.overworld, 1500);
+  });
+
   window.addEventListener('keydown', (e) => {
+    if (!state.started) return;
     if (ui.isDialogOpen()) {
       e.preventDefault();
       ui.dialogKey(e.key);
@@ -67,7 +85,7 @@ async function boot() {
     const dt = Math.min((now - last) / 1000, 0.05);
     last = now;
 
-    const locked = ui.isDialogOpen();
+    const locked = ui.isDialogOpen() || !state.started;
     world.update(dt, input, locked);
     world.render();
 

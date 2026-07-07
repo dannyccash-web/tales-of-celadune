@@ -3,7 +3,8 @@
 
 const VIEW_W = 1920;
 const VIEW_H = 1080;
-const PLAYER_SPEED = 260; // px/sec
+const PLAYER_SPEED = 130; // px/sec
+const WALK_FLIP_INTERVAL = 0.5; // s — icon mirrors while walking to suggest steps
 const COLLIDER = 36; // square collider centered on characters
 const INTERACT_RANGE = 90;
 const SHADOW_OFFSET = 3; // px, always to the bottom-right regardless of rotation
@@ -26,6 +27,7 @@ export class World {
       y: scene.spawn.y,
       rotation: Math.PI, // facing up (front of icon = bottom)
       moving: false,
+      walkTimer: 0,
     };
 
     this.npcs = scene.npcs.map((n) => ({
@@ -102,6 +104,7 @@ export class World {
     }
 
     p.moving = dx !== 0 || dy !== 0;
+    p.walkTimer = p.moving ? p.walkTimer + dt : 0;
     if (p.moving) {
       const len = Math.hypot(dx, dy);
       const step = PLAYER_SPEED * dt;
@@ -232,9 +235,10 @@ export class World {
     return sil;
   }
 
-  drawSprite(img, x, y, rotation) {
+  drawSprite(img, x, y, rotation, flip = false) {
     const ctx = this.ctx;
     const screenY = y - this.cameraY;
+    const fx = flip ? -1 : 1;
 
     // Drop shadow: offset applied in screen space (before rotating), so it always
     // falls to the bottom-right no matter which way the icon faces.
@@ -243,12 +247,14 @@ export class World {
     ctx.globalAlpha = SHADOW_ALPHA;
     ctx.translate(x + SHADOW_OFFSET, screenY + SHADOW_OFFSET);
     ctx.rotate(rotation || 0);
+    ctx.scale(fx, 1);
     ctx.drawImage(this.silhouetteOf(img), -img.width / 2, -img.height / 2);
     ctx.restore();
 
     ctx.save();
     ctx.translate(x, screenY);
     ctx.rotate(rotation || 0);
+    ctx.scale(fx, 1);
     ctx.drawImage(img, -img.width / 2, -img.height / 2);
     ctx.restore();
   }
@@ -281,9 +287,12 @@ export class World {
     for (const npc of this.npcs) {
       this.drawSprite(this.images[npc.sprite], npc.x, npc.y, npc.rotation);
     }
+    const p = this.player;
+    const stepFlip = p.moving
+      && Math.floor(p.walkTimer / WALK_FLIP_INTERVAL) % 2 === 1;
     this.drawSprite(
       this.images['assets/images/Player_Overhead_1.png'],
-      this.player.x, this.player.y, this.player.rotation,
+      p.x, p.y, p.rotation, stepFlip,
     );
 
     // Name label above the NPC the player could interact with

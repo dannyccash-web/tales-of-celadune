@@ -284,6 +284,44 @@ html, body {
   color: var(--text);
 }
 
+/* ---- Start screen (placeholder) ---- */
+#start-screen {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, #1a130a 0%, #000 75%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 70px;
+}
+
+#start-screen h1 {
+  font-family: var(--font-medieval);
+  font-weight: 400;
+  font-size: 110px;
+  color: var(--text);
+  text-shadow: 0 4px 18px rgba(0, 0, 0, 0.9);
+}
+
+#btn-start {
+  font-family: var(--font-meta);
+  font-size: 30px;
+  color: var(--text);
+  background: var(--panel-bg);
+  border: 2px solid;
+  border-image: linear-gradient(180deg, var(--frame-light), var(--frame-dark)) 1;
+  outline: 1px solid #4d3a1c;
+  outline-offset: 6px;
+  padding: 18px 90px;
+  cursor: pointer;
+}
+
+#btn-start:hover {
+  color: var(--gold-bright);
+  border-image: linear-gradient(180deg, var(--gold-bright), var(--frame-dark)) 1;
+}
+
 /* Toast messages (scene edges, etc.) */
 #toast {
   position: absolute;
