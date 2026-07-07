@@ -37,11 +37,13 @@
 
 - Player speed 130 px/s; icon mirrors horizontally every 0.5s while moving (walk effect) — see WALK_FLIP_INTERVAL in world.js.
 - Soundtrack: js/audio.js, one looped track at a time, `audio.play(src, fadeMs)` cross-fades. Start screen plays celadune_theme.mp3 (retried on first gesture — browser autoplay), Start button cross-fades to celadune_overworld.mp3. Battle/scene tracks later use the same call.
-- Collision maps are hand-traced from a 100px grid overlay on the scene background (PIL script — regenerate with grid+coordinates labels when tracing new scenes). Player must only walk paths/grass/dirt: crop fields, hedges, trees, buildings, barrels, well, pen, silo are all rects in js/data/<scene>.js.
+- Collision maps are hand-traced from a 50px grid overlay on the scene background (PIL script: 50px cyan lines, 100px red lines, labels every 100px; inspect per-quadrant crops for detail).
+- Homes: NPC `home: {door, interior}` + `routine` steps (leaveHome/goto/wait/goHome) in scene data. Leaving/entering = door SFX + 0.7s fade (FADE_S). Spacebar at door: locked toast if NPC away, dialog over interior background if home (world.interior swaps Layer 1). NPCs at home don't render, collide, or take dialog focus.
+- SFX are one-shots via `audio.sfx(src)` (no-op in node); soundtrack unchanged (one looped track, crossfade). Player must only walk paths/grass/dirt: crop fields, hedges, trees, buildings, barrels, well, pen, silo are all rects in js/data/<scene>.js.
 - Collision test suites live in this workflow: probe walkable/blocked points with `world.blockersAt`, walk exits/lanes with simulated input, and run the 4 NPC steering scenarios (route-around, patrol, overlap-escape, wall-block) headless in node before every collision change.
 
 ## Status / roadmap
 
-- ✅ D3 Farm: 4-layer scene, movement, collision (tight map: crops/trees/structures), camera, walk animation, Mirelle NPC patrol + avoidance, placeholder dialog, PDF-matched UI styling, HUD stubs, start screen, theme + overworld soundtrack with crossfade.
+- ✅ D3 Farm: 4-layer scene, movement, collision (50px-grid traced), camera, walk animation, Mirelle NPC with home routine (leave/return + door SFX + interior dialog), steering avoidance, placeholder dialog, PDF-matched UI styling, HUD stubs, start screen (click/Enter/Space), theme + overworld soundtrack with crossfade.
 - ⏳ Later: real dialog trees, battle system (kobolds, dagger), inventory/menu, interiors, other 15 scenes, Steam wrap.
 - Player stats currently hardcoded in `js/main.js` (health 10/10, magic 5/10, gold 1,234 — matches mockups).
