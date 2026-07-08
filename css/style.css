@@ -313,6 +313,63 @@ html, body {
   color: var(--text);
 }
 
+/* Item-received reveal: sits in the empty right side of the response box,
+   under the portrait, sliding down + fading in when ui.showReceivedItem()
+   plays it. Class removed/reflowed/re-added so it replays every time, same
+   trick as the portrait's entrance animation. */
+#dialog-received {
+  position: absolute;
+  right: 60px;
+  top: 0;
+  width: 230px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+}
+
+#dialog-received.received-enter {
+  animation: received-drop 0.5s ease-out;
+}
+
+@keyframes received-drop {
+  from { transform: translateY(-40px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.received-arrow { opacity: 0.9; }
+
+.received-label {
+  font-family: var(--font-lato);
+  font-weight: 600;
+  font-size: 22px;
+  letter-spacing: 4px;
+  color: var(--role-gold);
+  text-transform: uppercase;
+}
+
+.received-frame {
+  width: 190px;
+  height: 190px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid;
+  border-image: linear-gradient(180deg, var(--gold-bright), var(--frame-dark)) 1;
+  overflow: hidden;
+}
+
+.received-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.received-name {
+  font-family: var(--font-meta);
+  font-size: 22px;
+  color: var(--text);
+}
+
 /* ---- Menu / Inventory panels ----
    Full-screen dark backdrop + centered gold-double-framed panel (same frame
    recipe as .dialog-box), left tab rail + right content area. Empty item
@@ -380,7 +437,7 @@ html, body {
   font-family: var(--font-medieval);
   font-size: 26px;
   color: var(--text-dim);
-  padding: 18px 48px;
+  padding: 14px 20px 14px 44px;
   cursor: pointer;
   position: relative;
 }
@@ -389,29 +446,28 @@ html, body {
 
 .panel-tab.active { color: var(--text); }
 
-.panel-tab.active::before {
+/* Small gold arrow in front of the active tab's label, instead of the old
+   left accent bar — matches the dialog response arrow's shape language. */
+.panel-tab::before {
   content: '';
   position: absolute;
-  left: 0;
+  left: 16px;
   top: 50%;
   transform: translateY(-50%);
-  width: 5px;
-  height: 56%;
-  background: linear-gradient(180deg, var(--gold-bright), var(--gold-dark));
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 7px 0 7px 10px;
+  border-color: transparent transparent transparent var(--gold-bright);
+  opacity: 0;
 }
+
+.panel-tab.active::before { opacity: 1; }
 
 .panel-content {
   flex: 1;
-  padding: 70px 90px;
+  padding: 50px 60px;
   overflow: auto;
-}
-
-.panel-title {
-  font-family: var(--font-medieval);
-  font-weight: 400;
-  font-size: 36px;
-  color: var(--text);
-  margin-bottom: 44px;
 }
 
 /* Sliders (Audio tab) — reuse the .bar/.bar-bg/.bar-fill hex-clip component
@@ -542,6 +598,123 @@ html, body {
   grid-template-columns: repeat(3, 150px);
   gap: 30px;
   margin-top: 20px;
+}
+
+/* ---- Items tab: the real inventory (consumables, potions, resources...) ---- */
+.item-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 28px 24px;
+}
+
+.items-empty {
+  grid-column: 1 / -1;
+  font-family: var(--font-meta);
+  font-size: 22px;
+  color: var(--text-dim);
+}
+
+.item-tile {
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.item-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid;
+  border-image: linear-gradient(180deg, var(--gold-bright), var(--frame-dark)) 1;
+  overflow: hidden;
+}
+
+.item-tile:hover .item-frame,
+.item-tile.focused .item-frame {
+  border-image: linear-gradient(180deg, var(--gold-bright), var(--gold-bright)) 1;
+  box-shadow: 0 0 10px rgba(238, 214, 148, 0.5);
+}
+
+.item-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* Quest-item marker: a gold corner ribbon with a black star, upper-left */
+.quest-badge {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 34px 34px 0 0;
+  border-color: var(--gold-bright) transparent transparent transparent;
+}
+
+.quest-badge::after {
+  content: '\2605'; /* ★ */
+  position: absolute;
+  top: -30px;
+  left: -30px;
+  font-size: 13px;
+  color: #1a1305;
+}
+
+.item-label {
+  font-family: var(--font-meta);
+  font-size: 19px;
+  line-height: 1.25;
+  color: var(--text);
+  text-align: center;
+}
+
+.item-qty {
+  color: var(--text-dim);
+}
+
+/* ---- Item action popout (Use / Inspect / Remove) ---- */
+#item-popout {
+  position: absolute;
+  background: var(--panel-bg);
+  border: 2px solid;
+  border-image: linear-gradient(180deg, var(--frame-light), var(--frame-dark)) 1;
+  padding: 10px 0;
+  min-width: 200px;
+  z-index: 10;
+}
+
+.popout-title {
+  font-family: var(--font-medieval);
+  font-size: 20px;
+  color: var(--gold-bright);
+  padding: 6px 24px 10px;
+  border-bottom: 1px solid var(--frame-light);
+  margin-bottom: 6px;
+}
+
+.popout-action {
+  font-family: var(--font-meta);
+  font-size: 20px;
+  color: var(--text-dim);
+  padding: 8px 24px;
+  cursor: pointer;
+}
+
+.popout-action:hover,
+.popout-action.focused {
+  color: var(--text);
+  background: rgba(238, 214, 148, 0.1);
+}
+
+.popout-action.disabled {
+  color: #5a5a5a;
+  cursor: default;
+  pointer-events: none;
 }
 
 /* ---- Start screen (placeholder) ---- */

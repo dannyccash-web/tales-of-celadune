@@ -98,9 +98,16 @@ export function openDialog(npc, onClose, onResponse) {
   void portrait.offsetWidth; // force reflow
   portrait.classList.add('portrait-enter');
 
+  renderResponses(npc.dialog.responses);
+
+  $('dialog').classList.remove('hidden');
+  refreshSelection();
+}
+
+function renderResponses(responses) {
   const box = $('dialog-responses');
   box.innerHTML = '';
-  npc.dialog.responses.forEach((text, i) => {
+  responses.forEach((text, i) => {
     const el = document.createElement('span');
     el.className = 'response';
     el.textContent = text;
@@ -108,9 +115,6 @@ export function openDialog(npc, onClose, onResponse) {
     el.addEventListener('mouseenter', () => { dialogState.selected = i; refreshSelection(); });
     box.appendChild(el);
   });
-
-  $('dialog').classList.remove('hidden');
-  refreshSelection();
 }
 
 function refreshSelection() {
@@ -134,10 +138,30 @@ export function dialogKey(key) {
 
 function chooseResponse() {
   // Most responses are still placeholders that just close the dialog, but a
-  // response can carry a real effect (e.g. Gaffer's bite) — the caller that
-  // opened the dialog decides what that means, via onResponse.
-  if (dialogState.onResponse) dialogState.onResponse(dialogState.npc, dialogState.selected);
-  closeDialog();
+  // response can carry a real effect (e.g. Gaffer's bite, or Mirelle's
+  // vegetable-crate quest) — the caller that opened the dialog decides what
+  // that means, via onResponse. If onResponse returns true, the dialog stays
+  // open (used for "here's a thank-you line + here's your item" flows via
+  // updateDialogContent/showReceivedItem) instead of auto-closing.
+  const stayOpen = dialogState.onResponse
+    ? dialogState.onResponse(dialogState.npc, dialogState.selected)
+    : false;
+  if (!stayOpen) closeDialog();
+}
+
+// Swap the open dialog's line + responses in place, without closing/reopening
+// it (portrait stays put) — used when a response grants something and the
+// NPC gets a follow-up thank-you line instead of the conversation just
+// ending. responseEffects defaults to none (a plain closing line).
+export function updateDialogContent({ line, responses, responseEffects }) {
+  dialogState.npc = {
+    ...dialogState.npc,
+    dialog: { ...dialogState.npc.dialog, line, responses, responseEffects: responseEffects || [] },
+  };
+  dialogState.selected = 0;
+  startTyping(line);
+  renderResponses(responses);
+  refreshSelection();
 }
 
 function closeDialog() {
@@ -146,7 +170,24 @@ function closeDialog() {
   dialogState.typing = false;
   dialogState.open = false;
   $('dialog').classList.add('hidden');
+  const received = $('dialog-received');
+  received.classList.add('hidden');
+  received.classList.remove('received-enter');
   if (dialogState.onClose) dialogState.onClose();
+}
+
+// Play the "item received" reveal (gold arrow + label + item frame sliding
+// down from the portrait's side). Caller is responsible for actually adding
+// the item to inventory state first — this is purely the visual beat.
+export function showReceivedItem(itemDef) {
+  $('received-image').src = itemDef.image;
+  $('received-image').alt = itemDef.name;
+  $('received-name').textContent = itemDef.name;
+  const el = $('dialog-received');
+  el.classList.remove('hidden');
+  el.classList.remove('received-enter');
+  void el.offsetWidth; // force reflow so the animation replays
+  el.classList.add('received-enter');
 }
 
 // ---- Toast ----
@@ -178,6 +219,7 @@ function setActiveTab(panelEl, tabName) {
   panelEl.querySelectorAll('.tab-pane').forEach((el) => {
     el.classList.toggle('hidden', el.dataset.pane !== tabName);
   });
+  closeItemPopout();
 }
 
 function openPanel(name) {
@@ -189,6 +231,7 @@ function openPanel(name) {
 function closePanel(name) {
   panelState[name] = false;
   $(name).classList.add('hidden');
+  closeItemPopout();
 }
 
 // ---- Keyboard-only navigation ----
@@ -218,6 +261,8 @@ function cycleTab(root, dir) {
   setActiveTab(root, next.dataset.tab);
   audioFocusIndex = 0;
   refreshAudioFocus();
+  itemFocusIndex = 0;
+  refreshItemFocus();
 }
 
 function refreshAudioFocus() {
@@ -237,17 +282,202 @@ export function panelKey(key) {
   if (!name) return;
   const root = $(name);
 
+  // The item action popout, when open, owns the keyboard entirely — Up/Down
+  // move between its (non-disabled) actions, Space/Enter confirms, Escape
+  // backs out of just the popout (back to grid focus) rather than closing
+  // the whole panel.
+  if (isPopoutOpen()) {
+    const actions = popoutActionEls();
+    if (key === 'Escape') { closeItemPopout(); return; }
+    if (key === 'ArrowUp') { popoutActionIndex = (popoutActionIndex + actions.length - 1) % actions.length; refreshPopoutFocus(); return; }
+    if (key === 'ArrowDown') { popoutActionIndex = (popoutActionIndex + 1) % actions.length; refreshPopoutFocus(); return; }
+    if (key === ' ' || key === 'Enter') { runPopoutAction(actions[popoutActionIndex].dataset.action); return; }
+    return;
+  }
+
   if (key === 'Escape') { closeAllPanels(); return; }
   if (key === 'ArrowUp') { cycleTab(root, -1); return; }
   if (key === 'ArrowDown') { cycleTab(root, 1); return; }
 
-  const onAudio = currentTabName(root) === 'audio';
+  const tab = currentTabName(root);
+
+  if (tab === 'items') {
+    if (key === 'ArrowLeft') { moveItemFocus(-1); return; }
+    if (key === 'ArrowRight') { moveItemFocus(1); return; }
+    if (key === ' ' || key === 'Enter') {
+      if (!itemTiles.length) return;
+      const t = itemTiles[itemFocusIndex];
+      openItemPopout(t.id, t.el);
+    }
+    return;
+  }
+
+  const onAudio = tab === 'audio';
   if (key === ' ' || key === 'Enter') {
     if (onAudio) { audioFocusIndex = (audioFocusIndex + 1) % 2; refreshAudioFocus(); }
     return;
   }
   if (key === 'ArrowLeft') { if (onAudio) adjustAudioSlider(-1); return; }
   if (key === 'ArrowRight') { if (onAudio) adjustAudioSlider(1); return; }
+}
+
+// ---- Items tab (real inventory grid) ----
+// Tile layout is a flattened, row-major list (not true 2D nav) so Left/Right
+// can walk it without conflicting with Up/Down's existing tab-cycling role.
+
+let itemTiles = []; // [{ el, id }], in DOM/render order
+let itemFocusIndex = 0;
+let itemsHandlers = null; // { onAction(itemId, action) }, set via initItemsPanel
+let popoutActionIndex = 0;
+
+function moveItemFocus(dir) {
+  if (!itemTiles.length) return;
+  itemFocusIndex = (itemFocusIndex + dir + itemTiles.length) % itemTiles.length;
+  refreshItemFocus();
+}
+
+function refreshItemFocus() {
+  itemTiles.forEach((t, i) => t.el.classList.toggle('focused', i === itemFocusIndex));
+}
+
+// Render the Items tab's tile grid from inventory state + the item catalog.
+// inventory: [{id, qty}], catalog: { id: {name, image, description, questItem} }
+export function updateItemsPanel(inventory, catalog) {
+  const grid = $('items-grid');
+  grid.innerHTML = '';
+  itemTiles = [];
+
+  if (!inventory.length) {
+    const p = document.createElement('p');
+    p.className = 'items-empty';
+    p.textContent = 'Nothing here yet.';
+    grid.appendChild(p);
+    closeItemPopout();
+    return;
+  }
+
+  inventory.forEach((entry, i) => {
+    const def = catalog[entry.id];
+    if (!def) return;
+
+    const tile = document.createElement('div');
+    tile.className = 'item-tile';
+    tile.dataset.itemId = entry.id;
+    tile.dataset.itemName = def.name;
+    tile.dataset.quest = def.questItem ? '1' : '';
+
+    const frame = document.createElement('div');
+    frame.className = 'item-frame';
+    const img = document.createElement('img');
+    img.className = 'item-image';
+    img.src = def.image;
+    img.alt = def.name;
+    frame.appendChild(img);
+    if (def.questItem) {
+      const badge = document.createElement('div');
+      badge.className = 'quest-badge';
+      frame.appendChild(badge);
+    }
+
+    const label = document.createElement('div');
+    label.className = 'item-label';
+    label.textContent = def.description || def.name;
+    if (entry.qty > 1) {
+      const qty = document.createElement('span');
+      qty.className = 'item-qty';
+      qty.textContent = ` (${entry.qty})`;
+      label.appendChild(qty);
+    }
+
+    tile.appendChild(frame);
+    tile.appendChild(label);
+    tile.addEventListener('click', () => {
+      itemFocusIndex = i;
+      refreshItemFocus();
+      openItemPopout(entry.id, tile);
+    });
+
+    grid.appendChild(tile);
+    itemTiles.push({ el: tile, id: entry.id });
+  });
+
+  itemFocusIndex = Math.min(itemFocusIndex, itemTiles.length - 1);
+  refreshItemFocus();
+}
+
+// Register the handler for popout actions (Use/Inspect/Remove). Cancel is
+// handled locally and never reaches the handler.
+export function initItemsPanel(handlers) {
+  itemsHandlers = handlers;
+  $('item-popout').querySelectorAll('.popout-action').forEach((el) => {
+    el.addEventListener('click', () => {
+      if (el.classList.contains('disabled')) return;
+      runPopoutAction(el.dataset.action);
+    });
+  });
+  // Outside click closes the popout (tile clicks handle opening it themselves).
+  document.addEventListener('click', (e) => {
+    if (!isPopoutOpen()) return;
+    if ($('item-popout').contains(e.target)) return;
+    if (e.target.closest('.item-tile')) return;
+    closeItemPopout();
+  });
+}
+
+function isPopoutOpen() {
+  return !$('item-popout').classList.contains('hidden');
+}
+
+function popoutActionEls() {
+  return Array.from(document.querySelectorAll('#item-popout .popout-action')).filter(
+    (el) => !el.classList.contains('disabled')
+  );
+}
+
+function refreshPopoutFocus() {
+  const enabled = popoutActionEls();
+  document.querySelectorAll('#item-popout .popout-action').forEach((el) => el.classList.remove('focused'));
+  enabled.forEach((el, i) => el.classList.toggle('focused', i === popoutActionIndex));
+}
+
+let popoutItemId = null;
+
+function openItemPopout(itemId, anchorEl) {
+  popoutItemId = itemId;
+  popoutActionIndex = 0;
+  $('popout-title').textContent = anchorEl.dataset.itemName;
+  document.querySelector('#item-popout .popout-action[data-action="remove"]')
+    .classList.toggle('disabled', anchorEl.dataset.quest === '1');
+  positionPopout(anchorEl);
+  $('item-popout').classList.remove('hidden');
+  refreshPopoutFocus();
+}
+
+function closeItemPopout() {
+  const el = $('item-popout');
+  if (el) el.classList.add('hidden');
+  popoutItemId = null;
+}
+
+function runPopoutAction(action) {
+  if (action !== 'cancel' && itemsHandlers?.onAction) itemsHandlers.onAction(popoutItemId, action);
+  closeItemPopout();
+}
+
+// #stage is CSS-scaled (see fitStage) rather than laid out at native
+// resolution, so an anchor tile's screen-space getBoundingClientRect has to
+// be converted back into 1920x1080 "stage space" before being applied as an
+// inline position on #item-popout, which lives inside #ui (itself inset:0 of
+// the scaled #stage and therefore already in that same coordinate system).
+function positionPopout(anchorEl) {
+  const stageRect = $('stage').getBoundingClientRect();
+  const tileRect = anchorEl.getBoundingClientRect();
+  const scale = stageRect.width / 1920;
+  const x = Math.min((tileRect.left - stageRect.left) / scale, 1920 - 220);
+  const y = (tileRect.bottom - stageRect.top) / scale + 10;
+  const popout = $('item-popout');
+  popout.style.left = `${x}px`;
+  popout.style.top = `${y}px`;
 }
 
 export function toggleMenu() {

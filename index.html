@@ -78,6 +78,18 @@
             </g>
           </svg>
           <div id="dialog-responses"></div>
+          <!-- Item-received reveal: hidden until ui.showReceivedItem() plays it.
+               Sits in the empty right side of the response box, under the
+               portrait, and animates down from that direction (see
+               @keyframes received-drop in style.css). -->
+          <div id="dialog-received" class="hidden">
+            <svg class="received-arrow" width="28" height="22" viewBox="0 0 28 22" xmlns="http://www.w3.org/2000/svg">
+              <path d="M14 22 L1 6 L9 6 L9 0 L19 0 L19 6 L27 6 Z" fill="url(#goldgrad)"/>
+            </svg>
+            <div class="received-label">Received</div>
+            <div class="received-frame"><img id="received-image" src="" alt=""></div>
+            <div class="received-name" id="received-name">Item Name</div>
+          </div>
         </div>
       </div>
 
@@ -90,7 +102,6 @@
           </div>
           <div class="panel-content">
             <section class="tab-pane" data-pane="audio">
-              <h2 class="panel-title">Audio</h2>
               <div class="slider-row">
                 <span class="stat-label">Music</span>
                 <div class="slider-track">
@@ -111,7 +122,6 @@
               </div>
             </section>
             <section class="tab-pane hidden" data-pane="stats">
-              <h2 class="panel-title">Stats</h2>
               <div class="stat-row"><span class="stat-label">Level</span><span class="stat-value" id="stat-level">4</span></div>
               <div class="stat-row xp-row">
                 <span class="stat-label">Experience</span>
@@ -134,10 +144,10 @@
             <div class="panel-tab active" data-tab="equipment">Equipment</div>
             <div class="panel-tab" data-tab="weapons">Weapons</div>
             <div class="panel-tab" data-tab="magic">Magic</div>
+            <div class="panel-tab" data-tab="items">Items</div>
           </div>
           <div class="panel-content">
             <section class="tab-pane" data-pane="equipment">
-              <h2 class="panel-title">Equipment</h2>
               <div class="paperdoll">
                 <div class="item-slot slot-head"><div class="slot-icon"></div><span class="slot-label">Headwear</span></div>
                 <div class="item-slot slot-gloves"><div class="slot-icon"></div><span class="slot-label">Gloves</span></div>
@@ -146,14 +156,12 @@
               </div>
             </section>
             <section class="tab-pane hidden" data-pane="weapons">
-              <h2 class="panel-title">Weapons</h2>
               <div class="weapon-row">
                 <div class="item-slot slot-weapon"><div class="slot-icon"></div><span class="slot-label">Left Hand</span></div>
                 <div class="item-slot slot-weapon"><div class="slot-icon"></div><span class="slot-label">Right Hand</span></div>
               </div>
             </section>
             <section class="tab-pane hidden" data-pane="magic">
-              <h2 class="panel-title">Magic</h2>
               <div class="magic-grid">
                 <div class="item-slot"><div class="slot-icon"></div><span class="slot-label">Spell 1</span></div>
                 <div class="item-slot"><div class="slot-icon"></div><span class="slot-label">Spell 2</span></div>
@@ -163,8 +171,24 @@
                 <div class="item-slot"><div class="slot-icon"></div><span class="slot-label">Spell 6</span></div>
               </div>
             </section>
+            <section class="tab-pane hidden" data-pane="items">
+              <div class="item-grid" id="items-grid">
+                <p class="items-empty" id="items-empty">Nothing here yet.</p>
+              </div>
+            </section>
           </div>
         </div>
+      </div>
+
+      <!-- Item action popout (Use / Inspect / Remove) — positioned near the
+           clicked tile by ui.js. Closed by Escape, an outside click, or
+           choosing an action. -->
+      <div id="item-popout" class="hidden">
+        <div class="popout-title" id="popout-title">Item Name</div>
+        <div class="popout-action" data-action="use">Use</div>
+        <div class="popout-action" data-action="inspect">Inspect</div>
+        <div class="popout-action" data-action="remove">Remove</div>
+        <div class="popout-action" data-action="cancel">Cancel</div>
       </div>
 
       <div id="toast" class="hidden"></div>

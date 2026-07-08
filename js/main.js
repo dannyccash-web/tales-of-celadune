@@ -5,12 +5,32 @@ import sceneD3 from './data/d3.js';
 import { World } from './world.js';
 import * as ui from './ui.js';
 import * as audio from './audio.js';
+import ITEMS from './data/items.js';
 
 const stats = {
   health: 5, healthMax: 5, magic: 5, magicMax: 10, gold: 0,
   level: 4, xp: 1240, xpMax: 2000, attack: 14, defense: 9, speed: 11, luck: 6,
 };
 const state = { started: false };
+
+// Inventory *state* — what the player actually has, [{id, qty}], referencing
+// js/data/items.js (the game-wide catalog) by id. Kept here alongside stats
+// rather than in world/ui, which stay presentation-only.
+const inventory = [];
+
+function addItem(id, qty = 1) {
+  const existing = inventory.find((it) => it.id === id);
+  if (existing) existing.qty += qty; else inventory.push({ id, qty });
+  ui.updateItemsPanel(inventory, ITEMS);
+}
+
+function removeItem(id, qty = 1) {
+  const existing = inventory.find((it) => it.id === id);
+  if (!existing) return;
+  existing.qty -= qty;
+  if (existing.qty <= 0) inventory.splice(inventory.indexOf(existing), 1);
+  ui.updateItemsPanel(inventory, ITEMS);
+}
 
 const input = { up: false, down: false, left: false, right: false };
 
@@ -48,6 +68,8 @@ async function boot() {
   ui.initPanels(audio);
   ui.updateHud(stats);
   ui.updateStatsPanel(stats);
+  ui.initItemsPanel({ onAction: onItemAction });
+  ui.updateItemsPanel(inventory, ITEMS);
 
   // Start screen: theme music now (or on first gesture if autoplay is blocked),
   // then cross-fade to the overworld track when the game starts.
@@ -67,8 +89,10 @@ async function boot() {
   document.getElementById('btn-start').addEventListener('click', startGame);
 
   // A response can carry an optional effect (dialog.responseEffects, parallel
-  // to dialog.responses) — right now that's just Gaffer's bite, but any
-  // future NPC can hook the same mechanism instead of a new one.
+  // to dialog.responses) — damage (Gaffer's bite), a plain toast message, or
+  // grantItem (e.g. Mirelle's vegetable crate). grantItem returns true so
+  // ui.chooseResponse() keeps the dialog open for the follow-up thank-you
+  // line instead of closing immediately.
   function applyResponseEffect(npc, index) {
     const effect = npc.dialog.responseEffects?.[index];
     if (!effect) return;
@@ -77,7 +101,24 @@ async function boot() {
       ui.updateHud(stats);
       ui.flashHealthDamage();
     }
+    if (effect.grantItem) {
+      addItem(effect.grantItem, effect.qty ?? 1);
+      ui.showReceivedItem(ITEMS[effect.grantItem]);
+      if (effect.thankYou) {
+        ui.updateDialogContent({ line: effect.thankYou, responses: ['Leave.'] });
+      }
+      return true;
+    }
     if (effect.message) ui.toast(effect.message);
+  }
+
+  // Popout actions (Use / Inspect / Remove) from the Items tab.
+  function onItemAction(itemId, action) {
+    const def = ITEMS[itemId];
+    if (!def) return;
+    if (action === 'inspect') { ui.toast(def.description); return; }
+    if (action === 'remove') { removeItem(itemId); return; }
+    if (action === 'use') { ui.toast('Nothing happens... yet.'); }
   }
 
   // Every NPC dialog opens through here so the per-character voice clip

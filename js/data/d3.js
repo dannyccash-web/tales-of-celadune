@@ -156,13 +156,22 @@ export default {
         { do: 'goto', x: 952, y: 940 },
         { do: 'goHome' },
       ],
-      // Placeholder dialog — real dialog system comes later
+      // Quest test case for the item system: agreeing hands over a quest item
+      // (grantItem) and keeps the dialog open for a thank-you line instead of
+      // closing — see ui.js's chooseResponse()/updateDialogContent().
       dialog: {
-        line: 'Oh, hello there, traveler. Mind the cabbages — the kobolds have been at them again. If you’re headed west to the village, keep to the path.',
+        line: 'Oh, hello there, traveler. I’ve more vegetables than I know what to do with this week — would you carry a crate over to the tavern in the village for me?',
         responses: [
-          'Kobolds? Tell me more.',
-          'What do you grow here?',
-          'Leave.',
+          'I’ll take them to the tavern.',
+          'Not right now.',
+        ],
+        responseEffects: [
+          {
+            grantItem: 'vegetable_crate',
+            qty: 1,
+            thankYou: 'Bless you, dear. Mind the road — the tavern keeper will be glad to see these.',
+          },
+          null,
         ],
       },
     },
