@@ -98,6 +98,7 @@
           <div class="panel-tabs">
             <div class="panel-tab active" data-tab="audio">Audio</div>
             <div class="panel-tab" data-tab="stats">Stats</div>
+            <div class="panel-tab" data-tab="quests">Quests</div>
           </div>
           <div class="panel-content">
             <section class="tab-pane" data-pane="audio">
@@ -131,6 +132,11 @@
               <div class="stat-row"><span class="stat-label">Defense</span><span class="stat-value" id="stat-defense">9</span></div>
               <div class="stat-row"><span class="stat-label">Speed</span><span class="stat-value" id="stat-speed">11</span></div>
               <div class="stat-row"><span class="stat-label">Luck</span><span class="stat-value" id="stat-luck">6</span></div>
+            </section>
+            <section class="tab-pane hidden" data-pane="quests">
+              <div class="quest-list" id="quest-list">
+                <p class="quests-empty" id="quests-empty">No quests yet.</p>
+              </div>
             </section>
           </div>
         </div>
@@ -190,6 +196,7 @@
       </div>
 
       <div id="toast" class="hidden"></div>
+      <div id="quest-toast" class="hidden"></div>
 
       <div id="start-screen">
         <h1>Tales of Celadune</h1>

@@ -6,6 +6,7 @@ import { World } from './world.js';
 import * as ui from './ui.js';
 import * as audio from './audio.js';
 import ITEMS from './data/items.js';
+import QUESTS from './data/quests.js';
 
 const stats = {
   health: 5, healthMax: 5, magic: 5, magicMax: 10, gold: 0,
@@ -30,6 +31,39 @@ function removeItem(id, qty = 1) {
   existing.qty -= qty;
   if (existing.qty <= 0) inventory.splice(inventory.indexOf(existing), 1);
   ui.updateItemsPanel(inventory, ITEMS);
+}
+
+// Quest *state* — which quests the player has been given and their status,
+// [{id, status}] (status: 'active' | 'completed' | 'failed'), referencing
+// js/data/quests.js (the catalog) by id. Started only via startQuest() so a
+// quest is never added twice.
+const quests = [];
+
+function startQuest(id) {
+  if (quests.find((q) => q.id === id)) return; // already have it — no duplicates
+  const def = QUESTS[id];
+  if (!def) return;
+  quests.push({ id, status: 'active' });
+  ui.updateQuestsPanel(quests, QUESTS);
+  ui.showQuestAdded(def.name);
+}
+
+function questStatus(id) {
+  return quests.find((q) => q.id === id)?.status || 'none';
+}
+
+// An NPC's dialog can vary by quest status (e.g. Mirelle offers the crate
+// once, then asks about its status on later visits instead of handing over
+// a second one) via an optional dialogByQuestStatus map on the NPC — see
+// js/data/d3.js. Falls back to the NPC's plain `dialog` if no variant
+// matches the current status (including 'none', before the quest exists).
+function resolveNpcDialog(npc) {
+  if (!npc.dialogByQuestStatus) return npc.dialog;
+  for (const [questId, variants] of Object.entries(npc.dialogByQuestStatus)) {
+    const variant = variants[questStatus(questId)];
+    if (variant) return variant;
+  }
+  return npc.dialog;
 }
 
 const input = { up: false, down: false, left: false, right: false };
@@ -63,6 +97,7 @@ async function boot() {
   const canvas = document.getElementById('game');
   const world = new World(canvas, scene, images);
   window.world = world; // debug handle
+  window.quests = quests; // debug handle
 
   ui.initStage();
   ui.initPanels(audio);
@@ -70,6 +105,7 @@ async function boot() {
   ui.updateStatsPanel(stats);
   ui.initItemsPanel({ onAction: onItemAction });
   ui.updateItemsPanel(inventory, ITEMS);
+  ui.updateQuestsPanel(quests, QUESTS);
 
   // Start screen: theme music now (or on first gesture if autoplay is blocked),
   // then cross-fade to the overworld track when the game starts.
@@ -89,7 +125,8 @@ async function boot() {
   document.getElementById('btn-start').addEventListener('click', startGame);
 
   // A response can carry an optional effect (dialog.responseEffects, parallel
-  // to dialog.responses) — damage (Gaffer's bite), a plain toast message, or
+  // to dialog.responses) — damage (Gaffer's bite), a plain toast message,
+  // startQuest (adds a quest + fires the "Quest Added" banner), and/or
   // grantItem (e.g. Mirelle's vegetable crate). grantItem returns true so
   // ui.chooseResponse() keeps the dialog open for the follow-up thank-you
   // line instead of closing immediately.
@@ -101,6 +138,7 @@ async function boot() {
       ui.updateHud(stats);
       ui.flashHealthDamage();
     }
+    if (effect.startQuest) startQuest(effect.startQuest);
     if (effect.grantItem) {
       addItem(effect.grantItem, effect.qty ?? 1);
       ui.showReceivedItem(ITEMS[effect.grantItem]);
@@ -127,7 +165,7 @@ async function boot() {
   function openNpcDialog(npc, onClose) {
     const voice = audio.DIALOGUE_SFX[npc.id];
     if (voice) audio.sfx(voice, 1.0);
-    ui.openDialog(npc, onClose, applyResponseEffect);
+    ui.openDialog({ ...npc, dialog: resolveNpcDialog(npc) }, onClose, applyResponseEffect);
   }
 
   function interact() {

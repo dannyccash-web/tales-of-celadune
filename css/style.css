@@ -541,6 +541,64 @@ html, body {
 
 .stat-row.xp-row .bar { width: 320px; }
 
+/* Quests tab (Menu) — active quests first, then a "Completed" subhead with
+   completed (green check) or failed (red X) quests below it. */
+.quest-list {
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+}
+
+.quests-empty {
+  font-family: var(--font-meta);
+  font-size: 22px;
+  color: var(--text-dim);
+}
+
+.quest-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+}
+
+.quest-text { flex: 1; }
+
+.quest-name {
+  font-family: var(--font-medieval);
+  font-size: 25px;
+  color: var(--text);
+}
+
+.quest-desc {
+  font-family: var(--font-meta);
+  font-size: 19px;
+  line-height: 1.4;
+  color: var(--text-dim);
+  margin-top: 4px;
+}
+
+.quest-icon {
+  width: 26px;
+  flex-shrink: 0;
+  text-align: center;
+  font-size: 22px;
+  line-height: 1.5;
+}
+
+.quest-icon.done { color: #6fbf73; }
+.quest-icon.failed { color: #d9534f; }
+
+.quest-subhead {
+  font-family: var(--font-lato);
+  font-weight: 600;
+  font-size: 18px;
+  letter-spacing: 3px;
+  color: var(--role-gold);
+  text-transform: uppercase;
+  border-top: 1px solid var(--frame-light);
+  padding-top: 18px;
+}
+
 /* Item slots (Equipment / Weapons / Magic) */
 .item-slot {
   width: 160px;
@@ -778,4 +836,34 @@ html, body {
   font-family: var(--font-meta);
   font-size: 22px;
   color: var(--text);
+}
+
+/* "Quest Added" banner — same top-center spot as the plain toast (the two
+   never realistically co-occur: quest starts happen from dialog, which
+   pauses the world, and the plain toast is for world interactions), but
+   styled as its own event: bigger, gold, medieval heading font, and it
+   drops in with a short animation instead of just appearing. */
+#quest-toast {
+  position: absolute;
+  top: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--panel-bg);
+  border: 2px solid;
+  border-image: linear-gradient(180deg, var(--gold-bright), var(--frame-dark)) 1;
+  padding: 14px 36px;
+  font-family: var(--font-medieval);
+  font-size: 26px;
+  color: var(--gold-bright);
+  white-space: nowrap;
+  z-index: 15;
+}
+
+#quest-toast.quest-toast-enter {
+  animation: quest-toast-drop 0.4s ease-out;
+}
+
+@keyframes quest-toast-drop {
+  from { transform: translate(-50%, -24px); opacity: 0; }
+  to { transform: translate(-50%, 0); opacity: 1; }
 }

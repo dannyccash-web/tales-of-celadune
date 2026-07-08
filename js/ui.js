@@ -202,6 +202,22 @@ export function toast(message, ms = 2500) {
   toastTimer = setTimeout(() => el.classList.add('hidden'), ms);
 }
 
+// A distinct, more prominent banner for "you've been given a quest" — same
+// top-center spot as the plain toast, but styled/worded as its own event
+// rather than a passing notice (see main.js's startQuest()).
+let questToastTimer = null;
+
+export function showQuestAdded(questName) {
+  const el = $('quest-toast');
+  el.textContent = `Quest Added: ${questName}`;
+  el.classList.remove('hidden');
+  el.classList.remove('quest-toast-enter');
+  void el.offsetWidth; // force reflow so the animation replays
+  el.classList.add('quest-toast-enter');
+  clearTimeout(questToastTimer);
+  questToastTimer = setTimeout(() => el.classList.add('hidden'), 3500);
+}
+
 // ---- Menu / Inventory panels ----
 // Both share the same tabbed-panel structure (see .panel-box in style.css);
 // only one is ever open at a time, mirroring the topbar's two icon buttons.
@@ -420,7 +436,10 @@ export function updateItemsPanel(inventory, catalog) {
 
     const label = document.createElement('div');
     label.className = 'item-label';
-    label.textContent = def.description || def.name;
+    // The tile shows the item's *name* — kept consistent with how it's
+    // named everywhere else (the received-item reveal, the action popout
+    // title). Inspect is what shows the longer description.
+    label.textContent = def.name;
     if (entry.qty > 1) {
       const qty = document.createElement('span');
       qty.className = 'item-qty';
@@ -567,6 +586,69 @@ export function updateStatsPanel(stats) {
   $('stat-luck').textContent = stats.luck;
   $('xp-fill').style.width = `${Math.min(100, (stats.xp / stats.xpMax) * 100)}%`;
   $('xp-value').textContent = `${stats.xp.toLocaleString()} / ${stats.xpMax.toLocaleString()}`;
+}
+
+// ---- Quests tab (Menu) ----
+// Read-only list — no Level 1 interactive content, so panelKey()'s "no
+// interactive rows yet" fallthrough already covers keyboard nav here.
+
+function renderQuestRow(quest, def) {
+  const row = document.createElement('div');
+  row.className = 'quest-row';
+
+  const text = document.createElement('div');
+  text.className = 'quest-text';
+  const name = document.createElement('div');
+  name.className = 'quest-name';
+  name.textContent = def.name;
+  const desc = document.createElement('div');
+  desc.className = 'quest-desc';
+  desc.textContent = def.description;
+  text.append(name, desc);
+
+  const icon = document.createElement('span');
+  icon.className = 'quest-icon';
+  if (quest.status === 'completed') { icon.classList.add('done'); icon.textContent = '✓'; }
+  else if (quest.status === 'failed') { icon.classList.add('failed'); icon.textContent = '✕'; }
+
+  row.append(text, icon);
+  return row;
+}
+
+// quests: [{id, status}], catalog: { id: {name, description} } — see
+// js/data/quests.js. Active quests list first; completed/failed quests sink
+// below a "Completed" subhead (failed ones marked with a red X instead of a
+// green check, but still grouped there per Danny's spec).
+export function updateQuestsPanel(quests, catalog) {
+  const list = $('quest-list');
+  list.innerHTML = '';
+
+  if (!quests.length) {
+    const p = document.createElement('p');
+    p.className = 'quests-empty';
+    p.textContent = 'No quests yet.';
+    list.appendChild(p);
+    return;
+  }
+
+  const active = quests.filter((q) => q.status === 'active');
+  const resolved = quests.filter((q) => q.status === 'completed' || q.status === 'failed');
+
+  active.forEach((q) => {
+    const def = catalog[q.id];
+    if (def) list.appendChild(renderQuestRow(q, def));
+  });
+
+  if (resolved.length) {
+    const heading = document.createElement('div');
+    heading.className = 'quest-subhead';
+    heading.textContent = 'Completed';
+    list.appendChild(heading);
+    resolved.forEach((q) => {
+      const def = catalog[q.id];
+      if (def) list.appendChild(renderQuestRow(q, def));
+    });
+  }
 }
 
 export function initPanels(audio) {

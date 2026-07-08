@@ -156,9 +156,10 @@ export default {
         { do: 'goto', x: 952, y: 940 },
         { do: 'goHome' },
       ],
-      // Quest test case for the item system: agreeing hands over a quest item
-      // (grantItem) and keeps the dialog open for a thank-you line instead of
-      // closing — see ui.js's chooseResponse()/updateDialogContent().
+      // Quest test case for the item + quest systems: agreeing hands over a
+      // quest item (grantItem), starts the quest (startQuest — see
+      // js/data/quests.js), and keeps the dialog open for a thank-you line
+      // instead of closing — see ui.js's chooseResponse()/updateDialogContent().
       dialog: {
         line: 'Oh, hello there, traveler. I’ve more vegetables than I know what to do with this week — would you carry a crate over to the tavern in the village for me?',
         responses: [
@@ -169,10 +170,27 @@ export default {
           {
             grantItem: 'vegetable_crate',
             qty: 1,
+            startQuest: 'vegetable_delivery',
             thankYou: 'Bless you, dear. Mind the road — the tavern keeper will be glad to see these.',
           },
           null,
         ],
+      },
+      // Once the vegetable_delivery quest exists, main.js's resolveNpcDialog()
+      // swaps in the matching status variant here instead of the offer above
+      // — so asking again doesn't hand over a second crate. No 'completed'
+      // variant yet since there's no tavern scene to actually turn the quest
+      // in at; add one once that scene exists.
+      dialogByQuestStatus: {
+        vegetable_delivery: {
+          active: {
+            line: 'Any luck getting those vegetables to the tavern yet? The keeper’s probably wondering where I’ve gotten to.',
+            responses: [
+              'Not yet — I’ll get there.',
+              'Leave.',
+            ],
+          },
+        },
       },
     },
     {
