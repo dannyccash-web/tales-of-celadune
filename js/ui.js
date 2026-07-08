@@ -87,21 +87,56 @@ export function openDialog(npc, onClose, onResponse) {
   dialogState.onResponse = onResponse || null;
 
   $('dialog-name').textContent = npc.name;
-  $('dialog-role').textContent = npc.role;
+  $('dialog-role').textContent = npc.role || '';
   startTyping(npc.dialog.line);
 
-  // Portrait: slide in quickly from the right, fading 0% -> 100% opacity.
-  // Remove + reflow + re-add so the CSS animation replays on every open.
-  const portrait = $('dialog-portrait');
-  portrait.src = npc.portrait;
-  portrait.classList.remove('portrait-enter');
-  void portrait.offsetWidth; // force reflow
-  portrait.classList.add('portrait-enter');
+  // An unoccupied building (npc.isPlace, e.g. "Your House") has no portrait
+  // — that slot shows a "Contents" list instead, built once here since which
+  // mode is active doesn't change for the life of one open dialog. NPCs
+  // still get the usual slide-in-from-the-right portrait.
+  const portraitFrame = $('portrait-frame');
+  const contentsFrame = $('dialog-contents');
+  if (npc.isPlace) {
+    portraitFrame.classList.add('hidden');
+    contentsFrame.classList.remove('hidden');
+    renderContentsList(npc.contents);
+  } else {
+    portraitFrame.classList.remove('hidden');
+    contentsFrame.classList.add('hidden');
+    // Portrait: slide in quickly from the right, fading 0% -> 100% opacity.
+    // Remove + reflow + re-add so the CSS animation replays on every open.
+    const portrait = $('dialog-portrait');
+    portrait.src = npc.portrait;
+    portrait.classList.remove('portrait-enter');
+    void portrait.offsetWidth; // force reflow
+    portrait.classList.add('portrait-enter');
+  }
 
   renderResponses(npc.dialog.responses);
 
   $('dialog').classList.remove('hidden');
   refreshSelection();
+}
+
+// items: [{id, name}] — the "Contents" list shown in a place's dialog
+// (instead of a portrait). Re-called whenever an item is taken so the list
+// stays in sync with what's actually left in the room.
+function renderContentsList(items) {
+  const list = $('contents-list');
+  list.innerHTML = '';
+  if (!items || !items.length) {
+    const li = document.createElement('li');
+    li.className = 'contents-empty';
+    li.textContent = 'Nothing here.';
+    list.appendChild(li);
+    return;
+  }
+  items.forEach((item) => {
+    const li = document.createElement('li');
+    li.className = 'contents-item';
+    li.textContent = item.name;
+    list.appendChild(li);
+  });
 }
 
 function renderResponses(responses) {
@@ -150,17 +185,22 @@ function chooseResponse() {
 }
 
 // Swap the open dialog's line + responses in place, without closing/reopening
-// it (portrait stays put) — used when a response grants something and the
-// NPC gets a follow-up thank-you line instead of the conversation just
-// ending. responseEffects defaults to none (a plain closing line).
-export function updateDialogContent({ line, responses, responseEffects }) {
+// it (portrait/contents-list slot stays put) — used when a response grants
+// something and the conversation continues instead of ending: an NPC's
+// follow-up thank-you line, or a place's room refreshing after an item is
+// taken. responseEffects defaults to none (a plain closing line). `contents`
+// is optional — pass it (a place's updated [{id,name}] list) to re-render
+// the Contents list; omitted for ordinary NPC dialog.
+export function updateDialogContent({ line, responses, responseEffects, contents }) {
   dialogState.npc = {
     ...dialogState.npc,
     dialog: { ...dialogState.npc.dialog, line, responses, responseEffects: responseEffects || [] },
+    ...(contents ? { contents } : {}),
   };
   dialogState.selected = 0;
   startTyping(line);
   renderResponses(responses);
+  if (contents) renderContentsList(contents);
   refreshSelection();
 }
 

@@ -95,7 +95,7 @@ export default {
     { label: 'Mirelle’s Farmhouse', x: 952, y: 630, r: 170 },
     { label: 'Tuckwell’s House', x: 537, y: 855, r: 130 },
     { label: 'Brenna’s House', x: 700, y: 855, r: 130 },
-    { label: 'Storehouse', x: 1237, y: 855, r: 130 },
+    { label: 'Your House', x: 1237, y: 855, r: 130 },
     { label: 'Well', x: 362, y: 835, r: 110 },
     { label: 'Silo', x: 1237, y: 1310, r: 120 },
     { label: 'Old Barn', x: 1030, y: 1385, r: 170 },
@@ -309,6 +309,30 @@ export default {
           null,
         ],
       },
+    },
+    // "Your House" (was labeled Storehouse — see the buildings entry above)
+    // is an unoccupied building: modeled as a place in this same npcs array
+    // rather than a parallel system, since it reuses almost everything an
+    // NPC home already has — door proximity, the interior-image swap,
+    // startsHome/atHome (permanently true here: no routine, so it never
+    // leaves) — for free. `isPlace: true` is what tells main.js/ui.js to
+    // render it differently (blank role, description in place of a dialogue
+    // line, a "Contents" list instead of a portrait, dynamic "Take {item}"
+    // responses) instead of treating it like a talking NPC. Door sits 25px
+    // south of the barn's south face (x1150-1325,y725-900), matching the
+    // same offset used for Tuckwell's/Brenna's doors off their own houses.
+    {
+      id: 'your_house',
+      isPlace: true,
+      name: 'Your House',
+      x: 1237, y: 925,
+      startsHome: true,
+      home: {
+        door: { x: 1237, y: 925 },
+        interior: 'assets/images/home_interior.jpg',
+      },
+      description: 'Your modest one-room home on the farm — a cot, a hearth, and whatever you’ve managed to set aside.',
+      items: ['dagger', 'health_potion'],
     },
   ],
 };

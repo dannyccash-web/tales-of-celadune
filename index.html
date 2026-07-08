@@ -54,6 +54,13 @@
           <div id="portrait-frame">
             <img id="dialog-portrait" src="assets/images/Mirelle_Portrait.png" alt="">
           </div>
+          <!-- Unoccupied-building dialog (ui.openDialog with isPlace: true)
+               shows this in the portrait's slot instead — a "Contents"
+               headline + stacked item list, e.g. "Your House". -->
+          <div id="dialog-contents" class="hidden">
+            <h4 id="contents-heading">Contents</h4>
+            <ul id="contents-list"></ul>
+          </div>
           <div class="dialog-text">
             <h2 id="dialog-name">Mirelle</h2>
             <h3 id="dialog-role">FARM OWNER</h3>

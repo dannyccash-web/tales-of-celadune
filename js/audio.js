@@ -10,6 +10,13 @@ export const TRACKS = {
 export const SFX = {
   door: 'assets/audio/dragon-studio-open-door-stock-sfx-454246.mp3',
   footsteps: 'assets/audio/universfield-footsteps-walking-278819.mp3',
+  // Gold change, health decrease, item given/received — each fires from one
+  // centralized place in main.js (addGold/damagePlayer/addItem/removeItem)
+  // rather than at every individual call site, so any future gold/health/
+  // item source gets the sound for free.
+  gold: 'assets/audio/alexzavesa-clinking-coins-7-468427.mp3',
+  hurt: 'assets/audio/freesound_community-male_hurt7-48124.mp3',
+  item: 'assets/audio/freesound_community-open-bag-sound-39216.mp3',
 };
 
 // One "voice" clip per NPC, played once when their dialogue window opens —

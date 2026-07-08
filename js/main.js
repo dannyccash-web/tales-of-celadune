@@ -23,6 +23,7 @@ function addItem(id, qty = 1) {
   const existing = inventory.find((it) => it.id === id);
   if (existing) existing.qty += qty; else inventory.push({ id, qty });
   ui.updateItemsPanel(inventory, ITEMS);
+  audio.sfx(audio.SFX.item);
 }
 
 function removeItem(id, qty = 1) {
@@ -31,6 +32,23 @@ function removeItem(id, qty = 1) {
   existing.qty -= qty;
   if (existing.qty <= 0) inventory.splice(inventory.indexOf(existing), 1);
   ui.updateItemsPanel(inventory, ITEMS);
+  audio.sfx(audio.SFX.item);
+}
+
+// Centralized gold/health mutators (mirroring addItem/removeItem) so every
+// gold change or point of damage plays its sound from one place, regardless
+// of source — collectibles today, shops/battle later.
+function addGold(amount) {
+  stats.gold += amount;
+  ui.updateHud(stats);
+  audio.sfx(audio.SFX.gold);
+}
+
+function damagePlayer(amount) {
+  stats.health = Math.max(0, stats.health - amount);
+  ui.updateHud(stats);
+  ui.flashHealthDamage();
+  audio.sfx(audio.SFX.hurt);
 }
 
 // Quest *state* — which quests the player has been given and their status,
@@ -86,7 +104,9 @@ async function boot() {
   const sources = [
     scene.background,
     'assets/images/Player_Overhead_1.png',
-    ...scene.npcs.map((n) => n.sprite),
+    // Places (isPlace: true, e.g. "Your House") have no sprite — they're
+    // always atHome and never rendered as a walking body — so skip them here.
+    ...scene.npcs.filter((n) => n.sprite).map((n) => n.sprite),
     ...scene.npcs.filter((n) => n.home).map((n) => n.home.interior),
   ];
   const images = await loadImages([...new Set(sources)]);
@@ -133,11 +153,7 @@ async function boot() {
   function applyResponseEffect(npc, index) {
     const effect = npc.dialog.responseEffects?.[index];
     if (!effect) return;
-    if (effect.damage) {
-      stats.health = Math.max(0, stats.health - effect.damage);
-      ui.updateHud(stats);
-      ui.flashHealthDamage();
-    }
+    if (effect.damage) damagePlayer(effect.damage);
     if (effect.startQuest) startQuest(effect.startQuest);
     if (effect.grantItem) {
       addItem(effect.grantItem, effect.qty ?? 1);
@@ -159,10 +175,59 @@ async function boot() {
     if (action === 'use') { ui.toast('Nothing happens... yet.'); }
   }
 
+  // Builds the dialog "view" for an unoccupied building (a place, not an
+  // NPC) — blank role, its description standing in for a dialogue line, and
+  // one "Take {item name}" response per item still in the room (plus
+  // Leave.). `place.items` is the WORLD's own copy of the room's remaining
+  // item ids (js/world.js shallow-copies each npc off scene data, so
+  // reassigning it here — always via non-mutating .filter(), never
+  // .splice()/.push() — never touches the original scene module data).
+  function buildPlaceView(place) {
+    const contents = place.items.map((id) => ({ id, name: ITEMS[id]?.name || id }));
+    const takeResponses = place.items.map((id) => `Take ${ITEMS[id]?.name || id}`);
+    const takeEffects = place.items.map((id) => ({ takeItem: id }));
+    return {
+      ...place,
+      role: '',
+      contents,
+      dialog: {
+        line: place.description,
+        responses: [...takeResponses, 'Leave.'],
+        responseEffects: [...takeEffects, null],
+      },
+    };
+  }
+
+  // A "Take X" response removes that item from the room, grants it to the
+  // player (same received-item reveal as Mirelle's vegetable crate), and
+  // rebuilds the room's dialog in place — same "stay open, refresh content"
+  // mechanism as the quest-thank-you flow (see ui.updateDialogContent()).
+  function applyPlaceResponse(place, npcView, index) {
+    const effect = npcView.dialog.responseEffects?.[index];
+    if (!effect?.takeItem) return; // Leave. (or nothing) — close normally
+    place.items = place.items.filter((id) => id !== effect.takeItem);
+    addItem(effect.takeItem, 1);
+    ui.showReceivedItem(ITEMS[effect.takeItem]);
+    const refreshed = buildPlaceView(place);
+    ui.updateDialogContent({
+      line: refreshed.dialog.line,
+      responses: refreshed.dialog.responses,
+      responseEffects: refreshed.dialog.responseEffects,
+      contents: refreshed.contents,
+    });
+    return true; // keep browsing the room
+  }
+
   // Every NPC dialog opens through here so the per-character voice clip
   // (audio.DIALOGUE_SFX, keyed by npc.id) and response-effect handling are
   // consistent whether the NPC was approached directly or met at their door.
+  // Places (isPlace: true) branch off to their own view/response builders —
+  // they have no voice clip and no quest-status dialog variants.
   function openNpcDialog(npc, onClose) {
+    if (npc.isPlace) {
+      ui.openDialog(buildPlaceView(npc), onClose, (npcView, index) => applyPlaceResponse(npc, npcView, index));
+      return;
+    }
     const voice = audio.DIALOGUE_SFX[npc.id];
     if (voice) audio.sfx(voice, 1.0);
     ui.openDialog({ ...npc, dialog: resolveNpcDialog(npc) }, onClose, applyResponseEffect);
@@ -176,8 +241,7 @@ async function boot() {
     if (item) {
       item.collected = true;
       if (item.reward?.gold) {
-        stats.gold += item.reward.gold;
-        ui.updateHud(stats);
+        addGold(item.reward.gold);
         ui.toast(`You found ${item.reward.gold} gold!`);
       } else {
         ui.toast('You found something!');

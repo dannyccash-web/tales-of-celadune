@@ -262,6 +262,48 @@ html, body {
   animation: portrait-slide-in 0.28s ease-out;
 }
 
+/* Unoccupied-building dialog: same box as #portrait-frame (right-anchored,
+   500 wide, bottom-anchored to match the dialog box), a "Contents" heading
+   over a top-justified stacked item list instead of a portrait image. */
+#dialog-contents {
+  position: absolute;
+  right: 30px;
+  bottom: 0;
+  width: 500px;
+  height: 500px;
+  padding-top: 20px;
+  pointer-events: none;
+}
+
+#contents-heading {
+  font-family: var(--font-lato);
+  font-weight: 600;
+  font-size: 22px;
+  letter-spacing: 4px;
+  color: var(--role-gold);
+  text-transform: uppercase;
+  margin: 0 0 20px;
+}
+
+#contents-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.contents-item {
+  font-family: var(--font-meta);
+  font-size: 24px;
+  line-height: 1.6;
+  color: var(--text);
+}
+
+.contents-empty {
+  font-family: var(--font-meta);
+  font-size: 22px;
+  color: var(--text-dim);
+}
+
 .dialog-text { max-width: 760px; }
 
 .dialog-text h2 {
