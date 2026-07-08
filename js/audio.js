@@ -98,7 +98,14 @@ export function play(src, fadeMs = 1200) {
   current = { el, src };
 
   el.play().then(() => {
-    fade(el, musicVolume, fadeMs);
+    // A newer play() call can supersede this one while the promise was
+    // still pending — e.g. the same keydown both unblocks autoplay for the
+    // theme (via the retry-on-gesture listener) AND starts the game, which
+    // immediately calls play(overworld). Without this guard, the theme's
+    // delayed fade-in would win the race against the overworld transition's
+    // fade-out, canceling it and leaving both tracks playing at once. Only
+    // fade in if we're still the current track.
+    if (current && current.el === el) fade(el, musicVolume, fadeMs);
   }).catch(() => {
     // Autoplay blocked — forget this attempt so a retry on user gesture works
     if (current && current.el === el) current = old;

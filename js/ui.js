@@ -224,24 +224,46 @@ function setActiveTab(panelEl, tabName) {
 
 function openPanel(name) {
   panelState[name] = true;
-  $(name).classList.remove('hidden');
-  if (name === 'menu') { audioFocusIndex = 0; refreshAudioFocus(); }
+  const root = $(name);
+  root.classList.remove('hidden');
+  // Always land on the top tab, tab-list focus (Level 0) — a fresh,
+  // predictable starting point every time the panel opens, regardless of
+  // where the player left off last time.
+  const firstTab = root.querySelector('.panel-tab');
+  if (firstTab) setActiveTab(root, firstTab.dataset.tab);
+  audioFocusIndex = 0;
+  itemFocusIndex = 0;
+  setNavLevel(root, 'tabs');
 }
 
 function closePanel(name) {
   panelState[name] = false;
   $(name).classList.add('hidden');
   closeItemPopout();
+  navLevel = 'tabs';
 }
 
 // ---- Keyboard-only navigation ----
-// Up/Down cycle the active tab (instant preview, like a click). Space cycles
-// focus between the active tab's adjustable rows (currently just the Audio
-// tab's two sliders — everything else is a read-only placeholder for now).
-// Left/Right adjust whichever row is focused. Escape always closes.
+// A panel is navigated in levels, each one step deeper than the last, and
+// Escape always steps back exactly one level (I/M can still close from
+// anywhere):
+//   Level 0 "tabs"    Up/Down cycle the active tab. Space enters it.
+//                      Escape closes the whole panel.
+//   Level 1 "content"  varies per tab — Audio: Up/Down move between the
+//                      Music/Effects rows, Left/Right adjust the focused
+//                      one. Items: Left/Right move tile focus, Space opens
+//                      the action popout (Level 2). Escape returns to the
+//                      tab list (Level 0).
+//   Level 2 "popout"   (Items only) Up/Down move between the popout's
+//                      enabled actions, Space confirms. Escape closes just
+//                      the popout, back to the item grid (Level 1).
+// The gold arrow indicator lives on whichever level currently has focus:
+// on the active tab at Level 0, on the focused row/tile at Level 1 — see
+// setNavLevel() and the .content-mode CSS toggle.
 
 const SLIDER_STEP = 5; // percent, per arrow key press
 let audioFocusIndex = 0; // 0 = music, 1 = sfx
+let navLevel = 'tabs'; // 'tabs' | 'content' — Level 2 (popout) is tracked separately via isPopoutOpen()
 
 function activePanelName() {
   if (panelState.menu) return 'menu';
@@ -254,20 +276,29 @@ function currentTabName(root) {
   return active ? active.dataset.tab : null;
 }
 
+// Move focus between Level 0 (tab list) and Level 1 (that tab's content),
+// updating which gold arrow is visible to match.
+function setNavLevel(root, level) {
+  navLevel = level;
+  root.querySelector('.panel-tabs').classList.toggle('content-mode', level === 'content');
+  refreshAudioFocus();
+  refreshItemFocus();
+}
+
 function cycleTab(root, dir) {
   const tabs = Array.from(root.querySelectorAll('.panel-tab'));
   const idx = tabs.findIndex((el) => el.classList.contains('active'));
   const next = tabs[(idx + dir + tabs.length) % tabs.length];
   setActiveTab(root, next.dataset.tab);
   audioFocusIndex = 0;
-  refreshAudioFocus();
   itemFocusIndex = 0;
+  refreshAudioFocus();
   refreshItemFocus();
 }
 
 function refreshAudioFocus() {
   const rows = document.querySelectorAll('#menu .slider-row');
-  rows.forEach((row, i) => row.classList.toggle('focused', i === audioFocusIndex));
+  rows.forEach((row, i) => row.classList.toggle('focused', navLevel === 'content' && i === audioFocusIndex));
 }
 
 function adjustAudioSlider(dir) {
@@ -282,10 +313,7 @@ export function panelKey(key) {
   if (!name) return;
   const root = $(name);
 
-  // The item action popout, when open, owns the keyboard entirely — Up/Down
-  // move between its (non-disabled) actions, Space/Enter confirms, Escape
-  // backs out of just the popout (back to grid focus) rather than closing
-  // the whole panel.
+  // Level 2: the item action popout, when open, owns the keyboard entirely.
   if (isPopoutOpen()) {
     const actions = popoutActionEls();
     if (key === 'Escape') { closeItemPopout(); return; }
@@ -295,30 +323,41 @@ export function panelKey(key) {
     return;
   }
 
+  const tab = currentTabName(root);
+
+  // Level 1: inside the active tab's content.
+  if (navLevel === 'content') {
+    if (key === 'Escape') { setNavLevel(root, 'tabs'); return; }
+
+    if (tab === 'audio') {
+      if (key === 'ArrowUp') { audioFocusIndex = (audioFocusIndex + 1) % 2; refreshAudioFocus(); return; }
+      if (key === 'ArrowDown') { audioFocusIndex = (audioFocusIndex + 1) % 2; refreshAudioFocus(); return; }
+      if (key === 'ArrowLeft') { adjustAudioSlider(-1); return; }
+      if (key === 'ArrowRight') { adjustAudioSlider(1); return; }
+      return;
+    }
+
+    if (tab === 'items') {
+      if (key === 'ArrowLeft') { moveItemFocus(-1); return; }
+      if (key === 'ArrowRight') { moveItemFocus(1); return; }
+      if (key === ' ' || key === 'Enter') {
+        if (!itemTiles.length) return;
+        const t = itemTiles[itemFocusIndex];
+        openItemPopout(t.id, t.el);
+      }
+      return;
+    }
+
+    // Stats/Equipment/Weapons/Magic have no interactive content yet —
+    // nothing to move focus between, just wait for Escape.
+    return;
+  }
+
+  // Level 0: the tab list.
   if (key === 'Escape') { closeAllPanels(); return; }
   if (key === 'ArrowUp') { cycleTab(root, -1); return; }
   if (key === 'ArrowDown') { cycleTab(root, 1); return; }
-
-  const tab = currentTabName(root);
-
-  if (tab === 'items') {
-    if (key === 'ArrowLeft') { moveItemFocus(-1); return; }
-    if (key === 'ArrowRight') { moveItemFocus(1); return; }
-    if (key === ' ' || key === 'Enter') {
-      if (!itemTiles.length) return;
-      const t = itemTiles[itemFocusIndex];
-      openItemPopout(t.id, t.el);
-    }
-    return;
-  }
-
-  const onAudio = tab === 'audio';
-  if (key === ' ' || key === 'Enter') {
-    if (onAudio) { audioFocusIndex = (audioFocusIndex + 1) % 2; refreshAudioFocus(); }
-    return;
-  }
-  if (key === 'ArrowLeft') { if (onAudio) adjustAudioSlider(-1); return; }
-  if (key === 'ArrowRight') { if (onAudio) adjustAudioSlider(1); return; }
+  if (key === ' ' || key === 'Enter') { setNavLevel(root, 'content'); return; }
 }
 
 // ---- Items tab (real inventory grid) ----
@@ -337,7 +376,7 @@ function moveItemFocus(dir) {
 }
 
 function refreshItemFocus() {
-  itemTiles.forEach((t, i) => t.el.classList.toggle('focused', i === itemFocusIndex));
+  itemTiles.forEach((t, i) => t.el.classList.toggle('focused', navLevel === 'content' && i === itemFocusIndex));
 }
 
 // Render the Items tab's tile grid from inventory state + the item catalog.
@@ -393,7 +432,11 @@ export function updateItemsPanel(inventory, catalog) {
     tile.appendChild(label);
     tile.addEventListener('click', () => {
       itemFocusIndex = i;
-      refreshItemFocus();
+      // Items only live in the Inventory panel — clicking a tile is a mouse
+      // shortcut for "enter this tab's content, then open its popout" in one
+      // step, so keep nav-level state in sync for anyone mixing mouse and
+      // keyboard/controller input.
+      setNavLevel($('inventory'), 'content');
       openItemPopout(entry.id, tile);
     });
 
@@ -530,10 +573,20 @@ export function initPanels(audio) {
   ['menu', 'inventory'].forEach((name) => {
     const root = $(name);
     root.querySelectorAll('.panel-tab').forEach((tabEl) => {
-      tabEl.addEventListener('click', () => setActiveTab(root, tabEl.dataset.tab));
+      // A mouse click on a tab is a shortcut for "select this tab, back at
+      // the tab list" (Level 0) — the slider/item content underneath still
+      // works by direct click/drag regardless of nav level, so clicking a
+      // tab doesn't need to also "enter" it the way Space does.
+      tabEl.addEventListener('click', () => {
+        setActiveTab(root, tabEl.dataset.tab);
+        audioFocusIndex = 0;
+        itemFocusIndex = 0;
+        setNavLevel(root, 'tabs');
+      });
     });
-    root.querySelector('.panel-close').addEventListener('click', () => closePanel(name));
-    // Clicking the dark backdrop (outside the panel box) closes it too.
+    // Clicking the dark backdrop (outside the panel box) closes it too —
+    // there's no close button (I/M toggle, or Escape, close it instead, so
+    // the panel stays fully controller/keyboard-navigable).
     root.addEventListener('click', (e) => { if (e.target === root) closePanel(name); });
   });
 
