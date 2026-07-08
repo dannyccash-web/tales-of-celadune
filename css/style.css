@@ -659,9 +659,10 @@ html, body {
 .quest-badge::after {
   content: '\2605'; /* ★ */
   position: absolute;
-  top: -30px;
-  left: -30px;
+  top: 2px;
+  left: 2px;
   font-size: 13px;
+  line-height: 1;
   color: #1a1305;
 }
 
