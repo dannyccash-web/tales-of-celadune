@@ -16,6 +16,26 @@
 //   Attack/Defense stat while equipped (see main.js's effectiveAttack()/
 //   effectiveDefense()). Omitted = +0. No items grant these yet.
 // - heal: HP restored when Used (health_potion only so far).
+//
+// Inventory categories (2026-07-09, per Danny's spec): every item belongs to
+// exactly one of four top-level categories — Equipment, Weapons, Magic, or
+// Items — and only ever appears in that one category's tab in the Inventory
+// panel (an equippable item like the dagger does NOT also show up in Items).
+// Equipment/Weapons/Magic each have subcategories (their `slot` values) that
+// further classify what goes in them. categoryFor() derives the category
+// straight from `slot` rather than storing it redundantly on each item, so
+// there's one source of truth — if a future item's slot isn't in SLOT_CATEGORY
+// below (e.g. a real magic-item slot, once those exist), add it there.
+const SLOT_CATEGORY = {
+  head: 'equipment', clothing: 'equipment', feet: 'equipment', hands: 'equipment',
+  mainhand: 'weapons', offhand: 'weapons',
+};
+
+export function categoryFor(item) {
+  if (!item.slot) return 'items';
+  return SLOT_CATEGORY[item.slot] || 'magic';
+}
+
 export default {
   vegetable_crate: {
     id: 'vegetable_crate',

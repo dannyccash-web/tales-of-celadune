@@ -162,6 +162,14 @@
                  ui.updateEquipmentPanel() — the static .slot-icon/.slot-label
                  markup below is only what's shown while a slot is empty.
                  data-slot is the key into main.js's `equipment` state. -->
+            <!-- Each of Equipment/Weapons/Magic pairs its slot display with
+                 an "Inventory" grid of that category's owned-but-not-
+                 necessarily-equipped items below it (2026-07-09) — every
+                 item belongs to exactly one of Equipment/Weapons/Magic/Items
+                 and only ever renders in that one tab (see items.js's
+                 categoryFor()). The grid is the same .item-grid/.item-tile
+                 component as the Items tab, just filtered per category by
+                 ui.js's renderCategoryGrid(). -->
             <section class="tab-pane" data-pane="equipment">
               <div class="paperdoll">
                 <div class="item-slot slot-head" data-slot="head"><div class="slot-icon"></div><span class="slot-label">Head</span></div>
@@ -169,11 +177,19 @@
                 <div class="item-slot slot-armor" data-slot="clothing"><div class="slot-icon"></div><span class="slot-label">Clothing</span></div>
                 <div class="item-slot slot-boots" data-slot="feet"><div class="slot-icon"></div><span class="slot-label">Feet</span></div>
               </div>
+              <div class="section-subhead">Inventory</div>
+              <div class="item-grid" id="equipment-grid">
+                <p class="items-empty" id="equipment-empty">Nothing here yet.</p>
+              </div>
             </section>
             <section class="tab-pane hidden" data-pane="weapons">
               <div class="weapon-row">
                 <div class="item-slot slot-weapon" data-slot="mainhand"><div class="slot-icon"></div><span class="slot-label">Main Hand</span></div>
                 <div class="item-slot slot-weapon" data-slot="offhand"><div class="slot-icon"></div><span class="slot-label">Off Hand</span></div>
+              </div>
+              <div class="section-subhead">Inventory</div>
+              <div class="item-grid" id="weapons-grid">
+                <p class="items-empty" id="weapons-empty">Nothing here yet.</p>
               </div>
             </section>
             <section class="tab-pane hidden" data-pane="magic">
@@ -184,6 +200,10 @@
                 <div class="item-slot"><div class="slot-icon"></div><span class="slot-label">Spell 4</span></div>
                 <div class="item-slot"><div class="slot-icon"></div><span class="slot-label">Spell 5</span></div>
                 <div class="item-slot"><div class="slot-icon"></div><span class="slot-label">Spell 6</span></div>
+              </div>
+              <div class="section-subhead">Inventory</div>
+              <div class="item-grid" id="magic-items-grid">
+                <p class="items-empty" id="magic-items-empty">Nothing here yet.</p>
               </div>
             </section>
             <section class="tab-pane hidden" data-pane="items">

@@ -28,7 +28,8 @@ const inventory = [];
 
 // Equip *state* (2026-07-08) — one item id per slot, or null. Equipping
 // never removes the item from `inventory`; it's just a separate pointer, so
-// the item still shows up (with an "Equipped" marker) in the Items tab.
+// the item still shows up (with an "Equipped" marker) in its own category
+// tab's grid (Equipment or Weapons — see items.js's categoryFor(), 2026-07-09).
 // Only items whose catalog entry has a matching `slot` can go in a given
 // slot — see js/data/items.js's schema comment.
 const equipment = { head: null, clothing: null, feet: null, hands: null, mainhand: null, offhand: null };
@@ -190,7 +191,7 @@ async function boot() {
   ui.initEquipmentPanel({
     onSlotActivate: (slot) => {
       if (equipment[slot]) { unequipItem(slot); return; }
-      ui.toast('Equip items from your Items tab.');
+      ui.toast('Select an item below to equip.');
     },
   });
   ui.initGameOver({ onRestart: () => respawnAfterDefeat() });
@@ -398,7 +399,7 @@ async function boot() {
     }
     const current = battleState.order[battleState.turnPos];
     if (current.kind === 'player') {
-      ui.showBattleActions({ weaponName: equippedWeaponName(), potionCount: potionCount() });
+      showPlayerActions();
       return;
     }
     if (current.enemy.health <= 0) {
@@ -422,6 +423,18 @@ async function boot() {
   }
   function potionCount() {
     return inventory.find((it) => it.id === 'health_potion')?.qty || 0;
+  }
+  // Re-shows the action menu without advancing battleState.order/turnPos —
+  // used both by runQueue() when a fresh player turn comes up, and by any
+  // action that doesn't actually spend the turn (Magic's no-spells-yet stub,
+  // Potion with none in inventory). ui.battleKey() sets its internal mode to
+  // 'idle' the instant an action is selected, *before* the handler runs, so
+  // any handler that doesn't end up calling runQueue() again must call this
+  // itself or the battle UI is left with no live keyboard handler at all —
+  // a real bug caught live 2026-07-09 (selecting Magic appeared to "freeze"
+  // the game: the message updated, but no further key press did anything).
+  function showPlayerActions() {
+    ui.showBattleActions({ weaponName: equippedWeaponName(), potionCount: potionCount() });
   }
 
   function resolveEnemyTurn(enemy) {
@@ -463,6 +476,7 @@ async function boot() {
   // present. Wire real spells into this once the Magic system exists.
   function playerUseMagic() {
     ui.setBattleMessage('You don’t know any spells yet.');
+    showPlayerActions(); // no-op action — hand control straight back, see showPlayerActions()'s comment
   }
 
   // Reuses the same usePotion() the Items-tab "Use" action calls — only
@@ -473,7 +487,7 @@ async function boot() {
   function playerUsePotion() {
     const result = usePotion('health_potion');
     ui.setBattleMessage(result.message);
-    if (!result.ok) return;
+    if (!result.ok) { showPlayerActions(); return; } // no-op action — see showPlayerActions()'s comment
     battleState.turnPos += 1;
     runQueue();
   }

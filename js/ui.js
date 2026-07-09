@@ -1,6 +1,8 @@
 // Layer 4: fixed UI — HUD, interaction hint, placeholder dialog, toasts.
 // Also handles scaling the 1920x1080 stage to fit the browser window.
 
+import { categoryFor } from './data/items.js';
+
 const $ = (id) => document.getElementById(id);
 
 export function fitStage() {
@@ -288,8 +290,9 @@ function openPanel(name) {
   const firstTab = root.querySelector('.panel-tab');
   if (firstTab) setActiveTab(root, firstTab.dataset.tab);
   audioFocusIndex = 0;
-  itemFocusIndex = 0;
+  gridFocusIndex = 0;
   slotFocusIndex = 0;
+  contentZone = 'slots';
   setNavLevel(root, 'tabs');
 }
 
@@ -322,6 +325,14 @@ const SLIDER_STEP = 5; // percent, per arrow key press
 let audioFocusIndex = 0; // 0 = music, 1 = sfx
 let navLevel = 'tabs'; // 'tabs' | 'content' — Level 2 (popout) is tracked separately via isPopoutOpen()
 
+// Equipment/Weapons have two focus zones within their Level 1 content: the
+// equip-slots row and the category's item grid below it. Up/Down switch
+// between them (see panelKey()); Magic/Items have no slots zone, so their
+// grid is always focused regardless of this flag (checked explicitly at each
+// call site rather than folding into this variable, so it stays meaningful
+// only for the two tabs that actually have a slots zone).
+let contentZone = 'slots'; // 'slots' | 'grid'
+
 function activePanelName() {
   if (panelState.menu) return 'menu';
   if (panelState.inventory) return 'inventory';
@@ -339,7 +350,7 @@ function setNavLevel(root, level) {
   navLevel = level;
   root.querySelector('.panel-tabs').classList.toggle('content-mode', level === 'content');
   refreshAudioFocus();
-  refreshItemFocus();
+  refreshGridFocus();
   refreshSlotFocus();
 }
 
@@ -349,10 +360,11 @@ function cycleTab(root, dir) {
   const next = tabs[(idx + dir + tabs.length) % tabs.length];
   setActiveTab(root, next.dataset.tab);
   audioFocusIndex = 0;
-  itemFocusIndex = 0;
+  gridFocusIndex = 0;
   slotFocusIndex = 0;
+  contentZone = 'slots';
   refreshAudioFocus();
-  refreshItemFocus();
+  refreshGridFocus();
   refreshSlotFocus();
 }
 
@@ -397,32 +409,56 @@ export function panelKey(key) {
       return;
     }
 
-    if (tab === 'items') {
-      if (key === 'ArrowLeft') { moveItemFocus(-1); return; }
-      if (key === 'ArrowRight') { moveItemFocus(1); return; }
+    // Items has no equip-slots zone — its grid is always focused, same as
+    // Magic's (Magic's 6 spell slots aren't wired to real state yet, so
+    // there's nothing to zone-switch to there either; extend this once real
+    // magic items/slots exist, matching the equipment/weapons branch below).
+    if (tab === 'items' || tab === 'magic') {
+      if (key === 'ArrowLeft') { moveGridFocus(-1); return; }
+      if (key === 'ArrowRight') { moveGridFocus(1); return; }
       if (key === ' ' || key === 'Enter') {
-        if (!itemTiles.length) return;
-        const t = itemTiles[itemFocusIndex];
-        openItemPopout(t.id, t.el);
+        const els = currentGridEls(tab);
+        if (!els.length) return;
+        const t = els[gridFocusIndex];
+        openItemPopout(t.dataset.itemId, t);
       }
       return;
     }
 
-    // Equipment/Weapons: Left/Right move focus between that tab's slots,
-    // Space activates the focused one (main.js's onSlotActivate — unequips
-    // if filled, or an informative toast if empty; browsing/choosing what
-    // to equip happens from the Items tab, not here, so there's no picker
-    // to open).
+    // Equipment/Weapons: two focus zones — the equip-slots row and the
+    // category's item grid below it (2026-07-09, replacing the old
+    // Items-tab-only equip flow now that equippable items live exclusively
+    // in their own category tab, not Items). Up/Down switch zones; Left/
+    // Right move within whichever has focus. Space on a slot unequips it if
+    // filled (browsing/choosing what to equip happens via the grid below,
+    // not here); Space on a grid tile opens the same action popout Items
+    // uses, whose primary button is Equip/Unequip for gear.
     if (tab === 'equipment' || tab === 'weapons') {
-      const slots = currentSlotEls(tab);
-      if (!slots.length) return;
-      if (key === 'ArrowLeft') { slotFocusIndex = (slotFocusIndex - 1 + slots.length) % slots.length; refreshSlotFocus(); return; }
-      if (key === 'ArrowRight') { slotFocusIndex = (slotFocusIndex + 1) % slots.length; refreshSlotFocus(); return; }
-      if (key === ' ' || key === 'Enter') { activateSlot(slots[slotFocusIndex]); return; }
+      if (key === 'ArrowUp') { contentZone = 'slots'; refreshSlotFocus(); refreshGridFocus(); return; }
+      if (key === 'ArrowDown') { contentZone = 'grid'; refreshSlotFocus(); refreshGridFocus(); return; }
+
+      if (contentZone === 'slots') {
+        const slots = currentSlotEls(tab);
+        if (!slots.length) return;
+        if (key === 'ArrowLeft') { slotFocusIndex = (slotFocusIndex - 1 + slots.length) % slots.length; refreshSlotFocus(); return; }
+        if (key === 'ArrowRight') { slotFocusIndex = (slotFocusIndex + 1) % slots.length; refreshSlotFocus(); return; }
+        if (key === ' ' || key === 'Enter') { activateSlot(slots[slotFocusIndex]); return; }
+        return;
+      }
+
+      // contentZone === 'grid'
+      if (key === 'ArrowLeft') { moveGridFocus(-1); return; }
+      if (key === 'ArrowRight') { moveGridFocus(1); return; }
+      if (key === ' ' || key === 'Enter') {
+        const els = currentGridEls(tab);
+        if (!els.length) return;
+        const t = els[gridFocusIndex];
+        openItemPopout(t.dataset.itemId, t);
+      }
       return;
     }
 
-    // Stats/Magic have no interactive content yet — nothing to move focus
+    // Stats/Quests have no interactive content yet — nothing to move focus
     // between, just wait for Escape.
     return;
   }
@@ -434,49 +470,87 @@ export function panelKey(key) {
   if (key === ' ' || key === 'Enter') { setNavLevel(root, 'content'); return; }
 }
 
-// ---- Items tab (real inventory grid) ----
-// Tile layout is a flattened, row-major list (not true 2D nav) so Left/Right
-// can walk it without conflicting with Up/Down's existing tab-cycling role.
+// ---- Inventory tabs (Equipment / Weapons / Magic / Items, 2026-07-09) ----
+// Every owned item belongs to exactly one of these four categories (derived
+// from its catalog `slot` via items.js's categoryFor()) and only ever
+// renders in that one tab's grid — an equippable item like the dagger does
+// NOT also show up in Items. Equipment/Weapons/Magic additionally show their
+// equip slots above the grid (see updateEquipmentPanel, below); Items has no
+// slots, just the grid. Tile layout within a grid is a flattened, row-major
+// list (not true 2D nav) so Left/Right can walk it without conflicting with
+// Up/Down's tab-cycling (Level 0) / zone-switching (Level 1) role.
 
-let itemTiles = []; // [{ el, id }], in DOM/render order
-let itemFocusIndex = 0;
+const CATEGORY_GRID_ID = { equipment: 'equipment-grid', weapons: 'weapons-grid', magic: 'magic-items-grid', items: 'items-grid' };
+
+let gridFocusIndex = 0;
 let itemsHandlers = null; // { onAction(itemId, action) }, set via initItemsPanel
 let popoutActionIndex = 0;
 
-function moveItemFocus(dir) {
-  if (!itemTiles.length) return;
-  itemFocusIndex = (itemFocusIndex + dir + itemTiles.length) % itemTiles.length;
-  refreshItemFocus();
+function currentGridEls(tab) {
+  const grid = $(CATEGORY_GRID_ID[tab]);
+  return grid ? Array.from(grid.querySelectorAll('.item-tile')) : [];
 }
 
-function refreshItemFocus() {
-  itemTiles.forEach((t, i) => t.el.classList.toggle('focused', navLevel === 'content' && i === itemFocusIndex));
+function moveGridFocus(dir) {
+  const tab = currentTabName($(activePanelName()));
+  const els = currentGridEls(tab);
+  if (!els.length) return;
+  gridFocusIndex = (gridFocusIndex + dir + els.length) % els.length;
+  refreshGridFocus();
 }
 
-// Render the Items tab's tile grid from inventory state + the item catalog.
+// Items/Magic's grid is always the focus target within their Level 1
+// content (they have no slots zone); Equipment/Weapons only show grid focus
+// while contentZone === 'grid' (see panelKey()'s Up/Down handling).
+function refreshGridFocus() {
+  const name = activePanelName();
+  if (!name) return;
+  const tab = currentTabName($(name));
+  const els = currentGridEls(tab);
+  const gridHasFocus = navLevel === 'content' && (tab === 'items' || tab === 'magic' || contentZone === 'grid');
+  els.forEach((el, i) => el.classList.toggle('focused', gridHasFocus && i === gridFocusIndex));
+}
+
+// Renders all four category grids from inventory state + the item catalog.
 // inventory: [{id, qty}], catalog: { id: {name, image, description, questItem,
 // slot?, heal?} }. equipment (2026-07-08): { slot: itemId | null } — used
 // only to mark which tile is currently equipped (a gold-outlined frame +
 // "Equipped" label) and to feed openItemPopout()'s Equip/Unequip toggle;
 // still read straight off the tile's dataset, same as the existing quest
-// flag, keeping this module presentation-only.
+// flag, keeping this module presentation-only (categoryFor() is a small pure
+// function, imported for its logic, not game data — same spirit).
 export function updateItemsPanel(inventory, catalog, equipment = {}) {
-  const grid = $('items-grid');
-  grid.innerHTML = '';
-  itemTiles = [];
+  ['equipment', 'weapons', 'magic', 'items'].forEach((category) => {
+    renderCategoryGrid(category, inventory, catalog, equipment);
+  });
+  const name = activePanelName();
+  if (name) {
+    const count = currentGridEls(currentTabName($(name))).length;
+    if (count) gridFocusIndex = Math.min(gridFocusIndex, count - 1);
+  }
+  refreshGridFocus();
+}
 
-  if (!inventory.length) {
+function renderCategoryGrid(category, inventory, catalog, equipment) {
+  const grid = $(CATEGORY_GRID_ID[category]);
+  if (!grid) return;
+  grid.innerHTML = '';
+
+  const entries = inventory.filter((entry) => {
+    const def = catalog[entry.id];
+    return def && categoryFor(def) === category;
+  });
+
+  if (!entries.length) {
     const p = document.createElement('p');
     p.className = 'items-empty';
     p.textContent = 'Nothing here yet.';
     grid.appendChild(p);
-    closeItemPopout();
     return;
   }
 
-  inventory.forEach((entry, i) => {
+  entries.forEach((entry, i) => {
     const def = catalog[entry.id];
-    if (!def) return;
     const equipped = !!def.slot && equipment[def.slot] === entry.id;
 
     const tile = document.createElement('div');
@@ -523,21 +597,17 @@ export function updateItemsPanel(inventory, catalog, equipment = {}) {
     tile.appendChild(frame);
     tile.appendChild(label);
     tile.addEventListener('click', () => {
-      itemFocusIndex = i;
-      // Items only live in the Inventory panel — clicking a tile is a mouse
-      // shortcut for "enter this tab's content, then open its popout" in one
-      // step, so keep nav-level state in sync for anyone mixing mouse and
-      // keyboard/controller input.
+      contentZone = 'grid';
+      gridFocusIndex = i;
+      // Clicking a tile is a mouse shortcut for "enter this tab's content,
+      // then open its popout" in one step, so keep nav-level state in sync
+      // for anyone mixing mouse and keyboard/controller input.
       setNavLevel($('inventory'), 'content');
       openItemPopout(entry.id, tile);
     });
 
     grid.appendChild(tile);
-    itemTiles.push({ el: tile, id: entry.id });
   });
-
-  itemFocusIndex = Math.min(itemFocusIndex, itemTiles.length - 1);
-  refreshItemFocus();
 }
 
 // Register the handler for popout actions (Use/Inspect/Remove). Cancel is
@@ -639,11 +709,12 @@ function positionPopout(anchorEl) {
 // ---- Equipment / Weapons tabs (real equip slots, 2026-07-08) ----
 // Six total slots across the two tabs (head/hands/clothing/feet in
 // Equipment, mainhand/offhand in Weapons), each a .item-slot[data-slot] in
-// index.html. Equipping happens from the Items tab's popout (the one place
-// that already knows how to pick "the item you just selected"); a slot here
-// only *displays* what's equipped and lets Space/click unequip it — see the
-// comment on the equipment/weapons branch in panelKey() for why there's no
-// second item-picker built here.
+// index.html. A slot *displays* what's equipped and lets Space/click unequip
+// it. Equipping (2026-07-09, reworked) happens from that same tab's item
+// grid below the slots — clicking/selecting an owned item there opens the
+// same action popout the Items tab uses, whose primary button is Equip for
+// an unequipped item — since equippable items now live exclusively in their
+// own category tab (see categoryFor()), not a shared Items tab.
 
 let slotFocusIndex = 0;
 let equipHandlers = null; // { onSlotActivate(slot) }, set via initEquipmentPanel
@@ -652,12 +723,15 @@ function currentSlotEls(tab) {
   return Array.from(document.querySelectorAll(`.tab-pane[data-pane="${tab}"] .item-slot[data-slot]`));
 }
 
+// Only shows slot focus while contentZone === 'slots' — see panelKey()'s
+// Up/Down handling for Equipment/Weapons.
 function refreshSlotFocus() {
   const name = activePanelName();
   if (!name) return;
   const tab = currentTabName($(name));
   if (tab !== 'equipment' && tab !== 'weapons') return;
-  currentSlotEls(tab).forEach((el, i) => el.classList.toggle('focused', navLevel === 'content' && i === slotFocusIndex));
+  const slotsHaveFocus = navLevel === 'content' && contentZone === 'slots';
+  currentSlotEls(tab).forEach((el, i) => el.classList.toggle('focused', slotsHaveFocus && i === slotFocusIndex));
 }
 
 function activateSlot(el) {
@@ -704,6 +778,7 @@ export function initEquipmentPanel(handlers) {
       const tab = el.dataset.slot === 'mainhand' || el.dataset.slot === 'offhand' ? 'weapons' : 'equipment';
       const slots = currentSlotEls(tab);
       slotFocusIndex = Math.max(0, slots.indexOf(el));
+      contentZone = 'slots';
       setNavLevel($(activePanelName()), 'content');
       activateSlot(el);
     });
@@ -809,7 +884,7 @@ export function updateQuestsPanel(quests, catalog) {
 
   if (resolved.length) {
     const heading = document.createElement('div');
-    heading.className = 'quest-subhead';
+    heading.className = 'section-subhead';
     heading.textContent = 'Completed';
     list.appendChild(heading);
     resolved.forEach((q) => {
@@ -830,8 +905,9 @@ export function initPanels(audio) {
       tabEl.addEventListener('click', () => {
         setActiveTab(root, tabEl.dataset.tab);
         audioFocusIndex = 0;
-        itemFocusIndex = 0;
+        gridFocusIndex = 0;
         slotFocusIndex = 0;
+        contentZone = 'slots';
         setNavLevel(root, 'tabs');
       });
     });

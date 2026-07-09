@@ -630,7 +630,10 @@ html, body {
 .quest-icon.done { color: #6fbf73; }
 .quest-icon.failed { color: #d9534f; }
 
-.quest-subhead {
+/* Generic section divider heading — used by the Quests tab's "Completed"
+   subhead and (2026-07-09) each of Equipment/Weapons/Magic's "Inventory"
+   subhead separating the equip slots from that category's item grid. */
+.section-subhead {
   font-family: var(--font-lato);
   font-weight: 600;
   font-size: 18px;
@@ -638,6 +641,7 @@ html, body {
   color: var(--role-gold);
   text-transform: uppercase;
   border-top: 1px solid var(--frame-light);
+  margin-top: 30px;
   padding-top: 18px;
 }
 
