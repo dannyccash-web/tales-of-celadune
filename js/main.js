@@ -518,6 +518,15 @@ async function boot() {
     if (cb) cb('defeat');
   }
 
+  // Debug handle (mirrors window.world/window.quests) — lets a console or
+  // an automated test drive/inspect a fight directly, e.g.
+  // `battle.state.enemies.forEach(e => e.health = 1)` to force a fast win.
+  window.battle = {
+    start: startBattle, state: battleState, stats, equipment,
+    effectiveAttack, effectiveDefense, weaponDamage,
+    playerAttack, playerFlee, playerUsePotion, playerUseMagic, checkBattleEnd,
+  };
+
   function interact() {
     const npc = world.nearestNpcInRange();
     if (npc) { openNpcDialog(npc); return; }
