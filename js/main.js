@@ -1,6 +1,5 @@
 // Tales of Celadune — entry point.
 // Loads assets, builds the world for the current scene, runs the game loop.
-// (deploy-cache-bust 2026-07-09)
 
 import sceneD3 from './data/d3.js';
 import { World } from './world.js';
