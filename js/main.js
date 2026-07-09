@@ -520,8 +520,11 @@ async function boot() {
 
   // Debug handle (mirrors window.world/window.quests) — lets a console or
   // an automated test drive/inspect a fight directly, e.g.
-  // `battle.state.enemies.forEach(e => e.health = 1)` to force a fast win.
-  window.battle = {
+  // `battleDebug.state.enemies.forEach(e => e.health = 1)` to force a fast
+  // win. NOT named `window.battle` — that collides with the browser's
+  // auto-global for `<div id="battle">` (every element with an id becomes
+  // `window.<id>`), which silently wins over a plain assignment.
+  window.battleDebug = {
     start: startBattle, state: battleState, stats, equipment,
     effectiveAttack, effectiveDefense, weaponDamage,
     playerAttack, playerFlee, playerUsePotion, playerUseMagic, checkBattleEnd,
