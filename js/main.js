@@ -401,6 +401,13 @@ async function boot() {
       ui.showBattleActions({ weaponName: equippedWeaponName(), potionCount: potionCount() });
       return;
     }
+    if (current.enemy.health <= 0) {
+      // Killed earlier this same round (order is rolled once per round, so a
+      // dead enemy's slot can still come up later) — skip its turn, no delay.
+      battleState.turnPos += 1;
+      runQueue();
+      return;
+    }
     setTimeout(() => {
       if (!battleState.active) return;
       resolveEnemyTurn(current.enemy);
