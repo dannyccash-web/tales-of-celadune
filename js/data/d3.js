@@ -120,6 +120,19 @@ export default {
     },
   ],
 
+  // Battle encounters (2026-07-08): door + enemy id list (js/data/enemies.js).
+  // Same proximity+spacebar trigger as a home door (world.battleNearDoor()),
+  // handled in main.js's interact(). Test encounter: three kobolds in the
+  // Old Barn — door sits right where the barn meets its path (matches the
+  // 'bottom_barn' entrance rect above, x1000-1060,y1305).
+  battles: [
+    {
+      id: 'old_barn_kobolds',
+      door: { x: 1030, y: 1305 },
+      enemies: ['kobold', 'kobold', 'kobold'],
+    },
+  ],
+
   // Scene exits: crossing these edges moves the player to the adjacent scene.
   // Adjacent scenes per overworld map (page 6): D2 village west, D4 woods east, C3 woods north.
   exits: [

@@ -289,6 +289,7 @@ function openPanel(name) {
   if (firstTab) setActiveTab(root, firstTab.dataset.tab);
   audioFocusIndex = 0;
   itemFocusIndex = 0;
+  slotFocusIndex = 0;
   setNavLevel(root, 'tabs');
 }
 
@@ -339,6 +340,7 @@ function setNavLevel(root, level) {
   root.querySelector('.panel-tabs').classList.toggle('content-mode', level === 'content');
   refreshAudioFocus();
   refreshItemFocus();
+  refreshSlotFocus();
 }
 
 function cycleTab(root, dir) {
@@ -348,8 +350,10 @@ function cycleTab(root, dir) {
   setActiveTab(root, next.dataset.tab);
   audioFocusIndex = 0;
   itemFocusIndex = 0;
+  slotFocusIndex = 0;
   refreshAudioFocus();
   refreshItemFocus();
+  refreshSlotFocus();
 }
 
 function refreshAudioFocus() {
@@ -404,8 +408,22 @@ export function panelKey(key) {
       return;
     }
 
-    // Stats/Equipment/Weapons/Magic have no interactive content yet —
-    // nothing to move focus between, just wait for Escape.
+    // Equipment/Weapons: Left/Right move focus between that tab's slots,
+    // Space activates the focused one (main.js's onSlotActivate — unequips
+    // if filled, or an informative toast if empty; browsing/choosing what
+    // to equip happens from the Items tab, not here, so there's no picker
+    // to open).
+    if (tab === 'equipment' || tab === 'weapons') {
+      const slots = currentSlotEls(tab);
+      if (!slots.length) return;
+      if (key === 'ArrowLeft') { slotFocusIndex = (slotFocusIndex - 1 + slots.length) % slots.length; refreshSlotFocus(); return; }
+      if (key === 'ArrowRight') { slotFocusIndex = (slotFocusIndex + 1) % slots.length; refreshSlotFocus(); return; }
+      if (key === ' ' || key === 'Enter') { activateSlot(slots[slotFocusIndex]); return; }
+      return;
+    }
+
+    // Stats/Magic have no interactive content yet — nothing to move focus
+    // between, just wait for Escape.
     return;
   }
 
@@ -436,8 +454,13 @@ function refreshItemFocus() {
 }
 
 // Render the Items tab's tile grid from inventory state + the item catalog.
-// inventory: [{id, qty}], catalog: { id: {name, image, description, questItem} }
-export function updateItemsPanel(inventory, catalog) {
+// inventory: [{id, qty}], catalog: { id: {name, image, description, questItem,
+// slot?, heal?} }. equipment (2026-07-08): { slot: itemId | null } — used
+// only to mark which tile is currently equipped (a gold-outlined frame +
+// "Equipped" label) and to feed openItemPopout()'s Equip/Unequip toggle;
+// still read straight off the tile's dataset, same as the existing quest
+// flag, keeping this module presentation-only.
+export function updateItemsPanel(inventory, catalog, equipment = {}) {
   const grid = $('items-grid');
   grid.innerHTML = '';
   itemTiles = [];
@@ -454,12 +477,16 @@ export function updateItemsPanel(inventory, catalog) {
   inventory.forEach((entry, i) => {
     const def = catalog[entry.id];
     if (!def) return;
+    const equipped = !!def.slot && equipment[def.slot] === entry.id;
 
     const tile = document.createElement('div');
     tile.className = 'item-tile';
     tile.dataset.itemId = entry.id;
     tile.dataset.itemName = def.name;
     tile.dataset.quest = def.questItem ? '1' : '';
+    tile.dataset.slot = def.slot || '';
+    tile.dataset.equipped = equipped ? '1' : '';
+    tile.classList.toggle('equipped', equipped);
 
     const frame = document.createElement('div');
     frame.className = 'item-frame';
@@ -485,6 +512,12 @@ export function updateItemsPanel(inventory, catalog) {
       qty.className = 'item-qty';
       qty.textContent = ` (${entry.qty})`;
       label.appendChild(qty);
+    }
+    if (equipped) {
+      const tag = document.createElement('div');
+      tag.className = 'item-equipped-tag';
+      tag.textContent = 'Equipped';
+      label.appendChild(tag);
     }
 
     tile.appendChild(frame);
@@ -544,12 +577,33 @@ function refreshPopoutFocus() {
 
 let popoutItemId = null;
 
+// The popout's top button changes meaning per item (read straight off the
+// tile's own dataset — set in updateItemsPanel() — so this module still
+// never needs to import the item catalog): Equip/Unequip for gear
+// (dataset.slot set), Use for potions... but ui.js can't tell "has a heal
+// amount" from the tile alone, so a tile with no slot always gets a plain
+// "Use" button — main.js's onItemAction() is what actually knows whether
+// that does anything (heals, or the "nothing happens yet" stub).
+function primaryActionFor(anchorEl) {
+  const slot = anchorEl.dataset.slot;
+  if (slot) return anchorEl.dataset.equipped === '1'
+    ? { label: 'Unequip', action: 'unequip' }
+    : { label: 'Equip', action: 'equip' };
+  return { label: 'Use', action: 'use' };
+}
+
 function openItemPopout(itemId, anchorEl) {
   popoutItemId = itemId;
   popoutActionIndex = 0;
   $('popout-title').textContent = anchorEl.dataset.itemName;
+  const primary = primaryActionFor(anchorEl);
+  const primaryEl = $('popout-primary');
+  primaryEl.textContent = primary.label;
+  primaryEl.dataset.action = primary.action;
+  // An equipped item can't be removed out from under itself — unequip it
+  // first, same spirit as the existing quest-item restriction below.
   document.querySelector('#item-popout .popout-action[data-action="remove"]')
-    .classList.toggle('disabled', anchorEl.dataset.quest === '1');
+    .classList.toggle('disabled', anchorEl.dataset.quest === '1' || anchorEl.dataset.equipped === '1');
   positionPopout(anchorEl);
   $('item-popout').classList.remove('hidden');
   refreshPopoutFocus();
@@ -580,6 +634,80 @@ function positionPopout(anchorEl) {
   const popout = $('item-popout');
   popout.style.left = `${x}px`;
   popout.style.top = `${y}px`;
+}
+
+// ---- Equipment / Weapons tabs (real equip slots, 2026-07-08) ----
+// Six total slots across the two tabs (head/hands/clothing/feet in
+// Equipment, mainhand/offhand in Weapons), each a .item-slot[data-slot] in
+// index.html. Equipping happens from the Items tab's popout (the one place
+// that already knows how to pick "the item you just selected"); a slot here
+// only *displays* what's equipped and lets Space/click unequip it — see the
+// comment on the equipment/weapons branch in panelKey() for why there's no
+// second item-picker built here.
+
+let slotFocusIndex = 0;
+let equipHandlers = null; // { onSlotActivate(slot) }, set via initEquipmentPanel
+
+function currentSlotEls(tab) {
+  return Array.from(document.querySelectorAll(`.tab-pane[data-pane="${tab}"] .item-slot[data-slot]`));
+}
+
+function refreshSlotFocus() {
+  const name = activePanelName();
+  if (!name) return;
+  const tab = currentTabName($(name));
+  if (tab !== 'equipment' && tab !== 'weapons') return;
+  currentSlotEls(tab).forEach((el, i) => el.classList.toggle('focused', navLevel === 'content' && i === slotFocusIndex));
+}
+
+function activateSlot(el) {
+  if (equipHandlers?.onSlotActivate) equipHandlers.onSlotActivate(el.dataset.slot);
+}
+
+const SLOT_EMPTY_LABEL = {
+  head: 'Head', hands: 'Hands', clothing: 'Clothing', feet: 'Feet',
+  mainhand: 'Main Hand', offhand: 'Off Hand',
+};
+
+// equipment: { slot: itemId | null }, catalog: item catalog (js/data/items.js)
+export function updateEquipmentPanel(equipment, catalog) {
+  document.querySelectorAll('.item-slot[data-slot]').forEach((el) => {
+    const slot = el.dataset.slot;
+    const itemId = equipment[slot];
+    const def = itemId ? catalog[itemId] : null;
+    el.innerHTML = '';
+    el.classList.toggle('filled', !!def);
+    if (def) {
+      const img = document.createElement('img');
+      img.className = 'slot-item-image';
+      img.src = def.image;
+      img.alt = def.name;
+      const label = document.createElement('span');
+      label.className = 'slot-label';
+      label.textContent = def.name;
+      el.append(img, label);
+    } else {
+      const icon = document.createElement('div');
+      icon.className = 'slot-icon';
+      const label = document.createElement('span');
+      label.className = 'slot-label';
+      label.textContent = SLOT_EMPTY_LABEL[slot] || slot;
+      el.append(icon, label);
+    }
+  });
+}
+
+export function initEquipmentPanel(handlers) {
+  equipHandlers = handlers;
+  document.querySelectorAll('.item-slot[data-slot]').forEach((el) => {
+    el.addEventListener('click', () => {
+      const tab = el.dataset.slot === 'mainhand' || el.dataset.slot === 'offhand' ? 'weapons' : 'equipment';
+      const slots = currentSlotEls(tab);
+      slotFocusIndex = Math.max(0, slots.indexOf(el));
+      setNavLevel($(activePanelName()), 'content');
+      activateSlot(el);
+    });
+  });
 }
 
 export function toggleMenu() {
@@ -703,6 +831,7 @@ export function initPanels(audio) {
         setActiveTab(root, tabEl.dataset.tab);
         audioFocusIndex = 0;
         itemFocusIndex = 0;
+        slotFocusIndex = 0;
         setNavLevel(root, 'tabs');
       });
     });
@@ -717,4 +846,212 @@ export function initPanels(audio) {
 
   initSlider('music', audio.getMusicVolume(), audio.setMusicVolume);
   initSlider('sfx', audio.getSfxVolume(), audio.setSfxVolume);
+}
+
+// ---- Battle (2026-07-08) ----
+// Turn-based combat overlay — main.js owns the actual fight (whose turn,
+// hit/miss/damage via js/battle.js's dice), this module only renders it and
+// reports back which action/target the player picked. `mode` gates
+// battleKey() so key mashing during an enemy's turn (nothing to respond to)
+// or before the first turn is a no-op:
+//   'idle'   nothing to do — waiting on an enemy turn (see main.js's
+//            runQueue/ENEMY_TURN_DELAY_MS pacing).
+//   'action' the action menu (Attack/Magic/Potion/Flee) has focus.
+//   'target' Attack was chosen — Left/Right cycle alive enemies, Space
+//            confirms (handlers.onConfirmTarget), Escape cancels back to
+//            'action' without spending the turn.
+const battleUiState = {
+  open: false,
+  mode: 'idle',
+  handlers: null,
+  enemies: [], // live object refs shared with main.js's battleState.enemies — health mutates in place, so re-rendering always reflects the current fight
+  enemySlots: [], // [{ el, enemy }], in render order — rebuilt each renderBattleEnemies() call
+  actionIndex: 0,
+  targetIndex: 0,
+};
+
+const BATTLE_ACTIONS = ['attack', 'magic', 'potion', 'flee'];
+
+export function isBattleOpen() { return battleUiState.open; }
+
+export function openBattle({ enemies, onSelectAttack, onSelectMagic, onSelectPotion, onSelectFlee, onConfirmTarget }) {
+  battleUiState.open = true;
+  battleUiState.mode = 'idle';
+  battleUiState.handlers = { onSelectAttack, onSelectMagic, onSelectPotion, onSelectFlee, onConfirmTarget };
+  battleUiState.actionIndex = 0;
+  renderBattleEnemies(enemies);
+  $('battle').classList.remove('hidden');
+}
+
+export function closeBattle() {
+  battleUiState.open = false;
+  battleUiState.mode = 'idle';
+  battleUiState.handlers = null;
+  $('battle').classList.add('hidden');
+}
+
+export function setBattleMessage(text) {
+  $('battle-message').textContent = text;
+}
+
+// Rebuilds the enemy row from scratch every call (health, defeated state,
+// and — if we're mid target-select — which one's highlighted all change
+// together). Cheap enough at 1-4 enemies to not bother diffing.
+export function renderBattleEnemies(enemies) {
+  battleUiState.enemies = enemies;
+  const box = $('battle-enemies');
+  box.innerHTML = '';
+  battleUiState.enemySlots = enemies.map((enemy) => {
+    const defeated = enemy.health <= 0;
+    const slot = document.createElement('div');
+    slot.className = 'enemy-slot' + (defeated ? ' defeated' : '');
+
+    const portrait = document.createElement('img');
+    portrait.className = 'enemy-portrait';
+    portrait.src = enemy.portrait;
+    portrait.alt = enemy.name;
+
+    const bar = document.createElement('div');
+    bar.className = 'bar';
+    const bg = document.createElement('div');
+    bg.className = 'bar-bg';
+    const fill = document.createElement('div');
+    fill.className = 'bar-fill health';
+    fill.style.width = `${Math.max(0, (enemy.health / enemy.maxHealth) * 100)}%`;
+    bg.appendChild(fill);
+    bar.appendChild(bg);
+
+    const name = document.createElement('span');
+    name.className = 'enemy-name';
+    name.textContent = defeated ? `${enemy.name} (defeated)` : enemy.name;
+
+    slot.append(portrait, bar, name);
+    box.appendChild(slot);
+    return { el: slot, enemy };
+  });
+  refreshTargetFocus();
+}
+
+function aliveSlots() {
+  return battleUiState.enemySlots.filter((s) => s.enemy.health > 0);
+}
+
+function refreshActionFocus() {
+  const els = Array.from($('battle-actions').querySelectorAll('.battle-action'));
+  els.forEach((el, i) => el.classList.toggle('focused', battleUiState.mode === 'action' && i === battleUiState.actionIndex));
+}
+
+function refreshTargetFocus() {
+  battleUiState.enemySlots.forEach((s) => s.el.classList.remove('targeted'));
+  if (battleUiState.mode !== 'target') return;
+  const alive = aliveSlots();
+  const s = alive[battleUiState.targetIndex];
+  if (s) s.el.classList.add('targeted');
+}
+
+// Called by main.js's runQueue() whenever it's actually the player's turn —
+// updates the dynamic sub-labels (equipped weapon, potion count) and hands
+// the action menu keyboard focus.
+export function showBattleActions({ weaponName, potionCount }) {
+  battleUiState.mode = 'action';
+  battleUiState.actionIndex = 0;
+  $('battle-weapon-name').textContent = weaponName;
+  $('battle-potion-count').textContent = `Health (${potionCount})`;
+  $('battle-actions').querySelector('.battle-action[data-action="potion"]')
+    .classList.toggle('disabled', potionCount === 0);
+  refreshActionFocus();
+}
+
+// Attack was chosen — hand focus to the enemy row. Reads its own alive list
+// off battleUiState.enemies (not an argument) so it can't go stale relative
+// to what's actually rendered.
+export function startTargeting() {
+  if (!aliveSlots().length) return;
+  battleUiState.mode = 'target';
+  battleUiState.targetIndex = 0;
+  refreshTargetFocus();
+}
+
+export function battleKey(key) {
+  if (!battleUiState.open) return;
+  const h = battleUiState.handlers;
+
+  if (battleUiState.mode === 'target') {
+    const alive = aliveSlots();
+    if (key === 'Escape') { battleUiState.mode = 'action'; refreshTargetFocus(); refreshActionFocus(); return; }
+    if (key === 'ArrowLeft') { battleUiState.targetIndex = (battleUiState.targetIndex - 1 + alive.length) % alive.length; refreshTargetFocus(); return; }
+    if (key === 'ArrowRight') { battleUiState.targetIndex = (battleUiState.targetIndex + 1) % alive.length; refreshTargetFocus(); return; }
+    if (key === ' ' || key === 'Enter') {
+      const target = alive[battleUiState.targetIndex]?.enemy;
+      if (!target) return;
+      battleUiState.mode = 'idle';
+      refreshTargetFocus();
+      h?.onConfirmTarget?.(target);
+    }
+    return;
+  }
+
+  if (battleUiState.mode !== 'action') return; // an enemy turn is resolving — nothing to do yet
+  if (key === 'ArrowLeft') { battleUiState.actionIndex = (battleUiState.actionIndex + BATTLE_ACTIONS.length - 1) % BATTLE_ACTIONS.length; refreshActionFocus(); return; }
+  if (key === 'ArrowRight') { battleUiState.actionIndex = (battleUiState.actionIndex + 1) % BATTLE_ACTIONS.length; refreshActionFocus(); return; }
+  if (key === ' ' || key === 'Enter') {
+    const action = BATTLE_ACTIONS[battleUiState.actionIndex];
+    battleUiState.mode = 'idle';
+    if (action === 'attack') h?.onSelectAttack?.();
+    if (action === 'magic') h?.onSelectMagic?.();
+    if (action === 'potion') h?.onSelectPotion?.();
+    if (action === 'flee') h?.onSelectFlee?.();
+  }
+}
+
+// Mouse support for the action menu + enemy targeting, mirroring how the
+// dialog responses and item tiles work (click, or hover to move keyboard
+// focus without selecting). Action buttons are static HTML so this only
+// needs to run once; enemy slots are rebuilt every renderBattleEnemies()
+// call, so their clicks are handled via delegation on the container instead.
+export function initBattle() {
+  Array.from($('battle-actions').querySelectorAll('.battle-action')).forEach((el, i) => {
+    el.addEventListener('click', () => {
+      if (battleUiState.mode !== 'action') return;
+      battleUiState.actionIndex = i;
+      battleKey(' ');
+    });
+    el.addEventListener('mouseenter', () => {
+      if (battleUiState.mode !== 'action') return;
+      battleUiState.actionIndex = i;
+      refreshActionFocus();
+    });
+  });
+  $('battle-enemies').addEventListener('click', (e) => {
+    if (battleUiState.mode !== 'target') return;
+    const slotEl = e.target.closest('.enemy-slot');
+    const idx = slotEl ? aliveSlots().findIndex((s) => s.el === slotEl) : -1;
+    if (idx === -1) return;
+    battleUiState.targetIndex = idx;
+    battleKey(' ');
+  });
+}
+
+// ---- Game Over ----
+// Shown when the player's health hits 0 in battle (main.js's endBattle()).
+// The only way out is Try Again — no Escape/backdrop-click dismissal, since
+// there's nothing to "cancel" back to.
+
+let gameOverHandlers = null;
+
+export function isGameOverOpen() {
+  return !$('game-over').classList.contains('hidden');
+}
+
+export function showGameOver() {
+  $('game-over').classList.remove('hidden');
+}
+
+export function hideGameOver() {
+  $('game-over').classList.add('hidden');
+}
+
+export function initGameOver(handlers) {
+  gameOverHandlers = handlers;
+  $('btn-try-again').addEventListener('click', () => gameOverHandlers?.onRestart?.());
 }

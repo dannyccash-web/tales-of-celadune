@@ -61,6 +61,12 @@ export class World {
     // fresh World always starts with everything available.
     this.interactables = (scene.interactables || []).map((it) => ({ ...it, collected: false }));
 
+    // Battle encounters (2026-07-08): a door position + an enemy id list.
+    // `defeated` lives on the instance (not the scene data), same pattern as
+    // `collected` above, and is only ever set by main.js once a fight is
+    // actually won — see battleNearDoor().
+    this.battles = (scene.battles || []).map((b) => ({ ...b, defeated: false }));
+
     this.cameraY = 0;
     this.interior = null; // interior image while a home dialog is open
     this.edgeMessage = null; // set when player pushes on a scene exit
@@ -97,6 +103,18 @@ export class World {
       if (!npc.home) continue;
       const d = Math.hypot(npc.home.door.x - this.player.x, npc.home.door.y - this.player.y);
       if (d < INTERACT_RANGE) return npc;
+    }
+    return null;
+  }
+
+  // Same shape as homeNpcNearDoor() but for battle encounters (e.g. the
+  // kobolds in the Old Barn) — skips ones already marked defeated so a
+  // cleared encounter doesn't immediately re-trigger.
+  battleNearDoor() {
+    for (const b of this.battles) {
+      if (b.defeated) continue;
+      const d = Math.hypot(b.door.x - this.player.x, b.door.y - this.player.y);
+      if (d < INTERACT_RANGE) return b;
     }
     return null;
   }

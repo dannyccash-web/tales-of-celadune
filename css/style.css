@@ -675,6 +675,32 @@ html, body {
   padding: 0 8px;
 }
 
+/* Equip slots: filled state (an item is equipped there) and keyboard focus
+   (Equipment/Weapons tab Left/Right nav — see ui.js's refreshSlotFocus).
+   Focus reuses the same gold-glow treatment as a focused Items-tab tile. */
+.item-slot.filled {
+  border-image: linear-gradient(180deg, var(--gold-bright), var(--frame-dark)) 1;
+}
+
+.item-slot.focused {
+  border-image: linear-gradient(180deg, var(--gold-bright), var(--gold-bright)) 1;
+  box-shadow: 0 0 10px rgba(238, 214, 148, 0.5);
+}
+
+.slot-item-image {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+}
+
+.item-slot.filled .slot-label {
+  color: var(--text);
+  text-transform: none;
+  letter-spacing: 0;
+  font-family: var(--font-meta);
+  font-size: 16px;
+}
+
 /* Equipment tab: a loose paper-doll arrangement (head above, gloves/boots
    flanking the armor slot) so the grid reads as a body layout even without
    character art. */
@@ -745,6 +771,23 @@ html, body {
 .item-tile.focused .item-frame {
   border-image: linear-gradient(180deg, var(--gold-bright), var(--gold-bright)) 1;
   box-shadow: 0 0 10px rgba(238, 214, 148, 0.5);
+}
+
+/* Equipped marker (2026-07-08): a persistent thin gold outline (distinct
+   from the hover/focus glow above, which still layers on top of this) plus
+   an "Equipped" tag under the item name. */
+.item-tile.equipped .item-frame {
+  border-image: linear-gradient(180deg, var(--gold-bright), var(--frame-dark)) 1;
+}
+
+.item-equipped-tag {
+  font-family: var(--font-lato);
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--gold-bright);
+  margin-top: 2px;
 }
 
 .item-image {
@@ -861,6 +904,160 @@ html, body {
 }
 
 #btn-start:hover {
+  color: var(--gold-bright);
+  border-image: linear-gradient(180deg, var(--gold-bright), var(--frame-dark)) 1;
+}
+
+/* ---- Battle (2026-07-08) ----
+   Three stacked .dialog-box-style panels (same double-gold-frame recipe,
+   same 205px side inset as the dialog boxes): a status message strip, a big
+   enemy row, and a bottom action menu. */
+#battle {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+#battle-status {
+  top: 30px;
+  height: 74px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 50px;
+}
+
+#battle-message {
+  font-family: var(--font-meta);
+  font-size: 22px;
+  text-align: center;
+}
+
+#battle-enemies {
+  top: 130px;
+  height: 430px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 50px;
+  padding: 30px;
+}
+
+.enemy-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  width: 260px;
+}
+
+.enemy-portrait {
+  width: 220px;
+  height: auto;
+  object-fit: contain;
+}
+
+.enemy-slot .bar { width: 220px; }
+
+.enemy-name {
+  font-family: var(--font-medieval);
+  font-size: 22px;
+  color: var(--text-dim);
+}
+
+/* Target-select highlight (battleKey() 'target' mode) */
+.enemy-slot.targeted .enemy-portrait {
+  filter: drop-shadow(0 0 14px var(--gold-bright));
+}
+
+.enemy-slot.targeted .enemy-name { color: var(--gold-bright); }
+
+.enemy-slot.defeated { opacity: 0.35; }
+
+#battle-actions {
+  top: 590px;
+  height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 70px;
+  padding: 0 50px;
+}
+
+.battle-action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  cursor: pointer;
+}
+
+.battle-action-icon {
+  width: 56px;
+  height: 56px;
+  border: 2px solid;
+  border-image: linear-gradient(180deg, var(--frame-light), var(--frame-dark)) 1;
+  transform: rotate(45deg);
+}
+
+.battle-action.focused .battle-action-icon {
+  border-image: linear-gradient(180deg, var(--gold-bright), var(--gold-bright)) 1;
+  box-shadow: 0 0 10px rgba(238, 214, 148, 0.5);
+}
+
+.battle-action-label {
+  font-family: var(--font-medieval);
+  font-size: 26px;
+  color: var(--text);
+}
+
+.battle-action.focused .battle-action-label { color: var(--gold-bright); }
+
+.battle-action-sub {
+  font-family: var(--font-lato);
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.battle-action.disabled { opacity: 0.4; }
+
+/* ---- Game Over ---- */
+#game-over {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, #2a0a0a 0%, #000 78%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 60px;
+}
+
+#game-over h1 {
+  font-family: var(--font-medieval);
+  font-weight: 400;
+  font-size: 84px;
+  color: #e04138;
+  text-shadow: 0 4px 18px rgba(0, 0, 0, 0.9);
+}
+
+#btn-try-again {
+  font-family: var(--font-meta);
+  font-size: 28px;
+  color: var(--text);
+  background: var(--panel-bg);
+  border: 2px solid;
+  border-image: linear-gradient(180deg, var(--frame-light), var(--frame-dark)) 1;
+  outline: 1px solid #4d3a1c;
+  outline-offset: 6px;
+  padding: 16px 70px;
+  cursor: pointer;
+}
+
+#btn-try-again:hover {
   color: var(--gold-bright);
   border-image: linear-gradient(180deg, var(--gold-bright), var(--frame-dark)) 1;
 }

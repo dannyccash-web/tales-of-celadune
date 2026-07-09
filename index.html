@@ -158,18 +158,22 @@
             <div class="panel-tab" data-tab="items">Items</div>
           </div>
           <div class="panel-content">
+            <!-- Equip slots (2026-07-08): content per slot is rendered by
+                 ui.updateEquipmentPanel() — the static .slot-icon/.slot-label
+                 markup below is only what's shown while a slot is empty.
+                 data-slot is the key into main.js's `equipment` state. -->
             <section class="tab-pane" data-pane="equipment">
               <div class="paperdoll">
-                <div class="item-slot slot-head"><div class="slot-icon"></div><span class="slot-label">Headwear</span></div>
-                <div class="item-slot slot-gloves"><div class="slot-icon"></div><span class="slot-label">Gloves</span></div>
-                <div class="item-slot slot-armor"><div class="slot-icon"></div><span class="slot-label">Clothing / Armor</span></div>
-                <div class="item-slot slot-boots"><div class="slot-icon"></div><span class="slot-label">Boots</span></div>
+                <div class="item-slot slot-head" data-slot="head"><div class="slot-icon"></div><span class="slot-label">Head</span></div>
+                <div class="item-slot slot-gloves" data-slot="hands"><div class="slot-icon"></div><span class="slot-label">Hands</span></div>
+                <div class="item-slot slot-armor" data-slot="clothing"><div class="slot-icon"></div><span class="slot-label">Clothing</span></div>
+                <div class="item-slot slot-boots" data-slot="feet"><div class="slot-icon"></div><span class="slot-label">Feet</span></div>
               </div>
             </section>
             <section class="tab-pane hidden" data-pane="weapons">
               <div class="weapon-row">
-                <div class="item-slot slot-weapon"><div class="slot-icon"></div><span class="slot-label">Left Hand</span></div>
-                <div class="item-slot slot-weapon"><div class="slot-icon"></div><span class="slot-label">Right Hand</span></div>
+                <div class="item-slot slot-weapon" data-slot="mainhand"><div class="slot-icon"></div><span class="slot-label">Main Hand</span></div>
+                <div class="item-slot slot-weapon" data-slot="offhand"><div class="slot-icon"></div><span class="slot-label">Off Hand</span></div>
               </div>
             </section>
             <section class="tab-pane hidden" data-pane="magic">
@@ -191,12 +195,13 @@
         </div>
       </div>
 
-      <!-- Item action popout (Use / Inspect / Remove) — positioned near the
-           clicked tile by ui.js. Closed by Escape, an outside click, or
-           choosing an action. -->
+      <!-- Item action popout (Equip/Unequip/Use / Inspect / Remove) —
+           positioned near the clicked tile by ui.js. Closed by Escape, an
+           outside click, or choosing an action. The primary (top) action's
+           label + data-action are set dynamically in openItemPopout(). -->
       <div id="item-popout" class="hidden">
         <div class="popout-title" id="popout-title">Item Name</div>
-        <div class="popout-action" data-action="use">Use</div>
+        <div class="popout-action" id="popout-primary" data-action="use">Use</div>
         <div class="popout-action" data-action="inspect">Inspect</div>
         <div class="popout-action" data-action="remove">Remove</div>
         <div class="popout-action" data-action="cancel">Cancel</div>
@@ -204,6 +209,51 @@
 
       <div id="toast" class="hidden"></div>
       <div id="quest-toast" class="hidden"></div>
+
+      <!-- Battle (2026-07-08): status message, a row of enemy slots (built
+           dynamically by ui.renderBattleEnemies — count varies per
+           encounter), and an action menu (Attack/Magic/Potion/Flee). Same
+           double-gold-frame ".dialog-box"-style boxes as the rest of the UI.
+           Attack's sub-label shows the equipped weapon; selecting it enters
+           a target-select sub-mode over the enemy row instead of resolving
+           immediately. -->
+      <div id="battle" class="hidden">
+        <div class="dialog-box" id="battle-status">
+          <p id="battle-message">Battle status message in this area.</p>
+        </div>
+        <div class="dialog-box" id="battle-enemies"></div>
+        <div class="dialog-box" id="battle-actions">
+          <div class="battle-action" data-action="attack">
+            <div class="battle-action-icon"></div>
+            <span class="battle-action-label">Attack</span>
+            <span class="battle-action-sub" id="battle-weapon-name">Unarmed</span>
+          </div>
+          <div class="battle-action" data-action="magic">
+            <div class="battle-action-icon"></div>
+            <span class="battle-action-label">Magic</span>
+            <span class="battle-action-sub">&mdash;</span>
+          </div>
+          <div class="battle-action" data-action="potion">
+            <div class="battle-action-icon"></div>
+            <span class="battle-action-label">Potion</span>
+            <span class="battle-action-sub" id="battle-potion-count">Health (0)</span>
+          </div>
+          <div class="battle-action" data-action="flee">
+            <div class="battle-action-icon"></div>
+            <span class="battle-action-label">Flee</span>
+            <span class="battle-action-sub">&nbsp;</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Game Over (2026-07-08): shown when the player's health hits 0 in
+           battle. Only way out is Try Again (main.js's respawnAfterDefeat —
+           full heal, back to the scene's spawn point; no save/checkpoint
+           system exists yet, so this is the whole "penalty" for now). -->
+      <div id="game-over" class="hidden">
+        <h1>You Have Fallen</h1>
+        <button id="btn-try-again">Try Again</button>
+      </div>
 
       <div id="start-screen">
         <h1>Tales of Celadune</h1>

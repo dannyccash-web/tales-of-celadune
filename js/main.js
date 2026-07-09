@@ -7,10 +7,17 @@ import * as ui from './ui.js';
 import * as audio from './audio.js';
 import ITEMS from './data/items.js';
 import QUESTS from './data/quests.js';
+import ENEMIES from './data/enemies.js';
+import * as battle from './battle.js';
 
+// Attack/Defense start at 1 (Danny's spec, 2026-07-08 battle system) — real
+// combat stats now, not placeholder flavor like the rest of this block.
+// Speed keeps its earlier placeholder value (11) but now has real meaning
+// too: it drives battle.js's turn order against enemies (kobolds: speed 8),
+// so the player generally acts first without needing to touch it further.
 const stats = {
   health: 5, healthMax: 5, magic: 5, magicMax: 10, gold: 0,
-  level: 4, xp: 1240, xpMax: 2000, attack: 14, defense: 9, speed: 11, luck: 6,
+  level: 4, xp: 1240, xpMax: 2000, attack: 1, defense: 1, speed: 11, luck: 6,
 };
 const state = { started: false };
 
@@ -19,10 +26,21 @@ const state = { started: false };
 // rather than in world/ui, which stay presentation-only.
 const inventory = [];
 
+// Equip *state* (2026-07-08) — one item id per slot, or null. Equipping
+// never removes the item from `inventory`; it's just a separate pointer, so
+// the item still shows up (with an "Equipped" marker) in the Items tab.
+// Only items whose catalog entry has a matching `slot` can go in a given
+// slot — see js/data/items.js's schema comment.
+const equipment = { head: null, clothing: null, feet: null, hands: null, mainhand: null, offhand: null };
+
+function refreshItemsUi() {
+  ui.updateItemsPanel(inventory, ITEMS, equipment);
+}
+
 function addItem(id, qty = 1) {
   const existing = inventory.find((it) => it.id === id);
   if (existing) existing.qty += qty; else inventory.push({ id, qty });
-  ui.updateItemsPanel(inventory, ITEMS);
+  refreshItemsUi();
   audio.sfx(audio.SFX.item);
 }
 
@@ -31,8 +49,47 @@ function removeItem(id, qty = 1) {
   if (!existing) return;
   existing.qty -= qty;
   if (existing.qty <= 0) inventory.splice(inventory.indexOf(existing), 1);
-  ui.updateItemsPanel(inventory, ITEMS);
+  refreshItemsUi();
   audio.sfx(audio.SFX.item);
+}
+
+// equipItem/unequipItem are the only two ways `equipment` changes — mirrors
+// the addItem/removeItem/addGold/damagePlayer pattern of centralizing a
+// piece of state's mutation + its UI refresh + its SFX in one place.
+function equipItem(id) {
+  const def = ITEMS[id];
+  if (!def?.slot) return;
+  equipment[def.slot] = id;
+  ui.updateEquipmentPanel(equipment, ITEMS);
+  refreshItemsUi();
+  audio.sfx(audio.SFX.item);
+}
+
+function unequipItem(slot) {
+  if (!equipment[slot]) return;
+  equipment[slot] = null;
+  ui.updateEquipmentPanel(equipment, ITEMS);
+  refreshItemsUi();
+  audio.sfx(audio.SFX.item);
+}
+
+// Effective Attack/Defense = base stat + every equipped item's bonus (most
+// items grant +0 today — no armor with real bonuses exists yet, but the
+// math is here so future gear just needs attackBonus/defenseBonus fields).
+// weaponDamage() is what a successful player attack deals: the equipped
+// mainhand weapon's damage, or 1 (unarmed) if no weapon is equipped — per
+// Danny's spec exactly.
+function equipmentBonus(field) {
+  return Object.values(equipment).reduce((sum, id) => {
+    if (!id) return sum;
+    return sum + (ITEMS[id]?.[field] || 0);
+  }, 0);
+}
+function effectiveAttack() { return stats.attack + equipmentBonus('attackBonus'); }
+function effectiveDefense() { return stats.defense + equipmentBonus('defenseBonus'); }
+function weaponDamage() {
+  const mainhand = equipment.mainhand && ITEMS[equipment.mainhand];
+  return mainhand?.damage ?? 1;
 }
 
 // Centralized gold/health mutators (mirroring addItem/removeItem) so every
@@ -108,6 +165,9 @@ async function boot() {
     // always atHome and never rendered as a walking body — so skip them here.
     ...scene.npcs.filter((n) => n.sprite).map((n) => n.sprite),
     ...scene.npcs.filter((n) => n.home).map((n) => n.home.interior),
+    // Every enemy portrait this scene's battles could use, preloaded up
+    // front like everything else — battle art shouldn't pop in mid-fight.
+    ...(scene.battles || []).flatMap((b) => b.enemies).map((id) => ENEMIES[id].portrait),
   ];
   const images = await loadImages([...new Set(sources)]);
 
@@ -124,8 +184,17 @@ async function boot() {
   ui.updateHud(stats);
   ui.updateStatsPanel(stats);
   ui.initItemsPanel({ onAction: onItemAction });
-  ui.updateItemsPanel(inventory, ITEMS);
+  refreshItemsUi();
   ui.updateQuestsPanel(quests, QUESTS);
+  ui.updateEquipmentPanel(equipment, ITEMS);
+  ui.initEquipmentPanel({
+    onSlotActivate: (slot) => {
+      if (equipment[slot]) { unequipItem(slot); return; }
+      ui.toast('Equip items from your Items tab.');
+    },
+  });
+  ui.initGameOver({ onRestart: () => respawnAfterDefeat() });
+  ui.initBattle();
 
   // Start screen: theme music now (or on first gesture if autoplay is blocked),
   // then cross-fade to the overworld track when the game starts.
@@ -166,13 +235,39 @@ async function boot() {
     if (effect.message) ui.toast(effect.message);
   }
 
-  // Popout actions (Use / Inspect / Remove) from the Items tab.
+  // Popout actions from the Items tab. Inspect/Remove are unchanged; the
+  // primary action (top button) is Equip/Unequip for gear (def.slot set),
+  // Use-to-heal for potions (def.heal set), or the old "nothing yet" stub
+  // for anything else (e.g. the vegetable crate) — see ui.js's
+  // openItemPopout(), which decides the button's label/action to match.
   function onItemAction(itemId, action) {
     const def = ITEMS[itemId];
     if (!def) return;
     if (action === 'inspect') { ui.toast(def.description); return; }
     if (action === 'remove') { removeItem(itemId); return; }
-    if (action === 'use') { ui.toast('Nothing happens... yet.'); }
+    if (action === 'equip') { equipItem(itemId); return; }
+    if (action === 'unequip') { unequipItem(def.slot); return; }
+    if (action === 'use') {
+      if (def.heal) { usePotion(itemId); return; }
+      ui.toast('Nothing happens... yet.');
+    }
+  }
+
+  // Shared by the Items-tab "Use" action and the battle Potion action —
+  // consumes one, restores HP (capped at max), and reports back whether it
+  // actually did anything (battle uses this to decide whether the turn
+  // should advance; a dry "no potions" click shouldn't cost a turn).
+  function usePotion(itemId) {
+    const entry = inventory.find((it) => it.id === itemId);
+    if (!entry || entry.qty < 1) { ui.toast('You have no potions.'); return false; }
+    const def = ITEMS[itemId];
+    const before = stats.health;
+    removeItem(itemId, 1);
+    stats.health = Math.min(stats.healthMax, stats.health + def.heal);
+    ui.updateHud(stats);
+    const healed = stats.health - before;
+    ui.toast(`You drink a ${def.name} and recover ${healed} health.`);
+    return true;
   }
 
   // Builds the dialog "view" for an unoccupied building (a place, not an
@@ -233,6 +328,196 @@ async function boot() {
     ui.openDialog({ ...npc, dialog: resolveNpcDialog(npc) }, onClose, applyResponseEffect);
   }
 
+  // ---- Battle (2026-07-08) ----
+  // Turn-based combat: js/battle.js has the pure dice/turn-order logic;
+  // this is the stateful orchestration (whose turn it is, waiting on player
+  // input, running the round loop), same division of labor as dialog logic
+  // living here while ui.js only renders it. A scene's `battles` array
+  // (see js/data/d3.js) defines a door + an enemy id list; world.js's
+  // battleNearDoor() is how interact() finds one to start.
+  const ENEMY_TURN_DELAY_MS = 900; // pause between enemy turns so messages are readable
+
+  const battleState = {
+    active: false,
+    enemies: [], // live copies: [{key, id, name, portrait, health, maxHealth, attack, defense, speed, damage}]
+    order: [],   // this round's turn queue (mixed 'player' sentinel objects + enemy refs)
+    turnPos: 0,
+    onEnd: null, // (result) => void, called once the battle is fully resolved
+  };
+
+  function aliveEnemies() {
+    return battleState.enemies.filter((e) => e.health > 0);
+  }
+
+  // Recomputed every round (not just once) via battle.turnOrder — enemies
+  // that died last round simply won't be in the alive list anymore.
+  function rollRoundOrder() {
+    const combatants = [
+      { kind: 'player', speed: stats.speed },
+      ...aliveEnemies().map((e) => ({ kind: 'enemy', enemy: e, speed: e.speed })),
+    ];
+    return battle.turnOrder(combatants);
+  }
+
+  function startBattle(enemyIds, onEnd) {
+    battleState.active = true;
+    battleState.enemies = enemyIds.map((id, i) => {
+      const def = ENEMIES[id];
+      return {
+        key: `${id}_${i}`, id, name: def.name, portrait: def.portrait,
+        health: def.health, maxHealth: def.health,
+        attack: def.attack, defense: def.defense, speed: def.speed, damage: def.damage,
+      };
+    });
+    battleState.onEnd = onEnd || null;
+    battleState.order = rollRoundOrder();
+    battleState.turnPos = 0;
+    ui.openBattle({
+      enemies: battleState.enemies,
+      onSelectAttack: beginTargeting,
+      onSelectMagic: playerUseMagic,
+      onSelectPotion: playerUsePotion,
+      onSelectFlee: playerFlee,
+      onConfirmTarget: playerAttack,
+    });
+    ui.setBattleMessage('A wild encounter begins!');
+    runQueue();
+  }
+
+  // Advances through battleState.order. Stops (leaving the action menu up)
+  // once it reaches the player's turn; enemy turns resolve themselves with
+  // a short delay between each so their messages are readable back to back.
+  function runQueue() {
+    if (!battleState.active) return;
+    if (checkBattleEnd()) return;
+    if (battleState.turnPos >= battleState.order.length) {
+      battleState.order = rollRoundOrder();
+      battleState.turnPos = 0;
+    }
+    const current = battleState.order[battleState.turnPos];
+    if (current.kind === 'player') {
+      ui.showBattleActions({ weaponName: equippedWeaponName(), potionCount: potionCount() });
+      return;
+    }
+    setTimeout(() => {
+      if (!battleState.active) return;
+      resolveEnemyTurn(current.enemy);
+      ui.renderBattleEnemies(battleState.enemies);
+      battleState.turnPos += 1;
+      runQueue();
+    }, ENEMY_TURN_DELAY_MS);
+  }
+
+  function equippedWeaponName() {
+    return (equipment.mainhand && ITEMS[equipment.mainhand]?.name) || 'Unarmed';
+  }
+  function potionCount() {
+    return inventory.find((it) => it.id === 'health_potion')?.qty || 0;
+  }
+
+  function resolveEnemyTurn(enemy) {
+    const hit = battle.resolveAttack(enemy.attack, effectiveDefense());
+    if (hit) {
+      const dmg = battle.rollDamage(enemy.damage);
+      damagePlayer(dmg);
+      ui.setBattleMessage(`The ${enemy.name} hits you for ${dmg} damage.`);
+    } else {
+      ui.setBattleMessage(`The ${enemy.name} attacks but misses.`);
+    }
+  }
+
+  // Player chose Attack — hand off to ui.js's target-select sub-mode (Left/
+  // Right cycle alive enemies, Space confirms via onConfirmTarget below,
+  // Escape cancels back to the action menu without spending the turn).
+  function beginTargeting() {
+    ui.startTargeting();
+  }
+
+  function playerAttack(target) {
+    const hit = battle.resolveAttack(effectiveAttack(), target.defense);
+    if (hit) {
+      const dmg = weaponDamage();
+      target.health = Math.max(0, target.health - dmg);
+      ui.setBattleMessage(`You hit the ${target.name} for ${dmg} damage.`);
+      audio.sfx(audio.SFX.hurt);
+    } else {
+      ui.setBattleMessage(`You attack the ${target.name} but miss.`);
+    }
+    ui.renderBattleEnemies(battleState.enemies);
+    battleState.turnPos += 1;
+    runQueue();
+  }
+
+  // Magic has no spells to cast yet — an informative no-op that doesn't
+  // spend the player's turn, same spirit as a grayed-out menu item but
+  // still selectable/readable, matching the mockup's Magic slot being
+  // present. Wire real spells into this once the Magic system exists.
+  function playerUseMagic() {
+    ui.toast('You don’t know any spells yet.');
+  }
+
+  // Reuses the same usePotion() the Items-tab "Use" action calls — only
+  // spends the turn if it actually healed something (no potions = free
+  // no-op, so accidentally picking Potion with an empty bag isn't a wasted
+  // turn against three kobolds).
+  function playerUsePotion() {
+    const healed = usePotion('health_potion');
+    if (!healed) return;
+    ui.setBattleMessage('You drink a Health Potion.');
+    battleState.turnPos += 1;
+    runQueue();
+  }
+
+  // Always succeeds — no precedent yet for a failable flee, and this keeps
+  // early testing/iteration friction-free. Revisit if a real difficulty
+  // curve calls for it later.
+  function playerFlee() {
+    ui.setBattleMessage('You flee the battle!');
+    endBattle('fled');
+  }
+
+  function checkBattleEnd() {
+    if (stats.health <= 0) { endBattle('defeat'); return true; }
+    if (battleState.enemies.length && aliveEnemies().length === 0) { endBattle('victory'); return true; }
+    return false;
+  }
+
+  function endBattle(result) {
+    battleState.active = false;
+    const onEnd = battleState.onEnd;
+    battleState.onEnd = null;
+    if (result === 'defeat') {
+      ui.closeBattle();
+      ui.showGameOver();
+      pendingDefeatCallback = onEnd;
+      return;
+    }
+    ui.closeBattle();
+    if (result === 'victory') ui.toast('Victory! The kobolds are defeated.');
+    if (onEnd) onEnd(result);
+  }
+
+  // Set right before showGameOver() so ui.initGameOver's onRestart (wired
+  // once, above) knows what to finish up — same "defer the callback" shape
+  // as battleState.onEnd, just surviving past endBattle() clearing it.
+  let pendingDefeatCallback = null;
+
+  // No real death penalty/checkpoint system yet (2026-07-08 — Danny opted
+  // for a Game Over screen over an instant respawn): full-heal and return
+  // the player to the scene's spawn point, close the screen, then let the
+  // battle's own onEnd run (so e.g. a barn encounter isn't marked cleared —
+  // the kobolds are still there to fight again).
+  function respawnAfterDefeat() {
+    stats.health = stats.healthMax;
+    ui.updateHud(stats);
+    world.player.x = scene.spawn.x;
+    world.player.y = scene.spawn.y;
+    ui.hideGameOver();
+    const cb = pendingDefeatCallback;
+    pendingDefeatCallback = null;
+    if (cb) cb('defeat');
+  }
+
   function interact() {
     const npc = world.nearestNpcInRange();
     if (npc) { openNpcDialog(npc); return; }
@@ -261,12 +546,37 @@ async function boot() {
       } else {
         ui.toast('The door is locked.');
       }
+      return;
+    }
+
+    // Battle encounters (e.g. the kobolds in the Old Barn) trigger the same
+    // way a home door does — proximity + spacebar — see world.battleNearDoor().
+    // Only a victory marks it `defeated` (world.js skips defeated ones), so
+    // fleeing or losing leaves the encounter fightable again.
+    const trigger = world.battleNearDoor();
+    if (trigger) {
+      startBattle(trigger.enemies, (result) => {
+        if (result === 'victory') trigger.defeated = true;
+      });
     }
   }
 
   window.addEventListener('keydown', (e) => {
     if (!state.started) {
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); startGame(); }
+      return;
+    }
+    // Game Over takes priority over everything (I/M included) — the only
+    // way out is the Try Again button/key.
+    if (ui.isGameOverOpen()) {
+      if (['Enter', ' '].includes(e.key)) { e.preventDefault(); respawnAfterDefeat(); }
+      return;
+    }
+    if (ui.isBattleOpen()) {
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' ', 'Escape'].includes(e.key)) {
+        e.preventDefault();
+        ui.battleKey(e.key);
+      }
       return;
     }
     if (ui.isDialogOpen()) {
@@ -304,7 +614,7 @@ async function boot() {
     const dt = Math.min((now - last) / 1000, 0.05);
     last = now;
 
-    const locked = ui.isDialogOpen() || ui.isAnyPanelOpen() || !state.started;
+    const locked = ui.isDialogOpen() || ui.isAnyPanelOpen() || ui.isBattleOpen() || ui.isGameOverOpen() || !state.started;
     world.update(dt, input, locked);
     world.render();
 
