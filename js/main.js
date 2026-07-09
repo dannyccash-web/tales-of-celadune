@@ -57,11 +57,15 @@ function removeItem(id, qty = 1) {
 // equipItem/unequipItem are the only two ways `equipment` changes — mirrors
 // the addItem/removeItem/addGold/damagePlayer pattern of centralizing a
 // piece of state's mutation + its UI refresh + its SFX in one place.
+// refreshItemsUi() alone is enough to update the display (2026-07-09,
+// dropped the separate ui.updateEquipmentPanel call now that Equipment/
+// Weapons no longer have standalone slot boxes — equip state shows via the
+// checkmark badge on the item's own tile, which updateItemsPanel already
+// re-renders from `equipment`).
 function equipItem(id) {
   const def = ITEMS[id];
   if (!def?.slot) return;
   equipment[def.slot] = id;
-  ui.updateEquipmentPanel(equipment, ITEMS);
   refreshItemsUi();
   audio.sfx(audio.SFX.item);
 }
@@ -69,7 +73,6 @@ function equipItem(id) {
 function unequipItem(slot) {
   if (!equipment[slot]) return;
   equipment[slot] = null;
-  ui.updateEquipmentPanel(equipment, ITEMS);
   refreshItemsUi();
   audio.sfx(audio.SFX.item);
 }
@@ -187,13 +190,6 @@ async function boot() {
   ui.initItemsPanel({ onAction: onItemAction });
   refreshItemsUi();
   ui.updateQuestsPanel(quests, QUESTS);
-  ui.updateEquipmentPanel(equipment, ITEMS);
-  ui.initEquipmentPanel({
-    onSlotActivate: (slot) => {
-      if (equipment[slot]) { unequipItem(slot); return; }
-      ui.toast('Select an item below to equip.');
-    },
-  });
   ui.initGameOver({ onRestart: () => respawnAfterDefeat() });
   ui.initBattle();
 

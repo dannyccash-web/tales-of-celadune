@@ -158,39 +158,19 @@
             <div class="panel-tab" data-tab="items">Items</div>
           </div>
           <div class="panel-content">
-            <!-- Equip slots (2026-07-08): content per slot is rendered by
-                 ui.updateEquipmentPanel() — the static .slot-icon/.slot-label
-                 markup below is only what's shown while a slot is empty.
-                 data-slot is the key into main.js's `equipment` state. -->
-            <!-- Each of Equipment/Weapons/Magic pairs its slot display with
-                 an "Inventory" grid of that category's owned-but-not-
-                 necessarily-equipped items below it (2026-07-09) — every
-                 item belongs to exactly one of Equipment/Weapons/Magic/Items
-                 and only ever renders in that one tab (see items.js's
-                 categoryFor()). The grid is the same .item-grid/.item-tile
-                 component as the Items tab, just filtered per category by
-                 ui.js's renderCategoryGrid(). -->
+            <!-- Equipment/Weapons (2026-07-09 rework, matched to Danny's
+                 mockup): no more standalone equip-slot boxes — instead one
+                 header+grid section per subcategory (equip slot), each
+                 listing every owned item for that slot with an
+                 .equipped-badge marking the currently-equipped one.
+                 Equip/unequip happens via a tile's own popout. Sections are
+                 built entirely by ui.js's renderCategoryTab() from
+                 items.js's CATEGORY_SLOTS, so this container starts empty. -->
             <section class="tab-pane" data-pane="equipment">
-              <div class="paperdoll">
-                <div class="item-slot slot-head" data-slot="head"><div class="slot-icon"></div><span class="slot-label">Head</span></div>
-                <div class="item-slot slot-gloves" data-slot="hands"><div class="slot-icon"></div><span class="slot-label">Hands</span></div>
-                <div class="item-slot slot-armor" data-slot="clothing"><div class="slot-icon"></div><span class="slot-label">Clothing</span></div>
-                <div class="item-slot slot-boots" data-slot="feet"><div class="slot-icon"></div><span class="slot-label">Feet</span></div>
-              </div>
-              <div class="section-subhead">Inventory</div>
-              <div class="item-grid" id="equipment-grid">
-                <p class="items-empty" id="equipment-empty">Nothing here yet.</p>
-              </div>
+              <div class="category-sections" id="equipment-sections"></div>
             </section>
             <section class="tab-pane hidden" data-pane="weapons">
-              <div class="weapon-row">
-                <div class="item-slot slot-weapon" data-slot="mainhand"><div class="slot-icon"></div><span class="slot-label">Main Hand</span></div>
-                <div class="item-slot slot-weapon" data-slot="offhand"><div class="slot-icon"></div><span class="slot-label">Off Hand</span></div>
-              </div>
-              <div class="section-subhead">Inventory</div>
-              <div class="item-grid" id="weapons-grid">
-                <p class="items-empty" id="weapons-empty">Nothing here yet.</p>
-              </div>
+              <div class="category-sections" id="weapons-sections"></div>
             </section>
             <section class="tab-pane hidden" data-pane="magic">
               <div class="magic-grid">
@@ -216,11 +196,13 @@
       </div>
 
       <!-- Item action popout (Equip/Unequip/Use / Inspect / Remove) —
-           positioned near the clicked tile by ui.js. Closed by Escape, an
+           sized/positioned to match the clicked tile by ui.js and expands
+           downward from it (see #item-popout's .open transition in
+           style.css, 2026-07-09). No title row — the item's name is already
+           shown on the tile itself, right above. Closed by Escape, an
            outside click, or choosing an action. The primary (top) action's
            label + data-action are set dynamically in openItemPopout(). -->
-      <div id="item-popout" class="hidden">
-        <div class="popout-title" id="popout-title">Item Name</div>
+      <div id="item-popout">
         <div class="popout-action" id="popout-primary" data-action="use">Use</div>
         <div class="popout-action" data-action="inspect">Inspect</div>
         <div class="popout-action" data-action="remove">Remove</div>

@@ -262,16 +262,25 @@ html, body {
   animation: portrait-slide-in 0.28s ease-out;
 }
 
-/* Unoccupied-building dialog: same box as #portrait-frame (right-anchored,
-   500 wide, bottom-anchored to match the dialog box), a "Contents" heading
-   over a top-justified stacked item list instead of a portrait image. */
+/* Unoccupied-building dialog: same 500x500 box as #portrait-frame
+   (right-anchored, bottom:0 relative to the ~345px-tall #dialog-npc box —
+   meaning this box's own top edge sits ~155px *above* the visible dialog
+   frame, which is fine for a tall portrait image but left short text
+   floating up out of the visible box when top-anchored with padding-top.
+   Fixed 2026-07-09 (Danny: "the list of contents is up too high"): flex
+   column + justify-content:flex-end bottom-anchors the heading+list group
+   against the box's bottom edge instead, landing it down inside the
+   visible frame the way a portrait's lower body would read. */
 #dialog-contents {
   position: absolute;
   right: 30px;
   bottom: 0;
   width: 500px;
   height: 500px;
-  padding-top: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding-bottom: 50px;
   pointer-events: none;
 }
 
@@ -392,11 +401,13 @@ html, body {
 }
 
 .received-frame {
+  box-sizing: border-box;
   width: 190px;
   height: 190px;
   background: rgba(0, 0, 0, 0.35);
   border: 1px solid;
   border-image: linear-gradient(180deg, var(--gold-bright), var(--frame-dark)) 1;
+  padding: 12px; /* match .item-frame's breathing room, 2026-07-09 */
   overflow: hidden;
 }
 
@@ -645,7 +656,10 @@ html, body {
   padding-top: 18px;
 }
 
-/* Item slots (Equipment / Weapons / Magic) */
+/* Item slots — Magic's placeholder spell grid is the only remaining user of
+   this (2026-07-09: Equipment/Weapons dropped standalone slot boxes for the
+   per-subcategory section grids below; see .category-section). Inert/
+   display-only, no filled/focused states needed since nothing wires to it. */
 .item-slot {
   width: 160px;
   height: 160px;
@@ -679,57 +693,29 @@ html, body {
   padding: 0 8px;
 }
 
-/* Equip slots: filled state (an item is equipped there) and keyboard focus
-   (Equipment/Weapons tab Left/Right nav — see ui.js's refreshSlotFocus).
-   Focus reuses the same gold-glow treatment as a focused Items-tab tile. */
-.item-slot.filled {
-  border-image: linear-gradient(180deg, var(--gold-bright), var(--frame-dark)) 1;
+/* Equipment/Weapons tabs (2026-07-09 rework): a stacked list of subcategory
+   sections — one per equip slot (Main Hand, Off Hand, Head, Clothing...),
+   each a small-caps gold header + full-width rule followed by that slot's
+   complete item grid (built by ui.js's renderCategoryTab() from items.js's
+   CATEGORY_SLOTS). Replaces the old standalone equip-slot boxes entirely;
+   equip/unequip now happens via a tile's own popout, and the equipped item
+   is marked with .equipped-badge instead of a separate slot display. */
+.category-section:not(:first-child) {
+  margin-top: 34px;
 }
 
-.item-slot.focused {
-  border-image: linear-gradient(180deg, var(--gold-bright), var(--gold-bright)) 1;
-  box-shadow: 0 0 10px rgba(238, 214, 148, 0.5);
-}
-
-.slot-item-image {
-  width: 72px;
-  height: 72px;
-  object-fit: contain;
-}
-
-.item-slot.filled .slot-label {
-  color: var(--text);
-  text-transform: none;
-  letter-spacing: 0;
-  font-family: var(--font-meta);
+.category-section-header {
+  font-family: var(--font-lato);
+  font-weight: 600;
   font-size: 16px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--role-gold);
+  padding-bottom: 12px;
+  margin-bottom: 24px;
+  border-bottom: 2px solid;
+  border-image: linear-gradient(90deg, var(--gold-bright), var(--frame-dark)) 1;
 }
-
-/* Equipment tab: a loose paper-doll arrangement (head above, gloves/boots
-   flanking the armor slot) so the grid reads as a body layout even without
-   character art. */
-.paperdoll {
-  display: grid;
-  grid-template-columns: repeat(3, 160px);
-  grid-template-rows: repeat(3, 160px);
-  gap: 24px;
-  justify-content: center;
-  margin-top: 20px;
-}
-
-.slot-head   { grid-column: 2; grid-row: 1; }
-.slot-gloves { grid-column: 1; grid-row: 2; }
-.slot-armor  { grid-column: 2; grid-row: 2; }
-.slot-boots  { grid-column: 2; grid-row: 3; }
-
-/* Weapons tab: one slot per hand */
-.weapon-row {
-  display: flex;
-  gap: 50px;
-  margin-top: 20px;
-}
-
-.weapon-row .item-slot { width: 200px; height: 200px; }
 
 /* Magic tab: a simple spell grid */
 .magic-grid {
@@ -763,11 +749,16 @@ html, body {
 
 .item-frame {
   position: relative;
+  box-sizing: border-box;
   width: 100%;
   aspect-ratio: 1;
   background: rgba(0, 0, 0, 0.35);
   border: 1px solid;
   border-image: linear-gradient(180deg, var(--gold-bright), var(--frame-dark)) 1;
+  /* Breathing room between the item art and the frame edge (2026-07-09,
+     Danny: images were touching the border) — border-box keeps the frame's
+     own footprint unchanged in the grid, padding just shrinks the image. */
+  padding: 12px;
   overflow: hidden;
 }
 
@@ -777,21 +768,25 @@ html, body {
   box-shadow: 0 0 10px rgba(238, 214, 148, 0.5);
 }
 
-/* Equipped marker (2026-07-08): a persistent thin gold outline (distinct
-   from the hover/focus glow above, which still layers on top of this) plus
-   an "Equipped" tag under the item name. */
+/* Equipped marker: a persistent thin gold outline (distinct from the
+   hover/focus glow above, which still layers on top of this). The
+   equipped-item badge itself (checkmark corner ribbon) is added in the
+   tile's frame — see .equipped-badge. */
 .item-tile.equipped .item-frame {
   border-image: linear-gradient(180deg, var(--gold-bright), var(--frame-dark)) 1;
 }
 
-.item-equipped-tag {
+/* Secondary stat line under an item's name — e.g. "2 DMG" for a weapon
+   (2026-07-09, per Danny's mockup). Only rendered when items.js's
+   statLineFor() has something to show. */
+.item-stat {
   font-family: var(--font-lato);
   font-weight: 600;
   font-size: 12px;
-  letter-spacing: 2px;
+  letter-spacing: 1.5px;
   text-transform: uppercase;
-  color: var(--gold-bright);
-  margin-top: 2px;
+  color: var(--text-dim);
+  margin-top: -6px;
 }
 
 .item-image {
@@ -800,8 +795,33 @@ html, body {
   object-fit: contain;
 }
 
-/* Quest-item marker: a gold corner ribbon with a black star, upper-left */
-.quest-badge {
+/* Corner ribbon marker, upper-left of an item frame — gold triangle with a
+   black glyph on top: a star for quest items (.quest-badge), a checkmark
+   for currently-equipped gear (.equipped-badge, 2026-07-09). Both share this
+   base; only the glyph differs (see the modifier classes below).
+   **Fixed 2026-07-09** (Danny: "I'm still not seeing the black star... maybe
+   it's behind the triangle"): the badge used to be the 0x0 border-triangle
+   element itself, with the glyph as its ::after. A 0-sized box with
+   asymmetric border widths (34px top/right, 0 bottom/left) has a *degenerate*
+   padding box — CSS positions absolutely-positioned descendants relative to
+   the padding edge, which for those border widths sits offset from where
+   the visible triangle actually is, not at its true (0,0) corner. That could
+   push the glyph outside the painted triangle entirely, landing it on the
+   frame's dark background where it's invisible. Fixed by giving .quest-badge
+   itself a real 34x34 box (a proper, non-degenerate containing block) and
+   moving the triangle into ::before, so ::after's offset is relative to a
+   normal box instead of that edge case. */
+.quest-badge, .equipped-badge {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 34px;
+  height: 34px;
+  pointer-events: none;
+}
+
+.quest-badge::before, .equipped-badge::before {
+  content: '';
   position: absolute;
   top: 0;
   left: 0;
@@ -812,15 +832,18 @@ html, body {
   border-color: var(--gold-bright) transparent transparent transparent;
 }
 
-.quest-badge::after {
-  content: '\2605'; /* ★ */
+.quest-badge::after, .equipped-badge::after {
   position: absolute;
-  top: 2px;
-  left: 2px;
+  top: 3px;
+  left: 3px;
   font-size: 13px;
   line-height: 1;
   color: #1a1305;
+  z-index: 1;
 }
+
+.quest-badge::after { content: '\2605'; } /* ★ */
+.equipped-badge::after { content: '\2713'; font-weight: 700; } /* ✓ */
 
 .item-label {
   font-family: var(--font-meta);
@@ -834,38 +857,56 @@ html, body {
   color: var(--text-dim);
 }
 
-/* ---- Item action popout (Use / Inspect / Remove) ---- */
+/* ---- Item action popout (Use / Inspect / Remove) ----
+   Redesigned 2026-07-09 (Danny: "we don't need to see the name of the item
+   there again, as it is shown directly above" + "it would be cool if the
+   frame from the item could expand downward to show options"). No more
+   title row — the popout is sized/positioned (in ui.js's positionPopout) to
+   exactly match the anchor tile's width and sit flush beneath it, and
+   animates in with a top-anchored scaleY so it visually grows out of the
+   item's own frame rather than appearing as a separate floating menu.
+   Visibility is now driven by .open (not the shared .hidden class) so the
+   transition can actually run — .hidden is display:none, which can't
+   transition. */
 #item-popout {
   position: absolute;
   background: var(--panel-bg);
   border: 2px solid;
   border-image: linear-gradient(180deg, var(--frame-light), var(--frame-dark)) 1;
-  padding: 10px 0;
-  min-width: 200px;
+  border-top: none;
+  padding: 10px 0 12px;
   z-index: 10;
+  transform-origin: top center;
+  transform: scaleY(0);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.16s ease-out, opacity 0.12s ease-out;
 }
 
-.popout-title {
-  font-family: var(--font-medieval);
-  font-size: 20px;
-  color: var(--gold-bright);
-  padding: 6px 24px 10px;
-  border-bottom: 1px solid var(--frame-light);
-  margin-bottom: 6px;
+#item-popout.open {
+  transform: scaleY(1);
+  opacity: 1;
+  pointer-events: auto;
 }
 
+/* Cream-gold all-caps Lato, matching role captions / section subheads
+   elsewhere in the game (2026-07-09, was Metamorphous body text before). */
 .popout-action {
-  font-family: var(--font-meta);
-  font-size: 20px;
-  color: var(--text-dim);
-  padding: 8px 24px;
+  font-family: var(--font-lato);
+  font-weight: 600;
+  font-size: 16px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--role-gold);
+  text-align: center;
+  padding: 10px 24px;
   cursor: pointer;
 }
 
 .popout-action:hover,
 .popout-action.focused {
-  color: var(--text);
-  background: rgba(238, 214, 148, 0.1);
+  color: #fff;
+  background: rgba(238, 214, 148, 0.15);
 }
 
 .popout-action.disabled {

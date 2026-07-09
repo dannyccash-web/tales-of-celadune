@@ -36,6 +36,35 @@ export function categoryFor(item) {
   return SLOT_CATEGORY[item.slot] || 'magic';
 }
 
+// Subcategory (individual equip slot) breakdown within Equipment/Weapons,
+// used by the Inventory panel to render one header+grid section per slot
+// (2026-07-09 rework, matched to Danny's mockup: e.g. Weapons > Main Hand /
+// Off Hand, each its own labeled section with every owned item for that
+// slot — not a single shared grid). Order here is display order.
+export const CATEGORY_SLOTS = {
+  equipment: ['head', 'clothing', 'feet', 'hands'],
+  weapons: ['mainhand', 'offhand'],
+};
+
+export const SLOT_LABEL = {
+  head: 'Head', clothing: 'Clothing', feet: 'Feet', hands: 'Hands',
+  mainhand: 'Main Hand', offhand: 'Off Hand',
+};
+
+// Short secondary stat line shown under an item's name on its tile within
+// Equipment/Weapons (e.g. "2 DMG" for the dagger, per Danny's mockup) — null
+// if the item has nothing worth showing yet (armor with no bonuses set).
+export function statLineFor(item) {
+  if (item.damage != null) {
+    const dmg = typeof item.damage === 'object' ? `${item.damage.min}-${item.damage.max}` : item.damage;
+    return `${dmg} DMG`;
+  }
+  const parts = [];
+  if (item.attackBonus) parts.push(`+${item.attackBonus} ATK`);
+  if (item.defenseBonus) parts.push(`+${item.defenseBonus} DEF`);
+  return parts.length ? parts.join(' / ') : null;
+}
+
 export default {
   vegetable_crate: {
     id: 'vegetable_crate',
