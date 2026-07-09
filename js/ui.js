@@ -912,7 +912,7 @@ export function renderBattleEnemies(enemies) {
     portrait.alt = enemy.name;
 
     const bar = document.createElement('div');
-    bar.className = 'bar';
+    bar.className = 'bar enemy-health-bar';
     const bg = document.createElement('div');
     bg.className = 'bar-bg';
     const fill = document.createElement('div');
@@ -920,6 +920,10 @@ export function renderBattleEnemies(enemies) {
     fill.style.width = `${Math.max(0, (enemy.health / enemy.maxHealth) * 100)}%`;
     bg.appendChild(fill);
     bar.appendChild(bg);
+    const hpText = document.createElement('span');
+    hpText.className = 'enemy-health-value';
+    hpText.textContent = `${Math.max(0, enemy.health)}/${enemy.maxHealth}`;
+    bar.appendChild(hpText);
 
     const name = document.createElement('span');
     name.className = 'enemy-name';
@@ -970,6 +974,7 @@ export function startTargeting() {
   battleUiState.mode = 'target';
   battleUiState.targetIndex = 0;
   refreshTargetFocus();
+  refreshActionFocus(); // clears the action menu's highlight while targeting
 }
 
 export function battleKey(key) {

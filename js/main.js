@@ -248,26 +248,28 @@ async function boot() {
     if (action === 'equip') { equipItem(itemId); return; }
     if (action === 'unequip') { unequipItem(def.slot); return; }
     if (action === 'use') {
-      if (def.heal) { usePotion(itemId); return; }
+      if (def.heal) { ui.toast(usePotion(itemId).message); return; }
       ui.toast('Nothing happens... yet.');
     }
   }
 
   // Shared by the Items-tab "Use" action and the battle Potion action —
-  // consumes one, restores HP (capped at max), and reports back whether it
-  // actually did anything (battle uses this to decide whether the turn
-  // should advance; a dry "no potions" click shouldn't cost a turn).
+  // consumes one, restores HP (capped at max), and reports back what
+  // happened as a {ok, message} pair rather than showing it itself: the two
+  // call sites display it differently (a toast outside battle, the battle
+  // status line during one — see playerUsePotion()) and firing a toast from
+  // in here unconditionally used to visually collide with the battle status
+  // bar, which sits in roughly the same spot.
   function usePotion(itemId) {
     const entry = inventory.find((it) => it.id === itemId);
-    if (!entry || entry.qty < 1) { ui.toast('You have no potions.'); return false; }
+    if (!entry || entry.qty < 1) return { ok: false, message: 'You have no potions.' };
     const def = ITEMS[itemId];
     const before = stats.health;
     removeItem(itemId, 1);
     stats.health = Math.min(stats.healthMax, stats.health + def.heal);
     ui.updateHud(stats);
     const healed = stats.health - before;
-    ui.toast(`You drink a ${def.name} and recover ${healed} health.`);
-    return true;
+    return { ok: true, message: `You drink a ${def.name} and recover ${healed} health.` };
   }
 
   // Builds the dialog "view" for an unoccupied building (a place, not an
@@ -453,17 +455,18 @@ async function boot() {
   // still selectable/readable, matching the mockup's Magic slot being
   // present. Wire real spells into this once the Magic system exists.
   function playerUseMagic() {
-    ui.toast('You don’t know any spells yet.');
+    ui.setBattleMessage('You don’t know any spells yet.');
   }
 
   // Reuses the same usePotion() the Items-tab "Use" action calls — only
   // spends the turn if it actually healed something (no potions = free
   // no-op, so accidentally picking Potion with an empty bag isn't a wasted
-  // turn against three kobolds).
+  // turn against three kobolds). Routes the result through the battle
+  // status line (not a toast) so it doesn't visually collide with it.
   function playerUsePotion() {
-    const healed = usePotion('health_potion');
-    if (!healed) return;
-    ui.setBattleMessage('You drink a Health Potion.');
+    const result = usePotion('health_potion');
+    ui.setBattleMessage(result.message);
+    if (!result.ok) return;
     battleState.turnPos += 1;
     runQueue();
   }

@@ -959,6 +959,24 @@ html, body {
 
 .enemy-slot .bar { width: 220px; }
 
+/* Numeric HP centered on the bar itself, matching the design PDF's battle
+   mockup (e.g. "7/10" overlaid on the health bar, not off to the side). */
+.enemy-health-bar { position: relative; }
+
+.enemy-health-value {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-lato);
+  font-weight: 600;
+  font-size: 13px;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  pointer-events: none;
+}
+
 .enemy-name {
   font-family: var(--font-medieval);
   font-size: 22px;
