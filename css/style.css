@@ -1065,8 +1065,13 @@ html, body {
 
 .enemy-portrait-window {
   position: absolute;
-  left: 0;
-  right: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 400px; /* Danny's layout: 400x443 at 3 enemies (slots are ~490,
+                       so the cap is what applies there, leaving the mockup's
+                       dark gaps between portraits); 4+ enemies shrink the
+                       slots below 400 and width goes fluid instead */
   bottom: 45px;
   height: 443px; /* > box height -> top pokes ~70px above the frame */
   overflow: hidden;
@@ -1105,7 +1110,7 @@ html, body {
 
 .enemy-name {
   position: absolute;
-  bottom: 8px;
+  bottom: 14px;
   left: 0;
   right: 0;
   text-align: center;
