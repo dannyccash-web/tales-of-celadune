@@ -29,6 +29,10 @@
 const SLOT_CATEGORY = {
   head: 'equipment', clothing: 'equipment', feet: 'equipment', hands: 'equipment',
   mainhand: 'weapons', offhand: 'weapons',
+  // 'item' (2026-07-10): the battle Use slot — an Items-category consumable
+  // (e.g. the Health Potion) equipped from the Items tab shows up in the
+  // battle UI's Use diamond and is consumed from there (one use = one turn).
+  item: 'items',
 };
 
 export function categoryFor(item) {
@@ -88,6 +92,7 @@ export default {
     image: 'assets/images/Health_Potion.png',
     description: 'A small vial of restorative brew. Restores health when used.',
     questItem: false,
+    slot: 'item', // equips to the battle Use slot; stays in the Items tab (see SLOT_CATEGORY)
     heal: 3,
   },
 };

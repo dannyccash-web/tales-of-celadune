@@ -202,6 +202,11 @@
            label + data-action are set dynamically in openItemPopout(). -->
       <div id="item-popout">
         <div class="popout-action" id="popout-primary" data-action="use">Use</div>
+        <!-- Shown only for consumable items (def.heal set — see the tile's
+             data-usable flag): usable items' primary action became Equip
+             (2026-07-10, battle Use slot), so out-of-battle drinking gets
+             its own row instead. -->
+        <div class="popout-action hidden" id="popout-use" data-action="use">Use</div>
         <div class="popout-action" data-action="inspect">Inspect</div>
         <div class="popout-action" data-action="remove">Remove</div>
         <div class="popout-action" data-action="cancel">Cancel</div>
@@ -228,6 +233,11 @@
           </div>
         </div>
         <div class="dialog-box" id="battle-enemies"></div>
+        <!-- Four action slots (Magic removed 2026-07-10 per Danny — no magic
+             system exists yet; re-add its div here + a slot config in
+             main.js's showPlayerActions() when it does). Empty hand slots
+             show a fist icon + "Unarmed" and still attack (1 dmg); Use shows
+             whatever Items-category item is equipped to the 'item' slot. -->
         <div class="dialog-box" id="battle-actions">
           <div class="battle-action" data-action="mainhand">
             <span class="battle-action-label">Main Hand</span>
@@ -237,17 +247,12 @@
           <div class="battle-action" data-action="offhand">
             <span class="battle-action-label">Off Hand</span>
             <div class="battle-action-icon"><img class="battle-action-img hidden" alt=""></div>
-            <span class="battle-action-sub">&nbsp;</span>
-          </div>
-          <div class="battle-action" data-action="magic">
-            <span class="battle-action-label">Magic</span>
-            <div class="battle-action-icon"><img class="battle-action-img hidden" alt=""></div>
-            <span class="battle-action-sub">&mdash;</span>
+            <span class="battle-action-sub">Unarmed</span>
           </div>
           <div class="battle-action" data-action="use">
             <span class="battle-action-label">Use</span>
             <div class="battle-action-icon"><img class="battle-action-img hidden" alt=""></div>
-            <span class="battle-action-sub">Health (0)</span>
+            <span class="battle-action-sub">Nothing</span>
           </div>
           <div class="battle-action" data-action="flee">
             <span class="battle-action-label">Flee</span>

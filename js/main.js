@@ -32,7 +32,9 @@ const inventory = [];
 // tab's grid (Equipment or Weapons — see items.js's categoryFor(), 2026-07-09).
 // Only items whose catalog entry has a matching `slot` can go in a given
 // slot — see js/data/items.js's schema comment.
-const equipment = { head: null, clothing: null, feet: null, hands: null, mainhand: null, offhand: null };
+// 'item' (2026-07-10) is the battle Use slot — an Items-category consumable
+// equipped from the Items tab, consumed from the battle UI's Use diamond.
+const equipment = { head: null, clothing: null, feet: null, hands: null, mainhand: null, offhand: null, item: null };
 
 function refreshItemsUi() {
   ui.updateItemsPanel(inventory, ITEMS, equipment);
@@ -49,7 +51,14 @@ function removeItem(id, qty = 1) {
   const existing = inventory.find((it) => it.id === id);
   if (!existing) return;
   existing.qty -= qty;
-  if (existing.qty <= 0) inventory.splice(inventory.indexOf(existing), 1);
+  if (existing.qty <= 0) {
+    inventory.splice(inventory.indexOf(existing), 1);
+    // An item that's fully gone can't stay equipped (e.g. drinking the last
+    // equipped Health Potion) — clear any slot still pointing at it.
+    Object.keys(equipment).forEach((slot) => {
+      if (equipment[slot] === id) equipment[slot] = null;
+    });
+  }
   refreshItemsUi();
   audio.sfx(audio.SFX.item);
 }
@@ -257,7 +266,7 @@ async function boot() {
   // consumes one, restores HP (capped at max), and reports back what
   // happened as a {ok, message} pair rather than showing it itself: the two
   // call sites display it differently (a toast outside battle, the battle
-  // status line during one — see playerUsePotion()) and firing a toast from
+  // status line during one — see playerUseItem()) and firing a toast from
   // in here unconditionally used to visually collide with the battle status
   // bar, which sits in roughly the same spot.
   function usePotion(itemId) {
@@ -399,27 +408,23 @@ async function boot() {
     runQueue();
   }
 
-  // One handler for all five action slots (ui.js reports the picked slot's
+  // One handler for all four action slots (ui.js reports the picked slot's
   // data-action). Exactly one action per player turn: the attack slots spend
-  // the turn via playerAttack once a target is confirmed, Use spends it only
-  // if a potion was actually drunk, Magic is a free informative no-op until
-  // spells exist, Flee ends the battle. Every path that *doesn't* spend the
+  // the turn via playerAttack once a target is confirmed (an empty hand
+  // attacks unarmed for 1 — both hands are always live options, per Danny's
+  // 2026-07-10 spec), Use spends it only if the equipped item was actually
+  // consumed, Flee ends the battle. Every path that *doesn't* spend the
   // turn must re-show the action menu — see showPlayerActions()'s comment.
+  // (Magic was removed from the row entirely 2026-07-10 — no magic system
+  // exists yet; restore its div in index.html + a slot config below when it
+  // does.)
   function handleBattleAction(action) {
     if (action === 'mainhand' || action === 'offhand') {
-      if (action === 'offhand' && !equipment.offhand) {
-        // Shouldn't be reachable (the slot renders disabled + keyboard
-        // focus skips it), but guard anyway — a free no-op, not a lost turn.
-        ui.setBattleMessage('You have nothing in your off hand.');
-        showPlayerActions();
-        return;
-      }
       pendingAttackSlot = action;
       if (!ui.startTargeting()) showPlayerActions(); // no alive target — hand control back
       return;
     }
-    if (action === 'magic') { playerUseMagic(); return; }
-    if (action === 'use') { playerUsePotion(); return; }
+    if (action === 'use') { playerUseItem(); return; }
     if (action === 'flee') { playerFlee(); }
   }
 
@@ -454,33 +459,38 @@ async function boot() {
     }, ENEMY_TURN_DELAY_MS);
   }
 
-  function potionCount() {
-    return inventory.find((it) => it.id === 'health_potion')?.qty || 0;
+  function equippedItemCount() {
+    if (!equipment.item) return 0;
+    return inventory.find((it) => it.id === equipment.item)?.qty || 0;
   }
   // Re-shows the action row without advancing battleState.order/turnPos —
   // used both by runQueue() when a fresh player turn comes up, and by any
-  // action that doesn't actually spend the turn (Magic's no-spells-yet stub,
-  // an unreachable empty-slot pick, targeting with no one alive).
-  // ui.battleKey() sets its internal mode to 'idle' the instant an action is
-  // selected, *before* the handler runs, so any handler that doesn't end up
-  // calling runQueue() again must call this itself or the battle UI is left
-  // with no live keyboard handler at all — a real bug caught live 2026-07-09
-  // (selecting Magic appeared to "freeze" the game: the message updated, but
-  // no further key press did anything).
-  // Builds the full per-slot config for the mockup's five diamond slots:
-  // equipped item art in the diamond, its name (or state) as the small-caps
-  // sub-label, and disabled for slots with nothing to act with (empty Off
-  // Hand, Use with 0 potions — keyboard focus skips disabled slots).
+  // action that doesn't actually spend the turn (an unreachable empty-slot
+  // pick, targeting with no one alive). ui.battleKey() sets its internal
+  // mode to 'idle' the instant an action is selected, *before* the handler
+  // runs, so any handler that doesn't end up calling runQueue() again must
+  // call this itself or the battle UI is left with no live keyboard handler
+  // at all — a real bug caught live 2026-07-09 (a no-op action appeared to
+  // "freeze" the game: the message updated, but no further key press did
+  // anything).
+  // Builds the full per-slot config for the four diamond slots: equipped
+  // item art in the diamond (a gold fist icon + "Unarmed" for an empty hand
+  // — still a live attack option, per Danny's 2026-07-10 spec), the Use
+  // slot showing whatever Items-category consumable is equipped to the
+  // 'item' slot, and a runner icon on Flee. Only Use can be disabled
+  // (nothing equipped, or the equipped item ran out — keyboard skips it).
   function showPlayerActions() {
     const mainhand = equipment.mainhand && ITEMS[equipment.mainhand];
     const offhand = equipment.offhand && ITEMS[equipment.offhand];
-    const potions = potionCount();
+    const useItem = equipment.item && ITEMS[equipment.item];
+    const useCount = equippedItemCount();
     ui.showBattleActions({
-      mainhand: { sub: mainhand ? mainhand.name : 'Unarmed', image: mainhand?.image || null },
-      offhand: { sub: offhand ? offhand.name : 'Nothing', image: offhand?.image || null, disabled: !offhand },
-      magic: { sub: '—' },
-      use: { sub: `Health (${potions})`, image: potions > 0 ? ITEMS.health_potion.image : null, disabled: potions === 0 },
-      flee: { sub: '' },
+      mainhand: { sub: mainhand ? mainhand.name : 'Unarmed', image: mainhand?.image || 'assets/images/icon_fist.svg' },
+      offhand: { sub: offhand ? offhand.name : 'Unarmed', image: offhand?.image || 'assets/images/icon_fist.svg' },
+      use: useItem
+        ? { sub: `${useItem.name} (${useCount})`, image: useItem.image, disabled: useCount === 0 }
+        : { sub: 'Nothing', disabled: true },
+      flee: { sub: '', image: 'assets/images/icon_run.svg' },
     });
   }
 
@@ -518,22 +528,19 @@ async function boot() {
     runQueue();
   }
 
-  // Magic has no spells to cast yet — an informative no-op that doesn't
-  // spend the player's turn, same spirit as a grayed-out menu item but
-  // still selectable/readable, matching the mockup's Magic slot being
-  // present. Wire real spells into this once the Magic system exists.
-  function playerUseMagic() {
-    ui.setBattleMessage('You don’t know any spells yet.');
-    showPlayerActions(); // no-op action — hand control straight back, see showPlayerActions()'s comment
-  }
-
-  // Reuses the same usePotion() the Items-tab "Use" action calls — only
-  // spends the turn if it actually healed something (no potions = free
-  // no-op, so accidentally picking Potion with an empty bag isn't a wasted
-  // turn against three kobolds). Routes the result through the battle
-  // status line (not a toast) so it doesn't visually collide with it.
-  function playerUsePotion() {
-    const result = usePotion('health_potion');
+  // Consumes the item equipped to the Use slot (equipment.item, set from
+  // Inventory > Items). Reuses the same usePotion() the Items-tab "Use"
+  // action calls — only spends the turn if something was actually consumed
+  // (the slot renders disabled when empty, so the failure path here is just
+  // a defensive free no-op). Routes the result through the battle status
+  // line (not a toast) so it doesn't visually collide with it.
+  function playerUseItem() {
+    if (!equipment.item) {
+      ui.setBattleMessage('You have nothing readied to use.');
+      showPlayerActions(); // no-op action — see showPlayerActions()'s comment
+      return;
+    }
+    const result = usePotion(equipment.item);
     ui.setBattleMessage(result.message);
     if (!result.ok) { showPlayerActions(); return; } // no-op action — see showPlayerActions()'s comment
     battleState.turnPos += 1;
@@ -605,7 +612,7 @@ async function boot() {
   window.battleDebug = {
     start: startBattle, state: battleState, stats, equipment,
     effectiveAttack, effectiveDefense, weaponDamage,
-    handleBattleAction, playerAttack, playerFlee, playerUsePotion, playerUseMagic, checkBattleEnd,
+    handleBattleAction, playerAttack, playerFlee, playerUseItem, checkBattleEnd,
     nowPlaying: audio.nowPlaying, // for verifying battle-music crossfades in automation
   };
 

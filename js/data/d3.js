@@ -130,7 +130,7 @@ export default {
     {
       id: 'old_barn_rats',
       door: { x: 1030, y: 1305 },
-      enemies: ['blight_rat', 'blight_rat', 'blight_rat'],
+      enemies: ['blight_rat'],
     },
   ],
 

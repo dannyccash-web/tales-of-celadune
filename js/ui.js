@@ -619,6 +619,10 @@ function buildItemTile(entry, def, equipment) {
   tile.dataset.quest = def.questItem ? '1' : '';
   tile.dataset.slot = def.slot || '';
   tile.dataset.equipped = equipped ? '1' : '';
+  // Consumables (def.heal) get a dedicated "Use" popout row — their primary
+  // action is Equip/Unequip (battle Use slot, 2026-07-10), so out-of-battle
+  // drinking needs its own entry. Same dataset-only pattern as quest/slot.
+  tile.dataset.usable = def.heal ? '1' : '';
   tile.classList.toggle('equipped', equipped);
 
   const frame = document.createElement('div');
@@ -708,7 +712,7 @@ function isPopoutOpen() {
 
 function popoutActionEls() {
   return Array.from(document.querySelectorAll('#item-popout .popout-action')).filter(
-    (el) => !el.classList.contains('disabled')
+    (el) => !el.classList.contains('disabled') && !el.classList.contains('hidden')
   );
 }
 
@@ -744,6 +748,8 @@ function openItemPopout(itemId, anchorEl) {
   const primaryEl = $('popout-primary');
   primaryEl.textContent = primary.label;
   primaryEl.dataset.action = primary.action;
+  // Consumables get a second "Use" row under Equip/Unequip (see index.html).
+  $('popout-use').classList.toggle('hidden', anchorEl.dataset.usable !== '1');
   // An equipped item can't be removed out from under itself — unequip it
   // first, same spirit as the existing quest-item restriction below.
   document.querySelector('#item-popout .popout-action[data-action="remove"]')

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Unarmed attack icon: clenched fist silhouette, knuckles up.
+       Fill matches --gold-bright so it reads like the other gold UI marks. -->
+  <g fill="#eed694">
+    <rect x="24" y="18" width="13" height="40" rx="6.5"/>
+    <rect x="39" y="13" width="13" height="45" rx="6.5"/>
+    <rect x="54" y="15" width="13" height="43" rx="6.5"/>
+    <rect x="69" y="21" width="12" height="37" rx="6"/>
+    <rect x="22" y="45" width="60" height="39" rx="13"/>
+    <rect x="11" y="49" width="17" height="28" rx="8.5" transform="rotate(16 19.5 63)"/>
+    <rect x="33" y="79" width="38" height="15" rx="5"/>
+  </g>
+</svg>

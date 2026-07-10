@@ -266,25 +266,20 @@ html, body {
   animation: portrait-slide-in 0.28s ease-out;
 }
 
-/* Unoccupied-building dialog: same 500x500 box as #portrait-frame
-   (right-anchored, bottom:0 relative to the ~345px-tall #dialog-npc box —
-   meaning this box's own top edge sits ~155px *above* the visible dialog
-   frame, which is fine for a tall portrait image but left short text
-   floating up out of the visible box when top-anchored with padding-top.
-   Fixed 2026-07-09 (Danny: "the list of contents is up too high"): flex
-   column + justify-content:flex-end bottom-anchors the heading+list group
-   against the box's bottom edge instead, landing it down inside the
-   visible frame the way a portrait's lower body would read. */
+/* Unoccupied-building dialog: the "Contents" column sits in the portrait's
+   500px-wide slot, but TOP-anchored (2026-07-10, Danny's round-2 feedback —
+   supersedes the earlier bottom-anchored flex-end version): the CONTENTS
+   heading is fixed on the same visual line as the place's name (top: 41px
+   optically centers the 22px heading against the 40px h2 across the box's
+   30px padding), never moves, and the item list stacks top-justified below
+   it — so a taken item simply disappears and the ones after it reflow up
+   to fill the gap. */
 #dialog-contents {
   position: absolute;
   right: 30px;
+  top: 41px;
   bottom: 0;
   width: 500px;
-  height: 500px;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  padding-bottom: 50px;
   pointer-events: none;
 }
 
@@ -996,16 +991,16 @@ html, body {
   background: rgba(0, 0, 0, 0.35);
 }
 
-/* Banner geometry (2026-07-09 round 2, from Danny's feedback): sides slant
-   at exactly 45° (horizontal inset = height), and the banner's BOTTOM edge
-   is what lines up with the other frames' 205px insets — so the element
-   itself starts 70px (its height) further out each side and the clip-path
-   pulls the bottom corners back in to 205. */
+/* Banner geometry (round 3, 2026-07-10, from Danny's feedback): the banner's
+   TOP edge is what lines up with the other frames' 205px insets (round 2 had
+   the bottom edge aligned, which made the top overhang wider than everything
+   else — "too wide"). Sides still slant at exactly 45° (horizontal inset =
+   height), pulling the bottom corners inward. */
 #battle-status {
   position: absolute;
   top: 0;
-  left: 135px;
-  right: 135px;
+  left: 205px;
+  right: 205px;
   height: 70px;
   background: linear-gradient(180deg, var(--frame-light), var(--frame-dark));
   clip-path: polygon(0 0, 100% 0, calc(100% - 70px) 100%, 70px 100%);

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Flee icon: running figure (exit-sign style), facing right.
+       Stroke matches --gold-bright so it reads like the other gold UI marks. -->
+  <g stroke="#eed694" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <circle cx="66" cy="17" r="8.5" fill="#eed694" stroke="none"/>
+    <path d="M62 29 L50 54"/>
+    <path d="M60 33 L76 39 L86 27"/>
+    <path d="M60 33 L45 40 L32 33"/>
+    <path d="M50 54 L68 62 L65 85"/>
+    <path d="M50 54 L38 70 L17 67"/>
+  </g>
+</svg>
