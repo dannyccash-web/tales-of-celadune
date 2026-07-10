@@ -346,6 +346,17 @@ html, body {
   padding: 42px 120px;
 }
 
+/* While the received-item reveal is showing, the box must be tall enough to
+   contain the whole block (caret + label + 190px frame + name ≈ 317px, per
+   Danny's mockup where nothing spills past the bottom frame) — a short
+   response list (e.g. just "Leave." after accepting Mirelle's crate) would
+   otherwise leave the box at ~140px and the item hanging out below it
+   (caught live 2026-07-09). :has() keeps this conditional so ordinary
+   dialogs stay content-sized. */
+#dialog-response-box:has(#dialog-received:not(.hidden)) {
+  min-height: 345px;
+}
+
 /* Arrow lives in its own column and slides between rows; text never indents */
 #dialog-arrow {
   position: absolute;
