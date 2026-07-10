@@ -80,9 +80,12 @@ function unequipItem(slot) {
 // Effective Attack/Defense = base stat + every equipped item's bonus (most
 // items grant +0 today — no armor with real bonuses exists yet, but the
 // math is here so future gear just needs attackBonus/defenseBonus fields).
-// weaponDamage() is what a successful player attack deals: the equipped
-// mainhand weapon's damage, or 1 (unarmed) if no weapon is equipped — per
-// Danny's spec exactly.
+// weaponDamage(slot) is what a successful player attack with that weapon
+// slot deals: the equipped weapon's damage (flat or {min,max} — rolled by
+// the caller via battle.rollDamage), or 1 (unarmed) for a bare main hand.
+// An empty off hand can't attack at all — its action slot is disabled in
+// the battle UI (see showPlayerActions), so the unarmed fallback here only
+// ever applies to mainhand in practice.
 function equipmentBonus(field) {
   return Object.values(equipment).reduce((sum, id) => {
     if (!id) return sum;
@@ -91,9 +94,9 @@ function equipmentBonus(field) {
 }
 function effectiveAttack() { return stats.attack + equipmentBonus('attackBonus'); }
 function effectiveDefense() { return stats.defense + equipmentBonus('defenseBonus'); }
-function weaponDamage() {
-  const mainhand = equipment.mainhand && ITEMS[equipment.mainhand];
-  return mainhand?.damage ?? 1;
+function weaponDamage(slot = 'mainhand') {
+  const item = equipment[slot] && ITEMS[equipment[slot]];
+  return item?.damage ?? 1;
 }
 
 // Centralized gold/health mutators (mirroring addItem/removeItem) so every
@@ -266,7 +269,7 @@ async function boot() {
     stats.health = Math.min(stats.healthMax, stats.health + def.heal);
     ui.updateHud(stats);
     const healed = stats.health - before;
-    return { ok: true, message: `You drink a ${def.name} and recover ${healed} health.` };
+    return { ok: true, message: `You drink a ${def.name}. +${healed} health.` };
   }
 
   // Builds the dialog "view" for an unoccupied building (a place, not an
@@ -358,6 +361,11 @@ async function boot() {
     return battle.turnOrder(combatants);
   }
 
+  // Which weapon slot the in-flight attack is using ('mainhand'/'offhand'),
+  // set when the player picks that action slot and consumed by playerAttack
+  // once a target is confirmed. Cleared between attacks.
+  let pendingAttackSlot = null;
+
   function startBattle(enemyIds, onEnd) {
     battleState.active = true;
     battleState.enemies = enemyIds.map((id, i) => {
@@ -371,16 +379,38 @@ async function boot() {
     battleState.onEnd = onEnd || null;
     battleState.order = rollRoundOrder();
     battleState.turnPos = 0;
+    pendingAttackSlot = null;
     ui.openBattle({
       enemies: battleState.enemies,
-      onSelectAttack: beginTargeting,
-      onSelectMagic: playerUseMagic,
-      onSelectPotion: playerUsePotion,
-      onSelectFlee: playerFlee,
+      onAction: handleBattleAction,
       onConfirmTarget: playerAttack,
     });
     ui.setBattleMessage('A wild encounter begins!');
     runQueue();
+  }
+
+  // One handler for all five action slots (ui.js reports the picked slot's
+  // data-action). Exactly one action per player turn: the attack slots spend
+  // the turn via playerAttack once a target is confirmed, Use spends it only
+  // if a potion was actually drunk, Magic is a free informative no-op until
+  // spells exist, Flee ends the battle. Every path that *doesn't* spend the
+  // turn must re-show the action menu — see showPlayerActions()'s comment.
+  function handleBattleAction(action) {
+    if (action === 'mainhand' || action === 'offhand') {
+      if (action === 'offhand' && !equipment.offhand) {
+        // Shouldn't be reachable (the slot renders disabled + keyboard
+        // focus skips it), but guard anyway — a free no-op, not a lost turn.
+        ui.setBattleMessage('You have nothing in your off hand.');
+        showPlayerActions();
+        return;
+      }
+      pendingAttackSlot = action;
+      if (!ui.startTargeting()) showPlayerActions(); // no alive target — hand control back
+      return;
+    }
+    if (action === 'magic') { playerUseMagic(); return; }
+    if (action === 'use') { playerUsePotion(); return; }
+    if (action === 'flee') { playerFlee(); }
   }
 
   // Advances through battleState.order. Stops (leaving the action menu up)
@@ -414,23 +444,34 @@ async function boot() {
     }, ENEMY_TURN_DELAY_MS);
   }
 
-  function equippedWeaponName() {
-    return (equipment.mainhand && ITEMS[equipment.mainhand]?.name) || 'Unarmed';
-  }
   function potionCount() {
     return inventory.find((it) => it.id === 'health_potion')?.qty || 0;
   }
-  // Re-shows the action menu without advancing battleState.order/turnPos —
+  // Re-shows the action row without advancing battleState.order/turnPos —
   // used both by runQueue() when a fresh player turn comes up, and by any
   // action that doesn't actually spend the turn (Magic's no-spells-yet stub,
-  // Potion with none in inventory). ui.battleKey() sets its internal mode to
-  // 'idle' the instant an action is selected, *before* the handler runs, so
-  // any handler that doesn't end up calling runQueue() again must call this
-  // itself or the battle UI is left with no live keyboard handler at all —
-  // a real bug caught live 2026-07-09 (selecting Magic appeared to "freeze"
-  // the game: the message updated, but no further key press did anything).
+  // an unreachable empty-slot pick, targeting with no one alive).
+  // ui.battleKey() sets its internal mode to 'idle' the instant an action is
+  // selected, *before* the handler runs, so any handler that doesn't end up
+  // calling runQueue() again must call this itself or the battle UI is left
+  // with no live keyboard handler at all — a real bug caught live 2026-07-09
+  // (selecting Magic appeared to "freeze" the game: the message updated, but
+  // no further key press did anything).
+  // Builds the full per-slot config for the mockup's five diamond slots:
+  // equipped item art in the diamond, its name (or state) as the small-caps
+  // sub-label, and disabled for slots with nothing to act with (empty Off
+  // Hand, Use with 0 potions — keyboard focus skips disabled slots).
   function showPlayerActions() {
-    ui.showBattleActions({ weaponName: equippedWeaponName(), potionCount: potionCount() });
+    const mainhand = equipment.mainhand && ITEMS[equipment.mainhand];
+    const offhand = equipment.offhand && ITEMS[equipment.offhand];
+    const potions = potionCount();
+    ui.showBattleActions({
+      mainhand: { sub: mainhand ? mainhand.name : 'Unarmed', image: mainhand?.image || null },
+      offhand: { sub: offhand ? offhand.name : 'Nothing', image: offhand?.image || null, disabled: !offhand },
+      magic: { sub: '—' },
+      use: { sub: `Health (${potions})`, image: potions > 0 ? ITEMS.health_potion.image : null, disabled: potions === 0 },
+      flee: { sub: '' },
+    });
   }
 
   function resolveEnemyTurn(enemy) {
@@ -438,25 +479,26 @@ async function boot() {
     if (hit) {
       const dmg = battle.rollDamage(enemy.damage);
       damagePlayer(dmg);
-      ui.setBattleMessage(`The ${enemy.name} hits you for ${dmg} damage.`);
+      ui.setBattleMessage(`The ${enemy.name} hits you. −${dmg} damage taken.`);
     } else {
       ui.setBattleMessage(`The ${enemy.name} attacks but misses.`);
     }
   }
 
-  // Player chose Attack — hand off to ui.js's target-select sub-mode (Left/
-  // Right cycle alive enemies, Space confirms via onConfirmTarget below,
-  // Escape cancels back to the action menu without spending the turn).
-  function beginTargeting() {
-    ui.startTargeting();
-  }
-
+  // Target confirmed (ui.js's onConfirmTarget) — resolve the attack with
+  // whichever weapon slot was picked (pendingAttackSlot). Damage numbers in
+  // the status line carry a +/− sign so ui.setBattleMessage colorizes them
+  // per the mockup (+N green = damage done, −N red = damage taken).
   function playerAttack(target) {
+    const slot = pendingAttackSlot || 'mainhand';
+    pendingAttackSlot = null;
     const hit = battle.resolveAttack(effectiveAttack(), target.defense);
     if (hit) {
-      const dmg = weaponDamage();
+      const dmg = battle.rollDamage(weaponDamage(slot));
       target.health = Math.max(0, target.health - dmg);
-      ui.setBattleMessage(`You hit the ${target.name} for ${dmg} damage.`);
+      ui.setBattleMessage(target.health <= 0
+        ? `The ${target.name} falls! +${dmg} damage done.`
+        : `You hit the ${target.name}. +${dmg} damage done.`);
       audio.sfx(audio.SFX.hurt);
     } else {
       ui.setBattleMessage(`You attack the ${target.name} but miss.`);
@@ -547,7 +589,7 @@ async function boot() {
   window.battleDebug = {
     start: startBattle, state: battleState, stats, equipment,
     effectiveAttack, effectiveDefense, weaponDamage,
-    playerAttack, playerFlee, playerUsePotion, playerUseMagic, checkBattleEnd,
+    handleBattleAction, playerAttack, playerFlee, playerUsePotion, playerUseMagic, checkBattleEnd,
   };
 
   function interact() {

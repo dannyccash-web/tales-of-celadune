@@ -90,9 +90,7 @@
                portrait, and animates down from that direction (see
                @keyframes received-drop in style.css). -->
           <div id="dialog-received" class="hidden">
-            <svg class="received-arrow" width="28" height="22" viewBox="0 0 28 22" xmlns="http://www.w3.org/2000/svg">
-              <path d="M14 22 L1 6 L9 6 L9 0 L19 0 L19 6 L27 6 Z" fill="url(#goldgrad)"/>
-            </svg>
+            <div class="received-caret"></div>
             <div class="received-label">Received</div>
             <div class="received-frame"><img id="received-image" src="" alt=""></div>
             <div class="received-name" id="received-name">Item Name</div>
@@ -212,37 +210,48 @@
       <div id="toast" class="hidden"></div>
       <div id="quest-toast" class="hidden"></div>
 
-      <!-- Battle (2026-07-08): status message, a row of enemy slots (built
-           dynamically by ui.renderBattleEnemies — count varies per
-           encounter), and an action menu (Attack/Magic/Potion/Flee). Same
-           double-gold-frame ".dialog-box"-style boxes as the rest of the UI.
-           Attack's sub-label shows the equipped weapon; selecting it enters
-           a target-select sub-mode over the enemy row instead of resolving
-           immediately. -->
+      <!-- Battle (2026-07-08; UI matched to Danny's battle mockup
+           2026-07-09): a trapezoid status banner hanging flush from the top
+           screen edge (not a plain box — see #battle-status in style.css), a
+           wide double-gold-framed box of large cropped enemy portraits
+           (built dynamically by ui.renderBattleEnemies — health bar overlaps
+           each portrait's bottom, name below), and an action row of five
+           labeled diamond slots — one per thing the player can act with:
+           Main Hand / Off Hand / Magic / Use / Flee. Each diamond shows the
+           equipped item's art + a small-caps sub-label (filled per turn by
+           ui.showBattleActions). Main/Off Hand enter target-select over the
+           enemy row instead of resolving immediately; one action per turn. -->
       <div id="battle" class="hidden">
-        <div class="dialog-box" id="battle-status">
-          <p id="battle-message">Battle status message in this area.</p>
+        <div id="battle-status">
+          <div id="battle-status-inner">
+            <p id="battle-message">Battle status message in this area.</p>
+          </div>
         </div>
         <div class="dialog-box" id="battle-enemies"></div>
         <div class="dialog-box" id="battle-actions">
-          <div class="battle-action" data-action="attack">
-            <div class="battle-action-icon"></div>
-            <span class="battle-action-label">Attack</span>
-            <span class="battle-action-sub" id="battle-weapon-name">Unarmed</span>
+          <div class="battle-action" data-action="mainhand">
+            <span class="battle-action-label">Main Hand</span>
+            <div class="battle-action-icon"><img class="battle-action-img hidden" alt=""></div>
+            <span class="battle-action-sub">Unarmed</span>
+          </div>
+          <div class="battle-action" data-action="offhand">
+            <span class="battle-action-label">Off Hand</span>
+            <div class="battle-action-icon"><img class="battle-action-img hidden" alt=""></div>
+            <span class="battle-action-sub">&nbsp;</span>
           </div>
           <div class="battle-action" data-action="magic">
-            <div class="battle-action-icon"></div>
             <span class="battle-action-label">Magic</span>
+            <div class="battle-action-icon"><img class="battle-action-img hidden" alt=""></div>
             <span class="battle-action-sub">&mdash;</span>
           </div>
-          <div class="battle-action" data-action="potion">
-            <div class="battle-action-icon"></div>
-            <span class="battle-action-label">Potion</span>
-            <span class="battle-action-sub" id="battle-potion-count">Health (0)</span>
+          <div class="battle-action" data-action="use">
+            <span class="battle-action-label">Use</span>
+            <div class="battle-action-icon"><img class="battle-action-img hidden" alt=""></div>
+            <span class="battle-action-sub">Health (0)</span>
           </div>
           <div class="battle-action" data-action="flee">
-            <div class="battle-action-icon"></div>
             <span class="battle-action-label">Flee</span>
+            <div class="battle-action-icon"><img class="battle-action-img hidden" alt=""></div>
             <span class="battle-action-sub">&nbsp;</span>
           </div>
         </div>

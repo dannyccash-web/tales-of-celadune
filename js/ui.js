@@ -923,36 +923,38 @@ export function initPanels(audio) {
   initSlider('sfx', audio.getSfxVolume(), audio.setSfxVolume);
 }
 
-// ---- Battle (2026-07-08) ----
+// ---- Battle (2026-07-08, action row reworked to slot-based 2026-07-09) ----
 // Turn-based combat overlay — main.js owns the actual fight (whose turn,
 // hit/miss/damage via js/battle.js's dice), this module only renders it and
-// reports back which action/target the player picked. `mode` gates
-// battleKey() so key mashing during an enemy's turn (nothing to respond to)
-// or before the first turn is a no-op:
+// reports back which action/target the player picked. The action row is the
+// mockup's five labeled diamond slots — Main Hand / Off Hand / Magic / Use /
+// Flee — each showing the equipped item's art + a sub-label, all filled per
+// player turn by showBattleActions(). `mode` gates battleKey() so key
+// mashing during an enemy's turn (nothing to respond to) or before the
+// first turn is a no-op:
 //   'idle'   nothing to do — waiting on an enemy turn (see main.js's
 //            runQueue/ENEMY_TURN_DELAY_MS pacing).
-//   'action' the action menu (Attack/Magic/Potion/Flee) has focus.
-//   'target' Attack was chosen — Left/Right cycle alive enemies, Space
-//            confirms (handlers.onConfirmTarget), Escape cancels back to
-//            'action' without spending the turn.
+//   'action' the action row has focus. Space reports the selected slot's
+//            data-action through handlers.onAction(action).
+//   'target' Main/Off Hand was chosen — Left/Right cycle alive enemies,
+//            Space confirms (handlers.onConfirmTarget), Escape cancels back
+//            to 'action' without spending the turn.
 const battleUiState = {
   open: false,
   mode: 'idle',
-  handlers: null,
+  handlers: null, // { onAction(action), onConfirmTarget(enemy) }
   enemies: [], // live object refs shared with main.js's battleState.enemies — health mutates in place, so re-rendering always reflects the current fight
   enemySlots: [], // [{ el, enemy }], in render order — rebuilt each renderBattleEnemies() call
   actionIndex: 0,
   targetIndex: 0,
 };
 
-const BATTLE_ACTIONS = ['attack', 'magic', 'potion', 'flee'];
-
 export function isBattleOpen() { return battleUiState.open; }
 
-export function openBattle({ enemies, onSelectAttack, onSelectMagic, onSelectPotion, onSelectFlee, onConfirmTarget }) {
+export function openBattle({ enemies, onAction, onConfirmTarget }) {
   battleUiState.open = true;
   battleUiState.mode = 'idle';
-  battleUiState.handlers = { onSelectAttack, onSelectMagic, onSelectPotion, onSelectFlee, onConfirmTarget };
+  battleUiState.handlers = { onAction, onConfirmTarget };
   battleUiState.actionIndex = 0;
   renderBattleEnemies(enemies);
   $('battle').classList.remove('hidden');
@@ -965,13 +967,36 @@ export function closeBattle() {
   $('battle').classList.add('hidden');
 }
 
+// Status line with auto-colored damage numbers (per the mockup: "+1 damage
+// done" green, "−2 damage taken" red): any +N / −N / -N token in the text is
+// wrapped in a .dmg-pos/.dmg-neg span. Built with DOM nodes, not innerHTML,
+// so message text can never inject markup.
 export function setBattleMessage(text) {
-  $('battle-message').textContent = text;
+  const el = $('battle-message');
+  el.textContent = '';
+  String(text).split(/([+−-]\d+)/g).forEach((part) => {
+    if (/^\+\d+$/.test(part)) {
+      const span = document.createElement('span');
+      span.className = 'dmg-pos';
+      span.textContent = part;
+      el.appendChild(span);
+    } else if (/^[−-]\d+$/.test(part)) {
+      const span = document.createElement('span');
+      span.className = 'dmg-neg';
+      span.textContent = part;
+      el.appendChild(span);
+    } else if (part) {
+      el.appendChild(document.createTextNode(part));
+    }
+  });
 }
 
 // Rebuilds the enemy row from scratch every call (health, defeated state,
 // and — if we're mid target-select — which one's highlighted all change
-// together). Cheap enough at 1-4 enemies to not bother diffing.
+// together). Cheap enough at 1-4 enemies to not bother diffing. Structure
+// per slot (matched to the mockup): a cropping window the portrait fills
+// top-anchored (big art, cropped at the bottom), the health bar overlapping
+// the portrait's bottom edge, and the name centered below.
 export function renderBattleEnemies(enemies) {
   battleUiState.enemies = enemies;
   const box = $('battle-enemies');
@@ -981,10 +1006,13 @@ export function renderBattleEnemies(enemies) {
     const slot = document.createElement('div');
     slot.className = 'enemy-slot' + (defeated ? ' defeated' : '');
 
+    const windowEl = document.createElement('div');
+    windowEl.className = 'enemy-portrait-window';
     const portrait = document.createElement('img');
     portrait.className = 'enemy-portrait';
     portrait.src = enemy.portrait;
     portrait.alt = enemy.name;
+    windowEl.appendChild(portrait);
 
     const bar = document.createElement('div');
     bar.className = 'bar enemy-health-bar';
@@ -1004,7 +1032,7 @@ export function renderBattleEnemies(enemies) {
     name.className = 'enemy-name';
     name.textContent = defeated ? `${enemy.name} (defeated)` : enemy.name;
 
-    slot.append(portrait, bar, name);
+    slot.append(windowEl, bar, name);
     box.appendChild(slot);
     return { el: slot, enemy };
   });
@@ -1015,9 +1043,12 @@ function aliveSlots() {
   return battleUiState.enemySlots.filter((s) => s.enemy.health > 0);
 }
 
+function actionEls() {
+  return Array.from($('battle-actions').querySelectorAll('.battle-action'));
+}
+
 function refreshActionFocus() {
-  const els = Array.from($('battle-actions').querySelectorAll('.battle-action'));
-  els.forEach((el, i) => el.classList.toggle('focused', battleUiState.mode === 'action' && i === battleUiState.actionIndex));
+  actionEls().forEach((el, i) => el.classList.toggle('focused', battleUiState.mode === 'action' && i === battleUiState.actionIndex));
 }
 
 function refreshTargetFocus() {
@@ -1029,27 +1060,57 @@ function refreshTargetFocus() {
 }
 
 // Called by main.js's runQueue() whenever it's actually the player's turn —
-// updates the dynamic sub-labels (equipped weapon, potion count) and hands
-// the action menu keyboard focus.
-export function showBattleActions({ weaponName, potionCount }) {
+// fills every action slot (item art in the diamond, sub-label under it,
+// disabled state) and hands the action row keyboard focus. `slots` is keyed
+// by data-action: { mainhand: {sub, image}, offhand: {sub, image, disabled},
+// magic: {sub}, use: {sub, image, disabled}, flee: {sub} } — any field
+// omitted clears/enables that part.
+export function showBattleActions(slots) {
   battleUiState.mode = 'action';
-  battleUiState.actionIndex = 0;
-  $('battle-weapon-name').textContent = weaponName;
-  $('battle-potion-count').textContent = `Health (${potionCount})`;
-  $('battle-actions').querySelector('.battle-action[data-action="potion"]')
-    .classList.toggle('disabled', potionCount === 0);
+  battleUiState.actionIndex = 0; // Main Hand — never disabled (unarmed still works)
+  actionEls().forEach((el) => {
+    const cfg = slots[el.dataset.action] || {};
+    el.classList.toggle('disabled', !!cfg.disabled);
+    el.querySelector('.battle-action-sub').textContent = cfg.sub || ' ';
+    const img = el.querySelector('.battle-action-img');
+    if (cfg.image) {
+      img.src = cfg.image;
+      img.classList.remove('hidden');
+    } else {
+      img.classList.add('hidden');
+      img.removeAttribute('src');
+    }
+  });
   refreshActionFocus();
 }
 
-// Attack was chosen — hand focus to the enemy row. Reads its own alive list
-// off battleUiState.enemies (not an argument) so it can't go stale relative
-// to what's actually rendered.
+// A weapon slot was chosen — hand focus to the enemy row. Reads its own
+// alive list off battleUiState.enemies (not an argument) so it can't go
+// stale relative to what's actually rendered. Returns false if there's no
+// one to target (callers must then re-show the action menu themselves —
+// same "no action left without a live keyboard handler" rule as
+// showPlayerActions in main.js).
 export function startTargeting() {
-  if (!aliveSlots().length) return;
+  if (!aliveSlots().length) return false;
   battleUiState.mode = 'target';
   battleUiState.targetIndex = 0;
   refreshTargetFocus();
-  refreshActionFocus(); // clears the action menu's highlight while targeting
+  refreshActionFocus(); // clears the action row's highlight while targeting
+  return true;
+}
+
+// Left/Right skip disabled action slots (an empty Off Hand, Use with no
+// potions) so keyboard focus can never land on one; Flee is never disabled,
+// so this can't spin forever.
+function cycleAction(dir) {
+  const els = actionEls();
+  let i = battleUiState.actionIndex;
+  for (let n = 0; n < els.length; n += 1) {
+    i = (i + dir + els.length) % els.length;
+    if (!els[i].classList.contains('disabled')) break;
+  }
+  battleUiState.actionIndex = i;
+  refreshActionFocus();
 }
 
 export function battleKey(key) {
@@ -1072,32 +1133,31 @@ export function battleKey(key) {
   }
 
   if (battleUiState.mode !== 'action') return; // an enemy turn is resolving — nothing to do yet
-  if (key === 'ArrowLeft') { battleUiState.actionIndex = (battleUiState.actionIndex + BATTLE_ACTIONS.length - 1) % BATTLE_ACTIONS.length; refreshActionFocus(); return; }
-  if (key === 'ArrowRight') { battleUiState.actionIndex = (battleUiState.actionIndex + 1) % BATTLE_ACTIONS.length; refreshActionFocus(); return; }
+  if (key === 'ArrowLeft') { cycleAction(-1); return; }
+  if (key === 'ArrowRight') { cycleAction(1); return; }
   if (key === ' ' || key === 'Enter') {
-    const action = BATTLE_ACTIONS[battleUiState.actionIndex];
+    const el = actionEls()[battleUiState.actionIndex];
+    if (!el || el.classList.contains('disabled')) return;
     battleUiState.mode = 'idle';
-    if (action === 'attack') h?.onSelectAttack?.();
-    if (action === 'magic') h?.onSelectMagic?.();
-    if (action === 'potion') h?.onSelectPotion?.();
-    if (action === 'flee') h?.onSelectFlee?.();
+    refreshActionFocus();
+    h?.onAction?.(el.dataset.action);
   }
 }
 
-// Mouse support for the action menu + enemy targeting, mirroring how the
+// Mouse support for the action row + enemy targeting, mirroring how the
 // dialog responses and item tiles work (click, or hover to move keyboard
-// focus without selecting). Action buttons are static HTML so this only
+// focus without selecting). Action slots are static HTML so this only
 // needs to run once; enemy slots are rebuilt every renderBattleEnemies()
 // call, so their clicks are handled via delegation on the container instead.
 export function initBattle() {
-  Array.from($('battle-actions').querySelectorAll('.battle-action')).forEach((el, i) => {
+  actionEls().forEach((el, i) => {
     el.addEventListener('click', () => {
-      if (battleUiState.mode !== 'action') return;
+      if (battleUiState.mode !== 'action' || el.classList.contains('disabled')) return;
       battleUiState.actionIndex = i;
       battleKey(' ');
     });
     el.addEventListener('mouseenter', () => {
-      if (battleUiState.mode !== 'action') return;
+      if (battleUiState.mode !== 'action' || el.classList.contains('disabled')) return;
       battleUiState.actionIndex = i;
       refreshActionFocus();
     });
