@@ -258,20 +258,28 @@ export function toast(message, ms = 2500) {
   toastTimer = setTimeout(() => el.classList.add('hidden'), ms);
 }
 
-// A distinct, more prominent banner for "you've been given a quest" — same
+// A distinct, more prominent banner for quest lifecycle events — same
 // top-center spot as the plain toast, but styled/worded as its own event
-// rather than a passing notice (see main.js's startQuest()).
+// rather than a passing notice (see main.js's startQuest/completeQuest).
 let questToastTimer = null;
 
-export function showQuestAdded(questName) {
+function showQuestToast(text) {
   const el = $('quest-toast');
-  el.textContent = `Quest Added: ${questName}`;
+  el.textContent = text;
   el.classList.remove('hidden');
   el.classList.remove('quest-toast-enter');
   void el.offsetWidth; // force reflow so the animation replays
   el.classList.add('quest-toast-enter');
   clearTimeout(questToastTimer);
   questToastTimer = setTimeout(() => el.classList.add('hidden'), 3500);
+}
+
+export function showQuestAdded(questName) {
+  showQuestToast(`Quest Added: ${questName}`);
+}
+
+export function showQuestCompleted(questName) {
+  showQuestToast(`Quest Completed: ${questName}`);
 }
 
 // ---- Menu / Inventory panels ----

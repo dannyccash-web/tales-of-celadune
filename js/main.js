@@ -139,6 +139,17 @@ function startQuest(id) {
   ui.showQuestAdded(def.name);
 }
 
+// The one way a quest resolves to 'completed' (2026-07-10, first real user:
+// Brenna's barn_rat turn-in) — mirrors startQuest: state change + panel
+// refresh + the top-center banner, all in one place.
+function completeQuest(id) {
+  const q = quests.find((entry) => entry.id === id);
+  if (!q || q.status !== 'active') return;
+  q.status = 'completed';
+  ui.updateQuestsPanel(quests, QUESTS);
+  ui.showQuestCompleted(QUESTS[id]?.name || id);
+}
+
 function questStatus(id) {
   return quests.find((q) => q.id === id)?.status || 'none';
 }
@@ -148,10 +159,20 @@ function questStatus(id) {
 // a second one) via an optional dialogByQuestStatus map on the NPC — see
 // js/data/d3.js. Falls back to the NPC's plain `dialog` if no variant
 // matches the current status (including 'none', before the quest exists).
-function resolveNpcDialog(npc) {
+// `isQuestReady(questId)` (2026-07-10, optional) reports whether an active
+// quest's world condition is met (e.g. the barn rat being dead — see
+// QUEST_READY in boot()); when it is, an optional `readyToComplete`
+// pseudo-status variant takes precedence over the plain 'active' one, so
+// the turn-in conversation (thanks + reward + completeQuest effect) can
+// live in scene data like every other variant.
+function resolveNpcDialog(npc, isQuestReady) {
   if (!npc.dialogByQuestStatus) return npc.dialog;
   for (const [questId, variants] of Object.entries(npc.dialogByQuestStatus)) {
-    const variant = variants[questStatus(questId)];
+    const status = questStatus(questId);
+    if (status === 'active' && variants.readyToComplete && isQuestReady?.(questId)) {
+      return variants.readyToComplete;
+    }
+    const variant = variants[status];
     if (variant) return variant;
   }
   return npc.dialog;
@@ -222,17 +243,25 @@ async function boot() {
   }
   document.getElementById('btn-start').addEventListener('click', startGame);
 
+  // Gaffer only warms up once he's been fed (session state, not persisted —
+  // matches how the world's `defeated`/`collected` flags reset per World).
+  let gafferHappy = false;
+
   // A response can carry an optional effect (dialog.responseEffects, parallel
   // to dialog.responses) — damage (Gaffer's bite), a plain toast message,
-  // startQuest (adds a quest + fires the "Quest Added" banner), and/or
-  // grantItem (e.g. Mirelle's vegetable crate). grantItem returns true so
-  // ui.chooseResponse() keeps the dialog open for the follow-up thank-you
-  // line instead of closing immediately.
+  // startQuest (adds a quest + fires the "Quest Added" banner), addGold /
+  // completeQuest (Brenna's turn-in, 2026-07-10), grantItem (e.g. Mirelle's
+  // vegetable crate), feedGaffer (the corn hand-off), and/or followUp (a
+  // reply line that keeps the dialog open — the generic version of
+  // grantItem's thankYou). grantItem/feedGaffer/followUp return true so
+  // ui.chooseResponse() keeps the dialog open instead of closing.
   function applyResponseEffect(npc, index) {
     const effect = npc.dialog.responseEffects?.[index];
     if (!effect) return;
     if (effect.damage) damagePlayer(effect.damage);
     if (effect.startQuest) startQuest(effect.startQuest);
+    if (effect.addGold) addGold(effect.addGold);
+    if (effect.completeQuest) completeQuest(effect.completeQuest);
     if (effect.grantItem) {
       addItem(effect.grantItem, effect.qty ?? 1);
       ui.showReceivedItem(ITEMS[effect.grantItem]);
@@ -241,7 +270,50 @@ async function boot() {
       }
       return true;
     }
+    if (effect.feedGaffer) {
+      removeItem('corn', 1);
+      gafferHappy = true;
+      ui.updateDialogContent({
+        line: 'Gaffer snatches the corn straight from your hand and demolishes it, cob and all. He fixes you with a look of profound reevaluation.',
+        responses: ['Pet Gaffer.', 'Leave.'],
+        responseEffects: [{ followUp: GAFFER_HAPPY_PET_LINE }, null],
+      });
+      return true;
+    }
     if (effect.message) ui.toast(effect.message);
+    if (effect.followUp) {
+      ui.updateDialogContent({ line: effect.followUp, responses: ['Leave.'] });
+      return true;
+    }
+  }
+
+  const GAFFER_HAPPY_PET_LINE = 'Gaffer leans into your hand and bleats contentedly. His beard smells of corn and questionable decisions.';
+
+  // Gaffer's dialog is built dynamically instead of via quest variants —
+  // it depends on session state (fed or not) and inventory (holding corn),
+  // not on a quest. Unfed with corn in your bag: a "Feed Gaffer some corn."
+  // option appears (and petting still bites). Once fed, he's a friend for
+  // life: petting is safe and the flavor text warms up.
+  function buildGafferDialog(npc) {
+    if (gafferHappy) {
+      return {
+        line: 'Gaffer looks up mid-chew, ears flopping. For a goat, the expression is downright friendly.',
+        responses: ['Pet Gaffer.', 'Leave.'],
+        responseEffects: [{ followUp: GAFFER_HAPPY_PET_LINE }, null],
+      };
+    }
+    if (inventory.some((it) => it.id === 'corn')) {
+      return {
+        line: npc.dialog.line,
+        responses: ['Pet Gaffer.', 'Feed Gaffer some corn.', 'Leave.'],
+        responseEffects: [
+          { damage: 1, message: 'Gaffer nips you! -1 health.' },
+          { feedGaffer: true },
+          null,
+        ],
+      };
+    }
+    return npc.dialog;
   }
 
   // Popout actions from the Items tab. Inspect/Remove are unchanged; the
@@ -324,11 +396,20 @@ async function boot() {
     return true; // keep browsing the room
   }
 
+  // Which active quests' world conditions are currently satisfied — feeds
+  // resolveNpcDialog's readyToComplete pseudo-status. Lives here (not in
+  // scene data) because conditions read live world state.
+  const QUEST_READY = {
+    barn_rat: () => !!world.battles.find((b) => b.id === 'old_barn_rats')?.defeated,
+  };
+  const isQuestReady = (id) => QUEST_READY[id]?.() ?? false;
+
   // Every NPC dialog opens through here so the per-character voice clip
   // (audio.DIALOGUE_SFX, keyed by npc.id) and response-effect handling are
   // consistent whether the NPC was approached directly or met at their door.
   // Places (isPlace: true) branch off to their own view/response builders —
-  // they have no voice clip and no quest-status dialog variants.
+  // they have no voice clip and no quest-status dialog variants. Gaffer's
+  // dialog is state-built (fed / holding corn) rather than quest-driven.
   function openNpcDialog(npc, onClose) {
     if (npc.isPlace) {
       ui.openDialog(buildPlaceView(npc), onClose, (npcView, index) => applyPlaceResponse(npc, npcView, index));
@@ -336,7 +417,8 @@ async function boot() {
     }
     const voice = audio.DIALOGUE_SFX[npc.id];
     if (voice) audio.sfx(voice, 1.0);
-    ui.openDialog({ ...npc, dialog: resolveNpcDialog(npc) }, onClose, applyResponseEffect);
+    const dialog = npc.id === 'gaffer' ? buildGafferDialog(npc) : resolveNpcDialog(npc, isQuestReady);
+    ui.openDialog({ ...npc, dialog }, onClose, applyResponseEffect);
   }
 
   // ---- Battle (2026-07-08) ----
@@ -622,12 +704,17 @@ async function boot() {
 
     const item = world.nearestInteractableInRange();
     if (item) {
-      item.collected = true;
+      // Repeatable interactables (e.g. the silo's corn) never mark
+      // themselves collected, so they can be tapped again and again.
+      if (!item.repeatable) item.collected = true;
       if (item.reward?.gold) {
         addGold(item.reward.gold);
-        ui.toast(`You found ${item.reward.gold} gold!`);
+        ui.toast(item.message || `You found ${item.reward.gold} gold!`);
+      } else if (item.reward?.item) {
+        addItem(item.reward.item, item.reward.qty ?? 1);
+        ui.toast(item.message || `You got: ${ITEMS[item.reward.item]?.name || item.reward.item}.`);
       } else {
-        ui.toast('You found something!');
+        ui.toast(item.message || 'You found something!');
       }
       return;
     }

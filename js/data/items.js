@@ -86,6 +86,13 @@ export default {
     slot: 'mainhand',
     damage: 2,
   },
+  corn: {
+    id: 'corn',
+    name: 'Corn',
+    image: 'assets/images/Corn.png',
+    description: 'An ear of dried corn from the silo. A certain goat would trade his soul for this.',
+    questItem: false,
+  },
   health_potion: {
     id: 'health_potion',
     name: 'Health Potion',

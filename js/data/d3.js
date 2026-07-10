@@ -118,6 +118,23 @@ export default {
       label: 'A shiny object',
       reward: { gold: 3 },
     },
+    // The silo hands out corn (Gaffer's favorite — see main.js's
+    // buildGafferDialog). `repeatable: true` (2026-07-10) means it never
+    // marks itself collected, so a discarded/fed ear can always be replaced
+    // — no way to soft-lock the goat interaction. Anchor point sits at the
+    // silo's north face, reachable from the pen corridor (east), the path
+    // above, and the player-only pocket west of the silo (range 130 covers
+    // all three approaches; the 'Silo' building label draws ~70px south of
+    // this one, far enough apart to both stay readable).
+    {
+      id: 'silo-corn',
+      x: 1270, y: 1240,
+      range: 130,
+      label: 'Gather corn',
+      repeatable: true,
+      reward: { item: 'corn' },
+      message: 'You scoop an ear of corn from the silo.',
+    },
   ],
 
   // Battle encounters (2026-07-08): door + enemy id list (js/data/enemies.js).
@@ -282,6 +299,9 @@ export default {
         { do: 'wait', s: 15 },
         { do: 'leaveHome' },
       ],
+      // Fallback dialog — in practice never shown once the barn_rat quest
+      // variants below exist (they cover every status incl. 'none'), but
+      // kept as the safety net resolveNpcDialog() falls back to.
       dialog: {
         line: 'The animals are settled for now. Silo’s fuller than last season, at least — small mercies.',
         responses: [
@@ -289,6 +309,50 @@ export default {
           'What’s in the silo?',
           'Leave.',
         ],
+      },
+      // Brenna's rat quest (2026-07-10, Danny's spec). `readyToComplete` is a
+      // pseudo-status (see main.js's resolveNpcDialog): used instead of
+      // 'active' once the quest's world condition is met — here, the Old
+      // Barn encounter being defeated (QUEST_READY in main.js).
+      dialogByQuestStatus: {
+        barn_rat: {
+          none: {
+            line: 'Well now, look who’s come wandering by. Day’s work is nearly done... feel like a roll in the hay?',
+            responses: [
+              'Sure, why not?',
+              'No, thank you.',
+            ],
+            responseEffects: [
+              {
+                startQuest: 'barn_rat',
+                followUp: 'Ha! I like your spirit. One small thing first — there’s a blight rat holed up in the Old Barn, and I’m not setting foot near the hay while it’s scratching about. Go clear it out for me, would you?',
+              },
+              { followUp: 'Oh well. You’re missing out on the fun.' },
+            ],
+          },
+          active: {
+            line: 'That rat in the barn — have you dealt with it yet? I can hear it gnawing clear across the yard.',
+            responses: [
+              'Not yet. I’m working on it.',
+              'Leave.',
+            ],
+          },
+          readyToComplete: {
+            line: 'You actually did it! The barn’s finally quiet. You’re a dear — here, five gold for your trouble.',
+            responses: [
+              'Happy to help.',
+            ],
+            responseEffects: [
+              { addGold: 5, completeQuest: 'barn_rat' },
+            ],
+          },
+          completed: {
+            line: 'Barn’s all quiet now, thanks to you. The hay’s still there, mind — the offer stands.',
+            responses: [
+              'Leave.',
+            ],
+          },
+        },
       },
     },
     {
