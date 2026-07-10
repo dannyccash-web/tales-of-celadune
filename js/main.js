@@ -13,8 +13,8 @@ import * as battle from './battle.js';
 // Attack/Defense start at 1 (Danny's spec, 2026-07-08 battle system) — real
 // combat stats now, not placeholder flavor like the rest of this block.
 // Speed keeps its earlier placeholder value (11) but now has real meaning
-// too: it drives battle.js's turn order against enemies (kobolds: speed 8),
-// so the player generally acts first without needing to touch it further.
+// too: it drives battle.js's turn order against enemies (Blight Rats:
+// speed 8), so the player generally acts first without touching it further.
 const stats = {
   health: 5, healthMax: 5, magic: 5, magicMax: 10, gold: 0,
   level: 4, xp: 1240, xpMax: 2000, attack: 1, defense: 1, speed: 11, luck: 6,
@@ -366,7 +366,17 @@ async function boot() {
   // once a target is confirmed. Cleared between attacks.
   let pendingAttackSlot = null;
 
+  // Whatever soundtrack was playing when the battle started, so endBattle()
+  // can cross-fade back to it (audio.play() handles the fade both ways).
+  // Guarded so a battle started while the battle track is somehow already
+  // playing (e.g. back-to-back debug starts) can't "restore" the battle
+  // track over the real music.
+  let preBattleTrack = null;
+
   function startBattle(enemyIds, onEnd) {
+    const playing = audio.nowPlaying();
+    if (playing !== audio.TRACKS.battle) preBattleTrack = playing;
+    audio.play(audio.TRACKS.battle);
     battleState.active = true;
     battleState.enemies = enemyIds.map((id, i) => {
       const def = ENEMIES[id];
@@ -548,6 +558,12 @@ async function boot() {
     battleState.active = false;
     const onEnd = battleState.onEnd;
     battleState.onEnd = null;
+    // Cross-fade the battle track back out to whatever was playing before,
+    // on every outcome (victory, flee, and defeat — the Game Over screen
+    // sits over the restored music). Falls back to the overworld track if
+    // nothing was playing (e.g. autoplay was still blocked at battle start).
+    audio.play(preBattleTrack || audio.TRACKS.overworld);
+    preBattleTrack = null;
     if (result === 'defeat') {
       ui.closeBattle();
       ui.showGameOver();
@@ -555,7 +571,7 @@ async function boot() {
       return;
     }
     ui.closeBattle();
-    if (result === 'victory') ui.toast('Victory! The kobolds are defeated.');
+    if (result === 'victory') ui.toast('Victory! Your foes are defeated.');
     if (onEnd) onEnd(result);
   }
 
@@ -590,6 +606,7 @@ async function boot() {
     start: startBattle, state: battleState, stats, equipment,
     effectiveAttack, effectiveDefense, weaponDamage,
     handleBattleAction, playerAttack, playerFlee, playerUsePotion, playerUseMagic, checkBattleEnd,
+    nowPlaying: audio.nowPlaying, // for verifying battle-music crossfades in automation
   };
 
   function interact() {

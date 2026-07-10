@@ -122,14 +122,15 @@ export default {
 
   // Battle encounters (2026-07-08): door + enemy id list (js/data/enemies.js).
   // Same proximity+spacebar trigger as a home door (world.battleNearDoor()),
-  // handled in main.js's interact(). Test encounter: three kobolds in the
-  // Old Barn — door sits right where the barn meets its path (matches the
-  // 'bottom_barn' entrance rect above, x1000-1060,y1305).
+  // handled in main.js's interact(). Test encounter: three Blight Rats in
+  // the Old Barn (were kobolds until 2026-07-09) — door sits right where the
+  // barn meets its path (matches the 'bottom_barn' entrance rect above,
+  // x1000-1060,y1305).
   battles: [
     {
-      id: 'old_barn_kobolds',
+      id: 'old_barn_rats',
       door: { x: 1030, y: 1305 },
-      enemies: ['kobold', 'kobold', 'kobold'],
+      enemies: ['blight_rat', 'blight_rat', 'blight_rat'],
     },
   ],
 
@@ -244,7 +245,7 @@ export default {
         { do: 'goto', x: 450, y: 700 },    // back to the upper-left field
       ],
       dialog: {
-        line: 'Fields don’t tend themselves, friend. Four to walk every day, and the kobolds still get more than their share.',
+        line: 'Fields don’t tend themselves, friend. Four to walk every day, and the rats still get more than their share.',
         responses: [
           'How’s the harvest looking?',
           'Any trouble out there?',

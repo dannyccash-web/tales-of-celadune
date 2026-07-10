@@ -10,14 +10,14 @@
 // player. speed drives this round's turn order (battle.turnOrder) alongside
 // the player's stats.speed.
 export default {
-  kobold: {
-    id: 'kobold',
-    name: 'Kobold',
-    portrait: 'assets/images/kobold.png',
-    health: 10,
-    attack: 2,
+  blight_rat: {
+    id: 'blight_rat',
+    name: 'Blight Rat',
+    portrait: 'assets/images/Blight_Rat.png',
+    health: 2,
+    attack: 1,
     defense: 1,
-    speed: 8,
-    damage: { min: 1, max: 3 },
+    speed: 8, // unspecified by Danny — carried over from the old kobold
+    damage: 1,
   },
 };
