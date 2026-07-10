@@ -229,21 +229,36 @@ function closeDialog() {
   const received = $('dialog-received');
   received.classList.add('hidden');
   received.classList.remove('received-enter');
+  received.classList.remove('gave');
   if (dialogState.onClose) dialogState.onClose();
 }
 
-// Play the "item received" reveal (gold arrow + label + item frame sliding
-// down from the portrait's side). Caller is responsible for actually adding
-// the item to inventory state first — this is purely the visual beat.
-export function showReceivedItem(itemDef) {
+// Item-transfer reveal, both directions (2026-07-10): RECEIVED (caret
+// pointing down, block drops in from above — the item "arriving") and GAVE
+// (caret pointing up, block rises in from below — the item "leaving", e.g.
+// feeding Gaffer his corn). One shared element/#dialog-received block; the
+// .gave class flips the caret and the entrance animation. Caller is
+// responsible for actually mutating inventory state first — this is purely
+// the visual beat.
+function showItemTransfer(itemDef, mode) {
   $('received-image').src = itemDef.image;
   $('received-image').alt = itemDef.name;
   $('received-name').textContent = itemDef.name;
   const el = $('dialog-received');
+  el.classList.toggle('gave', mode === 'gave');
+  el.querySelector('.received-label').textContent = mode === 'gave' ? 'Gave' : 'Received';
   el.classList.remove('hidden');
   el.classList.remove('received-enter');
   void el.offsetWidth; // force reflow so the animation replays
   el.classList.add('received-enter');
+}
+
+export function showReceivedItem(itemDef) {
+  showItemTransfer(itemDef, 'received');
+}
+
+export function showGaveItem(itemDef) {
+  showItemTransfer(itemDef, 'gave');
 }
 
 // ---- Toast ----

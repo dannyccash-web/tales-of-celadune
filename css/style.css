@@ -415,6 +415,23 @@ html, body {
   border-top: 16px solid var(--gold-bright);
 }
 
+/* GAVE variant (2026-07-10): giving an item to an NPC (e.g. Gaffer's corn)
+   flips the caret to point up and the block rises in from below instead of
+   dropping from above — the mirror image of receiving. */
+#dialog-received.gave .received-caret {
+  border-top: none;
+  border-bottom: 16px solid var(--gold-bright);
+}
+
+#dialog-received.gave.received-enter {
+  animation: gave-rise 0.5s ease-out;
+}
+
+@keyframes gave-rise {
+  from { transform: translateY(40px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
 .received-label {
   font-family: var(--font-lato);
   font-weight: 600;

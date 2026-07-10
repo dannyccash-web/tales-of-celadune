@@ -258,6 +258,13 @@ async function boot() {
   function applyResponseEffect(npc, index) {
     const effect = npc.dialog.responseEffects?.[index];
     if (!effect) return;
+    // "Go back." on a follow-up line — restore the dialog content the
+    // follow-up replaced (captured below), so the player can revisit the
+    // other response options instead of only leaving (2026-07-10).
+    if (effect.goBack) {
+      ui.updateDialogContent(effect.goBack);
+      return true;
+    }
     if (effect.damage) damagePlayer(effect.damage);
     if (effect.startQuest) startQuest(effect.startQuest);
     if (effect.addGold) addGold(effect.addGold);
@@ -266,6 +273,8 @@ async function boot() {
       addItem(effect.grantItem, effect.qty ?? 1);
       ui.showReceivedItem(ITEMS[effect.grantItem]);
       if (effect.thankYou) {
+        // Leave-only on purpose: going "back" from here would re-run the
+        // one-time grant response. Same reasoning as followUp's noBack.
         ui.updateDialogContent({ line: effect.thankYou, responses: ['Leave.'] });
       }
       return true;
@@ -273,6 +282,7 @@ async function boot() {
     if (effect.feedGaffer) {
       removeItem('corn', 1);
       gafferHappy = true;
+      ui.showGaveItem(ITEMS.corn); // the GAVE reveal — mirror of receiving
       ui.updateDialogContent({
         line: 'Gaffer snatches the corn straight from your hand and demolishes it, cob and all. He fixes you with a look of profound reevaluation.',
         responses: ['Pet Gaffer.', 'Leave.'],
@@ -282,7 +292,14 @@ async function boot() {
     }
     if (effect.message) ui.toast(effect.message);
     if (effect.followUp) {
-      ui.updateDialogContent({ line: effect.followUp, responses: ['Leave.'] });
+      // NPC replied to the player's response — offer at least "Go back."
+      // (restores the options they came from) and "Leave.". Effects that
+      // must not be re-runnable set noBack: true (e.g. Brenna's quest
+      // accept, where going back would show the already-answered offer).
+      const prev = { line: npc.dialog.line, responses: npc.dialog.responses, responseEffects: npc.dialog.responseEffects };
+      const responses = effect.noBack ? ['Leave.'] : ['Go back.', 'Leave.'];
+      const responseEffects = effect.noBack ? [null] : [{ goBack: prev }, null];
+      ui.updateDialogContent({ line: effect.followUp, responses, responseEffects });
       return true;
     }
   }
@@ -704,8 +721,14 @@ async function boot() {
 
     const item = world.nearestInteractableInRange();
     if (item) {
-      // Repeatable interactables (e.g. the silo's corn) never mark
-      // themselves collected, so they can be tapped again and again.
+      // Already-collected interactables with an emptyMessage (e.g. the silo
+      // after its one ear of corn) stay interactive but just report empty —
+      // world.js's nearestInteractableInRange only returns collected ones
+      // when they carry that field.
+      if (item.collected) {
+        ui.toast(item.emptyMessage || 'Nothing left.');
+        return;
+      }
       if (!item.repeatable) item.collected = true;
       if (item.reward?.gold) {
         addGold(item.reward.gold);
@@ -729,6 +752,7 @@ async function boot() {
           world.interior = null;
         });
       } else {
+        audio.sfx(audio.SFX.locked);
         ui.toast('The door is locked.');
       }
       return;

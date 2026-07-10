@@ -72,13 +72,15 @@ export class World {
     this.edgeMessage = null; // set when player pushes on a scene exit
   }
 
-  // Nearest not-yet-collected interactable within range (defaults to the
-  // same radius as NPC interaction), or null.
+  // Nearest interactable within range (defaults to the same radius as NPC
+  // interaction), or null. Collected ones are skipped UNLESS they carry an
+  // `emptyMessage` (2026-07-10, e.g. the silo) — those stay interactive so
+  // main.js can respond with the empty line instead of silence.
   nearestInteractableInRange() {
     let best = null;
     let bestDist = Infinity;
     for (const it of this.interactables) {
-      if (it.collected) continue;
+      if (it.collected && !it.emptyMessage) continue;
       const range = it.range ?? INTERACT_RANGE;
       const d = Math.hypot(it.x - this.player.x, it.y - this.player.y);
       if (d < range && d < bestDist) { best = it; bestDist = d; }
@@ -455,9 +457,11 @@ export class World {
       if (Math.hypot(b.x - p.x, b.y - p.y) < b.r) this.drawLabel(b.label, b.x, b.y);
     }
 
-    // Hidden-collectible labels: same proximity-reveal pattern, no sprite
+    // Hidden-collectible labels: same proximity-reveal pattern, no sprite.
+    // Label-less interactables (e.g. the silo, 2026-07-10 — the structure
+    // itself is the visible thing) draw nothing.
     for (const it of this.interactables) {
-      if (it.collected) continue;
+      if (it.collected || !it.label) continue;
       const range = it.range ?? INTERACT_RANGE;
       if (Math.hypot(it.x - p.x, it.y - p.y) < range) this.drawLabel(it.label, it.x, it.y);
     }

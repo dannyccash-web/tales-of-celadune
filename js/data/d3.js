@@ -118,22 +118,24 @@ export default {
       label: 'A shiny object',
       reward: { gold: 3 },
     },
-    // The silo hands out corn (Gaffer's favorite — see main.js's
-    // buildGafferDialog). `repeatable: true` (2026-07-10) means it never
-    // marks itself collected, so a discarded/fed ear can always be replaced
-    // — no way to soft-lock the goat interaction. Anchor point sits at the
-    // silo's north face, reachable from the pen corridor (east), the path
-    // above, and the player-only pocket west of the silo (range 130 covers
-    // all three approaches; the 'Silo' building label draws ~70px south of
-    // this one, far enough apart to both stay readable).
+    // The silo hands out exactly ONE ear of corn (Gaffer's favorite — see
+    // main.js's buildGafferDialog), then reports empty forever after
+    // (2026-07-10, Danny's spec — replaced the earlier infinitely-repeatable
+    // version). No `label`: the silo itself is the visible thing, no
+    // floating prompt (the 'Silo' building label still draws nearby).
+    // `emptyMessage` keeps it interactive after collection — world.js's
+    // nearestInteractableInRange() skips collected interactables UNLESS
+    // they carry one, and main.js's interact() toasts it instead of
+    // re-granting. Anchor point sits at the silo's north face, reachable
+    // from the pen corridor (east), the path above, and the player-only
+    // pocket west of the silo (range 130 covers all three approaches).
     {
       id: 'silo-corn',
       x: 1270, y: 1240,
       range: 130,
-      label: 'Gather corn',
-      repeatable: true,
       reward: { item: 'corn' },
-      message: 'You scoop an ear of corn from the silo.',
+      message: 'You take an ear of corn from the silo.',
+      emptyMessage: 'The silo is empty.',
     },
   ],
 
@@ -332,6 +334,7 @@ export default {
             responseEffects: [
               {
                 startQuest: 'barn_rat',
+                noBack: true, // going back would re-show the already-answered offer
                 followUp: 'Great! There’s a blight rat holed up in the Old Barn, and I’m not setting foot near the hay while it’s scratching about. Go clear it out for me, would you?',
               },
               { followUp: 'Oh well. You’re missing out on the fun.' },

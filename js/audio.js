@@ -18,6 +18,7 @@ export const SFX = {
   gold: 'assets/audio/alexzavesa-clinking-coins-7-468427.mp3',
   hurt: 'assets/audio/freesound_community-male_hurt7-48124.mp3',
   item: 'assets/audio/freesound_community-open-bag-sound-39216.mp3',
+  locked: 'assets/audio/yodguard-locked-door-4-540180.mp3',
 };
 
 // One "voice" clip per NPC, played once when their dialogue window opens —
