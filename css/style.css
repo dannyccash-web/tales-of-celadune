@@ -665,6 +665,54 @@ html, body {
 .quest-icon.done { color: #6fbf73; }
 .quest-icon.failed { color: #d9534f; }
 
+/* Controls tab (Menu, 2026-07-10) — a static list of key bindings: a column
+   of gold-framed "key caps" (same frame recipe as the item slots) with a
+   Metamorphous description beside each. Read-only, like Stats/Quests. */
+.controls-list {
+  display: flex;
+  flex-direction: column;
+  gap: 34px;
+  margin-top: 10px;
+}
+
+.control-row {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+}
+
+.control-keys {
+  display: flex;
+  gap: 8px;
+  width: 250px;
+  flex-shrink: 0;
+}
+
+.key-cap {
+  min-width: 44px;
+  height: 44px;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-lato);
+  font-weight: 600;
+  font-size: 16px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--gold-bright);
+  background: rgba(0, 0, 0, 0.4);
+  border: 2px solid;
+  border-image: linear-gradient(180deg, var(--frame-light), var(--frame-dark)) 1;
+}
+
+.control-desc {
+  font-family: var(--font-meta);
+  font-size: 21px;
+  line-height: 1.45;
+  color: var(--text);
+}
+
 /* Generic section divider heading — used by the Quests tab's "Completed"
    subhead and (2026-07-09) each of Equipment/Weapons/Magic's "Inventory"
    subhead separating the equip slots from that category's item grid. */

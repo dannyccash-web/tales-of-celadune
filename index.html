@@ -104,6 +104,7 @@
             <div class="panel-tab active" data-tab="audio">Audio</div>
             <div class="panel-tab" data-tab="stats">Stats</div>
             <div class="panel-tab" data-tab="quests">Quests</div>
+            <div class="panel-tab" data-tab="controls">Controls</div>
           </div>
           <div class="panel-content">
             <section class="tab-pane" data-pane="audio">
@@ -141,6 +142,36 @@
             <section class="tab-pane hidden" data-pane="quests">
               <div class="quest-list" id="quest-list">
                 <p class="quests-empty" id="quests-empty">No quests yet.</p>
+              </div>
+            </section>
+            <!-- Controls (2026-07-10): static, read-only reference — like
+                 Stats/Quests it has no Level-1 interactive content, so the
+                 existing panel keyboard nav covers it with no JS changes.
+                 Keep these rows in sync with main.js's keydown handler. -->
+            <section class="tab-pane hidden" data-pane="controls">
+              <div class="controls-list">
+                <div class="control-row">
+                  <span class="control-keys">
+                    <span class="key-cap">&#8593;</span><span class="key-cap">&#8595;</span><span class="key-cap">&#8592;</span><span class="key-cap">&#8594;</span>
+                  </span>
+                  <span class="control-desc">Move. In menus and battle, moves the selection.</span>
+                </div>
+                <div class="control-row">
+                  <span class="control-keys"><span class="key-cap">Space</span><span class="key-cap">Enter</span></span>
+                  <span class="control-desc">Interact — talk, take, enter doors, confirm a choice. Reveals the rest of a line of dialogue.</span>
+                </div>
+                <div class="control-row">
+                  <span class="control-keys"><span class="key-cap">Esc</span></span>
+                  <span class="control-desc">Step back — cancel, or back out one level of a menu.</span>
+                </div>
+                <div class="control-row">
+                  <span class="control-keys"><span class="key-cap">I</span></span>
+                  <span class="control-desc">Open and close the Inventory.</span>
+                </div>
+                <div class="control-row">
+                  <span class="control-keys"><span class="key-cap">M</span></span>
+                  <span class="control-desc">Open and close the Menu.</span>
+                </div>
               </div>
             </section>
           </div>
