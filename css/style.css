@@ -996,19 +996,25 @@ html, body {
   background: rgba(0, 0, 0, 0.35);
 }
 
+/* Banner geometry (2026-07-09 round 2, from Danny's feedback): sides slant
+   at exactly 45° (horizontal inset = height), and the banner's BOTTOM edge
+   is what lines up with the other frames' 205px insets — so the element
+   itself starts 70px (its height) further out each side and the clip-path
+   pulls the bottom corners back in to 205. */
 #battle-status {
   position: absolute;
   top: 0;
-  left: 205px;
-  right: 205px;
-  height: 64px;
+  left: 135px;
+  right: 135px;
+  height: 70px;
   background: linear-gradient(180deg, var(--frame-light), var(--frame-dark));
-  clip-path: polygon(0 0, 100% 0, calc(100% - 30px) 100%, 30px 100%);
+  clip-path: polygon(0 0, 100% 0, calc(100% - 70px) 100%, 70px 100%);
 }
 
-/* The dark interior — inset 3px from the gold trapezoid on the sides/bottom
-   (no top edge: the banner hangs off the top of the screen). The slant is
-   28px vs the outer's 30px so the slanted gold edges stay ~3px thick too. */
+/* The dark interior — same semi-transparent --panel-bg fill as every other
+   frame, inset 3px from the gold trapezoid on the sides/bottom (no top
+   edge: the banner hangs off the top of the screen). The slant is 68px vs
+   the outer's 70px so the 45° gold edges stay ~3px thick too. */
 #battle-status-inner {
   position: absolute;
   top: 0;
@@ -1016,7 +1022,7 @@ html, body {
   right: 3px;
   bottom: 3px;
   background: var(--panel-bg);
-  clip-path: polygon(0 0, 100% 0, calc(100% - 28px) 100%, 28px 100%);
+  clip-path: polygon(0 0, 100% 0, calc(100% - 68px) 100%, 68px 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1036,8 +1042,13 @@ html, body {
 
 /* Enemy row: each slot is an equal column; the portrait fills a cropping
    window (object-fit cover, top-anchored, so big art crops at the bottom
-   like the mockup), the health bar overlaps the portrait's bottom edge, and
-   the name sits under the bar at the box's bottom. */
+   like the mockup). Per Danny's layout (round 2 feedback 2026-07-09): the
+   window is a fixed 443px tall, bottom-anchored inside the box, so its top
+   extends up OUT of the frame — the box doesn't clip, and children paint
+   over the border, so the art visibly rises past the top frame lines like
+   the mockup. Width stays fluid (100% of the slot) since enemy count
+   varies. The health bar sits fully on the art near its bottom (art runs a
+   little past below it), name under both. */
 #battle-enemies {
   top: 170px;
   height: 415px;
@@ -1054,10 +1065,10 @@ html, body {
 
 .enemy-portrait-window {
   position: absolute;
-  top: 0;
   left: 0;
   right: 0;
-  bottom: 52px;
+  bottom: 45px;
+  height: 443px; /* > box height -> top pokes ~70px above the frame */
   overflow: hidden;
 }
 
@@ -1070,11 +1081,11 @@ html, body {
 
 .enemy-health-bar {
   position: absolute;
-  bottom: 40px; /* bar is 26px tall -> spans 40-66px; portrait window ends at
-                   52px, so the bar overlaps the portrait's bottom ~14px */
+  bottom: 58px; /* bar is 26px tall -> spans 58-84px, fully overlaying the
+                   portrait (art bottom is at 45px, running ~13px below it) */
   left: 50%;
   transform: translateX(-50%);
-  width: 300px;
+  width: 320px;
 }
 
 /* Numeric HP centered on the bar itself ("7/10" overlaid, per the mockup). */
@@ -1094,12 +1105,12 @@ html, body {
 
 .enemy-name {
   position: absolute;
-  bottom: 4px;
+  bottom: 8px;
   left: 0;
   right: 0;
   text-align: center;
   font-family: var(--font-meta);
-  font-size: 26px;
+  font-size: 28px;
   color: var(--text-dim);
 }
 
