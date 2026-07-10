@@ -268,6 +268,13 @@ export default {
           'Any trouble out there?',
           'Leave.',
         ],
+        // followUp keeps the dialog open with his reply (see main.js's
+        // applyResponseEffect) instead of the old close-on-anything behavior.
+        responseEffects: [
+          { followUp: 'Fair enough, fair enough. The upper fields came in heavy this year — it’s the lower ones that like to sulk. If the rain holds, the silo will be full before first frost.' },
+          { followUp: 'Rats, mostly. And something’s been worrying the fence by the pen — though between you and me, I suspect the goat. Keep your eyes open around the barns after dark.' },
+          null,
+        ],
       },
     },
     {
@@ -325,7 +332,7 @@ export default {
             responseEffects: [
               {
                 startQuest: 'barn_rat',
-                followUp: 'Ha! I like your spirit. One small thing first — there’s a blight rat holed up in the Old Barn, and I’m not setting foot near the hay while it’s scratching about. Go clear it out for me, would you?',
+                followUp: 'Great! There’s a blight rat holed up in the Old Barn, and I’m not setting foot near the hay while it’s scratching about. Go clear it out for me, would you?',
               },
               { followUp: 'Oh well. You’re missing out on the fun.' },
             ],
