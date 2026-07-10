@@ -1,6 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
   <!-- Unarmed attack icon: clenched fist silhouette, knuckles up.
-       Fill matches --gold-bright so it reads like the other gold UI marks. -->
+       Fill matches the gold-bright UI color (#eed694). NOTE: never put a
+       double hyphen inside an XML comment (e.g. a CSS var name) - it makes
+       the SVG unparseable and the icon silently renders as a broken image. -->
   <g fill="#eed694">
     <rect x="24" y="18" width="13" height="40" rx="6.5"/>
     <rect x="39" y="13" width="13" height="45" rx="6.5"/>

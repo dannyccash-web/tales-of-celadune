@@ -1,6 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
   <!-- Flee icon: running figure (exit-sign style), facing right.
-       Stroke matches --gold-bright so it reads like the other gold UI marks. -->
+       Stroke matches the gold-bright UI color (#eed694). NOTE: never put a
+       double hyphen inside an XML comment (e.g. a CSS var name) - it makes
+       the SVG unparseable and the icon silently renders as a broken image. -->
   <g stroke="#eed694" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" fill="none">
     <circle cx="66" cy="17" r="8.5" fill="#eed694" stroke="none"/>
     <path d="M62 29 L50 54"/>
