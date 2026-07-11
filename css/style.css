@@ -59,6 +59,7 @@ html, body {
   width: 1928px;
   height: 1088px;
   mix-blend-mode: multiply;
+  opacity: 0.8;   /* softened from full-strength multiply (2026-07-11) */
   pointer-events: none;
 }
 

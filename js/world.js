@@ -74,6 +74,23 @@ export class World {
     // each frame and either switches scenes (if the target is built) or
     // shows the "not built yet" toast.
     this.pendingExit = null;
+
+    // Animation clock for code-drawn effects (currently campfire smoke).
+    this.time = 0;
+    // Smoke sources from scene data ({x, y} in world coords), each expanded
+    // with tunable defaults. Rendered as rising particle plumes in drawSmoke().
+    this.smokes = (scene.smoke || []).map((s) => ({
+      x: s.x,
+      y: s.y,
+      count: s.count ?? 16,     // particles per plume
+      rise: s.rise ?? 165,      // how high (px) a particle travels over its life
+      drift: s.drift ?? 30,     // sideways sway amplitude (px)
+      baseR: s.baseR ?? 11,     // starting particle radius
+      growR: s.growR ?? 32,     // extra radius gained over its life
+      speed: s.speed ?? 0.16,   // life-cycles per second (lower = slower)
+      maxAlpha: s.alpha ?? 0.26,
+      seed: s.seed ?? 0,
+    }));
   }
 
   // Nearest interactable within range (defaults to the same radius as NPC
@@ -170,6 +187,7 @@ export class World {
   }
 
   update(dt, input, uiLocked) {
+    this.time += dt; // advances even while UI-locked so effects keep drifting
     this.pendingExit = null;
     const p = this.player;
     let dx = 0, dy = 0;
@@ -428,6 +446,42 @@ export class World {
     this.drawLabel(npc.name, npc.x, npc.y - img.height / 2 - 14);
   }
 
+  // Soft rising campfire smoke: each particle loops through a birth→rise→fade
+  // life cycle, offset in phase so the plume looks continuous. Drawn as
+  // radial-gradient puffs in world space (scrolls with the camera).
+  drawSmoke(s) {
+    const ctx = this.ctx;
+    const baseScreenY = s.y - this.cameraY;
+    // Cull if the whole plume (source + full rise) is off-screen.
+    if (baseScreenY < -60 || baseScreenY - s.rise > VIEW_H + 60) return;
+
+    ctx.save();
+    for (let i = 0; i < s.count; i++) {
+      const phase = i / s.count + s.seed;
+      let f = (this.time * s.speed + phase) % 1; // life fraction [0,1)
+      if (f < 0) f += 1;
+
+      const a = Math.sin(f * Math.PI) * s.maxAlpha; // fade in, then out
+      if (a <= 0.01) continue;
+
+      const px = s.x
+        + Math.sin(f * 3.1 + i * 1.7) * s.drift * f // widening sway
+        + f * s.drift * 0.5;                        // gentle lean as it rises
+      const gy = (s.y - f * s.rise) - this.cameraY;
+      const r = s.baseR + f * s.growR;
+
+      const grad = ctx.createRadialGradient(px, gy, 0, px, gy, r);
+      grad.addColorStop(0, `rgba(202,202,194,${a})`);
+      grad.addColorStop(0.6, `rgba(182,182,174,${a * 0.5})`);
+      grad.addColorStop(1, 'rgba(172,172,164,0)');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(px, gy, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
   render() {
     const ctx = this.ctx;
 
@@ -456,6 +510,9 @@ export class World {
       this.images['assets/images/Player_Overhead_1.png'],
       p.x, p.y, p.rotation, stepFlip,
     );
+
+    // Campfire smoke and other code-drawn effects, above the world/characters
+    for (const s of this.smokes) this.drawSmoke(s);
 
     // Name label above the NPC the player could interact with
     const near = this.nearestNpcInRange();
