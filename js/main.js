@@ -118,6 +118,14 @@ function addGold(amount) {
   audio.sfx(audio.SFX.gold);
 }
 
+// Spend gold (e.g. the Bramblekin toll) — clamped at 0, same HUD + coin SFX
+// as addGold so a payment is felt the same way a pickup is.
+function spendGold(amount) {
+  stats.gold = Math.max(0, stats.gold - amount);
+  ui.updateHud(stats);
+  audio.sfx(audio.SFX.gold);
+}
+
 function damagePlayer(amount) {
   stats.health = Math.max(0, stats.health - amount);
   ui.updateHud(stats);
@@ -204,6 +212,10 @@ async function boot() {
   // instant walk-off-the-edge transitions, so nothing may load mid-game.
   const sources = [
     'assets/images/Player_Overhead_1.png',
+    // Bramblekin battle portraits — their fights start dynamically (not via a
+    // scene `battles` entry), so preload them so nothing pops in mid-fight.
+    'assets/images/Bramblekin.png',
+    'assets/images/Bramblekin_Chief.png',
     ...Object.values(SCENES).flatMap((scene) => [
       scene.background,
       // Places (isPlace: true, e.g. "Your House") have no sprite — they're
@@ -242,10 +254,20 @@ async function boot() {
   // east edge mid-path -> enter D4's west edge at the same height), per the
   // design spec. 20px inset keeps the 36px collider fully inside the new
   // scene so the return exit doesn't immediately re-trigger.
+  // Bramblekin toll (D4) — resets every time the player (re)enters D4, so the
+  // Chief shakes travelers down again on each return, per Danny's spec.
+  // `campTollPaid`: paid the 5-gold toll (or won the fight); `campPassGranted`:
+  // agreed to see the Chief (or shoved past a guard), so the gate guards stand
+  // down. Blocking is active while BOTH are false — see world.campBlocking.
+  let campTollPaid = false;
+  let campPassGranted = false;
+
   const EDGE_INSET = 20;
   function switchScene(exit) {
     const { x: px, y: py, rotation } = world.player;
     enterScene(exit.to);
+    // Re-arm the Bramblekin toll on every fresh arrival into D4.
+    if (exit.to === 'D4') { campTollPaid = false; campPassGranted = false; }
     const s = world.scene;
     if (exit.edge === 'right') { world.player.x = EDGE_INSET; world.player.y = py; }
     if (exit.edge === 'left') { world.player.x = s.width - EDGE_INSET; world.player.y = py; }
@@ -314,6 +336,23 @@ async function boot() {
     if (effect.goBack) {
       ui.updateDialogContent(effect.goBack);
       return true;
+    }
+    // Bramblekin Chief toll: pay it (deduct 5, mark paid, swap in a parting
+    // line) or refuse/draw steel (close, then fight the Chief + guards).
+    if (effect.payToll) {
+      spendGold(5);
+      campTollPaid = true;
+      ui.updateDialogContent({
+        line: 'The Chief’s grin is all thorns and bad intentions. “Pleasure doing business. The camp’s yours to cross — this once. Wander back through and we’ll dance again.”',
+        responses: ['Leave.'],
+      });
+      return true;
+    }
+    if (effect.refuseToll || effect.drawSteel) {
+      setTimeout(() => startBattle(campBattleFoes(), (result) => {
+        if (result === 'victory') campTollPaid = true;
+      }), 0);
+      return; // falsy — ui closes the dialog, then the battle opens
     }
     if (effect.damage) damagePlayer(effect.damage);
     if (effect.startQuest) startQuest(effect.startQuest);
@@ -471,6 +510,73 @@ async function boot() {
   };
   const isQuestReady = (id) => QUEST_READY[id]?.() ?? false;
 
+  // ---- Bramblekin toll-camp dialog (D4, 2026-07-11) ----
+  // Guard chit-chat and the Chief's toll are state-built (they depend on
+  // whether the toll's been paid this visit), like Gaffer's dialog — routed
+  // through openNpcDialog's branches below. The gate confrontation is a
+  // separate, gate-triggered dialog (openGateConfrontation).
+  function buildBramblekinDialog(npc) {
+    if (campTollPaid) return { line: npc.paidLine || '“Toll’s paid. Move along, then.”', responses: ['Leave.'] };
+    return { line: npc.line, responses: ['Leave.'] };
+  }
+
+  function buildChiefDialog() {
+    if (campTollPaid) {
+      return {
+        line: 'The Chief barely glances up. “You again. Coin’s paid, I remember your ugly face. Move along before I dream up a second toll.”',
+        responses: ['Leave.'],
+      };
+    }
+    if (stats.gold >= 5) {
+      return {
+        line: 'The Bramblekin Chief looks you over like something scraped off his boot. “Five gold — that’s the toll to cross my camp. Pay up or turn around, and count yourself lucky I offered two options.”',
+        responses: ['Pay 5 gold.', 'Refuse.'],
+        responseEffects: [{ payToll: true }, { refuseToll: true }],
+      };
+    }
+    return {
+      line: 'The Chief sneers, thorns bristling. “Five gold for safe passage. Empty pockets, is it? Then you’ll not set foot past this fire. Come back with coin — or draw steel and stop wasting my evening.”',
+      responses: ['I’ll come back with coin. (Leave)', 'Draw steel! (Fight)'],
+      responseEffects: [null, { drawSteel: true }],
+    };
+  }
+
+  // Refusing the Chief (or drawing steel) pits the player against the Chief
+  // plus three guards, per Danny's "Chief + 2–3 nearby" — the guards are all
+  // identical `bramblekin` enemies, so this is just the id list.
+  function campBattleFoes() {
+    return ['bramblekin_chief', 'bramblekin', 'bramblekin', 'bramblekin'];
+  }
+
+  // A gate confrontation, fired by world.pendingGate when the player crosses
+  // into a blocked gate. Agreeing stands the guards down (campPassGranted) so
+  // the player can reach the Chief; shoving past starts a fight with just that
+  // gate's blockers; backing off leaves them posted (the player's still free
+  // to walk away — the guards don't physically seal the gap).
+  function openGateConfrontation(gateId) {
+    const gate = world.scene.camp?.gates.find((g) => g.id === gateId);
+    const view = {
+      id: 'bramblekin', name: 'Bramblekin', role: '',
+      portrait: 'assets/images/Bramblekin.png',
+      dialog: {
+        line: 'A Bramblekin sidesteps into your path, thorny arms folded. “Far enough. Nobody wanders this camp for free. See the chief and pay the toll — or turn around. Try to shove past me and we’ll have a problem.”',
+        responses: ['Fine — I’ll see the chief.', 'Out of my way! (Fight)', 'Back off.'],
+      },
+    };
+    ui.openDialog(view, null, (v, index) => {
+      if (index === 0) { campPassGranted = true; return; }
+      if (index === 1) {
+        // Fight just this gate's blockers (world.gateGuards holds the posted
+        // guard npcs; each is an identical `bramblekin` enemy).
+        const foes = (world.gateGuards?.[gateId] || []).map(() => 'bramblekin');
+        setTimeout(() => startBattle(foes.length ? foes : ['bramblekin'], (result) => {
+          if (result === 'victory') campPassGranted = true;
+        }), 0);
+      }
+      // index 2 (Back off) / default: just close; guards stay posted.
+    });
+  }
+
   // Every NPC dialog opens through here so the per-character voice clip
   // (audio.DIALOGUE_SFX, keyed by npc.id) and response-effect handling are
   // consistent whether the NPC was approached directly or met at their door.
@@ -484,7 +590,11 @@ async function boot() {
     }
     const voice = audio.DIALOGUE_SFX[npc.id];
     if (voice) audio.sfx(voice, 1.0);
-    const dialog = npc.id === 'gaffer' ? buildGafferDialog(npc) : resolveNpcDialog(npc, isQuestReady);
+    let dialog;
+    if (npc.id === 'gaffer') dialog = buildGafferDialog(npc);
+    else if (npc.id === 'bramblekin_chief') dialog = buildChiefDialog();
+    else if (npc.bramblekin) dialog = buildBramblekinDialog(npc);
+    else dialog = resolveNpcDialog(npc, isQuestReady);
     ui.openDialog({ ...npc, dialog }, onClose, applyResponseEffect);
   }
 
@@ -876,6 +986,9 @@ async function boot() {
     last = now;
 
     const locked = ui.isDialogOpen() || ui.isAnyPanelOpen() || ui.isBattleOpen() || ui.isGameOverOpen() || !state.started;
+    // Bramblekin guards block the gates while the toll's unpaid and the player
+    // hasn't been waved through (no-op in scenes without a camp).
+    world.campBlocking = !campTollPaid && !campPassGranted;
     world.update(dt, input, locked);
     world.render();
 
@@ -893,6 +1006,14 @@ async function boot() {
         ui.toast('The path continues on, but that part of the world isn’t ready yet.');
         lastEdgeMessage = now;
       }
+    }
+
+    // Bramblekin gate confrontation: crossing into a blocked gate opens the
+    // "see the chief" dialog (world.js sets pendingGate; guards block the gap).
+    if (world.pendingGate) {
+      const gid = world.pendingGate;
+      world.pendingGate = null;
+      openGateConfrontation(gid);
     }
 
     requestAnimationFrame(frame);

@@ -75,6 +75,21 @@ export class World {
     // shows the "not built yet" toast.
     this.pendingExit = null;
 
+    // Bramblekin toll-camp (D4). `camp` holds the gate definitions; guards
+    // (npcs tagged `bramblekin`) break off their routine to block a gate when
+    // `campBlocking` is true (set by main.js from the toll state) and the
+    // player is near it. `pendingGate` is set when the player crosses into a
+    // blocked gate's radius — main.js consumes it to open the confrontation,
+    // like pendingExit.
+    this.camp = scene.camp || null;
+    this.campBlocking = false;
+    this.pendingGate = null;
+    // Per-gate guard assignments + trigger-armed flags, keyed by gate id.
+    // Kept on the World (not the shared scene data) so they're instance state,
+    // like `collected`/`defeated` — a fresh World starts with clean gates.
+    this.gateGuards = {};
+    this.gateArmed = {};
+
     // Animation clock for code-drawn effects (currently campfire smoke).
     this.time = 0;
     // Smoke sources from scene data ({x, y} in world coords), each expanded
@@ -243,8 +258,51 @@ export class World {
     if (exit) this.pendingExit = { ...exit };
   }
 
+  // Bramblekin gate blocking (2026-07-11). When the toll is unpaid
+  // (campBlocking) and the player is near a gate, the nearest available
+  // guards are pulled off their routine to stand on that gate's posts, and
+  // crossing into the gate's radius fires pendingGate once per approach (with
+  // hysteresis: re-arms only after the player backs out past r*1.5). Guards
+  // are assigned once per approach and held (no per-frame reshuffling) so
+  // they don't thrash between posts. Cleared entirely when the toll is paid.
+  updateCampGuards() {
+    if (!this.camp) return;
+    const guards = this.npcs.filter((n) => n.bramblekin);
+    if (!this.campBlocking) {
+      for (const g of this.camp.gates) { this.gateGuards[g.id] = []; this.gateArmed[g.id] = true; }
+      guards.forEach((n) => { n.blockPost = null; });
+      return;
+    }
+    const p = this.player;
+    for (const g of this.camp.gates) {
+      const assigned = this.gateGuards[g.id] || (this.gateGuards[g.id] = []);
+      const d = Math.hypot(g.x - p.x, g.y - p.y);
+      if (d < g.r) {
+        if (assigned.length === 0) {
+          const avail = guards
+            .filter((n) => !n.blockPost && !n.atHome && !n.fading)
+            .sort((a, b) => Math.hypot(a.x - g.x, a.y - g.y) - Math.hypot(b.x - g.x, b.y - g.y));
+          const picked = g.posts.map((post, i) => avail[i]).filter(Boolean);
+          picked.forEach((n, i) => { n.blockPost = g.posts[i]; });
+          this.gateGuards[g.id] = picked;
+        }
+        if (this.gateArmed[g.id] !== false && !this.pendingGate) {
+          this.pendingGate = g.id;
+          this.gateArmed[g.id] = false;
+        }
+      } else if (d > g.r * 1.5) {
+        if (assigned.length) {
+          assigned.forEach((n) => { n.blockPost = null; });
+          this.gateGuards[g.id] = [];
+        }
+        this.gateArmed[g.id] = true;
+      }
+    }
+  }
+
   updateNpcs(dt, uiLocked) {
     if (uiLocked) return; // world pauses during dialog
+    this.updateCampGuards();
     // Recorded before any movement so we can tell, after the fact, which NPCs
     // actually translated this tick (vs. waiting/fading/paused) — that drives
     // the same walk-flip mirroring the player uses, without threading extra
@@ -260,6 +318,16 @@ export class World {
           if (dir === -1) npc.atHome = true;
           npc.fading = null;
           this.advanceRoutine(npc);
+        }
+        continue;
+      }
+
+      // Assigned to block a gate: ignore routine/pause, walk to the post and
+      // hold there facing the player (updateCampGuards sets/clears blockPost).
+      if (npc.blockPost) {
+        const arrived = this.walkToward(npc, npc.blockPost, dt);
+        if (arrived) {
+          npc.rotation = Math.atan2(this.player.y - npc.y, this.player.x - npc.x) - Math.PI / 2;
         }
         continue;
       }

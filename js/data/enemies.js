@@ -20,4 +20,31 @@ export default {
     speed: 8, // unspecified by Danny — carried over from the old kobold
     damage: 1,
   },
+
+  // The Bramblekin toll-camp (D4, 2026-07-11). Both share +2 attack / +2
+  // defense; the Chief hits harder and has more health. damage is a
+  // {min,max} range (1d4 / 1d4+1) rolled by battle.rollDamage(). speed is
+  // below the player's 11 so the player generally acts first — Bramblekin a
+  // touch slower than the Chief.
+  bramblekin: {
+    id: 'bramblekin',
+    name: 'Bramblekin',
+    portrait: 'assets/images/Bramblekin.png',
+    health: 3,
+    attack: 2,
+    defense: 2,
+    speed: 6,
+    damage: { min: 1, max: 4 }, // 1d4
+  },
+
+  bramblekin_chief: {
+    id: 'bramblekin_chief',
+    name: 'Bramblekin Chief',
+    portrait: 'assets/images/Bramblekin_Chief.png',
+    health: 5,
+    attack: 2,
+    defense: 2,
+    speed: 7,
+    damage: { min: 2, max: 5 }, // 1d4+1
+  },
 };

@@ -321,14 +321,23 @@ export default {
     { x: 1372, y: 1468 },
   ],
 
-  // Two blight rats prowl the abandoned camp's north entrance.
-  battles: [
-    {
-      id: 'woods_camp_rats',
-      door: { x: 1500, y: 1250 },
-      enemies: ['blight_rat', 'blight_rat'],
-    },
-  ],
+  // The woodland camp is the Bramblekin toll-camp now — its guards + Chief
+  // live in `npcs` below, and their fights start dynamically from main.js
+  // (refusing the Chief's toll, or shoving past a gate guard), not from a
+  // fixed scene encounter. (The old 2-Blight-Rat battle was removed 2026-07-11.)
+  battles: [],
+
+  // Bramblekin toll-camp gates (2026-07-11). Two approaches into the camp
+  // clearing from the meadow — north and west. When the toll is unpaid, the
+  // nearest guards move to each gate's `posts` to block it, and crossing into
+  // a gate's radius triggers the "see the chief" confrontation (world.js's
+  // updateCampGuards + pendingGate, driven by main.js's toll state).
+  camp: {
+    gates: [
+      { id: 'north', x: 1420, y: 1300, r: 130, posts: [{ x: 1360, y: 1300 }, { x: 1470, y: 1300 }] },
+      { id: 'west', x: 1250, y: 1410, r: 130, posts: [{ x: 1250, y: 1360 }, { x: 1250, y: 1460 }] },
+    ],
+  },
 
   // West back to the D3 Farm (band matches D3's east exit, so walking off
   // either edge lands on the other scene's path at the same height).
@@ -338,5 +347,120 @@ export default {
     { edge: 'top', xMin: 975, xMax: 1100, to: 'C4', note: 'path north into deeper woods' },
   ],
 
-  npcs: [],
+  // ---- Bramblekin toll-camp (2026-07-11) ----
+  // Seven Bramblekin guards, one per tent (home door on the tent's
+  // fire-facing side, per Danny), + the Bramblekin Chief by the fire. Guards
+  // wander their corner of the camp and duck into their tent now and then
+  // (routine/home, like D3's farmhands); when the toll's unpaid and the
+  // player nears a gate they break off to block it (world.js). Their dialogue
+  // and the Chief's toll are built dynamically in main.js (state depends on
+  // whether the toll's been paid this visit) — the `line`/`paidLine` here are
+  // the per-guard flavor. The Chief is stationary (no routine/patrol).
+  npcs: [
+    {
+      id: 'bramblekin_1', name: 'Bramblekin', role: '', bramblekin: true,
+      sprite: 'assets/images/Bramblekin_Overhead.png',
+      portrait: 'assets/images/Bramblekin.png',
+      x: 1300, y: 1400, speed: 38, startsHome: false,
+      home: { door: { x: 1300, y: 1360 }, interior: 'assets/images/bramblekin_tent_interior.jpg' },
+      routine: [
+        { do: 'goto', x: 1300, y: 1400 }, { do: 'wait', s: 4 },
+        { do: 'goto', x: 1360, y: 1330 }, { do: 'wait', s: 5 },
+        { do: 'goHome' }, { do: 'wait', s: 6 }, { do: 'leaveHome' },
+      ],
+      line: '“State your business. Actually, don’t — I don’t care. Nobody crosses this camp without squaring up with the chief first.”',
+      paidLine: '“Chief took your coin. Guess you’re not my problem anymore.”',
+    },
+    {
+      id: 'bramblekin_2', name: 'Bramblekin', role: '', bramblekin: true,
+      sprite: 'assets/images/Bramblekin_Overhead.png',
+      portrait: 'assets/images/Bramblekin.png',
+      x: 1450, y: 1380, speed: 38, startsHome: false,
+      home: { door: { x: 1400, y: 1350 }, interior: 'assets/images/bramblekin_tent_interior.jpg' },
+      routine: [
+        { do: 'goto', x: 1450, y: 1380 }, { do: 'wait', s: 5 },
+        { do: 'goto', x: 1360, y: 1320 }, { do: 'wait', s: 4 },
+        { do: 'goHome' }, { do: 'wait', s: 7 }, { do: 'leaveHome' },
+      ],
+      line: '“Thorns out, coin up. That’s the rule. You want through? You talk to the chief, and you bring gold when you do.”',
+      paidLine: '“Paid up, are you? Fine. Don’t touch anything.”',
+    },
+    {
+      id: 'bramblekin_3', name: 'Bramblekin', role: '', bramblekin: true,
+      sprite: 'assets/images/Bramblekin_Overhead.png',
+      portrait: 'assets/images/Bramblekin.png',
+      x: 1560, y: 1475, speed: 38, startsHome: false,
+      home: { door: { x: 1492, y: 1435 }, interior: 'assets/images/bramblekin_tent_interior.jpg' },
+      routine: [
+        { do: 'goto', x: 1560, y: 1475 }, { do: 'wait', s: 6 },
+        { do: 'goto', x: 1520, y: 1470 }, { do: 'wait', s: 4 },
+        { do: 'goHome' }, { do: 'wait', s: 5 }, { do: 'leaveHome' },
+      ],
+      line: '“We don’t do charity here, sap. The chief sets the toll, you pay the toll, everybody’s happy. Well — he’s happy.”',
+      paidLine: '“Move along, moneybags. You’re square with us.”',
+    },
+    {
+      id: 'bramblekin_4', name: 'Bramblekin', role: '', bramblekin: true,
+      sprite: 'assets/images/Bramblekin_Overhead.png',
+      portrait: 'assets/images/Bramblekin.png',
+      x: 1275, y: 1505, speed: 38, startsHome: false,
+      home: { door: { x: 1230, y: 1466 }, interior: 'assets/images/bramblekin_tent_interior.jpg' },
+      routine: [
+        { do: 'goto', x: 1275, y: 1505 }, { do: 'wait', s: 4 },
+        { do: 'goto', x: 1235, y: 1420 }, { do: 'wait', s: 6 },
+        { do: 'goHome' }, { do: 'wait', s: 5 }, { do: 'leaveHome' },
+      ],
+      line: '“Keep walking and see what happens. Or better yet, go see the chief before something unfortunate grows out of you.”',
+      paidLine: '“You paid? Huh. Wonders never cease. Off you go.”',
+    },
+    {
+      id: 'bramblekin_5', name: 'Bramblekin', role: '', bramblekin: true,
+      sprite: 'assets/images/Bramblekin_Overhead.png',
+      portrait: 'assets/images/Bramblekin.png',
+      x: 1315, y: 1560, speed: 38, startsHome: false,
+      home: { door: { x: 1276, y: 1605 }, interior: 'assets/images/bramblekin_tent_interior.jpg' },
+      routine: [
+        { do: 'goto', x: 1315, y: 1560 }, { do: 'wait', s: 5 },
+        { do: 'goto', x: 1250, y: 1560 }, { do: 'wait', s: 5 },
+        { do: 'goHome' }, { do: 'wait', s: 6 }, { do: 'leaveHome' },
+      ],
+      line: '“Fresh face. Fresh purse, I hope. Passage costs, and the chief’s the one who counts it.”',
+      paidLine: '“Toll’s settled. I’ll pretend to be friendly now.”',
+    },
+    {
+      id: 'bramblekin_6', name: 'Bramblekin', role: '', bramblekin: true,
+      sprite: 'assets/images/Bramblekin_Overhead.png',
+      portrait: 'assets/images/Bramblekin.png',
+      x: 1400, y: 1560, speed: 38, startsHome: false,
+      home: { door: { x: 1392, y: 1606 }, interior: 'assets/images/bramblekin_tent_interior.jpg' },
+      routine: [
+        { do: 'goto', x: 1400, y: 1560 }, { do: 'wait', s: 6 },
+        { do: 'goto', x: 1450, y: 1600 }, { do: 'wait', s: 4 },
+        { do: 'goHome' }, { do: 'wait', s: 7 }, { do: 'leaveHome' },
+      ],
+      line: '“Rules are rules, twig. No toll, no trail. Go on and have your little chat with the chief.”',
+      paidLine: '“Gold’s in the chief’s pocket. You’re free to wander, twig.”',
+    },
+    {
+      id: 'bramblekin_7', name: 'Bramblekin', role: '', bramblekin: true,
+      sprite: 'assets/images/Bramblekin_Overhead.png',
+      portrait: 'assets/images/Bramblekin.png',
+      x: 1520, y: 1565, speed: 38, startsHome: false,
+      home: { door: { x: 1559, y: 1540 }, interior: 'assets/images/bramblekin_tent_interior.jpg' },
+      routine: [
+        { do: 'goto', x: 1520, y: 1565 }, { do: 'wait', s: 5 },
+        { do: 'goto', x: 1565, y: 1490 }, { do: 'wait', s: 6 },
+        { do: 'goHome' }, { do: 'wait', s: 5 }, { do: 'leaveHome' },
+      ],
+      line: '“You smell like someone who hasn’t paid yet. Fix that. The chief’s waiting, and his patience isn’t.”',
+      paidLine: '“All square. Try not to trip over a tent rope.”',
+    },
+    {
+      id: 'bramblekin_chief', name: 'Bramblekin Chief', role: '',
+      sprite: 'assets/images/Bramblekin_Chief_Overhead.png',
+      portrait: 'assets/images/Bramblekin_Chief.png',
+      x: 1372, y: 1545, speed: 0, startsHome: false,
+      // Stationary by the fire — no routine/patrol, so world.js leaves him put.
+    },
+  ],
 };
