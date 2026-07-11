@@ -254,6 +254,18 @@ async function boot() {
     world.player.rotation = rotation; // keep facing across the boundary
   }
 
+  // Debug handle for scene transitions (mirrors window.world/battleDebug —
+  // and like them, NOT named after any element id). Lets automation drive
+  // world.update + consume pendingExit manually, since rAF freezes in
+  // hidden tabs (see the live-testing notes in CLAUDE.md).
+  window.sceneDebug = {
+    switchScene,
+    enterScene,
+    worlds,
+    sceneIds: Object.keys(SCENES),
+    hasScene: (id) => !!SCENES[id],
+  };
+
   ui.initStage();
   ui.initPanels(audio);
   ui.updateHud(stats);
