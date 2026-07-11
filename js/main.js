@@ -2,6 +2,7 @@
 // Loads assets, builds the world for the current scene, runs the game loop.
 
 import sceneD3 from './data/d3.js';
+import sceneD4 from './data/d4.js';
 import { World } from './world.js';
 import * as ui from './ui.js';
 import * as audio from './audio.js';
@@ -193,18 +194,26 @@ function loadImages(sources) {
   }))).then(Object.fromEntries);
 }
 
+// Every scene in the game, keyed by the ids that exits point at. Adding a
+// scene = write its data file, import it, and register it here — the
+// transition system below handles everything else.
+const SCENES = { D3: sceneD3, D4: sceneD4 };
+
 async function boot() {
-  const scene = sceneD3;
+  // Preload assets for EVERY registered scene up front — scene switches are
+  // instant walk-off-the-edge transitions, so nothing may load mid-game.
   const sources = [
-    scene.background,
     'assets/images/Player_Overhead_1.png',
-    // Places (isPlace: true, e.g. "Your House") have no sprite — they're
-    // always atHome and never rendered as a walking body — so skip them here.
-    ...scene.npcs.filter((n) => n.sprite).map((n) => n.sprite),
-    ...scene.npcs.filter((n) => n.home).map((n) => n.home.interior),
-    // Every enemy portrait this scene's battles could use, preloaded up
-    // front like everything else — battle art shouldn't pop in mid-fight.
-    ...(scene.battles || []).flatMap((b) => b.enemies).map((id) => ENEMIES[id].portrait),
+    ...Object.values(SCENES).flatMap((scene) => [
+      scene.background,
+      // Places (isPlace: true, e.g. "Your House") have no sprite — they're
+      // always atHome and never rendered as a walking body — so skip them.
+      ...scene.npcs.filter((n) => n.sprite).map((n) => n.sprite),
+      ...scene.npcs.filter((n) => n.home).map((n) => n.home.interior),
+      // Every enemy portrait a scene's battles could use — battle art
+      // shouldn't pop in mid-fight.
+      ...(scene.battles || []).flatMap((b) => b.enemies).map((id) => ENEMIES[id].portrait),
+    ]),
   ];
   const images = await loadImages([...new Set(sources)]);
 
@@ -212,9 +221,38 @@ async function boot() {
   try { await document.fonts.load('22px MedievalSharp'); } catch { /* fallback font */ }
 
   const canvas = document.getElementById('game');
-  const world = new World(canvas, scene, images);
-  window.world = world; // debug handle
+
+  // One World instance PER SCENE, created on first visit and kept for the
+  // whole session — so per-scene state (battle `defeated` flags, collected
+  // interactables, NPC positions mid-routine) persists when the player
+  // leaves and comes back. `world` is the live one; everything below
+  // closes over the binding, not a specific instance.
+  const worlds = {};
+  let world;
+  function enterScene(id) {
+    if (!worlds[id]) worlds[id] = new World(canvas, SCENES[id], images);
+    world = worlds[id];
+    window.world = world; // debug handle follows the active scene
+  }
+  enterScene('D3');
   window.quests = quests; // debug handle
+
+  // Walking off a scene edge: the player reappears on the OPPOSITE edge of
+  // the target scene with their cross-axis position preserved (exit D3's
+  // east edge mid-path -> enter D4's west edge at the same height), per the
+  // design spec. 20px inset keeps the 36px collider fully inside the new
+  // scene so the return exit doesn't immediately re-trigger.
+  const EDGE_INSET = 20;
+  function switchScene(exit) {
+    const { x: px, y: py, rotation } = world.player;
+    enterScene(exit.to);
+    const s = world.scene;
+    if (exit.edge === 'right') { world.player.x = EDGE_INSET; world.player.y = py; }
+    if (exit.edge === 'left') { world.player.x = s.width - EDGE_INSET; world.player.y = py; }
+    if (exit.edge === 'bottom') { world.player.y = EDGE_INSET; world.player.x = px; }
+    if (exit.edge === 'top') { world.player.y = s.height - EDGE_INSET; world.player.x = px; }
+    world.player.rotation = rotation; // keep facing across the boundary
+  }
 
   ui.initStage();
   ui.initPanels(audio);
@@ -694,8 +732,10 @@ async function boot() {
   function respawnAfterDefeat() {
     stats.health = stats.healthMax;
     ui.updateHud(stats);
-    world.player.x = scene.spawn.x;
-    world.player.y = scene.spawn.y;
+    // Respawn at the CURRENT scene's spawn point (died in the woods ->
+    // wake up at the woods' entrance, not back on the farm).
+    world.player.x = world.scene.spawn.x;
+    world.player.y = world.scene.spawn.y;
     ui.hideGameOver();
     const cb = pendingDefeatCallback;
     pendingDefeatCallback = null;
@@ -829,9 +869,18 @@ async function boot() {
 
     audio.setWalking(!locked && world.player.moving);
 
-    if (world.edgeMessage && now - lastEdgeMessage > 3000) {
-      ui.toast(world.edgeMessage);
-      lastEdgeMessage = now;
+    // Scene exits: crossing an edge with a matching exit either walks the
+    // player straight into the adjacent scene (registered in SCENES) or,
+    // for scenes that don't exist yet, shows a throttled placeholder toast.
+    if (world.pendingExit) {
+      const exit = world.pendingExit;
+      world.pendingExit = null;
+      if (SCENES[exit.to]) {
+        switchScene(exit);
+      } else if (now - lastEdgeMessage > 3000) {
+        ui.toast('The path continues on, but that part of the world isn’t ready yet.');
+        lastEdgeMessage = now;
+      }
     }
 
     requestAnimationFrame(frame);

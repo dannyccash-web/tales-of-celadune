@@ -69,7 +69,11 @@ export class World {
 
     this.cameraY = 0;
     this.interior = null; // interior image while a home dialog is open
-    this.edgeMessage = null; // set when player pushes on a scene exit
+    // Set when the player pushes on a scene exit (2026-07-10, replaces the
+    // old edgeMessage placeholder): {edge, to, ...} — main.js consumes it
+    // each frame and either switches scenes (if the target is built) or
+    // shows the "not built yet" toast.
+    this.pendingExit = null;
   }
 
   // Nearest interactable within range (defaults to the same radius as NPC
@@ -166,7 +170,7 @@ export class World {
   }
 
   update(dt, input, uiLocked) {
-    this.edgeMessage = null;
+    this.pendingExit = null;
     const p = this.player;
     let dx = 0, dy = 0;
 
@@ -207,13 +211,18 @@ export class World {
     this.cameraY = Math.min(Math.max(p.y - VIEW_H / 2, 0), this.scene.height - VIEW_H);
   }
 
+  // Left/right exits match on a y band (yMin/yMax); top/bottom exits on an
+  // x band (xMin/xMax). A match sets pendingExit for main.js to act on.
   checkExit(edge) {
     const p = this.player;
-    const exit = this.scene.exits.find((e) =>
-      e.edge === edge && p.y >= (e.yMin ?? 0) && p.y <= (e.yMax ?? this.scene.height));
-    if (exit) {
-      this.edgeMessage = `The path continues to ${exit.to} — that scene isn’t built yet.`;
-    }
+    const exit = this.scene.exits.find((e) => {
+      if (e.edge !== edge) return false;
+      if (edge === 'left' || edge === 'right') {
+        return p.y >= (e.yMin ?? 0) && p.y <= (e.yMax ?? this.scene.height);
+      }
+      return p.x >= (e.xMin ?? 0) && p.x <= (e.xMax ?? this.scene.width);
+    });
+    if (exit) this.pendingExit = { ...exit };
   }
 
   updateNpcs(dt, uiLocked) {
