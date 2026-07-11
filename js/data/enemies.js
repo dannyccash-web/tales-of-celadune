@@ -47,4 +47,20 @@ export default {
     speed: 7,
     damage: { min: 2, max: 5 }, // 1d4+1
   },
+
+  // Rootweaver (D4 shortcut ambushes, 2026-07-11) — a deliberate "too tough
+  // for now" wall: high HP + hard hits so a fresh player (5 HP, atk1/def1,
+  // 1–2 dmg) can't grind it down before dying, and is meant to FLEE. Not
+  // absurd though — atk4/def3/15hp, not a 50-HP raid boss — so it becomes
+  // beatable later with a few levels + real gear. Rolls 2d4 (2–8) damage.
+  rootweaver: {
+    id: 'rootweaver',
+    name: 'Rootweaver',
+    portrait: 'assets/images/rootweaver.png',
+    health: 15,
+    attack: 4,
+    defense: 3,
+    speed: 9,
+    damage: { min: 2, max: 8 },
+  },
 };

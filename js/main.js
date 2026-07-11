@@ -255,19 +255,37 @@ async function boot() {
   // design spec. 20px inset keeps the 36px collider fully inside the new
   // scene so the return exit doesn't immediately re-trigger.
   // Bramblekin toll (D4) — resets every time the player (re)enters D4, so the
-  // Chief shakes travelers down again on each return, per Danny's spec.
-  // `campTollPaid`: paid the 5-gold toll (or won the fight); `campPassGranted`:
-  // agreed to see the Chief (or shoved past a guard), so the gate guards stand
-  // down. Blocking is active while BOTH are false — see world.campBlocking.
+  // Chief shakes travelers down again on each return. `campTollPaid`: paid the
+  // 5-gold toll (or won the fight) — the camp unseals, sentries step aside.
+  // `campEntered`: agreed at a gate to see the Chief and was let in — now the
+  // membrane flips from "can't enter" to "can't leave" (world.js). Reset on
+  // every fresh D4 arrival, and campEntered also clears on respawn (the player
+  // wakes up outside the camp).
   let campTollPaid = false;
-  let campPassGranted = false;
+  let campEntered = false;
+
+  // The two stationary gate sentries step to their gate's `aside` spot when the
+  // toll's paid (so the player passes freely) and back to their post on a fresh
+  // D4 visit. `_post` remembers where they stood so the reset is exact.
+  function stepSentriesAside() {
+    for (const s of world.npcs.filter((n) => n.sentry)) {
+      const gate = world.scene.camp?.gates.find((g) => g.id === s.gate);
+      if (gate?.aside) { s._post = s._post || { x: s.x, y: s.y }; s.x = gate.aside.x; s.y = gate.aside.y; }
+    }
+  }
+  function resetCampSentries() {
+    for (const s of world.npcs.filter((n) => n.sentry)) {
+      if (s._post) { s.x = s._post.x; s.y = s._post.y; }
+    }
+  }
 
   const EDGE_INSET = 20;
   function switchScene(exit) {
     const { x: px, y: py, rotation } = world.player;
     enterScene(exit.to);
-    // Re-arm the Bramblekin toll on every fresh arrival into D4.
-    if (exit.to === 'D4') { campTollPaid = false; campPassGranted = false; }
+    // Re-arm the Bramblekin toll on every fresh arrival into D4 (sentries back
+    // on post, camp resealed).
+    if (exit.to === 'D4') { campTollPaid = false; campEntered = false; resetCampSentries(); }
     const s = world.scene;
     if (exit.edge === 'right') { world.player.x = EDGE_INSET; world.player.y = py; }
     if (exit.edge === 'left') { world.player.x = s.width - EDGE_INSET; world.player.y = py; }
@@ -342,15 +360,18 @@ async function boot() {
     if (effect.payToll) {
       spendGold(5);
       campTollPaid = true;
+      stepSentriesAside();
       ui.updateDialogContent({
         line: 'The Chief’s grin is all thorns and bad intentions. “Pleasure doing business. The camp’s yours to cross — this once. Wander back through and we’ll dance again.”',
         responses: ['Leave.'],
       });
       return true;
     }
-    if (effect.refuseToll || effect.drawSteel) {
+    if (effect.drawSteel) {
+      // Close the dialog, then fight the Chief + guards. Winning forces
+      // passage (unseal + sentries aside).
       setTimeout(() => startBattle(campBattleFoes(), (result) => {
-        if (result === 'victory') campTollPaid = true;
+        if (result === 'victory') { campTollPaid = true; stepSentriesAside(); }
       }), 0);
       return; // falsy — ui closes the dialog, then the battle opens
     }
@@ -529,15 +550,15 @@ async function boot() {
     }
     if (stats.gold >= 5) {
       return {
-        line: 'The Bramblekin Chief looks you over like something scraped off his boot. “Five gold — that’s the toll to cross my camp. Pay up or turn around, and count yourself lucky I offered two options.”',
-        responses: ['Pay 5 gold.', 'Refuse.'],
-        responseEffects: [{ payToll: true }, { refuseToll: true }],
+        line: 'The Bramblekin Chief spits into the fire. “Five gold to cross my camp — and since you’re already standing in it, your only choices are the coin or the blade. Pay up, or fight your way out. Makes no difference to me.”',
+        responses: ['Pay 5 gold.', 'Fight!'],
+        responseEffects: [{ payToll: true }, { drawSteel: true }],
       };
     }
     return {
-      line: 'The Chief sneers, thorns bristling. “Five gold for safe passage. Empty pockets, is it? Then you’ll not set foot past this fire. Come back with coin — or draw steel and stop wasting my evening.”',
-      responses: ['I’ll come back with coin. (Leave)', 'Draw steel! (Fight)'],
-      responseEffects: [null, { drawSteel: true }],
+      line: 'The Chief eyes your empty purse and grins, all thorns. “No coin? In my camp, that leaves exactly one way past me — and it’s got a lot more bleeding involved.”',
+      responses: ['Fight!'],
+      responseEffects: [{ drawSteel: true }],
     };
   }
 
@@ -548,33 +569,50 @@ async function boot() {
     return ['bramblekin_chief', 'bramblekin', 'bramblekin', 'bramblekin'];
   }
 
-  // A gate confrontation, fired by world.pendingGate when the player crosses
-  // into a blocked gate. Agreeing stands the guards down (campPassGranted) so
-  // the player can reach the Chief; shoving past starts a fight with just that
-  // gate's blockers; backing off leaves them posted (the player's still free
-  // to walk away — the guards don't physically seal the gap).
+  // Entry confrontation, fired by world.pendingGate when the player pushes
+  // against the sealed camp boundary from OUTSIDE. Agreeing lets them in — the
+  // player is teleported to the gate's inside point (the guard "steps aside"
+  // and re-stations behind them, world.js's membrane then flips to can't-leave)
+  // and campEntered is set. Declining just closes; the membrane keeps them out.
   function openGateConfrontation(gateId) {
     const gate = world.scene.camp?.gates.find((g) => g.id === gateId);
     const view = {
       id: 'bramblekin', name: 'Bramblekin', role: '',
       portrait: 'assets/images/Bramblekin.png',
       dialog: {
-        line: 'A Bramblekin sidesteps into your path, thorny arms folded. “Far enough. Nobody wanders this camp for free. See the chief and pay the toll — or turn around. Try to shove past me and we’ll have a problem.”',
-        responses: ['Fine — I’ll see the chief.', 'Out of my way! (Fight)', 'Back off.'],
+        line: 'A Bramblekin guard plants itself in your path, thorny arms crossed. “Far enough. You want through this camp, you see the chief and you pay his toll — those are the terms, and there’s no strolling past me without them. Well? In or out?”',
+        responses: ['Take me to the chief.', 'Not now. (Leave)'],
       },
     };
     ui.openDialog(view, null, (v, index) => {
-      if (index === 0) { campPassGranted = true; return; }
-      if (index === 1) {
-        // Fight just this gate's blockers (world.gateGuards holds the posted
-        // guard npcs; each is an identical `bramblekin` enemy).
-        const foes = (world.gateGuards?.[gateId] || []).map(() => 'bramblekin');
-        setTimeout(() => startBattle(foes.length ? foes : ['bramblekin'], (result) => {
-          if (result === 'victory') campPassGranted = true;
-        }), 0);
+      if (index === 0) {
+        campEntered = true;
+        if (gate?.inside) { world.player.x = gate.inside.x; world.player.y = gate.inside.y; }
       }
-      // index 2 (Back off) / default: just close; guards stay posted.
+      // index 1 (Leave): the membrane keeps them out; free to walk away.
     });
+  }
+
+  // Turn-back, fired by world.pendingLeave when the player (already inside and
+  // unpaid) pushes against the boundary trying to LEAVE. Just a shove-back
+  // message — the membrane already reverted their move; their only ways out
+  // are paying the Chief or fighting.
+  function openLeaveConfrontation() {
+    const view = {
+      id: 'bramblekin', name: 'Bramblekin', role: '',
+      portrait: 'assets/images/Bramblekin.png',
+      dialog: {
+        line: 'The guard shoves you back with a thorny arm. “Nobody leaves till the chief’s been paid. Go see him. Pay the toll, or fight your way out — those are your only two ways past me.”',
+        responses: ['Fine.'],
+      },
+    };
+    ui.openDialog(view, null, () => {});
+  }
+
+  // A hidden Rootweaver ambush sprang — start the fight; winning clears it so
+  // it won't re-trigger (world.js marks `defeated`).
+  function startAmbush(ambush) {
+    startBattle(ambush.enemies, (result) => { if (result === 'victory') ambush.defeated = true; });
   }
 
   // Every NPC dialog opens through here so the per-character voice clip
@@ -853,6 +891,9 @@ async function boot() {
   // the kobolds are still there to fight again).
   function respawnAfterDefeat() {
     stats.health = stats.healthMax;
+    // Woke up outside the camp — no longer "inside" (clears the can't-leave
+    // membrane so respawning at the scene entrance doesn't insta-confront).
+    campEntered = false;
     ui.updateHud(stats);
     // Respawn at the CURRENT scene's spawn point (died in the woods ->
     // wake up at the woods' entrance, not back on the farm).
@@ -986,9 +1027,10 @@ async function boot() {
     last = now;
 
     const locked = ui.isDialogOpen() || ui.isAnyPanelOpen() || ui.isBattleOpen() || ui.isGameOverOpen() || !state.started;
-    // Bramblekin guards block the gates while the toll's unpaid and the player
-    // hasn't been waved through (no-op in scenes without a camp).
-    world.campBlocking = !campTollPaid && !campPassGranted;
+    // Camp membrane state (no-op in scenes without a camp): sealed until the
+    // toll's paid; campEntered flips the seal from keep-out to keep-in.
+    world.campSealed = !campTollPaid;
+    world.campEntered = campEntered;
     world.update(dt, input, locked);
     world.render();
 
@@ -1008,12 +1050,22 @@ async function boot() {
       }
     }
 
-    // Bramblekin gate confrontation: crossing into a blocked gate opens the
-    // "see the chief" dialog (world.js sets pendingGate; guards block the gap).
+    // Camp membrane confrontations: pushing the sealed boundary from outside
+    // opens the "see the chief" gate dialog; from inside (already entered) the
+    // turn-back. A sprung Rootweaver ambush starts its fight. (world.js sets
+    // these once per contact/approach.)
     if (world.pendingGate) {
       const gid = world.pendingGate;
       world.pendingGate = null;
       openGateConfrontation(gid);
+    } else if (world.pendingLeave) {
+      world.pendingLeave = null;
+      openLeaveConfrontation();
+    }
+    if (world.pendingAmbush) {
+      const a = world.pendingAmbush;
+      world.pendingAmbush = null;
+      startAmbush(a);
     }
 
     requestAnimationFrame(frame);

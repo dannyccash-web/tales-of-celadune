@@ -332,12 +332,27 @@ export default {
   // nearest guards move to each gate's `posts` to block it, and crossing into
   // a gate's radius triggers the "see the chief" confrontation (world.js's
   // updateCampGuards + pendingGate, driven by main.js's toll state).
+  // Reworked 2026-07-11 into a sealed region (see world.js's camp membrane).
+  // While the toll's unpaid the player can't cross `region`'s boundary: they
+  // can't ENTER until they agree to see the Chief (teleported to a gate's
+  // `inside` point), then can't LEAVE until they pay. Each gate has a
+  // stationary sentry (bramblekin_1 north / bramblekin_2 west); on payment the
+  // sentries step to their `aside` spot so the player comes and goes freely.
   camp: {
+    region: { x: 1150, y: 1290, w: 640, h: 480 },
     gates: [
-      { id: 'north', x: 1420, y: 1300, r: 130, posts: [{ x: 1360, y: 1300 }, { x: 1470, y: 1300 }] },
-      { id: 'west', x: 1250, y: 1410, r: 130, posts: [{ x: 1250, y: 1360 }, { x: 1250, y: 1460 }] },
+      { id: 'north', x: 1580, y: 1290, r: 110, inside: { x: 1580, y: 1375 }, aside: { x: 1620, y: 1370 } },
+      { id: 'west', x: 1150, y: 1340, r: 110, inside: { x: 1230, y: 1360 }, aside: { x: 1150, y: 1600 } },
     ],
   },
+
+  // Hidden Rootweaver ambushes on the two shortcuts that skirt the camp — walk
+  // within range and the fight starts on its own (world.js's checkAmbushes /
+  // main.js's pendingAmbush). Rootweavers are a "flee for now" wall.
+  ambushes: [
+    { id: 'rootweaver_north', x: 1337, y: 1100, range: 72, enemies: ['rootweaver'] },
+    { id: 'rootweaver_west', x: 757, y: 908, range: 72, enemies: ['rootweaver'] },
+  ],
 
   // West back to the D3 Farm (band matches D3's east exit, so walking off
   // either edge lands on the other scene's path at the same height).
@@ -361,13 +376,9 @@ export default {
       id: 'bramblekin_1', name: 'Bramblekin', role: '', bramblekin: true,
       sprite: 'assets/images/Bramblekin_Overhead.png',
       portrait: 'assets/images/Bramblekin.png',
-      x: 1300, y: 1400, speed: 38, startsHome: false,
-      home: { door: { x: 1300, y: 1360 }, interior: 'assets/images/bramblekin_tent_interior.jpg' },
-      routine: [
-        { do: 'goto', x: 1300, y: 1400 }, { do: 'wait', s: 4 },
-        { do: 'goto', x: 1360, y: 1330 }, { do: 'wait', s: 5 },
-        { do: 'goHome' }, { do: 'wait', s: 6 }, { do: 'leaveHome' },
-      ],
+      // Stationary sentry at the NORTH entrance (top-right opening; no routine).
+      x: 1580, y: 1320, speed: 38, startsHome: false,
+      sentry: true, gate: 'north',
       line: '“State your business. Actually, don’t — I don’t care. Nobody crosses this camp without squaring up with the chief first.”',
       paidLine: '“Chief took your coin. Guess you’re not my problem anymore.”',
     },
@@ -375,13 +386,9 @@ export default {
       id: 'bramblekin_2', name: 'Bramblekin', role: '', bramblekin: true,
       sprite: 'assets/images/Bramblekin_Overhead.png',
       portrait: 'assets/images/Bramblekin.png',
-      x: 1450, y: 1380, speed: 38, startsHome: false,
-      home: { door: { x: 1400, y: 1350 }, interior: 'assets/images/bramblekin_tent_interior.jpg' },
-      routine: [
-        { do: 'goto', x: 1450, y: 1380 }, { do: 'wait', s: 5 },
-        { do: 'goto', x: 1360, y: 1320 }, { do: 'wait', s: 4 },
-        { do: 'goHome' }, { do: 'wait', s: 7 }, { do: 'leaveHome' },
-      ],
+      // Stationary sentry at the WEST/NW entrance (main path in; no routine).
+      x: 1180, y: 1340, speed: 38, startsHome: false,
+      sentry: true, gate: 'west',
       line: '“Thorns out, coin up. That’s the rule. You want through? You talk to the chief, and you bring gold when you do.”',
       paidLine: '“Paid up, are you? Fine. Don’t touch anything.”',
     },

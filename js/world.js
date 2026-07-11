@@ -75,20 +75,33 @@ export class World {
     // shows the "not built yet" toast.
     this.pendingExit = null;
 
-    // Bramblekin toll-camp (D4). `camp` holds the gate definitions; guards
-    // (npcs tagged `bramblekin`) break off their routine to block a gate when
-    // `campBlocking` is true (set by main.js from the toll state) and the
-    // player is near it. `pendingGate` is set when the player crosses into a
-    // blocked gate's radius — main.js consumes it to open the confrontation,
-    // like pendingExit.
+    // Bramblekin toll-camp (D4, reworked 2026-07-11). `camp.region` is a
+    // rectangle the player can't cross while the toll's unpaid (`campSealed`,
+    // set by main.js): can't ENTER until they've agreed to see the Chief
+    // (`campEntered`), then can't LEAVE until they pay. Two stationary guards
+    // stand at the region's gates. Hitting the sealed boundary sets
+    // `pendingGate` (before entering — the "see the chief" confrontation) or
+    // `pendingLeave` (after — the "you're not leaving" turn-back); main.js
+    // consumes both, like pendingExit. `_campContact` de-bounces them so they
+    // fire once per approach, not every frame the player pushes the line.
     this.camp = scene.camp || null;
-    this.campBlocking = false;
+    this.campSealed = false;
+    this.campEntered = false;
     this.pendingGate = null;
-    // Per-gate guard assignments + trigger-armed flags, keyed by gate id.
-    // Kept on the World (not the shared scene data) so they're instance state,
-    // like `collected`/`defeated` — a fresh World starts with clean gates.
-    this.gateGuards = {};
+    this.pendingLeave = null;
+    this._campContact = false;
+    // Per-gate armed flag for the proximity confrontation (re-arms once the
+    // player leaves the gate's radius) — the guards physically block the
+    // opening, so the "see the chief" dialog is triggered by getting NEAR a
+    // gate, not by reaching the membrane line behind the guard.
     this.gateArmed = {};
+
+    // Hidden proximity ambushes (D4 Rootweavers): auto-start a battle when the
+    // player comes within range. Per-instance `triggered`/`defeated` like
+    // `battles`, so a fresh World resets them; `triggered` re-arms with
+    // hysteresis after the player leaves (so a fled ambush isn't instant-loop).
+    this.ambushes = (scene.ambushes || []).map((a) => ({ ...a, triggered: false, defeated: false }));
+    this.pendingAmbush = null;
 
     // Animation clock for code-drawn effects (currently campfire smoke).
     this.time = 0;
@@ -204,7 +217,11 @@ export class World {
   update(dt, input, uiLocked) {
     this.time += dt; // advances even while UI-locked so effects keep drifting
     this.pendingExit = null;
+    this.pendingGate = null;
+    this.pendingLeave = null;
+    this.pendingAmbush = null;
     const p = this.player;
+    const preX = p.x, preY = p.y; // pre-move position for the camp membrane clamp
     let dx = 0, dy = 0;
 
     if (!uiLocked) {
@@ -239,6 +256,14 @@ export class World {
 
     this.updateNpcs(dt, uiLocked);
 
+    // Camp membrane (can't enter/leave while sealed) + hidden ambush triggers —
+    // only while the world is live (a rejected move reverts to the pre-move pos).
+    if (!uiLocked) {
+      this.checkCampGates();
+      this.checkCampMembrane(preX, preY);
+      this.checkAmbushes();
+    }
+
     // Camera: horizontal fixed (world width == viewport width); vertical follows
     // player, clamped so Layer 1 never scrolls past its edges.
     this.cameraY = Math.min(Math.max(p.y - VIEW_H / 2, 0), this.scene.height - VIEW_H);
@@ -258,51 +283,86 @@ export class World {
     if (exit) this.pendingExit = { ...exit };
   }
 
-  // Bramblekin gate blocking (2026-07-11). When the toll is unpaid
-  // (campBlocking) and the player is near a gate, the nearest available
-  // guards are pulled off their routine to stand on that gate's posts, and
-  // crossing into the gate's radius fires pendingGate once per approach (with
-  // hysteresis: re-arms only after the player backs out past r*1.5). Guards
-  // are assigned once per approach and held (no per-frame reshuffling) so
-  // they don't thrash between posts. Cleared entirely when the toll is paid.
-  updateCampGuards() {
-    if (!this.camp) return;
-    const guards = this.npcs.filter((n) => n.bramblekin);
-    if (!this.campBlocking) {
-      for (const g of this.camp.gates) { this.gateGuards[g.id] = []; this.gateArmed[g.id] = true; }
-      guards.forEach((n) => { n.blockPost = null; });
-      return;
+  // ---- Bramblekin toll-camp membrane (reworked 2026-07-11) ----
+  // While the camp is sealed (toll unpaid), the player can't cross the region
+  // boundary: they can't ENTER until they've agreed to see the Chief
+  // (campEntered), then can't LEAVE until they pay. Called from update() with
+  // the pre-move position, so a rejected move just leaves the player where
+  // they were (stopped at the line). Fires pendingGate (entry confrontation)
+  // or pendingLeave (turn-back) once per contact — `_campContact` de-bounces
+  // it so it doesn't re-fire every frame the player holds into the boundary.
+  inCampRegion(x, y) {
+    const r = this.camp && this.camp.region;
+    return !!r && x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h;
+  }
+
+  nearestGateId() {
+    const p = this.player;
+    let best = null, bd = Infinity;
+    for (const g of this.camp.gates) {
+      const d = Math.hypot(g.x - p.x, g.y - p.y);
+      if (d < bd) { bd = d; best = g.id; }
     }
+    return best;
+  }
+
+  checkCampMembrane(preX, preY) {
+    if (!this.camp || !this.camp.region || !this.campSealed) { this._campContact = false; return; }
+    const p = this.player;
+    const inR = this.inCampRegion(p.x, p.y);
+    const violated = this.campEntered ? !inR : inR; // entered→can't leave; else→can't enter
+    if (violated) {
+      p.x = preX; p.y = preY; // stopped at the boundary
+      if (!this._campContact) {
+        if (this.campEntered) this.pendingLeave = this.nearestGateId();
+        else this.pendingGate = this.nearestGateId();
+      }
+      this._campContact = true;
+    } else {
+      this._campContact = false;
+    }
+  }
+
+  // Gate proximity confrontation (entry). The guards physically block the
+  // openings, so the "see the chief" dialog is triggered by getting NEAR a
+  // gate — not by reaching the membrane line behind the guard (which the
+  // player's collider can't get to). De-bounced per gate via gateArmed.
+  checkCampGates() {
+    if (!this.camp || !this.campSealed || this.campEntered) return;
     const p = this.player;
     for (const g of this.camp.gates) {
-      const assigned = this.gateGuards[g.id] || (this.gateGuards[g.id] = []);
+      const gr = g.r ?? 100;
       const d = Math.hypot(g.x - p.x, g.y - p.y);
-      if (d < g.r) {
-        if (assigned.length === 0) {
-          const avail = guards
-            .filter((n) => !n.blockPost && !n.atHome && !n.fading)
-            .sort((a, b) => Math.hypot(a.x - g.x, a.y - g.y) - Math.hypot(b.x - g.x, b.y - g.y));
-          const picked = g.posts.map((post, i) => avail[i]).filter(Boolean);
-          picked.forEach((n, i) => { n.blockPost = g.posts[i]; });
-          this.gateGuards[g.id] = picked;
-        }
+      if (d < gr) {
         if (this.gateArmed[g.id] !== false && !this.pendingGate) {
           this.pendingGate = g.id;
           this.gateArmed[g.id] = false;
         }
-      } else if (d > g.r * 1.5) {
-        if (assigned.length) {
-          assigned.forEach((n) => { n.blockPost = null; });
-          this.gateGuards[g.id] = [];
-        }
+      } else if (d > gr * 1.6) {
         this.gateArmed[g.id] = true;
+      }
+    }
+  }
+
+  // Hidden proximity ambushes (Rootweavers): fire pendingAmbush once when the
+  // player enters range, re-arming only after they leave (hysteresis), and
+  // skipping ones already defeated.
+  checkAmbushes() {
+    const p = this.player;
+    for (const a of this.ambushes) {
+      if (a.defeated) continue;
+      const range = a.range ?? 70;
+      const d = Math.hypot(a.x - p.x, a.y - p.y);
+      if (d < range) {
+        if (!a.triggered && !this.pendingAmbush) { this.pendingAmbush = a; a.triggered = true; }
+      } else if (d > range * 1.6) {
+        a.triggered = false;
       }
     }
   }
 
   updateNpcs(dt, uiLocked) {
     if (uiLocked) return; // world pauses during dialog
-    this.updateCampGuards();
     // Recorded before any movement so we can tell, after the fact, which NPCs
     // actually translated this tick (vs. waiting/fading/paused) — that drives
     // the same walk-flip mirroring the player uses, without threading extra
@@ -318,16 +378,6 @@ export class World {
           if (dir === -1) npc.atHome = true;
           npc.fading = null;
           this.advanceRoutine(npc);
-        }
-        continue;
-      }
-
-      // Assigned to block a gate: ignore routine/pause, walk to the post and
-      // hold there facing the player (updateCampGuards sets/clears blockPost).
-      if (npc.blockPost) {
-        const arrived = this.walkToward(npc, npc.blockPost, dt);
-        if (arrived) {
-          npc.rotation = Math.atan2(this.player.y - npc.y, this.player.x - npc.x) - Math.PI / 2;
         }
         continue;
       }
