@@ -34,7 +34,7 @@ export const DIALOGUE_SFX = {
 // musicVolume/sfxVolume are 0..1 master levels. Individual sfx() calls pass
 // a relative "weight" (their old hardcoded volume) that gets scaled by
 // sfxVolume, so the slider affects everything without touching call sites.
-const DEFAULT_VOLUME = 0.75; // music default, matches the slider's initial 75%
+const DEFAULT_VOLUME = 0.5; // music default (Danny, 2026-07-12), matches the slider's initial 50%
 let musicVolume = DEFAULT_VOLUME;
 let sfxVolume = 1.0; // matches the slider's initial 100%
 const STEPS_WEIGHT = 0.55;

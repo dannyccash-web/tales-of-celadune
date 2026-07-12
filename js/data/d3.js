@@ -274,7 +274,7 @@ export default {
         // applyResponseEffect) instead of the old close-on-anything behavior.
         responseEffects: [
           { followUp: 'Fair enough, fair enough. The upper fields came in heavy this year — it’s the lower ones that like to sulk. If the rain holds, the silo will be full before first frost.' },
-          { followUp: 'Rats, mostly. And something’s been worrying the fence by the pen — though between you and me, I suspect the goat. Keep your eyes open around the barns after dark.' },
+          { followUp: 'Out here? Just rats. But if you’re bound east, into the woods — keep to the path, and I mean it. There’s things living in among those trees that don’t take kindly to folk wandering off the trail. Stay on it and you’ll be fine.' },
           null,
         ],
       },
@@ -384,16 +384,17 @@ export default {
       ],
       dialog: {
         line: 'Gaffer fixes you with a flat yellow stare, lets out a low bleat, and goes back to chewing on a fence post.',
+        // "Offer him..." only appears once the player is actually carrying
+        // corn — main.js's buildGafferDialog swaps in the feed option then.
+        // With no corn, it's just pet-or-leave.
         responses: [
           'Pet Gaffer.',
-          'Offer him something to eat.',
           'Leave.',
         ],
         // Parallel to `responses` — an optional effect applied when that
         // response is chosen. See main.js's openNpcDialog/onResponse.
         responseEffects: [
           { damage: 1, message: 'Gaffer nips you! -1 health.' },
-          null,
           null,
         ],
       },
