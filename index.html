@@ -17,6 +17,10 @@
     <!-- Layer 3: vignette, multiply blend, fixed to viewport -->
     <img id="vignette" src="assets/images/Vignette.jpg" alt="">
 
+    <!-- Layer 3.5: world-space labels (building names, NPC names) drawn ABOVE
+         the multiply vignette so they stay crisp and readable -->
+    <canvas id="labels" width="1920" height="1080"></canvas>
+
     <!-- Layer 4: UI, fixed to viewport -->
     <div id="ui">
       <div id="topbar">

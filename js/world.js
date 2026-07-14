@@ -21,6 +21,12 @@ export class World {
   constructor(canvas, scene, images) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
+    // Separate canvas ABOVE the vignette for world-space labels (building
+    // names, NPC names) so the multiply vignette doesn't dim them. Falls back
+    // to the main ctx if the labels canvas isn't present (e.g. headless).
+    this.labelCtx = (typeof document !== 'undefined' && document.getElementById)
+      ? (document.getElementById('labels')?.getContext('2d') || this.ctx)
+      : this.ctx;
     this.scene = scene;
     this.images = images; // { [src]: HTMLImageElement }
     this.silhouettes = new Map(); // img -> black-silhouette canvas for shadows
@@ -546,7 +552,7 @@ export class World {
   }
 
   drawLabel(text, x, y) {
-    const ctx = this.ctx;
+    const ctx = this.labelCtx;
     ctx.save();
     ctx.font = '22px MedievalSharp, serif';
     ctx.textAlign = 'center';
@@ -602,6 +608,10 @@ export class World {
 
   render() {
     const ctx = this.ctx;
+
+    // Clear the (above-vignette) label canvas every frame so labels don't
+    // smear; drawLabel() repaints whatever's currently in range.
+    if (this.labelCtx && this.labelCtx !== ctx) this.labelCtx.clearRect(0, 0, VIEW_W, VIEW_H);
 
     // Inside a home: the interior replaces the whole world view (UI stays)
     if (this.interior) {

@@ -49,6 +49,17 @@ html, body {
   height: 1080px;
 }
 
+/* Layer 3.5: world label canvas — sits above the vignette so building/NPC
+   labels stay crisp (the vignette is multiply-blended and darkens whatever's
+   on #game). Same size/position as #game; never intercepts input. */
+#labels {
+  position: absolute;
+  inset: 0;
+  width: 1920px;
+  height: 1080px;
+  pointer-events: none;
+}
+
 /* ---- Layer 3: vignette ---- */
 /* Oversized by 4px on every edge: scaling the stage to arbitrary window sizes
    can leave sub-pixel seams at the borders, so the vignette overshoots them */
