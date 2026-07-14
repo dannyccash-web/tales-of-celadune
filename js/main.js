@@ -1,6 +1,7 @@
 // Tales of Celadune — entry point.
 // Loads assets, builds the world for the current scene, runs the game loop.
 
+import sceneD2 from './data/d2.js';
 import sceneD3 from './data/d3.js';
 import sceneD4 from './data/d4.js';
 import { World } from './world.js';
@@ -205,7 +206,7 @@ function loadImages(sources) {
 // Every scene in the game, keyed by the ids that exits point at. Adding a
 // scene = write its data file, import it, and register it here — the
 // transition system below handles everything else.
-const SCENES = { D3: sceneD3, D4: sceneD4 };
+const SCENES = { D2: sceneD2, D3: sceneD3, D4: sceneD4 };
 
 async function boot() {
   // Preload assets for EVERY registered scene up front — scene switches are
