@@ -671,25 +671,26 @@ export default {
 
   // ---- Village NPCs (2026-07-12) ----
   // 6 vendors/temple in the central gray buildings + the south temple by the
-  // graveyard; 12 villagers in the log houses around the ring. Each has a
-  // home door + a short LOCAL wander loop (2 nearby points) and a staggered
-  // routine so they're never all home or all out at once. Vendors: ~2min in
-  // shop / ~1min wandering; villagers: ~2min home / ~2min wandering. All door
-  // + wander points were engine-validated for 36px-collider clearance and the
-  // full 18-NPC set stress-tested (3600s sim, zero livelock).
+  // graveyard; 12 villagers in the log houses around the ring. Each has a home
+  // door + a short LOCAL 2-point wander loop and a staggered routine (vendors
+  // ~2min shop/~1min out; villagers ~2min home/~2min out). Half start OUT
+  // (visible on arrival, spawned at their first wander point), half start
+  // home and emerge over the next minute or two — so the village is populated
+  // immediately but they're never all home or all out together. All points
+  // engine-validated (36px clearance); 18-NPC set stress-tested (zero livelock).
   npcs: [
     {
       id: 'bram', name: 'Bram Caskwell', role: 'TAVERN KEEPER',
       sprite: 'assets/images/Bram Caskwell_overhead.png',
       portrait: 'assets/images/Bram Caskwell.png',
-      speed: 42, startsHome: true,
+      x: 1048, y: 1302, speed: 42, startsHome: false,
       home: { door: { x: 1058, y: 1208 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
-        { do: 'wait', s: 100 },
-        { do: 'leaveHome' },
         { do: 'goto', x: 1048, y: 1302 }, { do: 'wait', s: 26 },
         { do: 'goto', x: 981, y: 1264 }, { do: 'wait', s: 26 },
         { do: 'goHome' },
+        { do: 'wait', s: 100 },
+        { do: 'leaveHome' },
       ],
       dialog: { line: 'Welcome, welcome! Pull up a stool — though I’ll warn you, the ale’s still fermenting and the stew’s mostly turnip. Come back when the hearth’s lit proper.', responses: ['Leave.'] },
     },
@@ -712,14 +713,14 @@ export default {
       id: 'nadira', name: 'Nadira Thornwell', role: 'APOTHECARY',
       sprite: 'assets/images/Nadira Thornwell_overhead.png',
       portrait: 'assets/images/Nadira Thornwell.png',
-      speed: 42, startsHome: true,
+      x: 669, y: 1671, speed: 42, startsHome: false,
       home: { door: { x: 737, y: 1605 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
-        { do: 'wait', s: 126 },
-        { do: 'leaveHome' },
         { do: 'goto', x: 669, y: 1671 }, { do: 'wait', s: 32 },
         { do: 'goto', x: 831, y: 1592 }, { do: 'wait', s: 34 },
         { do: 'goHome' },
+        { do: 'wait', s: 126 },
+        { do: 'leaveHome' },
       ],
       dialog: { line: 'Careful what you touch — half these jars will cure you and the other half most certainly won’t. Come by when you’ve an ache I can put a price to.', responses: ['Leave.'] },
     },
@@ -742,14 +743,14 @@ export default {
       id: 'kwame', name: 'Kwame Hearthstone', role: 'BAKER',
       sprite: 'assets/images/Kwame Hearthstone_overhead.png',
       portrait: 'assets/images/Kwame Hearthstone.png',
-      speed: 42, startsHome: true,
+      x: 307, y: 1350, speed: 42, startsHome: false,
       home: { door: { x: 265, y: 1265 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
-        { do: 'wait', s: 152 },
-        { do: 'leaveHome' },
         { do: 'goto', x: 307, y: 1350 }, { do: 'wait', s: 38 },
         { do: 'goto', x: 207, y: 1190 }, { do: 'wait', s: 26 },
         { do: 'goHome' },
+        { do: 'wait', s: 152 },
+        { do: 'leaveHome' },
       ],
       dialog: { line: 'Smell that? Second batch of the day. The crusty loaves go fast, so if you want one, don’t dawdle.', responses: ['Leave.'] },
     },
@@ -772,14 +773,14 @@ export default {
       id: 'alden', name: 'Alden Hale', role: 'VILLAGER',
       sprite: 'assets/images/Alden Hale_overhead.png',
       portrait: 'assets/images/Alden Hale.png',
-      speed: 42, startsHome: true,
+      x: 1295, y: 177, speed: 42, startsHome: false,
       home: { door: { x: 1200, y: 177 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
-        { do: 'wait', s: 108 },
-        { do: 'leaveHome' },
         { do: 'goto', x: 1295, y: 177 }, { do: 'wait', s: 52 },
         { do: 'goto', x: 1153, y: 95 }, { do: 'wait', s: 60 },
         { do: 'goHome' },
+        { do: 'wait', s: 108 },
+        { do: 'leaveHome' },
       ],
       dialog: { line: 'Off to fell timber before the light goes. This rope won’t coil itself, and the forester’s already sour with me.', responses: ['Leave.'] },
     },
@@ -802,14 +803,14 @@ export default {
       id: 'petra', name: 'Petra Ashby', role: 'VILLAGER',
       sprite: 'assets/images/Petra Ashby_overhead.png',
       portrait: 'assets/images/Petra Ashby.png',
-      speed: 42, startsHome: true,
+      x: 977, y: 675, speed: 42, startsHome: false,
       home: { door: { x: 904, y: 614 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
-        { do: 'wait', s: 134 },
-        { do: 'leaveHome' },
         { do: 'goto', x: 977, y: 675 }, { do: 'wait', s: 60 },
         { do: 'goto', x: 820, y: 569 }, { do: 'wait', s: 68 },
         { do: 'goHome' },
+        { do: 'wait', s: 134 },
+        { do: 'leaveHome' },
       ],
       dialog: { line: 'Lovely day, isn’t it? Well — lovely if you’re not the one weeding the whole garden by yourself.', responses: ['Leave.'] },
     },
@@ -832,14 +833,14 @@ export default {
       id: 'marisol', name: 'Marisol Reyne', role: 'VILLAGER',
       sprite: 'assets/images/Marisol Reyne_overhead.png',
       portrait: 'assets/images/Marisol Reyne.png',
-      speed: 42, startsHome: true,
+      x: 1675, y: 990, speed: 42, startsHome: false,
       home: { door: { x: 1580, y: 990 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
-        { do: 'wait', s: 160 },
-        { do: 'leaveHome' },
         { do: 'goto', x: 1675, y: 990 }, { do: 'wait', s: 68 },
         { do: 'goto', x: 1644, y: 1061 }, { do: 'wait', s: 56 },
         { do: 'goHome' },
+        { do: 'wait', s: 160 },
+        { do: 'leaveHome' },
       ],
       dialog: { line: 'You’re not from around here, are you? Don’t fret, we don’t bite. Much.', responses: ['Leave.'] },
     },
@@ -862,14 +863,14 @@ export default {
       id: 'osric', name: 'Osric Blackwood', role: 'VILLAGER',
       sprite: 'assets/images/Osric Blackwood_overhead.png',
       portrait: 'assets/images/Osric Blackwood.png',
-      speed: 42, startsHome: true,
+      x: 233, y: 929, speed: 42, startsHome: false,
       home: { door: { x: 180, y: 850 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
-        { do: 'wait', s: 116 },
-        { do: 'leaveHome' },
         { do: 'goto', x: 233, y: 929 }, { do: 'wait', s: 52 },
         { do: 'goto', x: 167, y: 974 }, { do: 'wait', s: 64 },
         { do: 'goHome' },
+        { do: 'wait', s: 116 },
+        { do: 'leaveHome' },
       ],
       dialog: { line: 'These old knees have walked this village sixty years. Not much changes here, and I count that a blessing.', responses: ['Leave.'] },
     },
@@ -892,14 +893,14 @@ export default {
       id: 'darius', name: 'Darius Bellwren', role: 'VILLAGER',
       sprite: 'assets/images/Darius Bellwren_overhead.png',
       portrait: 'assets/images/Darius Bellwren.png',
-      speed: 42, startsHome: true,
+      x: 395, y: 1486, speed: 42, startsHome: false,
       home: { door: { x: 300, y: 1486 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
-        { do: 'wait', s: 142 },
-        { do: 'leaveHome' },
         { do: 'goto', x: 395, y: 1486 }, { do: 'wait', s: 60 },
         { do: 'goto', x: 290, y: 1392 }, { do: 'wait', s: 72 },
         { do: 'goHome' },
+        { do: 'wait', s: 142 },
+        { do: 'leaveHome' },
       ],
       dialog: { line: 'Fish aren’t biting, but the pond’s peaceful. Some days that’s catch enough. You fish? No? Pity.', responses: ['Leave.'] },
     },
@@ -922,14 +923,14 @@ export default {
       id: 'priya', name: 'Priya Sarn', role: 'VILLAGER',
       sprite: 'assets/images/Priya Sarn_overhead.png',
       portrait: 'assets/images/Priya Sarn.png',
-      speed: 42, startsHome: true,
+      x: 1503, y: 1555, speed: 42, startsHome: false,
       home: { door: { x: 1450, y: 1476 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
-        { do: 'wait', s: 168 },
-        { do: 'leaveHome' },
         { do: 'goto', x: 1503, y: 1555 }, { do: 'wait', s: 68 },
         { do: 'goto', x: 1361, y: 1508 }, { do: 'wait', s: 60 },
         { do: 'goHome' },
+        { do: 'wait', s: 168 },
+        { do: 'leaveHome' },
       ],
       dialog: { line: 'Festival’s coming, you know. I’m to weave the garlands. Come back then — there’ll be music, and Malik on his drum.', responses: ['Leave.'] },
     },
