@@ -297,6 +297,112 @@ export function showQuestCompleted(questName) {
   showQuestToast(`Quest Completed: ${questName}`);
 }
 
+// ---- Vendor shop (Buy/Sell, 2026-07-12) ----
+// Opened from a vendor's in-shop dialog (main.js's openVendorShop). Shows a
+// Buy grid (the vendor's stock + buy prices) or a Sell grid (the player's
+// non-quest items + sell values). main.js owns the gold/inventory mutation
+// via onBuy/onSell and then calls refreshShop() with the updated lists — ui.js
+// is presentation + keyboard nav only. Up/Down switch Buy/Sell, Left/Right
+// move the tile selection, Space trades, Esc leaves.
+const shopState = { open: false, mode: 'buy', buy: [], sell: [], selected: 0, gold: 0, onBuy: null, onSell: null, onClose: null };
+
+export function isShopOpen() { return shopState.open; }
+
+export function openShop({ vendorName, mode, buy, sell, gold, onBuy, onSell, onClose }) {
+  Object.assign(shopState, { open: true, mode: mode || 'buy', buy: buy || [], sell: sell || [], gold: gold || 0, onBuy, onSell, onClose, selected: 0 });
+  $('shop-title').textContent = vendorName || 'Shop';
+  $('shop').querySelectorAll('.shop-tab').forEach((t) => {
+    t.onclick = () => { shopState.mode = t.dataset.mode; shopState.selected = 0; renderShop(); };
+  });
+  renderShop();
+  $('shop').classList.remove('hidden');
+}
+
+function shopItems() { return shopState.mode === 'buy' ? shopState.buy : shopState.sell; }
+
+function renderShop() {
+  $('shop-gold-value').textContent = shopState.gold;
+  $('shop').querySelectorAll('.shop-tab').forEach((t) => t.classList.toggle('active', t.dataset.mode === shopState.mode));
+  const items = shopItems();
+  if (shopState.selected >= items.length) shopState.selected = Math.max(0, items.length - 1);
+  const grid = $('shop-grid');
+  grid.innerHTML = '';
+  const empty = $('shop-empty');
+  empty.classList.toggle('hidden', items.length > 0);
+  if (!items.length) empty.textContent = shopState.mode === 'buy' ? 'Nothing for sale right now.' : 'You have nothing to sell.';
+  items.forEach((it, i) => {
+    const tile = buildShopTile(it);
+    tile.classList.toggle('focused', i === shopState.selected);
+    tile.addEventListener('click', () => { shopState.selected = i; confirmShop(); });
+    tile.addEventListener('mouseenter', () => { shopState.selected = i; refreshShopFocus(); });
+    grid.appendChild(tile);
+  });
+}
+
+function buildShopTile(it) {
+  const buying = shopState.mode === 'buy';
+  const tile = document.createElement('div');
+  tile.className = 'item-tile';
+  if (buying && shopState.gold < it.price) tile.classList.add('unaffordable');
+  const frame = document.createElement('div');
+  frame.className = 'item-frame';
+  const img = document.createElement('img');
+  img.className = 'item-image';
+  img.src = it.image; img.alt = it.name;
+  frame.appendChild(img);
+  const label = document.createElement('div');
+  label.className = 'item-label';
+  label.textContent = it.name;
+  if (!buying && it.qty > 1) {
+    const qty = document.createElement('span'); qty.className = 'item-qty'; qty.textContent = ` (${it.qty})`;
+    label.appendChild(qty);
+  }
+  const price = document.createElement('div');
+  price.className = 'item-price';
+  price.textContent = String(buying ? it.price : it.value);
+  tile.appendChild(frame);
+  tile.appendChild(label);
+  tile.appendChild(price);
+  return tile;
+}
+
+function refreshShopFocus() {
+  $('shop-grid').querySelectorAll('.item-tile').forEach((el, i) => el.classList.toggle('focused', i === shopState.selected));
+}
+
+function confirmShop() {
+  const it = shopItems()[shopState.selected];
+  if (!it) return;
+  if (shopState.mode === 'buy') { if (shopState.onBuy) shopState.onBuy(it.id); }
+  else if (shopState.onSell) shopState.onSell(it.id);
+}
+
+// Called by main.js after a buy/sell mutates state — repaint with the new
+// gold + item lists, keeping the current Buy/Sell mode and selection.
+export function refreshShop({ gold, buy, sell } = {}) {
+  if (gold != null) shopState.gold = gold;
+  if (buy) shopState.buy = buy;
+  if (sell) shopState.sell = sell;
+  if (shopState.open) renderShop();
+}
+
+export function shopKey(key) {
+  if (!shopState.open) return;
+  if (key === 'Escape') { closeShop(); return; }
+  if (key === 'ArrowUp' || key === 'ArrowDown') { shopState.mode = shopState.mode === 'buy' ? 'sell' : 'buy'; shopState.selected = 0; renderShop(); return; }
+  const items = shopItems();
+  if (!items.length) return;
+  if (key === 'ArrowLeft') { shopState.selected = (shopState.selected + items.length - 1) % items.length; refreshShopFocus(); return; }
+  if (key === 'ArrowRight') { shopState.selected = (shopState.selected + 1) % items.length; refreshShopFocus(); return; }
+  if (key === ' ' || key === 'Enter') confirmShop();
+}
+
+function closeShop() {
+  shopState.open = false;
+  $('shop').classList.add('hidden');
+  if (shopState.onClose) shopState.onClose();
+}
+
 // ---- Menu / Inventory panels ----
 // Both share the same tabbed-panel structure (see .panel-box in style.css);
 // only one is ever open at a time, mirroring the topbar's two icon buttons.

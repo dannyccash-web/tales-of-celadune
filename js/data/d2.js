@@ -724,6 +724,8 @@ export default {
   npcs: [
     {
       id: 'bram', name: 'Bram Caskwell', role: 'TAVERN KEEPER',
+      vendor: true, stock: ['health_potion', 'dagger'],
+      awayLine: 'The tavern’s just there — come find me and I’ll pour you something proper. Can’t very well do business in the middle of the road.',
       sprite: 'assets/images/Bram Caskwell_overhead.png',
       portrait: 'assets/images/Bram Caskwell.png',
       x: 850, y: 1012, speed: 45, startsHome: false,
@@ -738,6 +740,8 @@ export default {
     },
     {
       id: 'sorcha', name: 'Sorcha Emberfell', role: 'BLACKSMITH',
+      vendor: true, stock: ['health_potion', 'dagger'],
+      awayLine: 'If it’s steel you’re after, catch me at the forge. I don’t lug the anvil about with me.',
       sprite: 'assets/images/Sorcha Emberfell_overhead.png',
       portrait: 'assets/images/Sorcha Emberfell.png',
       speed: 45, startsHome: true,
@@ -752,6 +756,8 @@ export default {
     },
     {
       id: 'nadira', name: 'Nadira Thornwell', role: 'APOTHECARY',
+      vendor: true, stock: ['health_potion', 'dagger'],
+      awayLine: 'My remedies are all back at the apothecary. Stop in when I’m behind the counter.',
       sprite: 'assets/images/Nadira Thornwell_overhead.png',
       portrait: 'assets/images/Nadira Thornwell.png',
       x: 844, y: 1221, speed: 45, startsHome: false,
@@ -766,6 +772,8 @@ export default {
     },
     {
       id: 'emeric', name: 'Emeric Vale', role: 'SHOPKEEPER',
+      vendor: true, stock: ['health_potion', 'dagger'],
+      awayLine: 'Come by the shop if you’re buying — I don’t carry the whole inventory in my pockets.',
       sprite: 'assets/images/Emeric Vale_overhead.png',
       portrait: 'assets/images/Emeric Vale.png',
       speed: 45, startsHome: true,
@@ -780,6 +788,8 @@ export default {
     },
     {
       id: 'kwame', name: 'Kwame Hearthstone', role: 'BAKER',
+      vendor: true, stock: ['health_potion', 'dagger'],
+      awayLine: 'The bread’s at the bakery, not out here. Swing by while the oven’s still hot.',
       sprite: 'assets/images/Kwame Hearthstone_overhead.png',
       portrait: 'assets/images/Kwame Hearthstone.png',
       x: 824, y: 272, speed: 45, startsHome: false,

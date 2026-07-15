@@ -356,6 +356,11 @@ async function boot() {
       ui.updateDialogContent(effect.goBack);
       return true;
     }
+    // Vendor Buy/Sell: close the dialog, then open the shop grid next tick.
+    if (effect.shop) {
+      setTimeout(() => openVendorShop(npc, effect.shop), 0);
+      return; // falsy — ui closes the dialog first
+    }
     // Bramblekin Chief toll: pay it (deduct 5, mark paid, swap in a parting
     // line) or refuse/draw steel (close, then fight the Chief + guards).
     if (effect.payToll) {
@@ -616,6 +621,54 @@ async function boot() {
     startBattle(ambush.enemies, (result) => { if (result === 'victory') ambush.defeated = true; });
   }
 
+  // ---- Vendor shop (2026-07-12) ----
+  // A vendor's dialog depends on whether they're in their shop: out and about,
+  // they point you back to the shop (awayLine); behind the counter (atHome)
+  // they offer Buy/Sell, which open the shop grid. Buy = the vendor's stock at
+  // full price; Sell = the player's non-quest items at half price (RPG-standard
+  // sell ratio). openVendorShop owns the gold/inventory mutation and re-hands
+  // fresh lists to ui.refreshShop after each trade.
+  function sellValue(def) { return Math.max(1, Math.floor((def?.price || 0) / 2)); }
+
+  function buildVendorDialog(npc) {
+    if (!npc.atHome) {
+      return { line: npc.awayLine || 'Catch me at my shop if you’re looking to trade.', responses: ['Leave.'] };
+    }
+    return {
+      line: npc.dialog.line,
+      responses: ['Buy', 'Sell', 'Leave.'],
+      responseEffects: [{ shop: 'buy' }, { shop: 'sell' }, null],
+    };
+  }
+
+  function openVendorShop(npc, mode) {
+    const buildBuy = () => (npc.stock || [])
+      .map((id) => ITEMS[id]).filter((d) => d && d.price != null)
+      .map((d) => ({ id: d.id, name: d.name, image: d.image, price: d.price }));
+    const buildSell = () => inventory
+      .map((e) => ({ e, d: ITEMS[e.id] }))
+      .filter(({ d }) => d && !d.questItem && d.price != null)
+      .map(({ e, d }) => ({ id: d.id, name: d.name, image: d.image, value: sellValue(d), qty: e.qty }));
+    ui.openShop({
+      vendorName: npc.name, mode,
+      buy: buildBuy(), sell: buildSell(), gold: stats.gold,
+      onBuy: (id) => {
+        const d = ITEMS[id];
+        if (!d || stats.gold < d.price) { audio.sfx(audio.SFX.locked); ui.toast('You can’t afford that.'); return; }
+        spendGold(d.price);
+        addItem(id, 1);
+        ui.refreshShop({ gold: stats.gold, buy: buildBuy(), sell: buildSell() });
+      },
+      onSell: (id) => {
+        const d = ITEMS[id];
+        if (!d || !inventory.find((e) => e.id === id)) return;
+        removeItem(id, 1);
+        addGold(sellValue(d));
+        ui.refreshShop({ gold: stats.gold, buy: buildBuy(), sell: buildSell() });
+      },
+    });
+  }
+
   // Every NPC dialog opens through here so the per-character voice clip
   // (audio.DIALOGUE_SFX, keyed by npc.id) and response-effect handling are
   // consistent whether the NPC was approached directly or met at their door.
@@ -633,6 +686,7 @@ async function boot() {
     if (npc.id === 'gaffer') dialog = buildGafferDialog(npc);
     else if (npc.id === 'bramblekin_chief') dialog = buildChiefDialog();
     else if (npc.bramblekin) dialog = buildBramblekinDialog(npc);
+    else if (npc.vendor) dialog = buildVendorDialog(npc);
     else dialog = resolveNpcDialog(npc, isQuestReady);
     ui.openDialog({ ...npc, dialog }, onClose, applyResponseEffect);
   }
@@ -992,6 +1046,13 @@ async function boot() {
       }
       return;
     }
+    if (ui.isShopOpen()) {
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' ', 'Enter', 'Escape'].includes(e.key)) {
+        e.preventDefault();
+        ui.shopKey(e.key);
+      }
+      return;
+    }
     if (ui.isDialogOpen()) {
       e.preventDefault();
       ui.dialogKey(e.key);
@@ -1027,7 +1088,7 @@ async function boot() {
     const dt = Math.min((now - last) / 1000, 0.05);
     last = now;
 
-    const locked = ui.isDialogOpen() || ui.isAnyPanelOpen() || ui.isBattleOpen() || ui.isGameOverOpen() || !state.started;
+    const locked = ui.isDialogOpen() || ui.isAnyPanelOpen() || ui.isBattleOpen() || ui.isGameOverOpen() || ui.isShopOpen() || !state.started;
     // Camp membrane state (no-op in scenes without a camp): sealed until the
     // toll's paid; campEntered flips the seal from keep-out to keep-in.
     world.campSealed = !campTollPaid;

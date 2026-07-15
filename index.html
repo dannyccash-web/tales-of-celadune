@@ -307,6 +307,24 @@
         <button id="btn-try-again">Try Again</button>
       </div>
 
+      <!-- Vendor shop: Buy/Sell grids with prices, opened from a vendor's
+           in-shop dialog (js/ui.js openShop / js/main.js openVendorShop) -->
+      <div id="shop" class="hidden">
+        <div class="shop-box">
+          <div class="shop-head">
+            <h2 id="shop-title">Shop</h2>
+            <div class="shop-tabs">
+              <span class="shop-tab" data-mode="buy">Buy</span>
+              <span class="shop-tab" data-mode="sell">Sell</span>
+            </div>
+            <div class="shop-gold"><span class="coin"></span><span id="shop-gold-value">0</span></div>
+          </div>
+          <div id="shop-grid" class="item-grid"></div>
+          <p id="shop-empty" class="items-empty hidden"></p>
+          <div class="shop-hint">↑↓ Buy / Sell &nbsp;·&nbsp; ←→ Select &nbsp;·&nbsp; Space to trade &nbsp;·&nbsp; Esc to leave</div>
+        </div>
+      </div>
+
       <div id="start-screen">
         <h1>Tales of Celadune</h1>
         <button id="btn-start">Start</button>

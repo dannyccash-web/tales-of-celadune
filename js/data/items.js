@@ -16,6 +16,10 @@
 //   Attack/Defense stat while equipped (see main.js's effectiveAttack()/
 //   effectiveDefense()). Omitted = +0. No items grant these yet.
 // - heal: HP restored when Used (health_potion only so far).
+// - price: the shop BUY cost in gold (2026-07-12). Vendors sell for this;
+//   they buy back from the player at half (sellValue() = floor(price/2), in
+//   main.js). Quest items have no price and can't be sold. Items without a
+//   price can't be bought or sold anywhere.
 //
 // Inventory categories (2026-07-09, per Danny's spec): every item belongs to
 // exactly one of four top-level categories — Equipment, Weapons, Magic, or
@@ -85,6 +89,7 @@ export default {
     questItem: false,
     slot: 'mainhand',
     damage: 2,
+    price: 12,
   },
   corn: {
     id: 'corn',
@@ -92,6 +97,7 @@ export default {
     image: 'assets/images/Corn.png',
     description: 'An ear of dried corn from the silo. A certain goat would trade his soul for this.',
     questItem: false,
+    price: 2,
   },
   health_potion: {
     id: 'health_potion',
@@ -101,5 +107,6 @@ export default {
     questItem: false,
     slot: 'item', // equips to the battle Use slot; stays in the Items tab (see SLOT_CATEGORY)
     heal: 3,
+    price: 8,
   },
 };
