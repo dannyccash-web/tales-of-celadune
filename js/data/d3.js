@@ -172,6 +172,7 @@ export default {
       startsHome: true,
       home: {
         door: { x: 952, y: 700 }, // just outside the farmhouse's south face
+        zone: { x: 952, y: 630, r: 135 },
         interior: 'assets/images/home_interior.jpg',
       },
       // Daily loop: rest at home, head out to check the Old Barn, draw water
@@ -237,6 +238,7 @@ export default {
       startsHome: false,
       home: {
         door: { x: 537, y: 925 }, // south face of the Hay Barn (his house)
+        zone: { x: 537, y: 855, r: 135 },
         interior: 'assets/images/home_interior.jpg',
       },
       // Tours all four crop fields, pausing at each, then home for a longer
@@ -290,6 +292,7 @@ export default {
       startsHome: false,
       home: {
         door: { x: 700, y: 925 }, // south face of the Tool Shed (her house)
+        zone: { x: 700, y: 855, r: 135 },
         interior: 'assets/images/home_interior.jpg',
       },
       // Checks the animal pen, then the silo, then home for the night.
@@ -418,6 +421,7 @@ export default {
       startsHome: true,
       home: {
         door: { x: 1237, y: 925 },
+        zone: { x: 1237, y: 855, r: 135 },
         interior: 'assets/images/home_interior.jpg',
       },
       description: 'Your modest one-room home on the farm — a cot, a hearth, and whatever you’ve managed to set aside.',

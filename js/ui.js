@@ -118,11 +118,17 @@ export function openDialog(npc, onClose, onResponse) {
 
   renderResponses(npc.dialog.responses);
 
-  // Defensive reset: a dialog always opens in text mode, even if the last
-  // one was closed mid-shop-grid somehow (closeDialog() already resets this
-  // too, but a fresh open shouldn't depend on that).
+  // Vendors get the portrait-on-the-left shop layout (see #dialog.vendor in
+  // style.css); everyone else keeps the standard portrait-on-the-right one.
+  $('dialog').classList.toggle('vendor', !!npc.vendor);
+
+  // Defensive reset: a dialog always opens in text mode (greeting shown,
+  // grid + hint hidden, response list shown), even if the last one was closed
+  // mid-shop-grid somehow (closeDialog() also resets this).
   dialogState.mode = 'text';
+  $('dialog-line').classList.remove('hidden');
   $('dialog-shop').classList.add('hidden');
+  $('dialog-shop-hint').classList.add('hidden');
   $('dialog-responses').classList.remove('hidden');
 
   $('dialog').classList.remove('hidden');
@@ -249,7 +255,10 @@ function closeDialog() {
   dialogGridState.open = false;
   dialogState.mode = 'text';
   $('dialog-shop').classList.add('hidden');
+  $('dialog-shop-hint').classList.add('hidden');
+  $('dialog-line').classList.remove('hidden');
   $('dialog-responses').classList.remove('hidden');
+  $('dialog').classList.remove('vendor');
   if (dialogState.onClose) dialogState.onClose();
 }
 
@@ -341,8 +350,13 @@ export function showDialogGrid({ kind, items, gold, emptyText, onSelect, onBack 
   });
   dialogState.mode = 'grid';
   $('dialog-shop-label').textContent = kind === 'sell' ? 'Sell' : 'Buy';
-  $('dialog-responses').classList.add('hidden');
+  // Top box: the grid takes the greeting's place (right of the portrait).
+  $('dialog-line').classList.add('hidden');
   $('dialog-shop').classList.remove('hidden');
+  // Response box: the Buy/Sell/Leave list gives way to a key hint while the
+  // grid (which now has focus) is up.
+  $('dialog-responses').classList.add('hidden');
+  $('dialog-shop-hint').classList.remove('hidden');
   renderDialogGrid();
 }
 
@@ -430,6 +444,8 @@ function hideDialogGrid() {
   dialogGridState.open = false;
   dialogState.mode = 'text';
   $('dialog-shop').classList.add('hidden');
+  $('dialog-line').classList.remove('hidden');
+  $('dialog-shop-hint').classList.add('hidden');
   $('dialog-responses').classList.remove('hidden');
   if (cb) cb();
 }

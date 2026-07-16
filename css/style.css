@@ -1355,34 +1355,55 @@ html, body {
   to { transform: translate(-50%, 0); opacity: 1; }
 }
 
-/* ---- Vendor Buy/Sell grid (2026-07-15, reworked from a separate full-screen
-   overlay) ----
-   Lives inside #dialog-response-box, in the same slot #dialog-responses
-   normally occupies — picking Buy/Sell (an ordinary dialog response) hides
-   the response list and shows this instead; Escape swaps back (ui.js
-   hideDialogGrid). The dialog window itself (portrait/name/role box above)
-   never closes, so browsing a vendor's stock looks like any other dialog
-   choice rather than a different screen. Capped width keeps it clear of the
-   #dialog-received reveal's column (which can pop up over the right side of
-   this same box after a trade); capped height + scroll keeps the window from
-   growing unbounded as a Sell grid's item count varies. */
-#dialog-shop {
-  max-width: 760px;
+/* ---- Vendor dialog layout (2026-07-16, per Danny's mockup) ----
+   A vendor's dialogue window flips to portrait-on-the-LEFT (normal NPCs keep
+   the portrait on the right). Their greeting sits to the RIGHT of the
+   portrait; when the player picks Buy or Sell (an ordinary dialogue
+   response), the greeting is swapped for the item grid IN THAT SAME SPOT, so
+   browsing stock never leaves the dialogue window or changes its shape. The
+   Buy/Sell/Leave choices stay in the response box below; while the grid has
+   focus, that box shows a key hint instead of the response list. */
+#dialog.vendor #portrait-frame { left: 30px; right: auto; }
+
+/* Right-hand content column for a vendor: name/role + greeting-or-grid,
+   beside the 500px left portrait. Absolutely positioned so the grid can use
+   the full height without being pushed around by the greeting's flow. */
+#dialog.vendor #dialog-npc .dialog-text {
+  position: absolute;
+  left: 580px;
+  right: 40px;
+  top: 30px;
+  bottom: 24px;
+  max-width: none;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Overrides .section-subhead's divider styling (border-top/margin-top) — this
-   label is the first thing in the box, not a divider between two sections. */
+   "Buy"/"Sell" label heads the grid, it's not a divider between sections. */
 #dialog-shop-label {
   border-top: none;
   margin-top: 0;
   padding-top: 0;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
 #dialog-shop-grid {
-  max-height: 230px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 128px);
+  gap: 16px 18px;
+  align-content: flex-start;
+  max-height: 220px;
   overflow-y: auto;
-  padding-right: 10px;
+  padding-right: 8px;
+}
+
+/* The key-hint that fills the response box while the grid is focused. */
+#dialog-shop-hint {
+  font-family: var(--font-meta);
+  font-size: 20px;
+  color: var(--text-dim);
+  line-height: 53px;
 }
 
 /* The price line under an item's name inside a shop tile. */

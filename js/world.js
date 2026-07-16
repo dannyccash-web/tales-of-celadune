@@ -154,20 +154,36 @@ export class World {
     return best;
   }
 
-  // NPC whose home door the player is standing near (for spacebar interaction).
-  // Picks the NEAREST door in range, not the first match in array order —
-  // some door pairs across the 18 D2 homes sit close enough (as near as
-  // ~53-68px) that a player standing right at door B is still within
-  // INTERACT_RANGE (90px) of door A. First-match order made A always win,
-  // silently making B's door unreachable/always-wrong. Mirrors the same
-  // nearest-wins pattern nearestNpcInRange() already uses.
+  // NPC whose home the player is standing near (for spacebar interaction:
+  // enter/talk if they're home, "door is locked" if they're out).
+  //
+  // Each home is matched by TWO anchors, nearest-wins across all of them:
+  //   1. home.door — the precise path-side entrance (also the NPC's fade
+  //      point), matched within INTERACT_RANGE (90px).
+  //   2. home.zone {x,y,r} — the building footprint (its label center + a
+  //      radius), matched within r. This is the important one: the door is a
+  //      single point on the path, so walking up to a building from any other
+  //      side used to land >90px from the door and trigger NOTHING (9 of D2's
+  //      18 buildings did this). The zone makes the whole building
+  //      interactable from any approach.
+  // Nearest-wins (not first-match) matters because D2's buildings are packed
+  // tightly enough that several doors/zones overlap; the nearest one is the
+  // building the player is actually standing at.
   homeNpcNearDoor() {
     let best = null;
-    let bestDist = INTERACT_RANGE;
+    // Not capped at INTERACT_RANGE — each anchor is gated by its OWN range
+    // (door: INTERACT_RANGE; zone: its own r, which is larger), then the
+    // nearest matching anchor across all homes wins.
+    let bestDist = Infinity;
     for (const npc of this.npcs) {
       if (!npc.home) continue;
-      const d = Math.hypot(npc.home.door.x - this.player.x, npc.home.door.y - this.player.y);
-      if (d < bestDist) { best = npc; bestDist = d; }
+      const dDoor = Math.hypot(npc.home.door.x - this.player.x, npc.home.door.y - this.player.y);
+      if (dDoor < INTERACT_RANGE && dDoor < bestDist) { best = npc; bestDist = dDoor; }
+      const z = npc.home.zone;
+      if (z) {
+        const dZone = Math.hypot(z.x - this.player.x, z.y - this.player.y);
+        if (dZone < z.r && dZone < bestDist) { best = npc; bestDist = dZone; }
+      }
     }
     return best;
   }

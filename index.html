@@ -69,6 +69,15 @@
             <h2 id="dialog-name">Mirelle</h2>
             <h3 id="dialog-role">FARM OWNER</h3>
             <p id="dialog-line"></p>
+            <!-- Vendor Buy/Sell grid (2026-07-16): for a vendor, picking Buy
+                 or Sell (an ordinary dialogue response) hides the greeting
+                 line above and shows this grid in its place — right beside the
+                 portrait, inside the same dialogue window. Portrait sits on
+                 the LEFT for vendors (see #dialog.vendor in style.css). -->
+            <div id="dialog-shop" class="hidden">
+              <div id="dialog-shop-label" class="section-subhead"></div>
+              <div id="dialog-shop-grid" class="item-grid"></div>
+            </div>
           </div>
         </div>
         <div class="dialog-box" id="dialog-response-box">
@@ -89,15 +98,9 @@
             </g>
           </svg>
           <div id="dialog-responses"></div>
-          <!-- Vendor Buy/Sell grid (2026-07-15): swapped in over the response
-               list — picking Buy/Sell (an ordinary dialog response) hides
-               #dialog-responses and shows this instead, in the same box, so
-               the dialog window never closes/reopens. Escape returns to the
-               response list (ui.js hideDialogGrid). -->
-          <div id="dialog-shop" class="hidden">
-            <div id="dialog-shop-label" class="section-subhead"></div>
-            <div id="dialog-shop-grid" class="item-grid"></div>
-          </div>
+          <!-- While the vendor grid (top box) has focus, the response list is
+               hidden and this hint fills the response box instead. -->
+          <div id="dialog-shop-hint" class="hidden">&#8592;&#8594; Select&nbsp;&nbsp;·&nbsp;&nbsp;Space to trade&nbsp;&nbsp;·&nbsp;&nbsp;Esc to go back</div>
           <!-- Item-received reveal: hidden until ui.showReceivedItem() plays it.
                Sits in the empty right side of the response box, under the
                portrait, and animates down from that direction (see
