@@ -89,10 +89,20 @@
             </g>
           </svg>
           <div id="dialog-responses"></div>
+          <!-- Vendor Buy/Sell grid (2026-07-15): swapped in over the response
+               list — picking Buy/Sell (an ordinary dialog response) hides
+               #dialog-responses and shows this instead, in the same box, so
+               the dialog window never closes/reopens. Escape returns to the
+               response list (ui.js hideDialogGrid). -->
+          <div id="dialog-shop" class="hidden">
+            <div id="dialog-shop-label" class="section-subhead"></div>
+            <div id="dialog-shop-grid" class="item-grid"></div>
+          </div>
           <!-- Item-received reveal: hidden until ui.showReceivedItem() plays it.
                Sits in the empty right side of the response box, under the
                portrait, and animates down from that direction (see
-               @keyframes received-drop in style.css). -->
+               @keyframes received-drop in style.css). Also used for vendor
+               trades — Buy = received, Sell = gave (showGaveItem). -->
           <div id="dialog-received" class="hidden">
             <div class="received-caret"></div>
             <div class="received-label">Received</div>
@@ -305,24 +315,6 @@
       <div id="game-over" class="hidden">
         <h1>You Have Fallen</h1>
         <button id="btn-try-again">Try Again</button>
-      </div>
-
-      <!-- Vendor shop: Buy/Sell grids with prices, opened from a vendor's
-           in-shop dialog (js/ui.js openShop / js/main.js openVendorShop) -->
-      <div id="shop" class="hidden">
-        <div class="shop-box">
-          <div class="shop-head">
-            <h2 id="shop-title">Shop</h2>
-            <div class="shop-tabs">
-              <span class="shop-tab" data-mode="buy">Buy</span>
-              <span class="shop-tab" data-mode="sell">Sell</span>
-            </div>
-            <div class="shop-gold"><span class="coin"></span><span id="shop-gold-value">0</span></div>
-          </div>
-          <div id="shop-grid" class="item-grid"></div>
-          <p id="shop-empty" class="items-empty hidden"></p>
-          <div class="shop-hint">↑↓ Buy / Sell &nbsp;·&nbsp; ←→ Select &nbsp;·&nbsp; Space to trade &nbsp;·&nbsp; Esc to leave</div>
-        </div>
       </div>
 
       <div id="start-screen">

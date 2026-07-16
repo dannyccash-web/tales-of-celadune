@@ -46,7 +46,9 @@ export function flashHealthDamage() {
 const RESPONSE_ROW_H = 53; // matches .response line-height
 const ARROW_BASE_TOP = 48; // first row, arrow vertically centered
 
-const dialogState = { open: false, selected: 0, npc: null, onClose: null, typing: false };
+// mode: 'text' (normal line + response list) or 'grid' (a vendor's Buy/Sell
+// item grid has taken over the response box — see dialogGridState below).
+const dialogState = { open: false, selected: 0, npc: null, onClose: null, typing: false, mode: 'text' };
 
 // ---- Typewriter effect for the NPC's dialog line ----
 const TYPE_MS_PER_CHAR = 22;
@@ -116,6 +118,13 @@ export function openDialog(npc, onClose, onResponse) {
 
   renderResponses(npc.dialog.responses);
 
+  // Defensive reset: a dialog always opens in text mode, even if the last
+  // one was closed mid-shop-grid somehow (closeDialog() already resets this
+  // too, but a fresh open shouldn't depend on that).
+  dialogState.mode = 'text';
+  $('dialog-shop').classList.add('hidden');
+  $('dialog-responses').classList.remove('hidden');
+
   $('dialog').classList.remove('hidden');
   refreshSelection();
 }
@@ -162,6 +171,10 @@ function refreshSelection() {
 
 export function dialogKey(key) {
   if (!dialogState.open) return;
+  // The vendor Buy/Sell grid takes over the response box's keyboard focus
+  // entirely while open — Left/Right move the tile selection, Space trades,
+  // Escape returns to the Buy/Sell/Leave response list (not a full close).
+  if (dialogState.mode === 'grid') { dialogGridKey(key); return; }
   const count = dialogState.npc.dialog.responses.length;
   if (key === 'ArrowUp') { dialogState.selected = (dialogState.selected + count - 1) % count; refreshSelection(); }
   if (key === 'ArrowDown') { dialogState.selected = (dialogState.selected + 1) % count; refreshSelection(); }
@@ -230,6 +243,13 @@ function closeDialog() {
   received.classList.add('hidden');
   received.classList.remove('received-enter');
   received.classList.remove('gave');
+  // A vendor visit that ends mid-grid (e.g. the player just walks off — Esc
+  // in grid mode only backs out one level, so this is the only other way to
+  // leave a grid open) shouldn't leave stale state for the next dialog.
+  dialogGridState.open = false;
+  dialogState.mode = 'text';
+  $('dialog-shop').classList.add('hidden');
+  $('dialog-responses').classList.remove('hidden');
   if (dialogState.onClose) dialogState.onClose();
 }
 
@@ -297,53 +317,59 @@ export function showQuestCompleted(questName) {
   showQuestToast(`Quest Completed: ${questName}`);
 }
 
-// ---- Vendor shop (Buy/Sell, 2026-07-12) ----
-// Opened from a vendor's in-shop dialog (main.js's openVendorShop). Shows a
-// Buy grid (the vendor's stock + buy prices) or a Sell grid (the player's
-// non-quest items + sell values). main.js owns the gold/inventory mutation
-// via onBuy/onSell and then calls refreshShop() with the updated lists — ui.js
-// is presentation + keyboard nav only. Up/Down switch Buy/Sell, Left/Right
-// move the tile selection, Space trades, Esc leaves.
-const shopState = { open: false, mode: 'buy', buy: [], sell: [], selected: 0, gold: 0, onBuy: null, onSell: null, onClose: null };
+// ---- Vendor Buy/Sell grid (2026-07-15) ----
+// Reworked from a separate full-screen overlay into part of the dialog
+// window itself: picking "Buy" or "Sell" (an ordinary dialog response, see
+// main.js's buildVendorDialog) calls showDialogGrid(), which hides
+// #dialog-responses and shows #dialog-shop in the same box — the dialog
+// never closes, so a vendor visit looks and feels like any other NPC
+// conversation instead of jumping to a different screen. main.js owns the
+// gold/inventory mutation via onSelect and calls refreshDialogGrid() with
+// the updated list after each trade; ui.js is presentation + keyboard nav
+// only. Left/Right move the tile selection (flattened row-major, same
+// "deliberately not true 2D nav" convention as the Inventory item grids),
+// Space trades, Escape backs out to the Buy/Sell/Leave response list (via
+// onBack) rather than closing the whole dialog.
+const dialogGridState = { open: false, kind: 'buy', items: [], gold: 0, focus: 0, emptyText: '', onSelect: null, onBack: null };
 
-export function isShopOpen() { return shopState.open; }
+export function isDialogGridOpen() { return dialogGridState.open; }
 
-export function openShop({ vendorName, mode, buy, sell, gold, onBuy, onSell, onClose }) {
-  Object.assign(shopState, { open: true, mode: mode || 'buy', buy: buy || [], sell: sell || [], gold: gold || 0, onBuy, onSell, onClose, selected: 0 });
-  $('shop-title').textContent = vendorName || 'Shop';
-  $('shop').querySelectorAll('.shop-tab').forEach((t) => {
-    t.onclick = () => { shopState.mode = t.dataset.mode; shopState.selected = 0; renderShop(); };
+export function showDialogGrid({ kind, items, gold, emptyText, onSelect, onBack }) {
+  Object.assign(dialogGridState, {
+    open: true, kind: kind || 'buy', items: items || [], gold: gold || 0,
+    emptyText: emptyText || '', onSelect, onBack, focus: 0,
   });
-  renderShop();
-  $('shop').classList.remove('hidden');
+  dialogState.mode = 'grid';
+  $('dialog-shop-label').textContent = kind === 'sell' ? 'Sell' : 'Buy';
+  $('dialog-responses').classList.add('hidden');
+  $('dialog-shop').classList.remove('hidden');
+  renderDialogGrid();
 }
 
-function shopItems() { return shopState.mode === 'buy' ? shopState.buy : shopState.sell; }
-
-function renderShop() {
-  $('shop-gold-value').textContent = shopState.gold;
-  $('shop').querySelectorAll('.shop-tab').forEach((t) => t.classList.toggle('active', t.dataset.mode === shopState.mode));
-  const items = shopItems();
-  if (shopState.selected >= items.length) shopState.selected = Math.max(0, items.length - 1);
-  const grid = $('shop-grid');
+function renderDialogGrid() {
+  const items = dialogGridState.items;
+  if (dialogGridState.focus >= items.length) dialogGridState.focus = Math.max(0, items.length - 1);
+  const grid = $('dialog-shop-grid');
   grid.innerHTML = '';
-  const empty = $('shop-empty');
-  empty.classList.toggle('hidden', items.length > 0);
-  if (!items.length) empty.textContent = shopState.mode === 'buy' ? 'Nothing for sale right now.' : 'You have nothing to sell.';
+  if (!items.length) {
+    const p = document.createElement('p');
+    p.className = 'items-empty';
+    p.textContent = dialogGridState.emptyText;
+    grid.appendChild(p);
+    return;
+  }
   items.forEach((it, i) => {
-    const tile = buildShopTile(it);
-    tile.classList.toggle('focused', i === shopState.selected);
-    tile.addEventListener('click', () => { shopState.selected = i; confirmShop(); });
-    tile.addEventListener('mouseenter', () => { shopState.selected = i; refreshShopFocus(); });
+    const tile = buildDialogGridTile(it, i);
+    tile.classList.toggle('focused', i === dialogGridState.focus);
     grid.appendChild(tile);
   });
 }
 
-function buildShopTile(it) {
-  const buying = shopState.mode === 'buy';
+function buildDialogGridTile(it, i) {
+  const buying = dialogGridState.kind === 'buy';
   const tile = document.createElement('div');
   tile.className = 'item-tile';
-  if (buying && shopState.gold < it.price) tile.classList.add('unaffordable');
+  if (buying && dialogGridState.gold < it.price) tile.classList.add('unaffordable');
   const frame = document.createElement('div');
   frame.className = 'item-frame';
   const img = document.createElement('img');
@@ -363,44 +389,49 @@ function buildShopTile(it) {
   tile.appendChild(frame);
   tile.appendChild(label);
   tile.appendChild(price);
+  tile.addEventListener('click', () => { dialogGridState.focus = i; confirmDialogGrid(); });
+  tile.addEventListener('mouseenter', () => { dialogGridState.focus = i; refreshDialogGridFocus(); });
   return tile;
 }
 
-function refreshShopFocus() {
-  $('shop-grid').querySelectorAll('.item-tile').forEach((el, i) => el.classList.toggle('focused', i === shopState.selected));
+function refreshDialogGridFocus() {
+  $('dialog-shop-grid').querySelectorAll('.item-tile').forEach((el, i) => el.classList.toggle('focused', i === dialogGridState.focus));
 }
 
-function confirmShop() {
-  const it = shopItems()[shopState.selected];
-  if (!it) return;
-  if (shopState.mode === 'buy') { if (shopState.onBuy) shopState.onBuy(it.id); }
-  else if (shopState.onSell) shopState.onSell(it.id);
+function confirmDialogGrid() {
+  const it = dialogGridState.items[dialogGridState.focus];
+  if (!it || !dialogGridState.onSelect) return;
+  dialogGridState.onSelect(it.id);
 }
 
-// Called by main.js after a buy/sell mutates state — repaint with the new
-// gold + item lists, keeping the current Buy/Sell mode and selection.
-export function refreshShop({ gold, buy, sell } = {}) {
-  if (gold != null) shopState.gold = gold;
-  if (buy) shopState.buy = buy;
-  if (sell) shopState.sell = sell;
-  if (shopState.open) renderShop();
+// Called by main.js after a trade mutates gold/inventory — repaint with the
+// new gold + item list, keeping the current tile selection where possible.
+export function refreshDialogGrid({ items, gold } = {}) {
+  if (items) dialogGridState.items = items;
+  if (gold != null) dialogGridState.gold = gold;
+  if (dialogGridState.open) renderDialogGrid();
 }
 
-export function shopKey(key) {
-  if (!shopState.open) return;
-  if (key === 'Escape') { closeShop(); return; }
-  if (key === 'ArrowUp' || key === 'ArrowDown') { shopState.mode = shopState.mode === 'buy' ? 'sell' : 'buy'; shopState.selected = 0; renderShop(); return; }
-  const items = shopItems();
-  if (!items.length) return;
-  if (key === 'ArrowLeft') { shopState.selected = (shopState.selected + items.length - 1) % items.length; refreshShopFocus(); return; }
-  if (key === 'ArrowRight') { shopState.selected = (shopState.selected + 1) % items.length; refreshShopFocus(); return; }
-  if (key === ' ' || key === 'Enter') confirmShop();
+function dialogGridKey(key) {
+  if (key === 'Escape') { hideDialogGrid(); return; }
+  const items = dialogGridState.items;
+  if (key === 'ArrowLeft') { if (items.length) { dialogGridState.focus = (dialogGridState.focus + items.length - 1) % items.length; refreshDialogGridFocus(); } return; }
+  if (key === 'ArrowRight') { if (items.length) { dialogGridState.focus = (dialogGridState.focus + 1) % items.length; refreshDialogGridFocus(); } return; }
+  if (key === ' ' || key === 'Enter') confirmDialogGrid();
 }
 
-function closeShop() {
-  shopState.open = false;
-  $('shop').classList.add('hidden');
-  if (shopState.onClose) shopState.onClose();
+// Leaves grid mode and returns keyboard focus to the response list — used by
+// Escape (dialogGridKey) and defensively by closeDialog(). onBack is how
+// main.js restores the Buy/Sell/Leave response list content; it's a no-op if
+// the grid was already closed some other way.
+function hideDialogGrid() {
+  if (!dialogGridState.open) return;
+  const cb = dialogGridState.onBack;
+  dialogGridState.open = false;
+  dialogState.mode = 'text';
+  $('dialog-shop').classList.add('hidden');
+  $('dialog-responses').classList.remove('hidden');
+  if (cb) cb();
 }
 
 // ---- Menu / Inventory panels ----

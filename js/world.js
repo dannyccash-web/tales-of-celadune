@@ -154,26 +154,37 @@ export class World {
     return best;
   }
 
-  // NPC whose home door the player is standing near (for spacebar interaction)
+  // NPC whose home door the player is standing near (for spacebar interaction).
+  // Picks the NEAREST door in range, not the first match in array order —
+  // some door pairs across the 18 D2 homes sit close enough (as near as
+  // ~53-68px) that a player standing right at door B is still within
+  // INTERACT_RANGE (90px) of door A. First-match order made A always win,
+  // silently making B's door unreachable/always-wrong. Mirrors the same
+  // nearest-wins pattern nearestNpcInRange() already uses.
   homeNpcNearDoor() {
+    let best = null;
+    let bestDist = INTERACT_RANGE;
     for (const npc of this.npcs) {
       if (!npc.home) continue;
       const d = Math.hypot(npc.home.door.x - this.player.x, npc.home.door.y - this.player.y);
-      if (d < INTERACT_RANGE) return npc;
+      if (d < bestDist) { best = npc; bestDist = d; }
     }
-    return null;
+    return best;
   }
 
   // Same shape as homeNpcNearDoor() but for battle encounters (e.g. the
   // kobolds in the Old Barn) — skips ones already marked defeated so a
-  // cleared encounter doesn't immediately re-trigger.
+  // cleared encounter doesn't immediately re-trigger. Nearest-wins for the
+  // same reason as homeNpcNearDoor() above.
   battleNearDoor() {
+    let best = null;
+    let bestDist = INTERACT_RANGE;
     for (const b of this.battles) {
       if (b.defeated) continue;
       const d = Math.hypot(b.door.x - this.player.x, b.door.y - this.player.y);
-      if (d < INTERACT_RANGE) return b;
+      if (d < bestDist) { best = b; bestDist = d; }
     }
-    return null;
+    return best;
   }
 
   // Everything blocking a body at (x, y). `self` is excluded; player and all

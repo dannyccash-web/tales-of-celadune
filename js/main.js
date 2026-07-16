@@ -356,10 +356,12 @@ async function boot() {
       ui.updateDialogContent(effect.goBack);
       return true;
     }
-    // Vendor Buy/Sell: close the dialog, then open the shop grid next tick.
+    // Vendor Buy/Sell: swap the response box into the item grid, in place —
+    // the dialog window stays open (portrait/name/role untouched), matching
+    // how every other in-dialog choice behaves.
     if (effect.shop) {
-      setTimeout(() => openVendorShop(npc, effect.shop), 0);
-      return; // falsy — ui closes the dialog first
+      openVendorGrid(npc, effect.shop);
+      return true; // stay open — we're managing the response box ourselves
     }
     // Bramblekin Chief toll: pay it (deduct 5, mark paid, swap in a parting
     // line) or refuse/draw steel (close, then fight the Chief + guards).
@@ -621,13 +623,20 @@ async function boot() {
     startBattle(ambush.enemies, (result) => { if (result === 'victory') ambush.defeated = true; });
   }
 
-  // ---- Vendor shop (2026-07-12) ----
-  // A vendor's dialog depends on whether they're in their shop: out and about,
-  // they point you back to the shop (awayLine); behind the counter (atHome)
-  // they offer Buy/Sell, which open the shop grid. Buy = the vendor's stock at
-  // full price; Sell = the player's non-quest items at half price (RPG-standard
-  // sell ratio). openVendorShop owns the gold/inventory mutation and re-hands
-  // fresh lists to ui.refreshShop after each trade.
+  // ---- Vendor shop (2026-07-12, reworked into an in-dialog grid 2026-07-15) ----
+  // A vendor's dialog depends on whether they're in their shop: out and about
+  // (!npc.atHome), they point you back with awayLine — reached either by
+  // talking to their wandering body (nearestNpcInRange) or by finding their
+  // home door locked (world.homeNpcNearDoor + the "door is locked" toast in
+  // interact(), same as any other NPC's home). Behind the counter (atHome,
+  // reached via their door) they offer Buy/Sell like any other dialog
+  // response — openVendorGrid swaps the response list for an item grid
+  // in-place (ui.showDialogGrid) rather than opening a separate screen. Buy
+  // = the vendor's stock at full price; Sell = the player's non-quest items
+  // at half price (RPG-standard sell ratio). openVendorGrid owns the
+  // gold/inventory mutation and re-hands fresh lists to ui.refreshDialogGrid
+  // after each trade; each trade also plays the same received/gave item
+  // reveal used everywhere else in dialog (Buy = received, Sell = gave).
   function sellValue(def) { return Math.max(1, Math.floor((def?.price || 0) / 2)); }
 
   function buildVendorDialog(npc) {
@@ -641,7 +650,7 @@ async function boot() {
     };
   }
 
-  function openVendorShop(npc, mode) {
+  function openVendorGrid(npc, mode) {
     const buildBuy = () => (npc.stock || [])
       .map((id) => ITEMS[id]).filter((d) => d && d.price != null)
       .map((d) => ({ id: d.id, name: d.name, image: d.image, price: d.price }));
@@ -649,23 +658,31 @@ async function boot() {
       .map((e) => ({ e, d: ITEMS[e.id] }))
       .filter(({ d }) => d && !d.questItem && d.price != null)
       .map(({ e, d }) => ({ id: d.id, name: d.name, image: d.image, value: sellValue(d), qty: e.qty }));
-    ui.openShop({
-      vendorName: npc.name, mode,
-      buy: buildBuy(), sell: buildSell(), gold: stats.gold,
-      onBuy: (id) => {
+    ui.showDialogGrid({
+      kind: mode,
+      items: mode === 'buy' ? buildBuy() : buildSell(),
+      gold: stats.gold,
+      emptyText: mode === 'buy' ? 'Nothing for sale right now.' : 'You have nothing to sell.',
+      onSelect: (id) => {
         const d = ITEMS[id];
-        if (!d || stats.gold < d.price) { audio.sfx(audio.SFX.locked); ui.toast('You can’t afford that.'); return; }
-        spendGold(d.price);
-        addItem(id, 1);
-        ui.refreshShop({ gold: stats.gold, buy: buildBuy(), sell: buildSell() });
+        if (mode === 'buy') {
+          if (!d || stats.gold < d.price) { audio.sfx(audio.SFX.locked); ui.toast('You can’t afford that.'); return; }
+          spendGold(d.price);
+          addItem(id, 1);
+          ui.showReceivedItem(d);
+        } else {
+          if (!d || !inventory.find((e) => e.id === id)) return;
+          removeItem(id, 1);
+          addGold(sellValue(d));
+          ui.showGaveItem(d);
+        }
+        ui.refreshDialogGrid({ gold: stats.gold, items: mode === 'buy' ? buildBuy() : buildSell() });
       },
-      onSell: (id) => {
-        const d = ITEMS[id];
-        if (!d || !inventory.find((e) => e.id === id)) return;
-        removeItem(id, 1);
-        addGold(sellValue(d));
-        ui.refreshShop({ gold: stats.gold, buy: buildBuy(), sell: buildSell() });
-      },
+      // Escape backs out of the grid — restore the Buy/Sell/Leave response
+      // list in the same dialog window (updateDialogContent swaps content
+      // without closing/reopening, same mechanism the goBack/thankYou flows
+      // already use elsewhere).
+      onBack: () => ui.updateDialogContent(buildVendorDialog(npc)),
     });
   }
 
@@ -1046,13 +1063,6 @@ async function boot() {
       }
       return;
     }
-    if (ui.isShopOpen()) {
-      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' ', 'Enter', 'Escape'].includes(e.key)) {
-        e.preventDefault();
-        ui.shopKey(e.key);
-      }
-      return;
-    }
     if (ui.isDialogOpen()) {
       e.preventDefault();
       ui.dialogKey(e.key);
@@ -1088,7 +1098,7 @@ async function boot() {
     const dt = Math.min((now - last) / 1000, 0.05);
     last = now;
 
-    const locked = ui.isDialogOpen() || ui.isAnyPanelOpen() || ui.isBattleOpen() || ui.isGameOverOpen() || ui.isShopOpen() || !state.started;
+    const locked = ui.isDialogOpen() || ui.isAnyPanelOpen() || ui.isBattleOpen() || ui.isGameOverOpen() || !state.started;
     // Camp membrane state (no-op in scenes without a camp): sealed until the
     // toll's paid; campEntered flips the seal from keep-out to keep-in.
     world.campSealed = !campTollPaid;

@@ -718,7 +718,7 @@ export default {
       sprite: 'assets/images/Bram Caskwell_overhead.png',
       portrait: 'assets/images/Bram Caskwell.png',
       x: 850, y: 1012, speed: 45, startsHome: false,
-      home: { door: { x: 850, y: 1012 }, interior: 'assets/images/home_interior.jpg' },
+      home: { door: { x: 850, y: 1012 }, interior: 'assets/images/tavern_interior.jpg' },
       routine: [
         { do: 'goto', x: 956, y: 906 }, { do: 'wait', s: 30 },
         { do: 'goHome' },
@@ -734,7 +734,7 @@ export default {
       sprite: 'assets/images/Sorcha Emberfell_overhead.png',
       portrait: 'assets/images/Sorcha Emberfell.png',
       speed: 45, startsHome: true,
-      home: { door: { x: 971, y: 1560 }, interior: 'assets/images/home_interior.jpg' },
+      home: { door: { x: 971, y: 1560 }, interior: 'assets/images/blacksmith_interior.jpg' },
       routine: [
         { do: 'wait', s: 118 },
         { do: 'leaveHome' },
@@ -750,7 +750,7 @@ export default {
       sprite: 'assets/images/Nadira Thornwell_overhead.png',
       portrait: 'assets/images/Nadira Thornwell.png',
       x: 844, y: 1221, speed: 45, startsHome: false,
-      home: { door: { x: 844, y: 1221 }, interior: 'assets/images/home_interior.jpg' },
+      home: { door: { x: 844, y: 1221 }, interior: 'assets/images/apothecary_interior.jpg' },
       routine: [
         { do: 'goto', x: 974, y: 1296 }, { do: 'wait', s: 30 },
         { do: 'goHome' },
@@ -766,7 +766,7 @@ export default {
       sprite: 'assets/images/Emeric Vale_overhead.png',
       portrait: 'assets/images/Emeric Vale.png',
       speed: 45, startsHome: true,
-      home: { door: { x: 844, y: 615 }, interior: 'assets/images/home_interior.jpg' },
+      home: { door: { x: 844, y: 615 }, interior: 'assets/images/general_goods_interior.jpg' },
       routine: [
         { do: 'wait', s: 144 },
         { do: 'leaveHome' },

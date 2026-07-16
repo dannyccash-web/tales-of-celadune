@@ -1355,94 +1355,34 @@ html, body {
   to { transform: translate(-50%, 0); opacity: 1; }
 }
 
-/* ---- Vendor shop (Buy/Sell grids, 2026-07-12) ----
-   Full-screen dark backdrop + a gold-double-framed box (same recipe as the
-   Menu/Inventory .panel-box). A Buy/Sell tab row + gold readout up top, then
-   an .item-grid of purchasable/sellable tiles (reused from the Inventory),
-   each with a price line. Keyboard: Up/Down switch Buy/Sell, Left/Right move
-   the tile selection, Space trades, Esc leaves (see ui.js shopKey). */
-#shop {
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.55);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+/* ---- Vendor Buy/Sell grid (2026-07-15, reworked from a separate full-screen
+   overlay) ----
+   Lives inside #dialog-response-box, in the same slot #dialog-responses
+   normally occupies — picking Buy/Sell (an ordinary dialog response) hides
+   the response list and shows this instead; Escape swaps back (ui.js
+   hideDialogGrid). The dialog window itself (portrait/name/role box above)
+   never closes, so browsing a vendor's stock looks like any other dialog
+   choice rather than a different screen. Capped width keeps it clear of the
+   #dialog-received reveal's column (which can pop up over the right side of
+   this same box after a trade); capped height + scroll keeps the window from
+   growing unbounded as a Sell grid's item count varies. */
+#dialog-shop {
+  max-width: 760px;
 }
 
-.shop-box {
-  position: relative;
-  width: 1200px;
-  min-height: 560px;
-  background: var(--panel-bg);
-  border: 2px solid;
-  border-image: linear-gradient(180deg, var(--frame-light), var(--frame-dark)) 1;
-  padding: 40px 60px 30px;
-  display: flex;
-  flex-direction: column;
+/* Overrides .section-subhead's divider styling (border-top/margin-top) — this
+   label is the first thing in the box, not a divider between two sections. */
+#dialog-shop-label {
+  border-top: none;
+  margin-top: 0;
+  padding-top: 0;
+  margin-bottom: 16px;
 }
 
-.shop-box::before {
-  content: '';
-  position: absolute;
-  inset: -9px;
-  border: 4px solid;
-  border-image: linear-gradient(180deg, #7d5f33, #4d3a1c) 1;
-  pointer-events: none;
-}
-
-.shop-head {
-  display: flex;
-  align-items: center;
-  gap: 40px;
-  border-bottom: 2px solid;
-  border-image: linear-gradient(90deg, var(--frame-light), var(--frame-dark)) 1;
-  padding-bottom: 22px;
-  margin-bottom: 30px;
-}
-
-#shop-title {
-  font-family: var(--font-medieval);
-  font-weight: 400;
-  font-size: 40px;
-  color: var(--text);
-}
-
-.shop-tabs {
-  display: flex;
-  gap: 12px;
-}
-
-.shop-tab {
-  font-family: var(--font-lato);
-  font-weight: 600;
-  font-size: 18px;
-  letter-spacing: 3px;
-  text-transform: uppercase;
-  color: var(--text-dim);
-  padding: 8px 22px;
-  border: 2px solid transparent;
-  cursor: pointer;
-}
-
-.shop-tab.active {
-  color: var(--gold-bright);
-  border-image: linear-gradient(180deg, var(--gold-bright), var(--frame-dark)) 1;
-}
-
-.shop-gold {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-family: var(--font-medieval);
-  font-size: 28px;
-  color: var(--gold-bright);
-}
-
-#shop-grid {
-  flex: 1;
-  align-content: flex-start;
+#dialog-shop-grid {
+  max-height: 230px;
+  overflow-y: auto;
+  padding-right: 10px;
 }
 
 /* The price line under an item's name inside a shop tile. */
@@ -1460,11 +1400,3 @@ html, body {
 /* A buy tile the player can't afford dims out (still shown, just not buyable). */
 .item-tile.unaffordable { opacity: 0.4; }
 .item-tile.unaffordable .item-price { color: #d9534f; }
-
-.shop-hint {
-  margin-top: 24px;
-  text-align: center;
-  font-family: var(--font-meta);
-  font-size: 16px;
-  color: var(--text-dim);
-}
