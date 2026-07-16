@@ -1390,13 +1390,19 @@ html, body {
 
 #dialog-shop-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, 128px);
-  gap: 16px 18px;
+  grid-template-columns: repeat(auto-fill, 104px);
+  gap: 10px 16px;
   align-content: flex-start;
-  max-height: 220px;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding-right: 8px;
 }
+
+/* Slightly tighter tile text in the vendor grid so a two-line item name +
+   its price both fit inside the top box (the box is a fixed 345px tall). */
+#dialog-shop .item-tile { gap: 6px; }
+#dialog-shop .item-label { font-size: 16px; line-height: 1.15; }
 
 /* The key-hint that fills the response box while the grid is focused. */
 #dialog-shop-hint {
