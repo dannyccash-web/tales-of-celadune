@@ -682,25 +682,14 @@ export default {
 
   // Chimney smoke rising from every home/business (code-drawn, World.drawSmoke
   // — same effect as D4’s campfire, tuned thinner/subtler for a chimney).
+  // Only the 3 central vendor buildings that actually have a chimney (black
+  // square) in the art: Kwame's bakery, Emeric's shop, Nadira's apothecary.
+  // Bram's tavern + Sorcha's smithy have no chimney square in the background,
+  // so they get none (source coords are the detected chimney, not roof center).
   smoke: [
-    { x: 925, y: 1094, count: 9, rise: 140, drift: 16, baseR: 6, growR: 16, speed: 0.12, alpha: 0.2, seed: 0.0 },
-    { x: 966, y: 1400, count: 9, rise: 140, drift: 16, baseR: 6, growR: 16, speed: 0.12, alpha: 0.2, seed: 0.11 },
-    { x: 711, y: 1188, count: 9, rise: 140, drift: 16, baseR: 6, growR: 16, speed: 0.12, alpha: 0.2, seed: 0.22 },
-    { x: 727, y: 653, count: 9, rise: 140, drift: 16, baseR: 6, growR: 16, speed: 0.12, alpha: 0.2, seed: 0.33 },
-    { x: 703, y: 360, count: 9, rise: 140, drift: 16, baseR: 6, growR: 16, speed: 0.12, alpha: 0.2, seed: 0.44 },
-    { x: 873, y: 1801, count: 9, rise: 140, drift: 16, baseR: 6, growR: 16, speed: 0.12, alpha: 0.2, seed: 0.55 },
-    { x: 990, y: 326, count: 9, rise: 140, drift: 16, baseR: 6, growR: 16, speed: 0.12, alpha: 0.2, seed: 0.66 },
-    { x: 263, y: 289, count: 9, rise: 140, drift: 16, baseR: 6, growR: 16, speed: 0.12, alpha: 0.2, seed: 0.77 },
-    { x: 1030, y: 491, count: 9, rise: 140, drift: 16, baseR: 6, growR: 16, speed: 0.12, alpha: 0.2, seed: 0.88 },
-    { x: 1081, y: 835, count: 9, rise: 140, drift: 16, baseR: 6, growR: 16, speed: 0.12, alpha: 0.2, seed: 0.99 },
-    { x: 1459, y: 515, count: 9, rise: 140, drift: 16, baseR: 6, growR: 16, speed: 0.12, alpha: 0.2, seed: 1.1 },
-    { x: 1168, y: 320, count: 9, rise: 140, drift: 16, baseR: 6, growR: 16, speed: 0.12, alpha: 0.2, seed: 1.21 },
-    { x: 354, y: 815, count: 9, rise: 140, drift: 16, baseR: 6, growR: 16, speed: 0.12, alpha: 0.2, seed: 1.32 },
-    { x: 1277, y: 501, count: 9, rise: 140, drift: 16, baseR: 6, growR: 16, speed: 0.12, alpha: 0.2, seed: 1.43 },
-    { x: 313, y: 1113, count: 9, rise: 140, drift: 16, baseR: 6, growR: 16, speed: 0.12, alpha: 0.2, seed: 1.54 },
-    { x: 1223, y: 1431, count: 9, rise: 140, drift: 16, baseR: 6, growR: 16, speed: 0.12, alpha: 0.2, seed: 1.65 },
-    { x: 1277, y: 845, count: 9, rise: 140, drift: 16, baseR: 6, growR: 16, speed: 0.12, alpha: 0.2, seed: 1.76 },
-    { x: 1459, y: 859, count: 9, rise: 140, drift: 16, baseR: 6, growR: 16, speed: 0.12, alpha: 0.2, seed: 1.87 },
+    { x: 772, y: 374, count: 9, rise: 140, drift: 14, baseR: 5, growR: 15, speed: 0.12, alpha: 0.26, seed: 0.0 },
+    { x: 748, y: 660, count: 9, rise: 140, drift: 14, baseR: 5, growR: 15, speed: 0.12, alpha: 0.26, seed: 0.5 },
+    { x: 764, y: 1198, count: 9, rise: 140, drift: 14, baseR: 5, growR: 15, speed: 0.12, alpha: 0.26, seed: 1.0 },
   ],
 
   // EAST back to the D3 Farm (band matches D3's west exit so walking off either
@@ -731,7 +720,7 @@ export default {
       x: 850, y: 1012, speed: 45, startsHome: false,
       home: { door: { x: 850, y: 1012 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
-        { do: 'goto', x: 773, y: 821 }, { do: 'wait', s: 30 },
+        { do: 'goto', x: 956, y: 906 }, { do: 'wait', s: 30 },
         { do: 'goHome' },
         { do: 'wait', s: 105 },
         { do: 'leaveHome' },
@@ -749,7 +738,7 @@ export default {
       routine: [
         { do: 'wait', s: 118 },
         { do: 'leaveHome' },
-        { do: 'goto', x: 1068, y: 1360 }, { do: 'wait', s: 30 },
+        { do: 'goto', x: 1121, y: 1560 }, { do: 'wait', s: 30 },
         { do: 'goHome' },
       ],
       dialog: { line: 'Mind the sparks. I’ve horseshoes to hammer and a plough-blade three farmers are waiting on. Steel doesn’t shape itself, more’s the pity.', responses: ['Leave.'] },
@@ -763,7 +752,7 @@ export default {
       x: 844, y: 1221, speed: 45, startsHome: false,
       home: { door: { x: 844, y: 1221 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
-        { do: 'goto', x: 971, y: 1300 }, { do: 'wait', s: 30 },
+        { do: 'goto', x: 974, y: 1296 }, { do: 'wait', s: 30 },
         { do: 'goHome' },
         { do: 'wait', s: 131 },
         { do: 'leaveHome' },
@@ -781,7 +770,7 @@ export default {
       routine: [
         { do: 'wait', s: 144 },
         { do: 'leaveHome' },
-        { do: 'goto', x: 960, y: 486 }, { do: 'wait', s: 30 },
+        { do: 'goto', x: 782, y: 847 }, { do: 'wait', s: 30 },
         { do: 'goHome' },
       ],
       dialog: { line: 'Everything a body could need and a few things nobody does. Have a look round — just don’t handle the goods with those hands.', responses: ['Leave.'] },
@@ -795,7 +784,7 @@ export default {
       x: 824, y: 272, speed: 45, startsHome: false,
       home: { door: { x: 824, y: 272 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
-        { do: 'goto', x: 795, y: 548 }, { do: 'wait', s: 30 },
+        { do: 'goto', x: 863, y: 127 }, { do: 'wait', s: 30 },
         { do: 'goHome' },
         { do: 'wait', s: 107 },
         { do: 'leaveHome' },
@@ -811,7 +800,7 @@ export default {
       routine: [
         { do: 'wait', s: 120 },
         { do: 'leaveHome' },
-        { do: 'goto', x: 1134, y: 1762 }, { do: 'wait', s: 30 },
+        { do: 'goto', x: 1043, y: 1566 }, { do: 'wait', s: 30 },
         { do: 'goHome' },
       ],
       dialog: { line: 'Peace be with you, traveler. The temple doors are always open, and the dead rest quiet in our care. Light a candle, if it eases you.', responses: ['Leave.'] },
@@ -823,7 +812,7 @@ export default {
       x: 876, y: 230, speed: 45, startsHome: false,
       home: { door: { x: 876, y: 230 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
-        { do: 'goto', x: 964, y: 99 }, { do: 'wait', s: 30 },
+        { do: 'goto', x: 951, y: 100 }, { do: 'wait', s: 30 },
         { do: 'goHome' },
         { do: 'wait', s: 122 },
         { do: 'leaveHome' },
@@ -839,7 +828,7 @@ export default {
       routine: [
         { do: 'wait', s: 139 },
         { do: 'leaveHome' },
-        { do: 'goto', x: 350, y: 568 }, { do: 'wait', s: 30 },
+        { do: 'goto', x: 342, y: 548 }, { do: 'wait', s: 30 },
         { do: 'goHome' },
       ],
       dialog: { line: 'Market’s thin this week, but I’ve herbs and eggs if you’re buying. Mind you don’t tread on my basket.', responses: ['Leave.'] },
@@ -851,7 +840,7 @@ export default {
       x: 960, y: 480, speed: 45, startsHome: false,
       home: { door: { x: 960, y: 480 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
-        { do: 'goto', x: 901, y: 626 }, { do: 'wait', s: 30 },
+        { do: 'goto', x: 960, y: 750 }, { do: 'wait', s: 30 },
         { do: 'goHome' },
         { do: 'wait', s: 156 },
         { do: 'leaveHome' },
@@ -867,7 +856,7 @@ export default {
       routine: [
         { do: 'wait', s: 103 },
         { do: 'leaveHome' },
-        { do: 'goto', x: 1210, y: 779 }, { do: 'wait', s: 30 },
+        { do: 'goto', x: 911, y: 989 }, { do: 'wait', s: 30 },
         { do: 'goHome' },
       ],
       dialog: { line: 'Measure twice, cut once — that’s the trade. Half this village stands because I put it there, though you’d not hear them say it.', responses: ['Leave.'] },
@@ -879,7 +868,7 @@ export default {
       x: 1389, y: 478, speed: 45, startsHome: false,
       home: { door: { x: 1389, y: 478 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
-        { do: 'goto', x: 1680, y: 607 }, { do: 'wait', s: 30 },
+        { do: 'goto', x: 1569, y: 478 }, { do: 'wait', s: 30 },
         { do: 'goHome' },
         { do: 'wait', s: 120 },
         { do: 'leaveHome' },
@@ -895,7 +884,7 @@ export default {
       routine: [
         { do: 'wait', s: 137 },
         { do: 'leaveHome' },
-        { do: 'goto', x: 1213, y: 158 }, { do: 'wait', s: 30 },
+        { do: 'goto', x: 1371, y: 469 }, { do: 'wait', s: 30 },
         { do: 'goHome' },
       ],
       dialog: { line: 'Bitter wind off the hills today. Keep your cloak close and your boots dry — that’s my advice, free of charge.', responses: ['Leave.'] },
@@ -907,7 +896,7 @@ export default {
       x: 434, y: 762, speed: 45, startsHome: false,
       home: { door: { x: 434, y: 762 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
-        { do: 'goto', x: 670, y: 830 }, { do: 'wait', s: 30 },
+        { do: 'goto', x: 579, y: 801 }, { do: 'wait', s: 30 },
         { do: 'goHome' },
         { do: 'wait', s: 154 },
         { do: 'leaveHome' },
@@ -923,7 +912,7 @@ export default {
       routine: [
         { do: 'wait', s: 101 },
         { do: 'leaveHome' },
-        { do: 'goto', x: 1249, y: 685 }, { do: 'wait', s: 30 },
+        { do: 'goto', x: 1338, y: 659 }, { do: 'wait', s: 30 },
         { do: 'goHome' },
       ],
       dialog: { line: 'Ma says I’m to fetch water and NOT go poking round the woods. So naturally I’m thinking about the woods.', responses: ['Leave.'] },
@@ -935,7 +924,7 @@ export default {
       x: 210, y: 1165, speed: 45, startsHome: false,
       home: { door: { x: 210, y: 1165 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
-        { do: 'goto', x: 298, y: 1437 }, { do: 'wait', s: 30 },
+        { do: 'goto', x: 260, y: 1353 }, { do: 'wait', s: 30 },
         { do: 'goHome' },
         { do: 'wait', s: 118 },
         { do: 'leaveHome' },
@@ -951,7 +940,7 @@ export default {
       routine: [
         { do: 'wait', s: 135 },
         { do: 'leaveHome' },
-        { do: 'goto', x: 1081, y: 1557 }, { do: 'wait', s: 30 },
+        { do: 'goto', x: 1001, y: 1544 }, { do: 'wait', s: 30 },
         { do: 'goHome' },
       ],
       dialog: { line: 'Mind the hem — I’ve only just finished this stitching and I’ll not have it dragged through the mud. Was there something?', responses: ['Leave.'] },
@@ -963,7 +952,7 @@ export default {
       x: 1352, y: 970, speed: 45, startsHome: false,
       home: { door: { x: 1352, y: 970 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
-        { do: 'goto', x: 1019, y: 993 }, { do: 'wait', s: 30 },
+        { do: 'goto', x: 1622, y: 970 }, { do: 'wait', s: 30 },
         { do: 'goHome' },
         { do: 'wait', s: 152 },
         { do: 'leaveHome' },
@@ -979,7 +968,7 @@ export default {
       routine: [
         { do: 'wait', s: 99 },
         { do: 'leaveHome' },
-        { do: 'goto', x: 1320, y: 1007 }, { do: 'wait', s: 30 },
+        { do: 'goto', x: 1682, y: 1107 }, { do: 'wait', s: 30 },
         { do: 'goHome' },
       ],
       dialog: { line: 'Hear that rhythm? That’s the village breathing. Stick around long enough and you’ll feel it too.', responses: ['Leave.'] },
