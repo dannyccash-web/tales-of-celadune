@@ -654,7 +654,11 @@ async function boot() {
     };
   }
 
-  function openVendorGrid(npc, mode) {
+  function openVendorGrid(npcArg, mode) {
+    // openNpcDialog passes a shallow COPY of the npc (`{ ...npc, dialog }`), so
+    // mutating its gold wouldn't stick. Resolve the live world instance by id
+    // so a vendor's purse actually changes across the session.
+    const npc = world.npcs.find((n) => n.id === npcArg.id) || npcArg;
     const buildBuy = () => (npc.stock || [])
       .map((id) => ITEMS[id]).filter((d) => d && d.price != null)
       .map((d) => ({ id: d.id, name: d.name, image: d.image, price: d.price }));
