@@ -796,7 +796,7 @@ export default {
       sprite: 'assets/images/Elowen Dawnmere_overhead.png',
       portrait: 'assets/images/Elowen Dawnmere.png',
       speed: 45, startsHome: true,
-      home: { door: { x: 985, y: 1783 }, zone: { x: 873, y: 1815, r: 135 }, interior: 'assets/images/home_interior.jpg' },
+      home: { door: { x: 985, y: 1783 }, zone: { x: 873, y: 1815, r: 135 }, interior: 'assets/images/temple_interior.jpg' },
       routine: [
         { do: 'wait', s: 120 },
         { do: 'leaveHome' },
