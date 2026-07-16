@@ -1490,17 +1490,16 @@ html, body {
   box-shadow: 0 0 16px 3px rgba(238, 214, 148, 0.75);
 }
 
-/* Item cost under the name in a shop tile (2026-07-16, restyled to Danny's
-   mockup): serif, soft-gold, "N GP". */
+/* Item cost under the name in a shop tile (2026-07-16, Danny: Lato uppercase
+   to match the uploaded example): "N GP", soft-gold. */
 .item-price {
-  font-family: var(--font-meta);
-  font-size: 18px;
+  font-family: var(--font-lato);
+  font-weight: 600;
+  font-size: 16px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
   color: #dcc190;
-  margin-top: 2px;
+  margin-top: 3px;
 }
 
 .item-price::after { content: ' GP'; }
-
-/* A tile the player (buy) or vendor (sell) can't afford dims out — the whole
-   tile fades; the cost keeps its gold colour so it still matches the mockup. */
-.item-tile.unaffordable { opacity: 0.4; }

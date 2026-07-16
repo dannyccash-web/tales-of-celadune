@@ -421,7 +421,9 @@ function buildDialogGridTile(it, i) {
   const buying = dialogGridState.kind === 'buy';
   const tile = document.createElement('div');
   tile.className = 'item-tile';
-  if (!affordable(it)) tile.classList.add('unaffordable');
+  // No affordability dimming (2026-07-16, Danny): every tile looks the same;
+  // trying to buy/sell what can't be afforded just fires the top info banner
+  // (main.js's onSelect guards) instead of screening the item back.
   const frame = document.createElement('div');
   frame.className = 'item-frame';
   const img = document.createElement('img');
@@ -474,8 +476,10 @@ function openVendorPopout() {
   const buying = dialogGridState.kind === 'buy';
   const trade = $('vendor-popout-trade');
   trade.textContent = buying ? 'Buy' : 'Sell';
-  // Can't buy what you can't afford / can't sell what the vendor can't afford.
-  trade.classList.toggle('disabled', !affordable(it));
+  // Buy/Sell is always selectable — affordability is checked when confirmed,
+  // and an unaffordable attempt just fires the top info banner (main.js's
+  // onSelect), rather than greying the action out here.
+  trade.classList.remove('disabled');
   const tile = $('dialog-shop-grid').querySelectorAll('.item-tile')[dialogGridState.focus];
   positionVendorPopout(tile);
   dialogGridState.popoutOpen = true;
