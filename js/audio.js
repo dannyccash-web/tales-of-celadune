@@ -24,10 +24,35 @@ export const SFX = {
 // One "voice" clip per NPC, played once when their dialogue window opens —
 // a quick audio flourish to help define the character. Keyed by npc.id.
 export const DIALOGUE_SFX = {
+  // D3 farm
   tuckwell: 'assets/audio/u_9kvcihzjc7-squashwo-gua-plants-vs-zombies-hmm-383643.mp3',
   brenna: 'assets/audio/u_xg7ssi08yr-female-ah-ha-389835.mp3',
   mirelle: 'assets/audio/freesound_community-long-sigh-104609.mp3',
   gaffer: 'assets/audio/dragon-studio-goat-sound-effect-390305.mp3',
+
+  // D2 village (2026-07-16). Three male + three female "hmm/reaction" clips
+  // (Danny's picks), spread ~3 apiece across the 9 men and 9 women so the
+  // village doesn't feel like everyone shares one voice.
+  // Men — M1 mrstokes hmm / M2 muffled reaction / M3 squash "hmm":
+  bram: 'assets/audio/mrstokes302-hmmm-sound-male-sfx-mrstokes302-420028.mp3',
+  emeric: 'assets/audio/mrstokes302-hmmm-sound-male-sfx-mrstokes302-420028.mp3',
+  darius: 'assets/audio/mrstokes302-hmmm-sound-male-sfx-mrstokes302-420028.mp3',
+  kwame: 'assets/audio/universfield-muffled-reaction-242214.mp3',
+  faris: 'assets/audio/universfield-muffled-reaction-242214.mp3',
+  malik: 'assets/audio/universfield-muffled-reaction-242214.mp3',
+  alden: 'assets/audio/u_9kvcihzjc7-squashwo-gua-plants-vs-zombies-hmm-383643.mp3',
+  osric: 'assets/audio/u_9kvcihzjc7-squashwo-gua-plants-vs-zombies-hmm-383643.mp3',
+  jory: 'assets/audio/u_9kvcihzjc7-squashwo-gua-plants-vs-zombies-hmm-383643.mp3',
+  // Women — F1 sigh (mature/hardworking) / F2 mmm-hmm / F3 girl chuckle (livelier):
+  sorcha: 'assets/audio/freesound_community-woman-sigh-101931.mp3',
+  nadira: 'assets/audio/freesound_community-woman-sigh-101931.mp3',
+  ingrith: 'assets/audio/freesound_community-woman-sigh-101931.mp3',
+  elowen: 'assets/audio/freesound_community-mmm-hmm-36292.mp3',
+  adaline: 'assets/audio/freesound_community-mmm-hmm-36292.mp3',
+  marisol: 'assets/audio/freesound_community-mmm-hmm-36292.mp3',
+  amara: 'assets/audio/freesound_community-girl-chucklewav-14669.mp3',
+  petra: 'assets/audio/freesound_community-girl-chucklewav-14669.mp3',
+  priya: 'assets/audio/freesound_community-girl-chucklewav-14669.mp3',
 };
 
 // ---- Volume controls (wired to the Menu > Audio sliders) ----
