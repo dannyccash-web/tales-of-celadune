@@ -687,9 +687,9 @@ export default {
   // Bram's tavern + Sorcha's smithy have no chimney square in the background,
   // so they get none (source coords are the detected chimney, not roof center).
   smoke: [
-    { x: 772, y: 374, count: 9, rise: 140, drift: 14, baseR: 5, growR: 15, speed: 0.12, alpha: 0.26, seed: 0.0 },
-    { x: 748, y: 660, count: 9, rise: 140, drift: 14, baseR: 5, growR: 15, speed: 0.12, alpha: 0.26, seed: 0.5 },
-    { x: 764, y: 1198, count: 9, rise: 140, drift: 14, baseR: 5, growR: 15, speed: 0.12, alpha: 0.26, seed: 1.0 },
+    { x: 772, y: 374, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.0 },
+    { x: 748, y: 660, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.5 },
+    { x: 764, y: 1198, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 1.0 },
   ],
 
   // EAST back to the D3 Farm (band matches D3's west exit so walking off either
