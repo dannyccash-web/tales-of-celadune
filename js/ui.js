@@ -301,32 +301,32 @@ export function showGaveItem(itemDef) {
   showItemTransfer(itemDef, 'gave');
 }
 
-// ---- Toast ----
-
+// ---- Info banner (shared, 2026-07-16) ----
+// One top banner (battle-status styled) for every transient notice. `gold`
+// gives quest events the medieval-gold heading treatment; the window itself
+// is the same either way, so pop-ups read consistently across the game.
 let toastTimer = null;
 
-export function toast(message, ms = 2500) {
+function showBanner(text, { ms = 2500, gold = false } = {}) {
   const el = $('toast');
-  el.textContent = message;
+  const txt = $('toast-text');
+  txt.textContent = text;
+  txt.classList.toggle('banner-gold', gold);
   el.classList.remove('hidden');
+  el.classList.remove('toast-enter');
+  void el.offsetWidth; // force reflow so the drop-in replays
+  el.classList.add('toast-enter');
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => el.classList.add('hidden'), ms);
 }
 
-// A distinct, more prominent banner for quest lifecycle events — same
-// top-center spot as the plain toast, but styled/worded as its own event
-// rather than a passing notice (see main.js's startQuest/completeQuest).
-let questToastTimer = null;
+export function toast(message, ms = 2500) {
+  showBanner(message, { ms });
+}
 
+// Quest lifecycle events use the same banner, gold-styled as their own beat.
 function showQuestToast(text) {
-  const el = $('quest-toast');
-  el.textContent = text;
-  el.classList.remove('hidden');
-  el.classList.remove('quest-toast-enter');
-  void el.offsetWidth; // force reflow so the animation replays
-  el.classList.add('quest-toast-enter');
-  clearTimeout(questToastTimer);
-  questToastTimer = setTimeout(() => el.classList.add('hidden'), 3500);
+  showBanner(text, { ms: 3500, gold: true });
 }
 
 export function showQuestAdded(questName) {

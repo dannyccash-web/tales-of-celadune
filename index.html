@@ -282,8 +282,14 @@
         <div class="popout-action" data-action="cancel">Cancel</div>
       </div>
 
-      <div id="toast" class="hidden"></div>
-      <div id="quest-toast" class="hidden"></div>
+      <!-- Shared transient info banner (2026-07-16, Danny): matches the battle
+           scene's top status window so every pop-up notice reads the same —
+           toasts (item found, door locked, an item's Inspect description...)
+           and quest add/complete notices all render here. Same nested-clip
+           trapezoid recipe as #battle-status. -->
+      <div id="toast" class="hidden">
+        <div id="toast-inner"><p id="toast-text"></p></div>
+      </div>
 
       <!-- Battle (2026-07-08; UI matched to Danny's battle mockup
            2026-07-09): a trapezoid status banner hanging flush from the top

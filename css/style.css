@@ -1332,49 +1332,57 @@ html, body {
   border-image: linear-gradient(180deg, var(--gold-bright), var(--frame-dark)) 1;
 }
 
-/* Toast messages (scene edges, etc.) */
+/* ---- Shared info banner (2026-07-16) ----
+   Every transient pop-up notice — plain toasts (item found, door locked, an
+   Inspect description) and quest add/complete banners — renders in this one
+   window, styled to match the battle scene's top status banner so the game's
+   pop-ups are consistent. Same nested-clip trapezoid recipe as #battle-status:
+   a gold-gradient outer trapezoid + a --panel-bg inner inset 3px, hanging off
+   the top edge of the screen. It drops in briefly, then auto-hides. */
 #toast {
   position: absolute;
-  top: 60px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--panel-bg);
-  border: 2px solid;
-  border-image: linear-gradient(180deg, var(--frame-light), var(--frame-dark)) 1;
-  padding: 12px 32px;
-  font-family: var(--font-meta);
-  font-size: 22px;
-  color: var(--text);
-}
-
-/* "Quest Added" banner — same top-center spot as the plain toast (the two
-   never realistically co-occur: quest starts happen from dialog, which
-   pauses the world, and the plain toast is for world interactions), but
-   styled as its own event: bigger, gold, medieval heading font, and it
-   drops in with a short animation instead of just appearing. */
-#quest-toast {
-  position: absolute;
-  top: 60px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--panel-bg);
-  border: 2px solid;
-  border-image: linear-gradient(180deg, var(--gold-bright), var(--frame-dark)) 1;
-  padding: 14px 36px;
-  font-family: var(--font-medieval);
-  font-size: 26px;
-  color: var(--gold-bright);
-  white-space: nowrap;
+  top: 0;
+  left: 205px;
+  right: 205px;
+  min-height: 70px;
+  background: linear-gradient(180deg, var(--frame-light), var(--frame-dark));
+  clip-path: polygon(0 0, 100% 0, calc(100% - 70px) 100%, 70px 100%);
   z-index: 15;
 }
 
-#quest-toast.quest-toast-enter {
-  animation: quest-toast-drop 0.4s ease-out;
+#toast.toast-enter { animation: toast-drop 0.35s ease-out; }
+@keyframes toast-drop {
+  from { transform: translateY(-24px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
 
-@keyframes quest-toast-drop {
-  from { transform: translate(-50%, -24px); opacity: 0; }
-  to { transform: translate(-50%, 0); opacity: 1; }
+#toast-inner {
+  position: absolute;
+  top: 0;
+  left: 3px;
+  right: 3px;
+  bottom: 3px;
+  min-height: 64px;
+  background: var(--panel-bg);
+  clip-path: polygon(0 0, 100% 0, calc(100% - 68px) 100%, 68px 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#toast-text {
+  margin: 0;
+  padding: 0 90px;
+  font-family: var(--font-meta);
+  font-size: 22px;
+  color: var(--text);
+  text-align: center;
+}
+
+/* Quest add/complete get the gold heading treatment inside the same banner. */
+#toast-text.banner-gold {
+  font-family: var(--font-medieval);
+  color: var(--gold-bright);
 }
 
 /* ---- Vendor dialog layout (2026-07-16, per Danny's mockup) ----
@@ -1401,8 +1409,8 @@ html, body {
   position: absolute;
   left: 560px;
   right: 8px;
-  top: -104px;
-  height: 92px;
+  top: -132px;
+  height: 110px;
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
@@ -1449,27 +1457,32 @@ html, body {
 }
 #dialog.vendor #dialog-line { align-self: center; margin: auto 0; }
 
-/* Overrides .section-subhead's divider styling (border-top/margin-top) — this
-   "Buy"/"Sell" label heads the grid, it's not a divider between sections. */
-#dialog-shop-label {
-  border-top: none;
-  margin-top: 0;
-  padding-top: 0;
-  margin-bottom: 12px;
-}
+/* The Buy/Sell label is gone (2026-07-16, Danny) — which mode you're in reads
+   from the highlighted response below. Kept in the DOM but not shown. */
+#dialog-shop-label { display: none; }
 
 #dialog-shop { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 
 #dialog-shop-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, 138px);
-  gap: 16px 20px;
+  grid-template-columns: repeat(auto-fill, 156px);
+  gap: 14px 22px;
   align-content: flex-start;
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 4px 10px 4px 4px;
+  padding: 6px 10px 6px 4px;
 }
+
+/* Bigger, brighter item tiles (Danny 2026-07-16: they were reading dark). The
+   frame gets a near-opaque warm fill so the dim shop interior behind the box
+   can't bleed through and mute the item art, plus a soft inner glow that lifts
+   the item forward; less padding lets the art fill more of the tile. */
+#dialog-shop .item-frame {
+  background: radial-gradient(ellipse at 50% 42%, rgba(74, 58, 36, 0.55), rgba(14, 10, 6, 0.96));
+  padding: 8px;
+}
+#dialog-shop .item-image { filter: brightness(1.12); }
 
 /* Stronger outer glow on the focused grid tile (arrow-key selection). */
 #dialog-shop .item-tile.focused .item-frame {
@@ -1477,18 +1490,17 @@ html, body {
   box-shadow: 0 0 16px 3px rgba(238, 214, 148, 0.75);
 }
 
-/* The price line under an item's name inside a shop tile. */
+/* Item cost under the name in a shop tile (2026-07-16, restyled to Danny's
+   mockup): serif, soft-gold, "N GP". */
 .item-price {
-  font-family: var(--font-lato);
-  font-weight: 600;
-  font-size: 15px;
-  letter-spacing: 1px;
-  color: var(--gold-bright);
-  margin-top: -4px;
+  font-family: var(--font-meta);
+  font-size: 18px;
+  color: #dcc190;
+  margin-top: 2px;
 }
 
-.item-price::after { content: ' g'; color: var(--text-dim); }
+.item-price::after { content: ' GP'; }
 
-/* A buy tile the player can't afford dims out (still shown, just not buyable). */
+/* A tile the player (buy) or vendor (sell) can't afford dims out — the whole
+   tile fades; the cost keeps its gold colour so it still matches the mockup. */
 .item-tile.unaffordable { opacity: 0.4; }
-.item-tile.unaffordable .item-price { color: #d9534f; }
