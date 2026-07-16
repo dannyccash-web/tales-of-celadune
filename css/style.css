@@ -1016,6 +1016,28 @@ html, body {
   pointer-events: none;
 }
 
+/* Vendor grid item dropdown — same expand-from-tile look as #item-popout, but
+   it lives over the dialog window so it needs a higher stacking order. */
+#vendor-popout {
+  position: absolute;
+  background: var(--panel-bg);
+  border: 2px solid;
+  border-image: linear-gradient(180deg, var(--frame-light), var(--frame-dark)) 1;
+  border-top: none;
+  padding: 8px 0 10px;
+  z-index: 30;
+  transform-origin: top center;
+  transform: scaleY(0);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.14s ease-out, opacity 0.1s ease-out;
+}
+#vendor-popout.open {
+  transform: scaleY(1);
+  opacity: 1;
+  pointer-events: auto;
+}
+
 /* ---- Start screen (placeholder) ---- */
 #start-screen {
   position: absolute;
@@ -1356,34 +1378,76 @@ html, body {
 }
 
 /* ---- Vendor dialog layout (2026-07-16, per Danny's mockup) ----
-   A vendor's dialogue window flips to portrait-on-the-LEFT (normal NPCs keep
-   the portrait on the right). Their greeting sits to the RIGHT of the
-   portrait; when the player picks Buy or Sell (an ordinary dialogue
-   response), the greeting is swapped for the item grid IN THAT SAME SPOT, so
-   browsing stock never leaves the dialogue window or changes its shape. The
-   Buy/Sell/Leave choices stay in the response box below; while the grid has
-   focus, that box shows a key hint instead of the response list. */
+   Trading looks distinct from ordinary dialogue: the portrait sits on the
+   LEFT and is flipped to face into the window, the vendor's name/title and
+   their own gold are lifted ABOVE the window frame, and the greeting (top
+   box, right of the portrait) is swapped for the Buy/Sell item grid when the
+   player picks Buy or Sell. The Buy/Sell/Leave choices stay in the response
+   box the whole time; the grid just takes keyboard focus (the response arrow
+   hides) until Escape hands focus back. */
 #dialog.vendor #portrait-frame { left: 30px; right: auto; }
+/* Flip the portrait horizontally so the vendor faces into the window. */
+#dialog.vendor #dialog-portrait { transform: scaleX(-1); }
+#dialog.vendor #dialog-portrait.portrait-enter { animation: portrait-slide-in-flip 0.28s ease-out; }
+@keyframes portrait-slide-in-flip {
+  from { transform: translateX(-70px) scaleX(-1); opacity: 0; }
+  to { transform: translateX(0) scaleX(-1); opacity: 1; }
+}
 
-/* Right-hand content column for a vendor: name/role + greeting-or-grid,
-   beside the 500px left portrait. Absolutely positioned so the grid can use
-   the full height without being pushed around by the greeting's flow. */
+/* Name/title + the vendor's gold, lifted above the top box. #dialog-npc is
+   position:absolute, so a negative top places this in the band above it (the
+   portrait already overflows up into that band on the left). */
+#vendor-header {
+  position: absolute;
+  left: 560px;
+  right: 8px;
+  top: -104px;
+  height: 92px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+#vendor-name {
+  font-family: var(--font-medieval);
+  font-weight: 400;
+  font-size: 44px;
+  color: var(--text);
+  margin: 0;
+}
+#vendor-title {
+  font-family: var(--font-lato);
+  font-weight: 600;
+  font-size: 22px;
+  letter-spacing: 4px;
+  color: var(--role-gold);
+  text-transform: uppercase;
+  margin: 6px 0 0;
+}
+#vendor-gold {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--font-medieval);
+  font-size: 30px;
+  color: var(--gold-bright);
+  padding-bottom: 6px;
+}
+
+/* Vendors hide the in-box name/role (they're up in #vendor-header now); the
+   greeting-or-grid column uses the full box height beside the portrait. */
+#dialog.vendor #dialog-name,
+#dialog.vendor #dialog-role { display: none; }
 #dialog.vendor #dialog-npc .dialog-text {
   position: absolute;
   left: 580px;
   right: 40px;
-  top: 24px;
-  bottom: 16px;
+  top: 30px;
+  bottom: 26px;
   max-width: none;
   display: flex;
   flex-direction: column;
 }
-
-/* In the vendor layout the name/role act as a compact header above the grid,
-   so trim their size + margins to leave the grid room inside the fixed-height
-   top box. */
-#dialog.vendor #dialog-name { font-size: 34px; }
-#dialog.vendor #dialog-role { font-size: 20px; margin: 4px 0 10px; }
+#dialog.vendor #dialog-line { align-self: center; margin: auto 0; }
 
 /* Overrides .section-subhead's divider styling (border-top/margin-top) — this
    "Buy"/"Sell" label heads the grid, it's not a divider between sections. */
@@ -1391,32 +1455,26 @@ html, body {
   border-top: none;
   margin-top: 0;
   padding-top: 0;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
+
+#dialog-shop { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 
 #dialog-shop-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, 96px);
-  gap: 8px 16px;
+  grid-template-columns: repeat(auto-fill, 138px);
+  gap: 16px 20px;
   align-content: flex-start;
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding-right: 8px;
+  padding: 4px 10px 4px 4px;
 }
 
-/* Tighter tile text in the vendor grid so a two-line item name + its price
-   both fit inside the top box (the box is a fixed 345px tall). */
-#dialog-shop .item-tile { gap: 5px; }
-#dialog-shop .item-label { font-size: 15px; line-height: 1.1; }
-#dialog-shop .item-price { font-size: 14px; }
-
-/* The key-hint that fills the response box while the grid is focused. */
-#dialog-shop-hint {
-  font-family: var(--font-meta);
-  font-size: 20px;
-  color: var(--text-dim);
-  line-height: 53px;
+/* Stronger outer glow on the focused grid tile (arrow-key selection). */
+#dialog-shop .item-tile.focused .item-frame {
+  border-image: linear-gradient(180deg, var(--gold-bright), var(--gold-bright)) 1;
+  box-shadow: 0 0 16px 3px rgba(238, 214, 148, 0.75);
 }
 
 /* The price line under an item's name inside a shop tile. */

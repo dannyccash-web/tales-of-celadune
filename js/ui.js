@@ -120,15 +120,23 @@ export function openDialog(npc, onClose, onResponse) {
 
   // Vendors get the portrait-on-the-left shop layout (see #dialog.vendor in
   // style.css); everyone else keeps the standard portrait-on-the-right one.
-  $('dialog').classList.toggle('vendor', !!npc.vendor);
+  // A vendor's name/title + their own gold live in the header ABOVE the box.
+  const isVendor = !!npc.vendor;
+  $('dialog').classList.toggle('vendor', isVendor);
+  $('vendor-header').classList.toggle('hidden', !isVendor);
+  if (isVendor) {
+    $('vendor-name').textContent = npc.name;
+    $('vendor-title').textContent = npc.role || '';
+    setVendorGold(npc.gold || 0);
+  }
 
   // Defensive reset: a dialog always opens in text mode (greeting shown,
-  // grid + hint hidden, response list shown), even if the last one was closed
+  // grid + arrow shown, grid hidden), even if the last one was closed
   // mid-shop-grid somehow (closeDialog() also resets this).
   dialogState.mode = 'text';
   $('dialog-line').classList.remove('hidden');
   $('dialog-shop').classList.add('hidden');
-  $('dialog-shop-hint').classList.add('hidden');
+  $('dialog-arrow').classList.remove('hidden');
   $('dialog-responses').classList.remove('hidden');
 
   $('dialog').classList.remove('hidden');
@@ -253,12 +261,15 @@ function closeDialog() {
   // in grid mode only backs out one level, so this is the only other way to
   // leave a grid open) shouldn't leave stale state for the next dialog.
   dialogGridState.open = false;
+  dialogGridState.popoutOpen = false;
+  $('vendor-popout').classList.remove('open');
   dialogState.mode = 'text';
   $('dialog-shop').classList.add('hidden');
-  $('dialog-shop-hint').classList.add('hidden');
   $('dialog-line').classList.remove('hidden');
+  $('dialog-arrow').classList.remove('hidden');
   $('dialog-responses').classList.remove('hidden');
   $('dialog').classList.remove('vendor');
+  $('vendor-header').classList.add('hidden');
   if (dialogState.onClose) dialogState.onClose();
 }
 
@@ -326,38 +337,52 @@ export function showQuestCompleted(questName) {
   showQuestToast(`Quest Completed: ${questName}`);
 }
 
-// ---- Vendor Buy/Sell grid (2026-07-15) ----
-// Reworked from a separate full-screen overlay into part of the dialog
-// window itself: picking "Buy" or "Sell" (an ordinary dialog response, see
-// main.js's buildVendorDialog) calls showDialogGrid(), which hides
-// #dialog-responses and shows #dialog-shop in the same box — the dialog
-// never closes, so a vendor visit looks and feels like any other NPC
-// conversation instead of jumping to a different screen. main.js owns the
-// gold/inventory mutation via onSelect and calls refreshDialogGrid() with
-// the updated list after each trade; ui.js is presentation + keyboard nav
-// only. Left/Right move the tile selection (flattened row-major, same
-// "deliberately not true 2D nav" convention as the Inventory item grids),
-// Space trades, Escape backs out to the Buy/Sell/Leave response list (via
-// onBack) rather than closing the whole dialog.
-const dialogGridState = { open: false, kind: 'buy', items: [], gold: 0, focus: 0, emptyText: '', onSelect: null, onBack: null };
+// ---- Vendor Buy/Sell grid (2026-07-15, expanded 2026-07-16) ----
+// Part of the dialogue window itself: picking "Buy" or "Sell" (an ordinary
+// dialogue response, see main.js's buildVendorDialog) calls showDialogGrid(),
+// which swaps the greeting (top box, right of the portrait) for the item
+// grid. The Buy/Sell/Leave choices stay visible in the response box; the grid
+// just takes keyboard focus (the response arrow hides). Navigation is true 2D
+// (arrows move a lit selection across rows/columns); Space opens a per-item
+// dropdown (#vendor-popout: Buy/Sell · Inspect · Cancel). main.js owns the
+// gold/inventory mutation via onSelect and re-hands fresh lists to
+// refreshDialogGrid; ui.js is presentation + nav only.
+const dialogGridState = {
+  open: false, kind: 'buy', items: [], playerGold: 0, vendorGold: 0,
+  focus: 0, cols: 1, emptyText: '',
+  onSelect: null, onInspect: null, onBack: null,
+  popoutOpen: false, popoutFocus: 0,
+};
 
 export function isDialogGridOpen() { return dialogGridState.open; }
 
-export function showDialogGrid({ kind, items, gold, emptyText, onSelect, onBack }) {
+export function showDialogGrid({ kind, items, playerGold, vendorGold, emptyText, onSelect, onInspect, onBack }) {
   Object.assign(dialogGridState, {
-    open: true, kind: kind || 'buy', items: items || [], gold: gold || 0,
-    emptyText: emptyText || '', onSelect, onBack, focus: 0,
+    open: true, kind: kind || 'buy', items: items || [],
+    playerGold: playerGold || 0, vendorGold: vendorGold || 0,
+    emptyText: emptyText || '', onSelect, onInspect, onBack,
+    focus: 0, popoutOpen: false, popoutFocus: 0,
   });
   dialogState.mode = 'grid';
   $('dialog-shop-label').textContent = kind === 'sell' ? 'Sell' : 'Buy';
-  // Top box: the grid takes the greeting's place (right of the portrait).
+  // Top box: grid takes the greeting's place. Bottom box: responses stay put,
+  // but the arrow hides since focus is on the grid now.
   $('dialog-line').classList.add('hidden');
   $('dialog-shop').classList.remove('hidden');
-  // Response box: the Buy/Sell/Leave list gives way to a key hint while the
-  // grid (which now has focus) is up.
-  $('dialog-responses').classList.add('hidden');
-  $('dialog-shop-hint').classList.remove('hidden');
+  $('dialog-arrow').classList.add('hidden');
+  setVendorGold(dialogGridState.vendorGold);
   renderDialogGrid();
+}
+
+function setVendorGold(g) {
+  const el = $('vendor-gold-value');
+  if (el) el.textContent = Number(g).toLocaleString();
+}
+
+function affordable(it) {
+  return dialogGridState.kind === 'buy'
+    ? dialogGridState.playerGold >= it.price      // player can pay
+    : dialogGridState.vendorGold >= it.value;     // vendor can pay
 }
 
 function renderDialogGrid() {
@@ -377,13 +402,26 @@ function renderDialogGrid() {
     tile.classList.toggle('focused', i === dialogGridState.focus);
     grid.appendChild(tile);
   });
+  measureGridCols();
+}
+
+// Column count = how many tiles share the first tile's offsetTop. Needed for
+// up/down (±cols) 2D navigation, since the grid is auto-fill and the count
+// depends on the rendered width.
+function measureGridCols() {
+  const tiles = $('dialog-shop-grid').querySelectorAll('.item-tile');
+  if (!tiles.length) { dialogGridState.cols = 1; return; }
+  const top0 = tiles[0].offsetTop;
+  let cols = 0;
+  for (const t of tiles) { if (t.offsetTop === top0) cols++; else break; }
+  dialogGridState.cols = Math.max(1, cols);
 }
 
 function buildDialogGridTile(it, i) {
   const buying = dialogGridState.kind === 'buy';
   const tile = document.createElement('div');
   tile.className = 'item-tile';
-  if (buying && dialogGridState.gold < it.price) tile.classList.add('unaffordable');
+  if (!affordable(it)) tile.classList.add('unaffordable');
   const frame = document.createElement('div');
   frame.className = 'item-frame';
   const img = document.createElement('img');
@@ -403,49 +441,141 @@ function buildDialogGridTile(it, i) {
   tile.appendChild(frame);
   tile.appendChild(label);
   tile.appendChild(price);
-  tile.addEventListener('click', () => { dialogGridState.focus = i; confirmDialogGrid(); });
-  tile.addEventListener('mouseenter', () => { dialogGridState.focus = i; refreshDialogGridFocus(); });
+  tile.addEventListener('mouseenter', () => { if (!dialogGridState.popoutOpen) { dialogGridState.focus = i; refreshDialogGridFocus(); } });
+  tile.addEventListener('click', () => { dialogGridState.focus = i; refreshDialogGridFocus(); openVendorPopout(); });
   return tile;
 }
 
 function refreshDialogGridFocus() {
-  $('dialog-shop-grid').querySelectorAll('.item-tile').forEach((el, i) => el.classList.toggle('focused', i === dialogGridState.focus));
+  const tiles = $('dialog-shop-grid').querySelectorAll('.item-tile');
+  tiles.forEach((el, i) => el.classList.toggle('focused', i === dialogGridState.focus));
+  const cur = tiles[dialogGridState.focus];
+  if (cur) cur.scrollIntoView({ block: 'nearest' });
 }
 
-function confirmDialogGrid() {
-  const it = dialogGridState.items[dialogGridState.focus];
-  if (!it || !dialogGridState.onSelect) return;
-  dialogGridState.onSelect(it.id);
-}
-
-// Called by main.js after a trade mutates gold/inventory — repaint with the
-// new gold + item list, keeping the current tile selection where possible.
-export function refreshDialogGrid({ items, gold } = {}) {
+// Called by main.js after a trade — repaint with the new gold + item list.
+// Keeps the current selection where possible.
+export function refreshDialogGrid({ items, playerGold, vendorGold } = {}) {
   if (items) dialogGridState.items = items;
-  if (gold != null) dialogGridState.gold = gold;
+  if (playerGold != null) dialogGridState.playerGold = playerGold;
+  if (vendorGold != null) { dialogGridState.vendorGold = vendorGold; setVendorGold(vendorGold); }
   if (dialogGridState.open) renderDialogGrid();
 }
 
+// ---- The per-item dropdown (#vendor-popout) ----
+function vendorPopoutActionEls() {
+  return Array.from(document.querySelectorAll('#vendor-popout .popout-action'))
+    .filter((el) => !el.classList.contains('disabled'));
+}
+
+function openVendorPopout() {
+  const it = dialogGridState.items[dialogGridState.focus];
+  if (!it) return;
+  const buying = dialogGridState.kind === 'buy';
+  const trade = $('vendor-popout-trade');
+  trade.textContent = buying ? 'Buy' : 'Sell';
+  // Can't buy what you can't afford / can't sell what the vendor can't afford.
+  trade.classList.toggle('disabled', !affordable(it));
+  const tile = $('dialog-shop-grid').querySelectorAll('.item-tile')[dialogGridState.focus];
+  positionVendorPopout(tile);
+  dialogGridState.popoutOpen = true;
+  dialogGridState.popoutFocus = 0;
+  $('vendor-popout').classList.add('open');
+  refreshVendorPopoutFocus();
+}
+
+function closeVendorPopout() {
+  dialogGridState.popoutOpen = false;
+  $('vendor-popout').classList.remove('open');
+}
+
+function refreshVendorPopoutFocus() {
+  const enabled = vendorPopoutActionEls();
+  document.querySelectorAll('#vendor-popout .popout-action').forEach((el) => el.classList.remove('focused'));
+  enabled.forEach((el, i) => el.classList.toggle('focused', i === dialogGridState.popoutFocus));
+}
+
+function runVendorPopoutAction(action) {
+  const it = dialogGridState.items[dialogGridState.focus];
+  closeVendorPopout();
+  if (!it) return;
+  if (action === 'trade') { if (dialogGridState.onSelect) dialogGridState.onSelect(it.id); }
+  else if (action === 'inspect') { if (dialogGridState.onInspect) dialogGridState.onInspect(it.id); }
+  // 'cancel' just closes.
+}
+
+// Same screen-space -> stage-space conversion as the inventory popout, since
+// #vendor-popout also lives inside the CSS-scaled #ui. Positioned flush under
+// the focused tile.
+function positionVendorPopout(anchorEl) {
+  if (!anchorEl) return;
+  const stageRect = $('stage').getBoundingClientRect();
+  const tileRect = anchorEl.getBoundingClientRect();
+  const scale = stageRect.width / 1920;
+  const pop = $('vendor-popout');
+  pop.style.left = `${(tileRect.left - stageRect.left) / scale}px`;
+  pop.style.top = `${(tileRect.bottom - stageRect.top) / scale}px`;
+  pop.style.width = `${tileRect.width / scale}px`;
+}
+
 function dialogGridKey(key) {
-  if (key === 'Escape') { hideDialogGrid(); return; }
+  // Dropdown open: it owns the keys (up/down between actions, Space confirm,
+  // Escape closes just the dropdown back to the grid).
+  if (dialogGridState.popoutOpen) {
+    const acts = vendorPopoutActionEls();
+    if (key === 'Escape') { closeVendorPopout(); return; }
+    if (key === 'ArrowUp') { dialogGridState.popoutFocus = (dialogGridState.popoutFocus + acts.length - 1) % acts.length; refreshVendorPopoutFocus(); return; }
+    if (key === 'ArrowDown') { dialogGridState.popoutFocus = (dialogGridState.popoutFocus + 1) % acts.length; refreshVendorPopoutFocus(); return; }
+    if (key === ' ' || key === 'Enter') { const el = acts[dialogGridState.popoutFocus]; if (el) runVendorPopoutAction(el.dataset.action); return; }
+    return;
+  }
+  // Grid nav.
   const items = dialogGridState.items;
-  if (key === 'ArrowLeft') { if (items.length) { dialogGridState.focus = (dialogGridState.focus + items.length - 1) % items.length; refreshDialogGridFocus(); } return; }
-  if (key === 'ArrowRight') { if (items.length) { dialogGridState.focus = (dialogGridState.focus + 1) % items.length; refreshDialogGridFocus(); } return; }
-  if (key === ' ' || key === 'Enter') confirmDialogGrid();
+  const n = items.length;
+  if (key === 'Escape') { hideDialogGrid(); return; }
+  if (!n) return;
+  const cols = dialogGridState.cols || 1;
+  let f = dialogGridState.focus;
+  if (key === 'ArrowLeft') f = Math.max(0, f - 1);
+  else if (key === 'ArrowRight') f = Math.min(n - 1, f + 1);
+  else if (key === 'ArrowUp') f = f - cols >= 0 ? f - cols : f;
+  else if (key === 'ArrowDown') f = f + cols < n ? f + cols : f;
+  else if (key === ' ' || key === 'Enter') { openVendorPopout(); return; }
+  else return;
+  dialogGridState.focus = f;
+  refreshDialogGridFocus();
+}
+
+// Wire the dropdown's action rows for mouse users (keyboard path above goes
+// through dialogGridKey). Called once from main.js boot.
+export function initVendorGrid() {
+  document.querySelectorAll('#vendor-popout .popout-action').forEach((el) => {
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (el.classList.contains('disabled')) return;
+      runVendorPopoutAction(el.dataset.action);
+    });
+  });
+  document.addEventListener('click', (e) => {
+    if (!dialogGridState.popoutOpen) return;
+    if ($('vendor-popout').contains(e.target)) return;
+    if (e.target.closest('.item-tile')) return;
+    closeVendorPopout();
+  });
 }
 
 // Leaves grid mode and returns keyboard focus to the response list — used by
-// Escape (dialogGridKey) and defensively by closeDialog(). onBack is how
-// main.js restores the Buy/Sell/Leave response list content; it's a no-op if
-// the grid was already closed some other way.
+// Escape (dialogGridKey) and defensively by closeDialog(). onBack restores the
+// Buy/Sell/Leave response content in the same window.
 function hideDialogGrid() {
   if (!dialogGridState.open) return;
   const cb = dialogGridState.onBack;
+  closeVendorPopout();
   dialogGridState.open = false;
   dialogState.mode = 'text';
   $('dialog-shop').classList.add('hidden');
   $('dialog-line').classList.remove('hidden');
-  $('dialog-shop-hint').classList.add('hidden');
+  $('dialog-arrow').classList.remove('hidden');
   $('dialog-responses').classList.remove('hidden');
   if (cb) cb();
 }

@@ -55,6 +55,17 @@
 
       <div id="dialog" class="hidden">
         <div class="dialog-box" id="dialog-npc">
+          <!-- Vendor-only header: name + title and the vendor's own gold sit
+               ABOVE the window frame (2026-07-16, Danny's mockup), so trading
+               reads differently from ordinary dialogue. Hidden for normal NPCs
+               (whose name/role stay inside the box, see .dialog-text). -->
+          <div id="vendor-header" class="hidden">
+            <div class="vendor-header-text">
+              <h2 id="vendor-name"></h2>
+              <h3 id="vendor-title"></h3>
+            </div>
+            <div id="vendor-gold"><span id="vendor-gold-value">0</span><span class="coin"></span></div>
+          </div>
           <div id="portrait-frame">
             <img id="dialog-portrait" src="assets/images/Mirelle_Portrait.png" alt="">
           </div>
@@ -258,6 +269,16 @@
         <div class="popout-action hidden" id="popout-use" data-action="use">Use</div>
         <div class="popout-action" data-action="inspect">Inspect</div>
         <div class="popout-action" data-action="remove">Remove</div>
+        <div class="popout-action" data-action="cancel">Cancel</div>
+      </div>
+
+      <!-- Vendor item dropdown (2026-07-16): opens under the focused tile in
+           the Buy/Sell grid. Primary action is "Buy" or "Sell" (set by ui.js),
+           then Inspect (toasts the item's description) and Cancel. Same
+           expand-from-tile styling as #item-popout. -->
+      <div id="vendor-popout">
+        <div class="popout-action" id="vendor-popout-trade" data-action="trade">Buy</div>
+        <div class="popout-action" data-action="inspect">Inspect</div>
         <div class="popout-action" data-action="cancel">Cancel</div>
       </div>
 

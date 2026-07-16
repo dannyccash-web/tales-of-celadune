@@ -42,14 +42,17 @@ function refreshItemsUi() {
   ui.updateItemsPanel(inventory, ITEMS, equipment);
 }
 
-function addItem(id, qty = 1) {
+// `silent` skips the bag SFX — used by vendor trades, which play the coin
+// exchange sound (via addGold/spendGold) instead so the transaction reads as
+// money changing hands, not an item being rummaged out of a bag.
+function addItem(id, qty = 1, silent = false) {
   const existing = inventory.find((it) => it.id === id);
   if (existing) existing.qty += qty; else inventory.push({ id, qty });
   refreshItemsUi();
-  audio.sfx(audio.SFX.item);
+  if (!silent) audio.sfx(audio.SFX.item);
 }
 
-function removeItem(id, qty = 1) {
+function removeItem(id, qty = 1, silent = false) {
   const existing = inventory.find((it) => it.id === id);
   if (!existing) return;
   existing.qty -= qty;
@@ -62,7 +65,7 @@ function removeItem(id, qty = 1) {
     });
   }
   refreshItemsUi();
-  audio.sfx(audio.SFX.item);
+  if (!silent) audio.sfx(audio.SFX.item);
 }
 
 // equipItem/unequipItem are the only two ways `equipment` changes — mirrors
@@ -312,6 +315,7 @@ async function boot() {
   ui.updateHud(stats);
   ui.updateStatsPanel(stats);
   ui.initItemsPanel({ onAction: onItemAction });
+  ui.initVendorGrid();
   refreshItemsUi();
   ui.updateQuestsPanel(quests, QUESTS);
   ui.initGameOver({ onRestart: () => respawnAfterDefeat() });
@@ -658,26 +662,41 @@ async function boot() {
       .map((e) => ({ e, d: ITEMS[e.id] }))
       .filter(({ d }) => d && !d.questItem && d.price != null)
       .map(({ e, d }) => ({ id: d.id, name: d.name, image: d.image, value: sellValue(d), qty: e.qty }));
+    const refresh = () => ui.refreshDialogGrid({
+      playerGold: stats.gold, vendorGold: npc.gold,
+      items: mode === 'buy' ? buildBuy() : buildSell(),
+    });
     ui.showDialogGrid({
       kind: mode,
       items: mode === 'buy' ? buildBuy() : buildSell(),
-      gold: stats.gold,
+      playerGold: stats.gold,
+      vendorGold: npc.gold ?? 0,
       emptyText: mode === 'buy' ? 'Nothing for sale right now.' : 'You have nothing to sell.',
+      // Buy/Sell from the item's dropdown. Money changes hands BOTH ways: a
+      // purchase moves the price into the vendor's purse; a sale pays out of
+      // it (and can't happen if the vendor's short). addItem/removeItem run
+      // silent so only the coin sound (from addGold/spendGold) plays.
       onSelect: (id) => {
         const d = ITEMS[id];
         if (mode === 'buy') {
           if (!d || stats.gold < d.price) { audio.sfx(audio.SFX.locked); ui.toast('You can’t afford that.'); return; }
           spendGold(d.price);
-          addItem(id, 1);
+          npc.gold = (npc.gold || 0) + d.price;
+          addItem(id, 1, true);
           ui.showReceivedItem(d);
         } else {
           if (!d || !inventory.find((e) => e.id === id)) return;
-          removeItem(id, 1);
-          addGold(sellValue(d));
+          const value = sellValue(d);
+          if ((npc.gold || 0) < value) { audio.sfx(audio.SFX.locked); ui.toast('“I haven’t the coin for that right now.”'); return; }
+          removeItem(id, 1, true);
+          addGold(value);
+          npc.gold -= value;
           ui.showGaveItem(d);
         }
-        ui.refreshDialogGrid({ gold: stats.gold, items: mode === 'buy' ? buildBuy() : buildSell() });
+        refresh();
       },
+      // Inspect from the dropdown — toast the item's catalog description.
+      onInspect: (id) => { const d = ITEMS[id]; if (d) ui.toast(d.description || d.name); },
       // Escape backs out of the grid — restore the Buy/Sell/Leave response
       // list in the same dialog window (updateDialogContent swaps content
       // without closing/reopening, same mechanism the goBack/thankYou flows
