@@ -1372,12 +1372,18 @@ html, body {
   position: absolute;
   left: 580px;
   right: 40px;
-  top: 30px;
-  bottom: 24px;
+  top: 24px;
+  bottom: 16px;
   max-width: none;
   display: flex;
   flex-direction: column;
 }
+
+/* In the vendor layout the name/role act as a compact header above the grid,
+   so trim their size + margins to leave the grid room inside the fixed-height
+   top box. */
+#dialog.vendor #dialog-name { font-size: 34px; }
+#dialog.vendor #dialog-role { font-size: 20px; margin: 4px 0 10px; }
 
 /* Overrides .section-subhead's divider styling (border-top/margin-top) — this
    "Buy"/"Sell" label heads the grid, it's not a divider between sections. */
@@ -1385,13 +1391,13 @@ html, body {
   border-top: none;
   margin-top: 0;
   padding-top: 0;
-  margin-bottom: 14px;
+  margin-bottom: 10px;
 }
 
 #dialog-shop-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, 104px);
-  gap: 10px 16px;
+  grid-template-columns: repeat(auto-fill, 96px);
+  gap: 8px 16px;
   align-content: flex-start;
   flex: 1;
   min-height: 0;
@@ -1399,10 +1405,11 @@ html, body {
   padding-right: 8px;
 }
 
-/* Slightly tighter tile text in the vendor grid so a two-line item name +
-   its price both fit inside the top box (the box is a fixed 345px tall). */
-#dialog-shop .item-tile { gap: 6px; }
-#dialog-shop .item-label { font-size: 16px; line-height: 1.15; }
+/* Tighter tile text in the vendor grid so a two-line item name + its price
+   both fit inside the top box (the box is a fixed 345px tall). */
+#dialog-shop .item-tile { gap: 5px; }
+#dialog-shop .item-label { font-size: 15px; line-height: 1.1; }
+#dialog-shop .item-price { font-size: 14px; }
 
 /* The key-hint that fills the response box while the grid is focused. */
 #dialog-shop-hint {
