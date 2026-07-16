@@ -217,12 +217,34 @@ export default {
       // in at; add one once that scene exists.
       dialogByQuestStatus: {
         vegetable_delivery: {
+          // Before the crate reaches the tavern (readyToComplete condition in
+          // main.js's QUEST_READY is false).
           active: {
             line: 'Any luck getting those vegetables to the tavern yet? The keeper’s probably wondering where I’ve gotten to.',
             responses: [
               'Not yet — I’ll get there.',
               'Leave.',
             ],
+          },
+          // Once Bram's taken the crate + paid (vegetableDeliveredToTavern) the
+          // player can hand the coin over honestly or pocket it and lie — either
+          // way completes the quest (see main.js giveMirelleGold/lieToMirelle).
+          readyToComplete: {
+            line: 'Back already! And in one piece. Did that old tavern keeper settle up for the vegetables, then?',
+            responses: [
+              'He did. Here’s your five gold.',
+              'Afraid not — he never paid a copper.',
+              'Leave.',
+            ],
+            responseEffects: [
+              { giveMirelleGold: true },
+              { lieToMirelle: true },
+              null,
+            ],
+          },
+          completed: {
+            line: 'Those vegetables you ran to the tavern — half the village has had the stew by now. Thank you again, dear.',
+            responses: ['Leave.'],
           },
         },
       },

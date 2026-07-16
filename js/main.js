@@ -268,6 +268,12 @@ async function boot() {
   let campTollPaid = false;
   let campEntered = false;
 
+  // Vegetable-delivery quest progress (2026-07-16): set when the player hands
+  // Mirelle's crate to Bram at the tavern (who pays 5 gold for her). It's the
+  // quest's `readyToComplete` condition — Mirelle then offers to be paid back
+  // (or lied to). Session-scoped, never reset (quest progress, not per-scene).
+  let vegetableDeliveredToTavern = false;
+
   // The two stationary gate sentries step to their gate's `aside` spot when the
   // toll's paid (so the player passes freely) and back to their post on a fresh
   // D4 visit. `_post` remembers where they stood so the reset is exact.
@@ -386,6 +392,41 @@ async function boot() {
         if (result === 'victory') { campTollPaid = true; stepSentriesAside(); }
       }), 0);
       return; // falsy — ui closes the dialog, then the battle opens
+    }
+    // Hand Mirelle's crate to Bram at the tavern: he takes it, pays 5 gold for
+    // her, and asks the player to carry the coin back to her. Marks the quest
+    // ready to turn in at Mirelle (readyToComplete). One-time (the response
+    // only appears while the player holds the crate + the quest is active).
+    if (effect.deliverVegetables) {
+      removeItem('vegetable_crate', 1, true);
+      ui.showGaveItem(ITEMS.vegetable_crate);
+      addGold(5);
+      vegetableDeliveredToTavern = true;
+      ui.updateDialogContent({
+        line: '“Mirelle’s crate — been waiting on these! Here, five gold for her trouble. See it finds its way back to her, won’t you? Good lass, that one.”',
+        responses: ['Leave.'],
+      });
+      return true;
+    }
+    // Turn-in at Mirelle: hand over the tavern's 5 gold honestly...
+    if (effect.giveMirelleGold) {
+      spendGold(5);
+      completeQuest('vegetable_delivery');
+      ui.updateDialogContent({
+        line: '“You didn’t have to — but bless you for it. Honest folk are rarer than good weather these days. Safe travels, dear.”',
+        responses: ['Leave.'],
+      });
+      return true;
+    }
+    // ...or pocket it and claim the tavern stiffed you. Quest completes either
+    // way — Mirelle's none the wiser.
+    if (effect.lieToMirelle) {
+      completeQuest('vegetable_delivery');
+      ui.updateDialogContent({
+        line: '“Not a copper? That old skinflint. Ah well — thank you for carrying them all the same, dear. Least the stew got made.”',
+        responses: ['Leave.'],
+      });
+      return true;
     }
     if (effect.damage) damagePlayer(effect.damage);
     if (effect.startQuest) startQuest(effect.startQuest);
@@ -540,6 +581,7 @@ async function boot() {
   // scene data) because conditions read live world state.
   const QUEST_READY = {
     barn_rat: () => !!world.battles.find((b) => b.id === 'old_barn_rats')?.defeated,
+    vegetable_delivery: () => vegetableDeliveredToTavern,
   };
   const isQuestReady = (id) => QUEST_READY[id]?.() ?? false;
 
@@ -647,11 +689,34 @@ async function boot() {
     if (!npc.atHome) {
       return { line: npc.awayLine || 'Catch me at my shop if you’re looking to trade.', responses: ['Leave.'] };
     }
-    return {
-      line: npc.dialog.line,
-      responses: ['Buy', 'Sell', 'Leave.'],
-      responseEffects: [{ shop: 'buy' }, { shop: 'sell' }, null],
-    };
+    const responses = ['Buy', 'Sell', 'Leave.'];
+    const responseEffects = [{ shop: 'buy' }, { shop: 'sell' }, null];
+    // Bram's vegetable-crate turn-in: only while the player is carrying
+    // Mirelle's crate and the quest is still active (and not yet delivered).
+    if (npc.id === 'bram'
+        && questStatus('vegetable_delivery') === 'active'
+        && !vegetableDeliveredToTavern
+        && inventory.some((it) => it.id === 'vegetable_crate')) {
+      responses.unshift('Deliver Mirelle’s crate of vegetables.');
+      responseEffects.unshift({ deliverVegetables: true });
+    }
+    // Small talk topics (npc.chatter) go just before "Leave."
+    return withChatter({ line: npc.dialog.line, responses, responseEffects }, npc);
+  }
+
+  // Append an NPC's chatter topics (npc.chatter: [{ q, a }]) to a dialog just
+  // before its trailing close response. Each topic is a player line (q) whose
+  // effect is a followUp reply (a) — reusing the existing followUp/Go-back
+  // machinery so a conversation branches into a topic and returns. No-op for
+  // NPCs without chatter, so it's safe to run on every dialog.
+  function withChatter(dialog, npc) {
+    if (!npc.chatter?.length) return dialog;
+    const responses = [...dialog.responses];
+    const effects = dialog.responseEffects ? [...dialog.responseEffects] : responses.map(() => null);
+    const at = Math.max(0, responses.length - 1); // before the trailing "Leave."
+    responses.splice(at, 0, ...npc.chatter.map((c) => c.q));
+    effects.splice(at, 0, ...npc.chatter.map((c) => ({ followUp: c.a })));
+    return { ...dialog, responses, responseEffects: effects };
   }
 
   function openVendorGrid(npcArg, mode) {
@@ -726,8 +791,8 @@ async function boot() {
     if (npc.id === 'gaffer') dialog = buildGafferDialog(npc);
     else if (npc.id === 'bramblekin_chief') dialog = buildChiefDialog();
     else if (npc.bramblekin) dialog = buildBramblekinDialog(npc);
-    else if (npc.vendor) dialog = buildVendorDialog(npc);
-    else dialog = resolveNpcDialog(npc, isQuestReady);
+    else if (npc.vendor) dialog = buildVendorDialog(npc); // adds its own chatter
+    else dialog = withChatter(resolveNpcDialog(npc, isQuestReady), npc);
     ui.openDialog({ ...npc, dialog }, onClose, applyResponseEffect);
   }
 

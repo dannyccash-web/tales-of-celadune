@@ -726,6 +726,10 @@ export default {
         { do: 'leaveHome' },
       ],
       dialog: { line: 'Welcome, welcome! Pull up a stool — though I’ll warn you, the ale’s still fermenting and the stew’s mostly turnip. Come back when the hearth’s lit proper.', responses: ['Leave.'] },
+      chatter: [
+        { q: 'Heard any news?', a: 'Travelers bring more news than coin through that door. Word is the woods east of the village have gone unfriendly — folk paying tolls just to pass. I would steer clear till it settles.' },
+        { q: 'What is good to drink?', a: 'Ha! Nothing, presently. The good barrel is still fermenting and the other is mostly for cleaning boots. Give it a fortnight and I will pour you something worth the walk.' },
+      ],
     },
     {
       id: 'sorcha', name: 'Sorcha Emberfell', role: 'BLACKSMITH',
@@ -742,6 +746,10 @@ export default {
         { do: 'goHome' },
       ],
       dialog: { line: 'Mind the sparks. I’ve horseshoes to hammer and a plough-blade three farmers are waiting on. Steel doesn’t shape itself, more’s the pity.', responses: ['Leave.'] },
+      chatter: [
+        { q: 'Can you make weapons?', a: 'Anything with an edge, given time and good iron. Trouble is good iron is dear these days — the ore carts come light and late. Bring me something worth forging and we will talk.' },
+        { q: 'Any advice for the road?', a: 'Aye — a blade is only as good as the arm behind it, so keep the arm fed and the blade dry. Rust has killed more steel than any battle ever did.' },
+      ],
     },
     {
       id: 'nadira', name: 'Nadira Thornwell', role: 'APOTHECARY',
@@ -758,6 +766,10 @@ export default {
         { do: 'leaveHome' },
       ],
       dialog: { line: 'Careful what you touch — half these jars will cure you and the other half most certainly won’t. Come by when you’ve an ache I can put a price to.', responses: ['Leave.'] },
+      chatter: [
+        { q: 'What ails the village?', a: 'Nothing a poultice will not mend — yet. But I have seen more blight on the eastern crops than I like, and where blight goes, worse follows. Keep a health draught on you, is my counsel.' },
+        { q: 'Are your remedies safe?', a: 'Safe as you are careful. Half of what heals will harm in the wrong dose — that is not witchcraft, that is arithmetic. Ask before you swallow anything out of a jar.' },
+      ],
     },
     {
       id: 'emeric', name: 'Emeric Vale', role: 'SHOPKEEPER',
@@ -774,6 +786,10 @@ export default {
         { do: 'goHome' },
       ],
       dialog: { line: 'Everything a body could need and a few things nobody does. Have a look round — just don’t handle the goods with those hands.', responses: ['Leave.'] },
+      chatter: [
+        { q: 'Is business good?', a: 'Fair to middling. Folk buy less when the roads are dangerous — and lately the roads are very dangerous. You spot a caravan that made it through, you send it my way, eh?' },
+        { q: 'Heard any rumors?', a: 'I hear everything twice and believe half of it. They say there is an old cave in the woods no one is fool enough to enter. Naturally, someone always is.' },
+      ],
     },
     {
       id: 'kwame', name: 'Kwame Hearthstone', role: 'BAKER',
@@ -790,6 +806,10 @@ export default {
         { do: 'leaveHome' },
       ],
       dialog: { line: 'Smell that? Second batch of the day. The crusty loaves go fast, so if you want one, don’t dawdle.', responses: ['Leave.'] },
+      chatter: [
+        { q: 'How is the harvest?', a: 'Grain came in golden this year, praise the rain — bread for all and a fat mill. You can smell my loaves clear across the plaza. Second batch is nearly out, mind.' },
+        { q: 'Any gossip?', a: 'A baker hears it all before the ovens are cold. Old Osric swears he saw lights in the woods; young Jory swears he is brave enough to go look. I would not bet on either, myself.' },
+      ],
     },
     {
       id: 'elowen', name: 'Elowen Dawnmere', role: 'PRIESTESS',
@@ -804,6 +824,10 @@ export default {
         { do: 'goHome' },
       ],
       dialog: { line: 'Peace be with you, traveler. The temple doors are always open, and the dead rest quiet in our care. Light a candle, if it eases you.', responses: ['Leave.'] },
+      chatter: [
+        { q: 'Who rests in the graveyard?', a: 'Generations of this village — farmers, smiths, children who never grew. We tend them all the same. The dead ask little; a lit candle and a kind memory is enough.' },
+        { q: 'Have you a blessing for me?', a: 'May the road rise gentle and the night find you sheltered. Faith will not stop a blade, traveler — but it may steady the hand that lifts one against it.' },
+      ],
     },
     {
       id: 'alden', name: 'Alden Hale', role: 'VILLAGER',
@@ -818,6 +842,10 @@ export default {
         { do: 'leaveHome' },
       ],
       dialog: { line: 'Off to fell timber before the light goes. This rope won’t coil itself, and the forester’s already sour with me.', responses: ['Leave.'] },
+      chatter: [
+        { q: 'Working hard?', a: 'Harder than I am paid for. The forester wants a cord of timber by dusk and my back is already filing complaints. Honest work, though — there are worse ways to earn a crust.' },
+        { q: 'Anything I should know?', a: 'Do not wander the woods past the bridges. Something has stirred them up. I lost a good axe out there last week and I will not be going back for it.' },
+      ],
     },
     {
       id: 'amara', name: 'Amara Odwyn', role: 'VILLAGER',
@@ -832,6 +860,10 @@ export default {
         { do: 'goHome' },
       ],
       dialog: { line: 'Market’s thin this week, but I’ve herbs and eggs if you’re buying. Mind you don’t tread on my basket.', responses: ['Leave.'] },
+      chatter: [
+        { q: 'What are you selling?', a: 'Herbs, eggs, whatever the garden spares. Market is thin this week — folk are hoarding, and hoarding is a bad sign. When neighbors stop trading, trouble is usually near.' },
+        { q: 'Mind if I look?', a: 'Look all you like, just mind the basket — I will not have a season of eggs cracked by a careless boot. There. Now, was there something you actually wanted?' },
+      ],
     },
     {
       id: 'petra', name: 'Petra Ashby', role: 'VILLAGER',
@@ -846,6 +878,10 @@ export default {
         { do: 'leaveHome' },
       ],
       dialog: { line: 'Lovely day, isn’t it? Well — lovely if you’re not the one weeding the whole garden by yourself.', responses: ['Leave.'] },
+      chatter: [
+        { q: 'Beautiful garden.', a: 'Is it not? And every weed of it pulled by these two hands. I do not mind, truly — a body needs something growing to look after. Keeps the sad thoughts from setting root.' },
+        { q: 'Any village gossip?', a: 'Oh, always. Adaline fancies the baker, Jory fancies himself an adventurer, and old Osric fancies his naps. That is the whole village in a sentence, really.' },
+      ],
     },
     {
       id: 'faris', name: 'Faris Kell', role: 'VILLAGER',
@@ -860,6 +896,10 @@ export default {
         { do: 'goHome' },
       ],
       dialog: { line: 'Measure twice, cut once — that’s the trade. Half this village stands because I put it there, though you’d not hear them say it.', responses: ['Leave.'] },
+      chatter: [
+        { q: 'You build things?', a: 'Half of what stands here, and none of the thanks for it. Measure twice, cut once — same as life, really. Rush a joint and the whole thing comes down on you.' },
+        { q: 'Any advice?', a: 'Aye — trust the work you can see over the words you cannot. A wall does not flatter you, but it will keep the rain off long after a friend has forgotten your name.' },
+      ],
     },
     {
       id: 'marisol', name: 'Marisol Reyne', role: 'VILLAGER',
@@ -874,6 +914,10 @@ export default {
         { do: 'leaveHome' },
       ],
       dialog: { line: 'You’re not from around here, are you? Don’t fret, we don’t bite. Much.', responses: ['Leave.'] },
+      chatter: [
+        { q: 'You forage?', a: 'When the woods let me. There are good mushrooms and better herbs out there — and lately, things that would rather I stayed home. So I keep to the meadow edge and count my fingers after.' },
+        { q: 'Is this a friendly village?', a: 'Friendly enough. We size up strangers, sure, but we feed them after. Stay honest and you will find no kinder folk between here and the mountains.' },
+      ],
     },
     {
       id: 'ingrith', name: 'Ingrith Snowmantle', role: 'VILLAGER',
@@ -888,6 +932,10 @@ export default {
         { do: 'goHome' },
       ],
       dialog: { line: 'Bitter wind off the hills today. Keep your cloak close and your boots dry — that’s my advice, free of charge.', responses: ['Leave.'] },
+      chatter: [
+        { q: 'Lived here long?', a: 'Longer than these hills have had names I would repeat. I have buried three winters harder than this one and I will likely bury more. The cold teaches patience, if it does not take you first.' },
+        { q: 'Any old tales?', a: 'Plenty, and most of them warnings dressed as stories. There is a thing in the deep woods the old folk will not name aloud. Call it superstition — just do not go looking to prove me wrong.' },
+      ],
     },
     {
       id: 'osric', name: 'Osric Blackwood', role: 'VILLAGER',
@@ -902,6 +950,10 @@ export default {
         { do: 'leaveHome' },
       ],
       dialog: { line: 'These old knees have walked this village sixty years. Not much changes here, and I count that a blessing.', responses: ['Leave.'] },
+      chatter: [
+        { q: 'Sixty years, you said?', a: 'Sixty and then some. Watched this village grow and shrink and grow again. Not much changes — and after a life of chasing change, I will tell you plainly: quiet is the finest thing a man can own.' },
+        { q: 'Seen anything strange?', a: 'Lights, out past the treeline, three nights running. Young Jory thinks I am daft. Maybe I am. But these eyes have watched this valley sixty years — they know when something is wrong in it.' },
+      ],
     },
     {
       id: 'jory', name: 'Jory Whitlock', role: 'VILLAGER',
@@ -916,6 +968,10 @@ export default {
         { do: 'goHome' },
       ],
       dialog: { line: 'Ma says I’m to fetch water and NOT go poking round the woods. So naturally I’m thinking about the woods.', responses: ['Leave.'] },
+      chatter: [
+        { q: 'Off to the woods, then?', a: 'Shh — not so loud, Ma has ears like an owl. But one day I will go proper, sword and all, and come back a hero. You have been out there, have you not? Is it as grand as they say?' },
+        { q: 'The woods are dangerous, you know.', a: 'That is what everyone SAYS. But nothing exciting ever happened to someone who fetched water all day. ...You are not going to tell my Ma, are you?' },
+      ],
     },
     {
       id: 'darius', name: 'Darius Bellwren', role: 'VILLAGER',
@@ -930,6 +986,10 @@ export default {
         { do: 'leaveHome' },
       ],
       dialog: { line: 'Fish aren’t biting, but the pond’s peaceful. Some days that’s catch enough. You fish? No? Pity.', responses: ['Leave.'] },
+      chatter: [
+        { q: 'Catch anything?', a: 'Not a fin. But the pond is quiet and the sun is warm, and a bad day fishing beats a good day at most anything else. You should try it — does wonders for a troubled head.' },
+        { q: 'Anything worth knowing?', a: 'Only that the pond has dropped a hand-width since spring, and I do not like it. Water does not just leave. Something upstream has changed. But what do I know — I only watch it every day.' },
+      ],
     },
     {
       id: 'adaline', name: 'Adaline Beaumont', role: 'VILLAGER',
@@ -944,6 +1004,10 @@ export default {
         { do: 'goHome' },
       ],
       dialog: { line: 'Mind the hem — I’ve only just finished this stitching and I’ll not have it dragged through the mud. Was there something?', responses: ['Leave.'] },
+      chatter: [
+        { q: 'Fine stitching.', a: 'Kind of you to notice — most do not, till a hem tears. I have dressed half this village for festival and funeral both. A good seam holds a life together, if you think on it.' },
+        { q: 'Any news?', a: 'I keep to my needle, not the gossip — though one hears plenty with folk standing still for fittings. They say the roads east are not safe. I say stay home and mend something.' },
+      ],
     },
     {
       id: 'priya', name: 'Priya Sarn', role: 'VILLAGER',
@@ -958,6 +1022,10 @@ export default {
         { do: 'leaveHome' },
       ],
       dialog: { line: 'Festival’s coming, you know. I’m to weave the garlands. Come back then — there’ll be music, and Malik on his drum.', responses: ['Leave.'] },
+      chatter: [
+        { q: 'Tell me about the festival.', a: 'Oh, it is the best week of the year! Garlands on every door, Malik on his drum, dancing till the lanterns gutter. You must come back for it — promise me. Strangers make the best dancers.' },
+        { q: 'Need any help?', a: 'Are you not kind! If you are back before the festival, I could use hands for the weaving. Till then — just do not let the world make you too grim to dance. That is help enough.' },
+      ],
     },
     {
       id: 'malik', name: 'Malik Duskweather', role: 'VILLAGER',
@@ -972,6 +1040,10 @@ export default {
         { do: 'goHome' },
       ],
       dialog: { line: 'Hear that rhythm? That’s the village breathing. Stick around long enough and you’ll feel it too.', responses: ['Leave.'] },
+      chatter: [
+        { q: 'That rhythm — what is it?', a: 'The village, breathing. You laugh, but listen: the hammer at the forge, the mill wheel, feet on the plaza — it all keeps time, if you let it. I just play along.' },
+        { q: 'Will you play at the festival?', a: 'Try and stop me. Priya weaves the garlands, I keep the beat, and the whole village forgets its troubles for a night. Come back for it. Everyone should feel that at least once.' },
+      ],
     },
   ],
 };
