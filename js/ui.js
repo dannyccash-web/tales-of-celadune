@@ -254,6 +254,7 @@ function closeDialog() {
   dialogState.open = false;
   $('dialog').classList.add('hidden');
   const received = $('dialog-received');
+  clearTimeout(transferTimer);
   received.classList.add('hidden');
   received.classList.remove('received-enter');
   received.classList.remove('gave');
@@ -280,6 +281,7 @@ function closeDialog() {
 // .gave class flips the caret and the entrance animation. Caller is
 // responsible for actually mutating inventory state first — this is purely
 // the visual beat.
+let transferTimer = null;
 function showItemTransfer(itemDef, mode) {
   $('received-image').src = itemDef.image;
   $('received-image').alt = itemDef.name;
@@ -291,6 +293,14 @@ function showItemTransfer(itemDef, mode) {
   el.classList.remove('received-enter');
   void el.offsetWidth; // force reflow so the animation replays
   el.classList.add('received-enter');
+  // The reveal is a brief beat, not a persistent panel — clear it after ~3s
+  // even if the dialog stays open (2026-07-17, Danny).
+  clearTimeout(transferTimer);
+  transferTimer = setTimeout(() => {
+    el.classList.add('hidden');
+    el.classList.remove('received-enter');
+    el.classList.remove('gave');
+  }, 3000);
 }
 
 export function showReceivedItem(itemDef) {

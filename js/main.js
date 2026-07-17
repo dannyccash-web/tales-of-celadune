@@ -773,10 +773,27 @@ async function boot() {
     for (const s of stockList) {
       if (s.qty !== Infinity && npc.stockLeft[s.id] === undefined) npc.stockLeft[s.id] = s.qty;
     }
-    const buildBuy = () => stockList
-      .filter((s) => s.qty === Infinity || (npc.stockLeft[s.id] ?? 0) > 0)
-      .map((s) => ITEMS[s.id]).filter((d) => d && d.price != null)
-      .map((d) => ({ id: d.id, name: d.name, image: d.image, price: d.price }));
+    // Items the player has sold this vendor (2026-07-17, Danny): they go into
+    // the vendor's stock and become buyable back at full catalog price. Lives
+    // on the live npc so it persists for the session, same as stockLeft.
+    npc.resale = npc.resale || {};
+    // Available buy quantity per id = base stock (infinite or stockLeft) plus
+    // anything resold to this vendor.
+    const availById = () => {
+      const m = {};
+      for (const s of stockList) m[s.id] = s.qty === Infinity ? Infinity : (npc.stockLeft[s.id] ?? 0);
+      for (const id in npc.resale) {
+        if ((npc.resale[id] ?? 0) > 0) m[id] = m[id] === Infinity ? Infinity : (m[id] ?? 0) + npc.resale[id];
+      }
+      return m;
+    };
+    const buildBuy = () => {
+      const avail = availById();
+      return Object.keys(avail)
+        .filter((id) => avail[id] === Infinity || avail[id] > 0)
+        .map((id) => ITEMS[id]).filter((d) => d && d.price != null)
+        .map((d) => ({ id: d.id, name: d.name, image: d.image, price: d.price }));
+    };
     const buildSell = () => inventory
       .map((e) => ({ e, d: ITEMS[e.id] }))
       .filter(({ d }) => d && !d.questItem && d.price != null)
@@ -801,7 +818,10 @@ async function boot() {
           if (!d || stats.gold < d.price) { audio.sfx(audio.SFX.locked); ui.toast('You can’t afford that.'); return; }
           spendGold(d.price);
           npc.gold = (npc.gold || 0) + d.price;
-          if (npc.stockLeft[id] !== undefined) npc.stockLeft[id] -= 1; // deplete limited stock
+          // Deplete resold stock first, then any limited base stock (infinite
+          // base stock has no counter to touch).
+          if ((npc.resale[id] ?? 0) > 0) npc.resale[id] -= 1;
+          else if (npc.stockLeft[id] !== undefined) npc.stockLeft[id] -= 1;
           addItem(id, 1, true);
           ui.showReceivedItem(d);
         } else {
@@ -811,6 +831,7 @@ async function boot() {
           removeItem(id, 1, true);
           addGold(value);
           npc.gold -= value;
+          npc.resale[id] = (npc.resale[id] ?? 0) + 1; // now buyable from this vendor
           ui.showGaveItem(d);
         }
         refresh();
