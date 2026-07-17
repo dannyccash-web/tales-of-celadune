@@ -58,6 +58,11 @@ export class World {
         fading: null, // 'in' | 'out'
         alpha: startsHome ? 0 : 1,
         atHome: startsHome,
+        // Set once a hostile camp NPC is beaten in battle (2026-07-17). Lives
+        // on the instance (the cached-per-session World), so a slain Bramblekin
+        // stays gone when the player leaves and returns to D4. A defeated NPC
+        // doesn't render, collide, aggro, or take interaction.
+        defeated: false,
         ...(startsHome ? { x: n.home.door.x, y: n.home.door.y } : {}),
       };
     });
@@ -102,8 +107,13 @@ export class World {
     this.camp = scene.camp || null;
     this.campSealed = false;
     this.campEntered = false;
+    // Set by main.js once the player draws steel on any camp member (2026-07-17):
+    // every Bramblekin then attacks on sight — walking within CAMP_AGGRO_RANGE
+    // of an alive one fires `pendingAggro` (a battle with just that one).
+    this.campHostile = false;
     this.pendingGate = null;
     this.pendingLeave = null;
+    this.pendingAggro = null;
     this._campContact = false;
     // Per-gate armed flag for the proximity confrontation (re-arms once the
     // player leaves the gate's radius) — the guards physically block the
@@ -156,7 +166,7 @@ export class World {
     let best = null;
     let bestDist = INTERACT_RANGE;
     for (const npc of this.npcs) {
-      if (npc.atHome) continue;
+      if (npc.atHome || npc.defeated) continue;
       const d = Math.hypot(npc.x - this.player.x, npc.y - this.player.y);
       if (d < bestDist) { best = npc; bestDist = d; }
     }
@@ -185,7 +195,7 @@ export class World {
     // nearest matching anchor across all homes wins.
     let bestDist = Infinity;
     for (const npc of this.npcs) {
-      if (!npc.home) continue;
+      if (!npc.home || npc.defeated) continue;
       const dDoor = Math.hypot(npc.home.door.x - this.player.x, npc.home.door.y - this.player.y);
       if (dDoor < INTERACT_RANGE && dDoor < bestDist) { best = npc; bestDist = dDoor; }
       const z = npc.home.zone;
@@ -243,7 +253,7 @@ export class World {
       }
     }
     for (const b of [this.player, ...this.npcs]) {
-      if (b === self || b.atHome) continue;
+      if (b === self || b.atHome || b.defeated) continue;
       if (rectsOverlap(cx, cy, COLLIDER, COLLIDER,
         { x: b.x - half, y: b.y - half, w: COLLIDER, h: COLLIDER })) {
         out.push({ id: b, cx: b.x, cy: b.y });
@@ -275,6 +285,7 @@ export class World {
     this.pendingGate = null;
     this.pendingLeave = null;
     this.pendingAmbush = null;
+    this.pendingAggro = null;
     const p = this.player;
     const preX = p.x, preY = p.y; // pre-move position for the camp membrane clamp
     let dx = 0, dy = 0;
@@ -316,6 +327,7 @@ export class World {
     if (!uiLocked) {
       this.checkCampGates();
       this.checkCampMembrane(preX, preY);
+      this.checkCampAggro();
       this.checkAmbushes();
     }
 
@@ -399,6 +411,31 @@ export class World {
     }
   }
 
+  // Hostile-camp aggro (2026-07-17): once the player has drawn steel on any
+  // Bramblekin, every remaining one attacks on sight — coming within
+  // CAMP_AGGRO_RANGE of an alive, undefeated camp member (guard or Chief) fires
+  // pendingAggro (main.js starts a one-on-one fight with it). De-bounced per
+  // NPC via `_aggroArmed`, re-arming once the player backs off past 1.4×range,
+  // so fleeing one fight doesn't instantly restart it while you're still next
+  // to the body.
+  isCampMember(npc) {
+    return npc.bramblekin || npc.id === 'bramblekin_chief';
+  }
+  checkCampAggro() {
+    if (!this.campHostile || this.pendingAggro) return;
+    const p = this.player;
+    const RANGE = 200;
+    for (const npc of this.npcs) {
+      if (npc.defeated || npc.atHome || !this.isCampMember(npc)) continue;
+      const d = Math.hypot(npc.x - p.x, npc.y - p.y);
+      if (d < RANGE) {
+        if (npc._aggroArmed !== false) { this.pendingAggro = npc; npc._aggroArmed = false; }
+      } else if (d > RANGE * 1.4) {
+        npc._aggroArmed = true;
+      }
+    }
+  }
+
   // Hidden proximity ambushes (Rootweavers): fire pendingAmbush once when the
   // player enters range, re-arming only after they leave (hysteresis), and
   // skipping ones already defeated.
@@ -425,6 +462,7 @@ export class World {
     const before = this.npcs.map((n) => ({ x: n.x, y: n.y }));
 
     for (const npc of this.npcs) {
+      if (npc.defeated) continue; // slain — no movement, no routine
       // Door fades run to completion before anything else
       if (npc.fading) {
         const dir = npc.fading === 'in' ? 1 : -1;
@@ -711,7 +749,7 @@ export class World {
 
     // Layer 2: NPCs, then player on top
     for (const npc of this.npcs) {
-      if (npc.atHome) continue;
+      if (npc.atHome || npc.defeated) continue;
       const npcFlip = npc.moving
         && Math.floor(npc.walkTimer / WALK_FLIP_INTERVAL) % 2 === 1;
       this.drawSprite(this.images[npc.sprite], npc.x, npc.y, npc.rotation, npcFlip, npc.alpha);

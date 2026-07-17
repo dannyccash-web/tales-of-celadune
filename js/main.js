@@ -269,6 +269,20 @@ async function boot() {
   // wakes up outside the camp).
   let campTollPaid = false;
   let campEntered = false;
+  // `campQuestDone`: completed the Chief's rootweaver-heart favor — grants
+  // PERMANENT passage (unlike paying, which re-blocks on each D4 visit).
+  // `campHostile`: the player drew steel on a camp member, so every Bramblekin
+  // now attacks on sight (world.js's checkCampAggro). Both persist across D4
+  // re-entry (they're not reset in switchScene) — a favor stays done, and the
+  // camp stays angry once blood's been drawn. `campEntryGate`: which gate the
+  // player entered through, so accepting the favor sets them back down just
+  // outside that same gate.
+  let campQuestDone = false;
+  let campHostile = false;
+  let campEntryGate = null;
+  const CAMP_FEE = 5;
+  const CAMP_QUEST_REWARD = 10; // gold the Chief pays on top of safe passage
+  const randInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
 
   // Vegetable-delivery quest progress (2026-07-16): set when the player hands
   // Mirelle's crate to Bram at the tavern (who pays 5 gold for her). It's the
@@ -289,6 +303,32 @@ async function boot() {
     for (const s of world.npcs.filter((n) => n.sentry)) {
       if (s._post) { s.x = s._post.x; s.y = s._post.y; }
     }
+  }
+
+  // Set the player down just outside the camp (the gate they came in through) —
+  // used when they accept the Chief's favor or step out with the quest still
+  // open, so agreeing to hunt rootweavers doesn't strand them inside the
+  // sealed membrane (2026-07-17).
+  function teleportOutsideCamp() {
+    campEntered = false;
+    const gates = world.scene.camp?.gates || [];
+    const gate = gates.find((g) => g.id === campEntryGate) || gates[0];
+    if (gate?.outside) { world.player.x = gate.outside.x; world.player.y = gate.outside.y; }
+  }
+
+  // Draw steel on a single camp member (a gate guard, a wanderer via aggro, or
+  // the Chief). Turns the whole camp hostile (every Bramblekin now attacks on
+  // sight) and starts a one-on-one fight with just that NPC — winning marks it
+  // slain (gone for good, on the cached World) and counts as forcing passage.
+  // Resolves the LIVE world npc by id (the dialog gets a shallow copy, so
+  // mutating that wouldn't stick). Deferred a tick so the dialog closes first.
+  function fightCampMember(npcId) {
+    campHostile = true;
+    const live = world.npcs.find((n) => n.id === npcId);
+    const enemyId = npcId === 'bramblekin_chief' ? 'bramblekin_chief' : 'bramblekin';
+    setTimeout(() => startBattle([enemyId], (result) => {
+      if (result === 'victory' && live) { live.defeated = true; campTollPaid = true; }
+    }), 0);
   }
 
   const EDGE_INSET = 20;
@@ -375,10 +415,10 @@ async function boot() {
       openVendorGrid(npc, effect.shop);
       return true; // stay open — we're managing the response box ourselves
     }
-    // Bramblekin Chief toll: pay it (deduct 5, mark paid, swap in a parting
-    // line) or refuse/draw steel (close, then fight the Chief + guards).
+    // Bramblekin Chief toll: pay it (deduct the fee, mark paid this visit, step
+    // the sentries aside, swap in a parting line).
     if (effect.payToll) {
-      spendGold(5);
+      spendGold(CAMP_FEE);
       campTollPaid = true;
       stepSentriesAside();
       ui.updateDialogContent({
@@ -387,13 +427,41 @@ async function boot() {
       });
       return true;
     }
+    // Draw steel on the Chief — the whole camp turns hostile and a fight with
+    // just the Chief begins (his guards join in only if the player then wanders
+    // within range of them, per the aggro rules).
     if (effect.drawSteel) {
-      // Close the dialog, then fight the Chief + guards. Winning forces
-      // passage (unseal + sentries aside).
-      setTimeout(() => startBattle(campBattleFoes(), (result) => {
-        if (result === 'victory') { campTollPaid = true; stepSentriesAside(); }
-      }), 0);
+      fightCampMember(npc.id);
       return; // falsy — ui closes the dialog, then the battle opens
+    }
+    // Accept the Chief's favor when you can't pay: start the rootweaver-heart
+    // quest and get set down just outside the camp so you can go hunt.
+    if (effect.acceptFavor) {
+      startQuest('rootweaver_favor');
+      teleportOutsideCamp();
+      return; // falsy — dialog closes
+    }
+    // Step back out of the camp with the favor still open (no heart yet) — a
+    // graceful exit from inside the sealed membrane.
+    if (effect.leaveCamp) {
+      teleportOutsideCamp();
+      return;
+    }
+    // Hand the Chief the rootweaver heart: complete the favor, take the gold,
+    // and earn PERMANENT safe passage (campQuestDone never resets).
+    if (effect.turnInHeart) {
+      removeItem('rootweaver_heart', 1, true);
+      ui.showGaveItem(ITEMS.rootweaver_heart);
+      addGold(CAMP_QUEST_REWARD);
+      completeQuest('rootweaver_favor');
+      campQuestDone = true;
+      campTollPaid = true;
+      stepSentriesAside();
+      ui.updateDialogContent({
+        line: 'The Chief turns the heart over in his thorny hands and grunts, almost impressed. “A deal’s a deal. The camp’s open to you — for good, this time. Now get out of my firelight.”',
+        responses: ['Leave.'],
+      });
+      return true;
     }
     // Hand Mirelle's crate to Bram at the tavern: he takes it, pays 5 gold for
     // her, and asks the player to carry the coin back to her. Marks the quest
@@ -631,59 +699,104 @@ async function boot() {
   // through openNpcDialog's branches below. The gate confrontation is a
   // separate, gate-triggered dialog (openGateConfrontation).
   function buildBramblekinDialog(npc) {
-    if (campTollPaid) return { line: npc.paidLine || '“Toll’s paid. Move along, then.”', responses: ['Leave.'] };
+    if (campTollPaid || campQuestDone) return { line: npc.paidLine || '“Toll’s paid. Move along, then.”', responses: ['Leave.'] };
     return { line: npc.line, responses: ['Leave.'] };
   }
 
+  // The Chief's dialog (2026-07-17 rework). Once passage is granted (paid this
+  // visit or the favor's done for good) he just waves you on. Otherwise the
+  // options depend on the rootweaver-favor quest and your purse:
+  //   - no quest, can pay -> Pay / Draw steel
+  //   - no quest, too poor -> Accept the favor / Refuse (Draw steel)
+  //   - favor active, holding a heart -> Turn it in / Draw steel
+  //   - favor active, no heart -> (Pay, if now affordable) / step out / Draw steel
+  // "Draw steel" is always available — the player can fight the Chief anytime.
   function buildChiefDialog() {
-    if (campTollPaid) {
+    if (campTollPaid || campQuestDone) {
       return {
-        line: 'The Chief barely glances up. “You again. Coin’s paid, I remember your ugly face. Move along before I dream up a second toll.”',
+        line: 'The Chief barely glances up. “You again. You’ve squared your debt, I remember your ugly face. Move along before I dream up a second toll.”',
         responses: ['Leave.'],
       };
     }
-    if (stats.gold >= 5) {
+    const hasHeart = inventory.some((it) => it.id === 'rootweaver_heart');
+    const q = questStatus('rootweaver_favor');
+    if (q === 'active') {
+      if (hasHeart) {
+        return {
+          line: 'The Chief’s eyes fix on the dark, dripping thing in your pack. “...you actually did it. A rootweaver’s heart. Hand it here and the camp’s yours to cross — I’m even good for a little gold.”',
+          responses: ['Hand over the heart.', 'Draw steel.'],
+          responseEffects: [{ turnInHeart: true }, { drawSteel: true }],
+        };
+      }
+      const responses = [];
+      const effects = [];
+      if (stats.gold >= CAMP_FEE) { responses.push('Pay 5 gold.'); effects.push({ payToll: true }); }
+      responses.push('I’ll be back with the heart.'); effects.push({ leaveCamp: true });
+      responses.push('Draw steel.'); effects.push({ drawSteel: true });
       return {
-        line: 'The Bramblekin Chief spits into the fire. “Five gold to cross my camp — and since you’re already standing in it, your only choices are the coin or the blade. Pay up, or fight your way out. Makes no difference to me.”',
-        responses: ['Pay 5 gold.', 'Fight!'],
+        line: 'The Chief bares a mouthful of thorns. “No heart, no bargain. The rootweavers still choke my woods — go bring me one’s heart, and don’t come whining back till you have it.”',
+        responses,
+        responseEffects: effects,
+      };
+    }
+    if (stats.gold >= CAMP_FEE) {
+      return {
+        line: 'The Bramblekin Chief spits into the fire. “Five gold to cross my camp — and since you’re already standing in it, your choices are the coin or the blade. Pay up, or draw steel. Makes no difference to me.”',
+        responses: ['Pay 5 gold.', 'Draw steel.'],
         responseEffects: [{ payToll: true }, { drawSteel: true }],
       };
     }
     return {
-      line: 'The Chief eyes your empty purse and grins, all thorns. “No coin? In my camp, that leaves exactly one way past me — and it’s got a lot more bleeding involved.”',
-      responses: ['Fight!'],
-      responseEffects: [{ drawSteel: true }],
+      line: 'The Chief eyes your empty purse and grins, all thorns. “No coin? Then earn your way. Rootweavers have grown thick in these woods — bring me the heart of one and you may pass, with a little gold besides. Or we can settle this the bloody way.”',
+      responses: ['Accept the favor.', 'Refuse. (Draw steel)'],
+      responseEffects: [{ acceptFavor: true }, { drawSteel: true }],
     };
   }
 
-  // Refusing the Chief (or drawing steel) pits the player against the Chief
-  // plus three guards, per Danny's "Chief + 2–3 nearby" — the guards are all
-  // identical `bramblekin` enemies, so this is just the id list.
-  function campBattleFoes() {
-    return ['bramblekin_chief', 'bramblekin', 'bramblekin', 'bramblekin'];
-  }
-
   // Entry confrontation, fired by world.pendingGate when the player pushes
-  // against the sealed camp boundary from OUTSIDE. Agreeing lets them in — the
-  // player is teleported to the gate's inside point (the guard "steps aside"
-  // and re-stations behind them, world.js's membrane then flips to can't-leave)
-  // and campEntered is set. Declining just closes; the membrane keeps them out.
+  // against the sealed camp boundary from OUTSIDE (only while the camp isn't
+  // yet hostile — once it is, the sentries just attack, no dialog). Three ways
+  // through: see the Chief (teleport in past the guard, then his dialog opens
+  // straight away), fight the guard (camp turns hostile, one-on-one), or leave
+  // (the guard shrugs you off and the membrane keeps you out). `parted` guards
+  // against the index remap after the parting line is swapped in.
   function openGateConfrontation(gateId) {
     const gate = world.scene.camp?.gates.find((g) => g.id === gateId);
+    const sentry = world.npcs.find((n) => n.sentry && n.gate === gateId && !n.defeated)
+      || world.npcs.find((n) => n.bramblekin && !n.defeated);
     const view = {
       id: 'bramblekin', name: 'Bramblekin', role: '',
       portrait: 'assets/images/Bramblekin.png',
       dialog: {
-        line: 'A Bramblekin guard plants itself in your path, thorny arms crossed. “Far enough. You want through this camp, you see the chief and you pay his toll — those are the terms, and there’s no strolling past me without them. Well? In or out?”',
-        responses: ['Take me to the chief.', 'Not now. (Leave)'],
+        line: 'A Bramblekin guard plants itself in your path, thorny arms crossed. “Far enough. Nobody crosses this camp without squaring up with the chief — so it’s in to see him, steel if you’d rather, or turn around. Which is it?”',
+        responses: ['Take me to the chief.', 'Fight the guard.', 'Leave.'],
       },
     };
+    let parted = false;
     ui.openDialog(view, null, (v, index) => {
+      if (parted) return; // the parting line's only response just closes
       if (index === 0) {
         campEntered = true;
+        campEntryGate = gateId;
         if (gate?.inside) { world.player.x = gate.inside.x; world.player.y = gate.inside.y; }
+        // The chief's dialog begins the moment you're brought inside.
+        setTimeout(() => {
+          const chief = world.npcs.find((n) => n.id === 'bramblekin_chief');
+          if (chief) openNpcDialog(chief);
+        }, 0);
+        return;
       }
-      // index 1 (Leave): the membrane keeps them out; free to walk away.
+      if (index === 1) {
+        if (sentry) fightCampMember(sentry.id);
+        return;
+      }
+      // Leave — the guard waves you off; the membrane keeps you outside.
+      parted = true;
+      ui.updateDialogContent({
+        line: 'The guard snorts and steps back. “Suit yourself. Mind you don’t wander back this way without coin.”',
+        responses: ['Leave.'],
+      });
+      return true;
     });
   }
 
@@ -703,10 +816,18 @@ async function boot() {
     ui.openDialog(view, null, () => {});
   }
 
-  // A hidden Rootweaver ambush sprang — start the fight; winning clears it so
-  // it won't re-trigger (world.js marks `defeated`).
+  // A hidden Rootweaver ambush sprang — start the fight. Winning clears it for
+  // good; fleeing shoves the player back down the path to the ambush's
+  // `retreat` point (far enough that pressing on walks them right back into it,
+  // 2026-07-17).
   function startAmbush(ambush) {
-    startBattle(ambush.enemies, (result) => { if (result === 'victory') ambush.defeated = true; });
+    startBattle(ambush.enemies, (result) => {
+      if (result === 'victory') ambush.defeated = true;
+      else if (result === 'fled' && ambush.retreat) {
+        world.player.x = ambush.retreat.x;
+        world.player.y = ambush.retreat.y;
+      }
+    });
   }
 
   // ---- Vendor shop (2026-07-12, reworked into an in-dialog grid 2026-07-15) ----
@@ -883,6 +1004,7 @@ async function boot() {
     order: [],   // this round's turn queue (mixed 'player' sentinel objects + enemy refs)
     turnPos: 0,
     onEnd: null, // (result) => void, called once the battle is fully resolved
+    ensnared: false, // set once a rootweaver's first-flee snare has fired this battle
   };
 
   function aliveEnemies() {
@@ -927,6 +1049,7 @@ async function boot() {
     battleState.onEnd = onEnd || null;
     battleState.order = rollRoundOrder();
     battleState.turnPos = 0;
+    battleState.ensnared = false;
     pendingAttackSlot = null;
     ui.openBattle({
       enemies: battleState.enemies,
@@ -1076,10 +1199,25 @@ async function boot() {
     runQueue();
   }
 
-  // Always succeeds — no precedent yet for a failable flee, and this keeps
-  // early testing/iteration friction-free. Revisit if a real difficulty
-  // curve calls for it later.
+  // Flee. Normally succeeds outright. But a rootweaver's roots snare you on the
+  // FIRST flee attempt (2026-07-17): that attempt fails, the rootweaver gets a
+  // free extra attack, and control returns to you to fight or flee again — the
+  // second attempt gets away (and the ambush's onEnd shoves you back down the
+  // path). `ensnared` is per-battle so the snare only bites once.
   function playerFlee() {
+    const snarer = battleState.enemies.find((e) => e.health > 0 && ENEMIES[e.id]?.ensnare);
+    if (snarer && !battleState.ensnared) {
+      battleState.ensnared = true;
+      ui.setBattleMessage('Roots erupt from the earth and snare your legs — you can’t escape this round!');
+      setTimeout(() => {
+        if (!battleState.active) return;
+        resolveEnemyTurn(snarer);
+        ui.renderBattleEnemies(battleState.enemies);
+        if (checkBattleEnd()) return; // the snare's free hit could down you
+        showPlayerActions(); // your move again: fight or flee
+      }, ENEMY_TURN_DELAY_MS);
+      return;
+    }
     ui.setBattleMessage('You flee the battle!');
     endBattle('fled');
   }
@@ -1107,7 +1245,26 @@ async function boot() {
       return;
     }
     ui.closeBattle();
-    if (result === 'victory') ui.toast('Victory! Your foes are defeated.');
+    if (result === 'victory') {
+      // Loot: grant every defeated enemy's `drops` (item + gold), folding what
+      // was taken into the victory banner so it doesn't fight the toast for the
+      // top-of-screen slot. (Rootweaver: a heart + 5–10 gold.)
+      let bonus = '';
+      for (const e of battleState.enemies) {
+        const def = ENEMIES[e.id];
+        if (!def?.drops) continue;
+        if (def.drops.item && ITEMS[def.drops.item]) {
+          addItem(def.drops.item, 1, true);
+          bonus += ` You claim a ${ITEMS[def.drops.item].name}.`;
+        }
+        if (def.drops.gold) {
+          const g = randInt(def.drops.gold.min, def.drops.gold.max);
+          addGold(g);
+          bonus += ` +${g} gold.`;
+        }
+      }
+      ui.toast(`Victory! Your foes are defeated.${bonus}`);
+    }
     if (onEnd) onEnd(result);
   }
 
@@ -1299,9 +1456,12 @@ async function boot() {
 
     const locked = ui.isDialogOpen() || ui.isAnyPanelOpen() || ui.isBattleOpen() || ui.isGameOverOpen() || fishing || !state.started;
     // Camp membrane state (no-op in scenes without a camp): sealed until the
-    // toll's paid; campEntered flips the seal from keep-out to keep-in.
-    world.campSealed = !campTollPaid;
+    // player has passage (paid this visit OR did the Chief's favor) — and never
+    // sealed once the camp's hostile, since then the guards attack rather than
+    // wall you off. campEntered flips the seal from keep-out to keep-in.
+    world.campSealed = !(campTollPaid || campQuestDone || campHostile);
     world.campEntered = campEntered;
+    world.campHostile = campHostile;
     world.update(dt, input, locked);
     world.render();
 
@@ -1332,6 +1492,17 @@ async function boot() {
     } else if (world.pendingLeave) {
       world.pendingLeave = null;
       openLeaveConfrontation();
+    }
+    // Hostile-camp aggro: a Bramblekin got within striking range and lunges —
+    // start a one-on-one fight with it (it's the live world npc, so marking it
+    // defeated on victory sticks).
+    if (world.pendingAggro) {
+      const foe = world.pendingAggro;
+      world.pendingAggro = null;
+      const enemyId = foe.id === 'bramblekin_chief' ? 'bramblekin_chief' : 'bramblekin';
+      startBattle([enemyId], (result) => {
+        if (result === 'victory') { foe.defeated = true; campTollPaid = true; }
+      });
     }
     if (world.pendingAmbush) {
       const a = world.pendingAmbush;

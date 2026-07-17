@@ -62,5 +62,11 @@ export default {
     defense: 3,
     speed: 9,
     damage: { min: 2, max: 8 },
+    // Loot on death (2026-07-17): the heart (the Bramblekin Chief's proof for
+    // safe passage) + 5–10 gold. Granted in main.js's endBattle('victory') for
+    // any enemy carrying a `drops`. `ensnare: true` makes the first flee
+    // attempt against it fail (see main.js's playerFlee).
+    drops: { item: 'rootweaver_heart', gold: { min: 5, max: 10 } },
+    ensnare: true,
   },
 };

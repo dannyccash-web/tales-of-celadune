@@ -20,4 +20,9 @@ export default {
     name: 'The Moonscale Trout',
     description: 'Darius lent you his rod to land the rare Moonscale Trout. You’ll want bait — the general store sells it.',
   },
+  rootweaver_favor: {
+    id: 'rootweaver_favor',
+    name: 'The Chief’s Bargain',
+    description: 'The Bramblekin Chief will grant safe passage through his camp in exchange for the heart of a rootweaver from the surrounding woods.',
+  },
 };

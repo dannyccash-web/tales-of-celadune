@@ -211,4 +211,13 @@ export default {
     description: 'A rare, silver-scaled trout that rises only under moonlight. Darius would pay dearly for this.',
     price: 20,
   },
+  // Dropped by a slain Rootweaver (2026-07-17). The Bramblekin Chief wants one
+  // as proof for safe passage through his camp. A quest item — can't be sold.
+  rootweaver_heart: {
+    id: 'rootweaver_heart',
+    name: 'Rootweaver Heart',
+    image: 'assets/images/rootweaver_heart.png',
+    description: 'The dense, still-warm heartwood of a slain rootweaver. The Bramblekin Chief wanted proof of the deed.',
+    questItem: true,
+  },
 };

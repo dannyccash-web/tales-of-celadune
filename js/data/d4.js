@@ -347,18 +347,27 @@ export default {
   // sentries step to their `aside` spot so the player comes and goes freely.
   camp: {
     region: { x: 1150, y: 1290, w: 640, h: 480 },
+    // `inside`: teleport past the sentry when the player agrees to see the
+    // Chief. `aside`: where the sentry steps on peaceful passage (paid / quest
+    // done). `outside`: just OUTSIDE the sealed camp — where the player is set
+    // down after accepting the Chief's rootweaver favor (2026-07-17), so they
+    // leave to go hunt without being stuck inside the membrane.
     gates: [
-      { id: 'north', x: 1580, y: 1290, r: 110, inside: { x: 1580, y: 1375 }, aside: { x: 1620, y: 1370 } },
-      { id: 'west', x: 1150, y: 1340, r: 110, inside: { x: 1230, y: 1360 }, aside: { x: 1150, y: 1600 } },
+      { id: 'north', x: 1580, y: 1290, r: 110, inside: { x: 1580, y: 1375 }, aside: { x: 1620, y: 1370 }, outside: { x: 1580, y: 1250 } },
+      { id: 'west', x: 1150, y: 1340, r: 110, inside: { x: 1230, y: 1360 }, aside: { x: 1150, y: 1600 }, outside: { x: 1110, y: 1340 } },
     ],
   },
 
   // Hidden Rootweaver ambushes on the two shortcuts that skirt the camp — walk
   // within range and the fight starts on its own (world.js's checkAmbushes /
   // main.js's pendingAmbush). Rootweavers are a "flee for now" wall.
+  // `retreat`: where the player is pushed back to if they FLEE the fight —
+  // far enough back down the path (2026-07-17) that pressing on again walks
+  // them right back into the rootweaver (each is >range*1.6 away, so the
+  // ambush re-arms). Killing the rootweaver clears it for good.
   ambushes: [
-    { id: 'rootweaver_north', x: 1337, y: 1100, range: 72, enemies: ['rootweaver'] },
-    { id: 'rootweaver_west', x: 757, y: 908, range: 72, enemies: ['rootweaver'] },
+    { id: 'rootweaver_north', x: 1337, y: 1100, range: 72, enemies: ['rootweaver'], retreat: { x: 1220, y: 1180 } },
+    { id: 'rootweaver_west', x: 757, y: 908, range: 72, enemies: ['rootweaver'], retreat: { x: 450, y: 940 } },
   ],
 
   // West back to the D3 Farm (band matches D3's east exit, so walking off
