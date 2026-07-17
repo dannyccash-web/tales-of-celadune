@@ -750,5 +750,12 @@ export class World {
       const range = it.range ?? INTERACT_RANGE;
       if (Math.hypot(it.x - p.x, it.y - p.y) < range) this.drawLabel(it.label, it.x, it.y);
     }
+
+    // "Go Fishing" prompt over the water when the player's on the shore (not
+    // while a cast is already in progress).
+    if (!this.fishing) {
+      const spot = this.waterNearby();
+      if (spot) this.drawLabel('Go Fishing', spot.cast.x, spot.cast.y);
+    }
   }
 }
