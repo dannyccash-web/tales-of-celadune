@@ -29,14 +29,11 @@ export default {
   // normal arrival comes through the scene-transition system).
   spawn: { x: 60, y: 940 },
 
-  // Fishable water (2026-07-16): the winding river, covered by a handful of
-  // reaches from its top-right entry down through the middle to the SW corner.
-  water: [
-    { x: 700, y: 130, w: 560, h: 180 },
-    { x: 500, y: 280, w: 320, h: 340 },
-    { x: 280, y: 560, w: 340, h: 340 },
-    { x: 80, y: 880, w: 380, h: 520 },
-    { x: 40, y: 1380, w: 400, h: 500 },
+  // Fishing spots (2026-07-17): specific points on the river, not the whole
+  // waterway. Player fishes within 180px; label + ripples center here.
+  fishingSpots: [
+    { x: 408, y: 1611 },
+    { x: 1398, y: 344 },
   ],
 
   obstacles: [

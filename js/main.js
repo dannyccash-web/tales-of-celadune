@@ -1184,9 +1184,9 @@ async function boot() {
       return;
     }
 
-    // On the shore of a fishable water body — cast a line (needs rod + bait).
-    const spot = world.waterNearby();
-    if (spot) startFishing(spot.cast);
+    // Near a fishing spot — cast a line (needs rod + bait).
+    const spot = world.fishingSpotNearby();
+    if (spot) startFishing(spot);
   }
 
   // Weighted catch table (2026-07-16, Danny's odds).
@@ -1202,19 +1202,20 @@ async function boot() {
   // catch (big picture + banner). `fishing` locks player input for the cast.
   let fishing = false;
   const FISH_MS = 10000;
-  function startFishing(cast) {
+  function startFishing(spot) {
     if (fishing) return;
     if (!inventory.some((it) => it.id === 'fishing_rod')) { audio.sfx(audio.SFX.locked); ui.toast('You need a fishing rod to fish here.'); return; }
     if (!inventory.some((it) => it.id === 'fishing_bait')) { audio.sfx(audio.SFX.locked); ui.toast('You’ve no bait — the general store sells some.'); return; }
     fishing = true;
     removeItem('fishing_bait', 1, true);
     audio.sfx(audio.SFX.cast);
-    world.fishing = { x: cast.x, y: cast.y };
+    world.fishing = { x: spot.x, y: spot.y };
     setTimeout(() => {
       const id = rollCatch();
       world.fishing = null;
       fishing = false;
       addItem(id, 1, true); // silent; the reveal + banner announce it
+      audio.sfx(audio.SFX.catch);
       ui.showCatch(ITEMS[id]);
     }, FISH_MS);
   }

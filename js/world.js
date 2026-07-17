@@ -73,10 +73,13 @@ export class World {
     // actually won — see battleNearDoor().
     this.battles = (scene.battles || []).map((b) => ({ ...b, defeated: false }));
 
-    // Fishable water bodies (2026-07-16) — rects the player casts into from
-    // the shore (see waterNearby()). fishing = { x, y } cast point while a
-    // cast is in progress (main.js sets/clears it), drawn as ripples.
-    this.water = (scene.water || []).map((wz) => ({ ...wz }));
+    // Fishing spots (2026-07-17) — specific points the player can fish from,
+    // not every body of water. Each is { x, y }; the "Go Fishing" label, the
+    // ripple animation, and the interaction all center on this point. The
+    // player can fish while within FISH_SPOT_RANGE of it (see
+    // fishingSpotNearby()). fishing = { x, y } while a cast is in progress
+    // (main.js sets/clears it), drawn as ripples at that same spot.
+    this.fishingSpots = (scene.fishingSpots || []).map((s) => ({ ...s }));
     this.fishing = null;
 
     this.cameraY = 0;
@@ -209,29 +212,17 @@ export class World {
     return best;
   }
 
-  // A fishable water body the player is standing on the shore of, plus the
-  // point to cast toward (just inside the water). null if not near any water.
-  // The player stands OUTSIDE the water (it's impassable), within SHORE_RANGE
-  // of its edge.
-  waterNearby() {
-    const SHORE_RANGE = 85;
-    for (const wz of this.water) {
-      const nx = Math.max(wz.x, Math.min(this.player.x, wz.x + wz.w)); // nearest edge point
-      const ny = Math.max(wz.y, Math.min(this.player.y, wz.y + wz.h));
-      const d = Math.hypot(nx - this.player.x, ny - this.player.y);
-      if (d < SHORE_RANGE) {
-        // Cast a bit further past the nearest edge, into the water, and clamp
-        // inside the rect so ripples always land on water.
-        const dx = nx - this.player.x, dy = ny - this.player.y;
-        const len = Math.hypot(dx, dy) || 1;
-        let cx = nx + (dx / len) * 45;
-        let cy = ny + (dy / len) * 45;
-        cx = Math.max(wz.x + 12, Math.min(cx, wz.x + wz.w - 12));
-        cy = Math.max(wz.y + 12, Math.min(cy, wz.y + wz.h - 12));
-        return { zone: wz, cast: { x: cx, y: cy } };
-      }
+  // The nearest fishing spot the player is close enough to fish from (within
+  // FISH_SPOT_RANGE), or null. The returned spot's { x, y } is where the label
+  // shows, where ripples animate, and where the line is cast.
+  fishingSpotNearby() {
+    const FISH_SPOT_RANGE = 180;
+    let best = null, bestDist = FISH_SPOT_RANGE;
+    for (const s of this.fishingSpots) {
+      const d = Math.hypot(s.x - this.player.x, s.y - this.player.y);
+      if (d < bestDist) { best = s; bestDist = d; }
     }
-    return null;
+    return best;
   }
 
   // Everything blocking a body at (x, y). `self` is excluded; player and all
@@ -507,10 +498,16 @@ export class World {
         npc.alpha = 0;
         npc.fading = 'in'; // advanceRoutine fires when the fade completes
         break;
-      case 'wait':
+      case 'wait': {
         npc.timer += dt;
-        if (npc.timer >= step.s) this.advanceRoutine(npc);
+        // Cap how long an NPC stands still *in the open* at 5s (2026-07-17,
+        // Danny) — a frozen figure out in the world reads as dead. Waits taken
+        // while home (invisible, indoors) keep their full duration so the
+        // town's staggered come-and-go rhythm is preserved.
+        const limit = npc.atHome ? step.s : Math.min(step.s, 5);
+        if (npc.timer >= limit) this.advanceRoutine(npc);
         break;
+      }
       case 'goto':
         if (this.walkToward(npc, step, dt)) this.advanceRoutine(npc);
         break;
@@ -751,11 +748,11 @@ export class World {
       if (Math.hypot(it.x - p.x, it.y - p.y) < range) this.drawLabel(it.label, it.x, it.y);
     }
 
-    // "Go Fishing" prompt over the water when the player's on the shore (not
-    // while a cast is already in progress).
+    // "Go Fishing" prompt above a fishing spot when the player's close enough
+    // (not while a cast is already in progress).
     if (!this.fishing) {
-      const spot = this.waterNearby();
-      if (spot) this.drawLabel('Go Fishing', spot.cast.x, spot.cast.y);
+      const spot = this.fishingSpotNearby();
+      if (spot) this.drawLabel('Go Fishing', spot.x, spot.y);
     }
   }
 }
