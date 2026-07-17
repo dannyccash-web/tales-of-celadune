@@ -150,6 +150,7 @@ function startQuest(id) {
   quests.push({ id, status: 'active' });
   ui.updateQuestsPanel(quests, QUESTS);
   ui.showQuestAdded(def.name);
+  audio.sfx(audio.SFX.questAdded);
 }
 
 // The one way a quest resolves to 'completed' (2026-07-10, first real user:
@@ -161,6 +162,7 @@ function completeQuest(id) {
   q.status = 'completed';
   ui.updateQuestsPanel(quests, QUESTS);
   ui.showQuestCompleted(QUESTS[id]?.name || id);
+  audio.sfx(audio.SFX.questComplete);
 }
 
 function questStatus(id) {
@@ -418,6 +420,19 @@ async function boot() {
       });
       return true;
     }
+    // Hand Darius the Moonscale Trout: he pays 20 gold (double its market
+    // value) and the fish quest completes.
+    if (effect.giveDariusFish) {
+      removeItem('rare_fish', 1, true);
+      ui.showGaveItem(ITEMS.rare_fish);
+      addGold(20);
+      completeQuest('rare_fish');
+      ui.updateDialogContent({
+        line: '“Would you look at that — a Moonscale, big as my forearm! Here, twenty gold, and cheap at the price. You’ve made an old fisherman’s year.”',
+        responses: ['Leave.'],
+      });
+      return true;
+    }
     // ...or pocket it and claim the tavern stiffed you. Quest completes either
     // way — Mirelle's none the wiser.
     if (effect.lieToMirelle) {
@@ -606,6 +621,7 @@ async function boot() {
   const QUEST_READY = {
     barn_rat: () => !!world.battles.find((b) => b.id === 'old_barn_rats')?.defeated,
     vegetable_delivery: () => vegetableDeliveredToTavern,
+    rare_fish: () => inventory.some((it) => it.id === 'rare_fish'),
   };
   const isQuestReady = (id) => QUEST_READY[id]?.() ?? false;
 
@@ -1165,7 +1181,42 @@ async function boot() {
       startBattle(trigger.enemies, (result) => {
         if (result === 'victory') trigger.defeated = true;
       });
+      return;
     }
+
+    // On the shore of a fishable water body — cast a line (needs rod + bait).
+    const spot = world.waterNearby();
+    if (spot) startFishing(spot.cast);
+  }
+
+  // Weighted catch table (2026-07-16, Danny's odds).
+  function rollCatch() {
+    const r = Math.random() * 100;
+    if (r < 50) return 'trout';       // 50%
+    if (r < 80) return 'bluegill';    // 30%
+    if (r < 90) return 'old_boot';    // 10%
+    return 'rare_fish';               // 10% (Moonscale Trout)
+  }
+
+  // Cast a line: spend one bait, splash the water, wait 10s, then reveal the
+  // catch (big picture + banner). `fishing` locks player input for the cast.
+  let fishing = false;
+  const FISH_MS = 10000;
+  function startFishing(cast) {
+    if (fishing) return;
+    if (!inventory.some((it) => it.id === 'fishing_rod')) { audio.sfx(audio.SFX.locked); ui.toast('You need a fishing rod to fish here.'); return; }
+    if (!inventory.some((it) => it.id === 'fishing_bait')) { audio.sfx(audio.SFX.locked); ui.toast('You’ve no bait — the general store sells some.'); return; }
+    fishing = true;
+    removeItem('fishing_bait', 1, true);
+    audio.sfx(audio.SFX.cast);
+    world.fishing = { x: cast.x, y: cast.y };
+    setTimeout(() => {
+      const id = rollCatch();
+      world.fishing = null;
+      fishing = false;
+      addItem(id, 1, true); // silent; the reveal + banner announce it
+      ui.showCatch(ITEMS[id]);
+    }, FISH_MS);
   }
 
   window.addEventListener('keydown', (e) => {
@@ -1179,6 +1230,9 @@ async function boot() {
       if (['Enter', ' '].includes(e.key)) { e.preventDefault(); respawnAfterDefeat(); }
       return;
     }
+    // Mid-cast: the player is committed for the 10s (movement's already locked
+    // in the frame loop); swallow keys so nothing else fires.
+    if (fishing) { if (KEYMAP[e.key] || [' ', 'i', 'I', 'm', 'M'].includes(e.key)) e.preventDefault(); return; }
     if (ui.isBattleOpen()) {
       if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' ', 'Escape'].includes(e.key)) {
         e.preventDefault();
@@ -1221,7 +1275,7 @@ async function boot() {
     const dt = Math.min((now - last) / 1000, 0.05);
     last = now;
 
-    const locked = ui.isDialogOpen() || ui.isAnyPanelOpen() || ui.isBattleOpen() || ui.isGameOverOpen() || !state.started;
+    const locked = ui.isDialogOpen() || ui.isAnyPanelOpen() || ui.isBattleOpen() || ui.isGameOverOpen() || fishing || !state.started;
     // Camp membrane state (no-op in scenes without a camp): sealed until the
     // toll's paid; campEntered flips the seal from keep-out to keep-in.
     world.campSealed = !campTollPaid;

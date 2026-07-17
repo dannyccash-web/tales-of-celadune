@@ -19,6 +19,9 @@ export const SFX = {
   hurt: 'assets/audio/freesound_community-male_hurt7-48124.mp3',
   item: 'assets/audio/freesound_community-open-bag-sound-39216.mp3',
   locked: 'assets/audio/yodguard-locked-door-4-540180.mp3',
+  questAdded: 'assets/audio/universfield-logo-reveal-199582.mp3',
+  questComplete: 'assets/audio/tithuh-successful-accepted-reward-523721.mp3',
+  cast: 'assets/audio/spinopel-fishing-rod-whoosh-411640.mp3',
 };
 
 // One "voice" clip per NPC, played once when their dialogue window opens —

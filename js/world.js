@@ -73,6 +73,12 @@ export class World {
     // actually won — see battleNearDoor().
     this.battles = (scene.battles || []).map((b) => ({ ...b, defeated: false }));
 
+    // Fishable water bodies (2026-07-16) — rects the player casts into from
+    // the shore (see waterNearby()). fishing = { x, y } cast point while a
+    // cast is in progress (main.js sets/clears it), drawn as ripples.
+    this.water = (scene.water || []).map((wz) => ({ ...wz }));
+    this.fishing = null;
+
     this.cameraY = 0;
     this.interior = null; // interior image while a home dialog is open
     // Set when the player pushes on a scene exit (2026-07-10, replaces the
@@ -201,6 +207,31 @@ export class World {
       if (d < bestDist) { best = b; bestDist = d; }
     }
     return best;
+  }
+
+  // A fishable water body the player is standing on the shore of, plus the
+  // point to cast toward (just inside the water). null if not near any water.
+  // The player stands OUTSIDE the water (it's impassable), within SHORE_RANGE
+  // of its edge.
+  waterNearby() {
+    const SHORE_RANGE = 85;
+    for (const wz of this.water) {
+      const nx = Math.max(wz.x, Math.min(this.player.x, wz.x + wz.w)); // nearest edge point
+      const ny = Math.max(wz.y, Math.min(this.player.y, wz.y + wz.h));
+      const d = Math.hypot(nx - this.player.x, ny - this.player.y);
+      if (d < SHORE_RANGE) {
+        // Cast a bit further past the nearest edge, into the water, and clamp
+        // inside the rect so ripples always land on water.
+        const dx = nx - this.player.x, dy = ny - this.player.y;
+        const len = Math.hypot(dx, dy) || 1;
+        let cx = nx + (dx / len) * 45;
+        let cy = ny + (dy / len) * 45;
+        cx = Math.max(wz.x + 12, Math.min(cx, wz.x + wz.w - 12));
+        cy = Math.max(wz.y + 12, Math.min(cy, wz.y + wz.h - 12));
+        return { zone: wz, cast: { x: cx, y: cy } };
+      }
+    }
+    return null;
   }
 
   // Everything blocking a body at (x, y). `self` is excluded; player and all
@@ -600,6 +631,36 @@ export class World {
   // Soft rising campfire smoke: each particle loops through a birth→rise→fade
   // life cycle, offset in phase so the plume looks continuous. Drawn as
   // radial-gradient puffs in world space (scrolls with the camera).
+  // Concentric ripple rings expanding from the cast point on the water
+  // surface, plus a little bobber dot, while a cast is in progress. Flattened
+  // vertically for the top-down water perspective.
+  drawRipples() {
+    const ctx = this.ctx;
+    const sx = this.fishing.x;
+    const sy = this.fishing.y - this.cameraY;
+    if (sy < -60 || sy > VIEW_H + 60) return;
+    ctx.save();
+    const RINGS = 3, PERIOD = 1.7, MAXR = 52;
+    for (let i = 0; i < RINGS; i++) {
+      let f = ((this.time / PERIOD) + i / RINGS) % 1;
+      if (f < 0) f += 1;
+      const r = 5 + f * MAXR;
+      const a = (1 - f) * 0.55;
+      ctx.strokeStyle = `rgba(214,234,242,${a})`;
+      ctx.lineWidth = 2.5 * (1 - f * 0.5);
+      ctx.beginPath();
+      ctx.ellipse(sx, sy, r, r * 0.52, 0, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    // bobber / bait splash at the centre
+    const bob = Math.sin(this.time * 3) * 1.5;
+    ctx.fillStyle = 'rgba(236,244,248,0.8)';
+    ctx.beginPath();
+    ctx.ellipse(sx, sy + bob, 5, 3, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
   drawSmoke(s) {
     const ctx = this.ctx;
     const baseScreenY = s.y - this.cameraY;
@@ -668,6 +729,9 @@ export class World {
 
     // Campfire smoke and other code-drawn effects, above the world/characters
     for (const s of this.smokes) this.drawSmoke(s);
+
+    // Fishing ripples where the bait was cast
+    if (this.fishing) this.drawRipples();
 
     // Name label above the NPC the player could interact with
     const near = this.nearestNpcInRange();

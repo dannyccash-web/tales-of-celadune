@@ -30,6 +30,12 @@ export default {
   // scene-transition system (the east edge, from D3).
   spawn: { x: 900, y: 910 },
 
+  // Fishable water (2026-07-16): the SW pond. Standing on its shore, the
+  // player can cast (needs a rod + bait). world.waterNearby() matches these.
+  water: [
+    { x: 45, y: 1575, w: 400, h: 305 },
+  ],
+
   obstacles: [
     { x: 0, y: 0, w: 810, h: 20 },
     { x: 910, y: 0, w: 1010, h: 40 },
@@ -1022,16 +1028,26 @@ export default {
           null,
         ],
       },
-      // Once the fish quest is going, Darius asks after it instead of re-lending
-      // the rod. (Landing the trout itself is future work — no fishing yet.)
+      // Once the fish quest is going, Darius asks after it; when the player is
+      // actually carrying the Moonscale Trout (readyToComplete — see main.js's
+      // QUEST_READY.rare_fish) he offers to buy it for 20 gold + finishes the
+      // quest.
       dialogByQuestStatus: {
         rare_fish: {
           active: {
-            line: 'Any luck with the Moonscale Trout? Slippery devil — rises only under a clear moon, they say. Get bait off Emeric if you haven’t already.',
+            line: 'Any luck with the Moonscale Trout? Slippery devil — rises only under a clear moon, they say. Get bait off Emeric if you haven’t already, and try any water you come across.',
             responses: ['Still after it.', 'Leave.'],
           },
+          readyToComplete: {
+            line: 'Is that— by the tides, you actually caught it! Let me see that Moonscale. Tell you what, I’ll give you a fair bit more than she’d fetch at market.',
+            responses: ['Hand him the Moonscale Trout.', 'Not yet.'],
+            responseEffects: [
+              { giveDariusFish: true },
+              null,
+            ],
+          },
           completed: {
-            line: 'That trout’s the finest thing to come out of that pond in twenty years. You’ve a gift, friend. Come wet a line with me any time.',
+            line: 'That trout’s the finest thing to come out of that water in twenty years. You’ve a gift, friend. Come wet a line with me any time.',
             responses: ['Leave.'],
           },
         },

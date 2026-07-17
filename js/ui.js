@@ -326,7 +326,7 @@ export function toast(message, ms = 2500) {
 
 // Quest lifecycle events use the same banner, gold-styled as their own beat.
 function showQuestToast(text) {
-  showBanner(text, { ms: 3500, gold: true });
+  showBanner(text, { ms: 4600, gold: true });
 }
 
 export function showQuestAdded(questName) {
@@ -335,6 +335,23 @@ export function showQuestAdded(questName) {
 
 export function showQuestCompleted(questName) {
   showQuestToast(`Quest Completed: ${questName}`);
+}
+
+// Big centred reveal of a fishing catch — a large picture of the item for a
+// few seconds, plus the usual top banner announcing it (2026-07-16).
+let catchTimer = null;
+export function showCatch(itemDef) {
+  $('catch-image').src = itemDef.image;
+  $('catch-image').alt = itemDef.name;
+  $('catch-name').textContent = itemDef.name;
+  const el = $('catch-reveal');
+  el.classList.remove('hidden');
+  el.classList.remove('catch-enter');
+  void el.offsetWidth; // reflow so the drop-in replays
+  el.classList.add('catch-enter');
+  clearTimeout(catchTimer);
+  catchTimer = setTimeout(() => el.classList.add('hidden'), 3800);
+  toast(`You caught: ${itemDef.name}!`);
 }
 
 // ---- Vendor Buy/Sell grid (2026-07-15, expanded 2026-07-16) ----

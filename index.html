@@ -291,6 +291,13 @@
         <div id="toast-inner"><p id="toast-text"></p></div>
       </div>
 
+      <!-- Fishing catch reveal (2026-07-16): a large picture of what you just
+           landed, shown centre-screen for a few seconds (ui.js showCatch). -->
+      <div id="catch-reveal" class="hidden">
+        <div class="catch-frame"><img id="catch-image" src="" alt=""></div>
+        <div id="catch-name"></div>
+      </div>
+
       <!-- Battle (2026-07-08; UI matched to Danny's battle mockup
            2026-07-09): a trapezoid status banner hanging flush from the top
            screen edge (not a plain box — see #battle-status in style.css), a

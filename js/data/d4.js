@@ -29,6 +29,16 @@ export default {
   // normal arrival comes through the scene-transition system).
   spawn: { x: 60, y: 940 },
 
+  // Fishable water (2026-07-16): the winding river, covered by a handful of
+  // reaches from its top-right entry down through the middle to the SW corner.
+  water: [
+    { x: 700, y: 130, w: 560, h: 180 },
+    { x: 500, y: 280, w: 320, h: 340 },
+    { x: 280, y: 560, w: 340, h: 340 },
+    { x: 80, y: 880, w: 380, h: 520 },
+    { x: 40, y: 1380, w: 400, h: 500 },
+  ],
+
   obstacles: [
     { x: 0, y: 0, w: 920, h: 100 },
     { x: 1120, y: 0, w: 800, h: 120 },

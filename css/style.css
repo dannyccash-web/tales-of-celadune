@@ -1379,10 +1379,51 @@ html, body {
   text-align: center;
 }
 
-/* Quest add/complete get the gold heading treatment inside the same banner. */
+/* Quest add/complete get the gold heading treatment inside the same banner,
+   in a larger heading size (2026-07-16, Danny). */
 #toast-text.banner-gold {
   font-family: var(--font-medieval);
+  font-size: 30px;
   color: var(--gold-bright);
+}
+
+/* ---- Fishing catch reveal (2026-07-16) ----
+   Big centred picture of the catch for a few seconds, over a soft vignette. */
+#catch-reveal {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0) 60%);
+  z-index: 16;
+}
+#catch-reveal.catch-enter { animation: catch-pop 0.45s cubic-bezier(0.2, 1.3, 0.5, 1); }
+@keyframes catch-pop {
+  from { transform: scale(0.6); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+.catch-frame {
+  width: 420px;
+  height: 420px;
+  background: rgba(12, 9, 6, 0.55);
+  border: 3px solid;
+  border-image: linear-gradient(180deg, var(--gold-bright), var(--frame-dark)) 1;
+  box-shadow: 0 0 40px 6px rgba(238, 214, 148, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.catch-frame img { max-width: 100%; max-height: 100%; object-fit: contain; }
+#catch-name {
+  font-family: var(--font-medieval);
+  font-size: 48px;
+  color: var(--gold-bright);
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.8);
 }
 
 /* ---- Vendor dialog layout (2026-07-16, per Danny's mockup) ----

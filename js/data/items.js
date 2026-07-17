@@ -179,11 +179,36 @@ export default {
     questItem: false,
     // no price -> can't be sold; it's a quest aid to hang onto
   },
+  // ---- Catch items (2026-07-16) — what a fishing cast can land. Each has a
+  // gold value (via price; vendors buy at half). The Moonscale Trout is both
+  // the rare catch and Darius's quest target: it sells for 10 anywhere, but
+  // Darius pays 20 for it (see main.js's giveDariusFish).
+  trout: {
+    id: 'trout',
+    name: 'Trout',
+    image: 'assets/images/fish_trout.png',
+    description: 'A plump river trout. A fair catch, and worth a few coins.',
+    price: 10,
+  },
+  bluegill: {
+    id: 'bluegill',
+    name: 'Bluegill',
+    image: 'assets/images/fish_bluegill.png',
+    description: 'A small, scrappy bluegill. Not much meat, but it fries up fine.',
+    price: 6,
+  },
+  old_boot: {
+    id: 'old_boot',
+    name: 'Old Boot',
+    image: 'assets/images/old boot.png',
+    description: 'A waterlogged old boot. One careful owner, presumably. Practically worthless.',
+    price: 1,
+  },
   rare_fish: {
     id: 'rare_fish',
     name: 'Moonscale Trout',
-    image: 'assets/images/rare_fish.png',
+    image: 'assets/images/fish_moonscale_trout.png',
     description: 'A rare, silver-scaled trout that rises only under moonlight. Darius would pay dearly for this.',
-    questItem: true,
+    price: 20,
   },
 };
