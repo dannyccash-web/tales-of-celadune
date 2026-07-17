@@ -509,9 +509,15 @@ async function boot() {
     if (action === 'equip') { equipItem(itemId); return; }
     if (action === 'unequip') { unequipItem(def.slot); return; }
     if (action === 'use') {
-      if (def.heal) { ui.toast(usePotion(itemId).message); return; }
+      if (isConsumable(def)) { ui.toast(usePotion(itemId).message); return; }
       ui.toast('Nothing happens... yet.');
     }
+  }
+
+  // An item is "usable" (gets a Use action + the battle Use slot) if it has any
+  // consume-on-use effect: heal (HP), restoreMagic (MP), or vitality (max HP).
+  function isConsumable(def) {
+    return !!(def && (def.heal || def.restoreMagic || def.vitality));
   }
 
   // Shared by the Items-tab "Use" action and the battle Potion action —
@@ -523,14 +529,32 @@ async function boot() {
   // bar, which sits in roughly the same spot.
   function usePotion(itemId) {
     const entry = inventory.find((it) => it.id === itemId);
-    if (!entry || entry.qty < 1) return { ok: false, message: 'You have no potions.' };
+    if (!entry || entry.qty < 1) return { ok: false, message: 'You have none of those.' };
     const def = ITEMS[itemId];
-    const before = stats.health;
-    removeItem(itemId, 1);
-    stats.health = Math.min(stats.healthMax, stats.health + def.heal);
-    ui.updateHud(stats);
-    const healed = stats.health - before;
-    return { ok: true, message: `You drink a ${def.name}. +${healed} health.` };
+    if (def.heal) {
+      const before = stats.health;
+      removeItem(itemId, 1);
+      stats.health = Math.min(stats.healthMax, stats.health + def.heal);
+      ui.updateHud(stats);
+      return { ok: true, message: `You use a ${def.name}. +${stats.health - before} health.` };
+    }
+    if (def.restoreMagic) {
+      const before = stats.magic;
+      removeItem(itemId, 1);
+      stats.magic = Math.min(stats.magicMax, stats.magic + def.restoreMagic);
+      ui.updateHud(stats);
+      return { ok: true, message: `You drink a ${def.name}. +${stats.magic - before} magic.` };
+    }
+    if (def.vitality) {
+      // Permanent max-HP boost — the new capacity fills in immediately so the
+      // player feels it (the HUD bar also widens: it scales with healthMax).
+      removeItem(itemId, 1);
+      stats.healthMax += def.vitality;
+      stats.health += def.vitality;
+      ui.updateHud(stats);
+      return { ok: true, message: `You drink a ${def.name}. Maximum health increased by ${def.vitality}!` };
+    }
+    return { ok: false, message: 'Nothing happens.' };
   }
 
   // Builds the dialog "view" for an unoccupied building (a place, not an
@@ -724,8 +748,18 @@ async function boot() {
     // mutating its gold wouldn't stick. Resolve the live world instance by id
     // so a vendor's purse actually changes across the session.
     const npc = world.npcs.find((n) => n.id === npcArg.id) || npcArg;
-    const buildBuy = () => (npc.stock || [])
-      .map((id) => ITEMS[id]).filter((d) => d && d.price != null)
+    // A stock entry is either an id string (infinite supply) or { id, qty }
+    // (limited — e.g. Emeric's 3 tins of bait). Limited counts live on the live
+    // npc (npc.stockLeft) so they deplete as the player buys and persist for
+    // the session.
+    const stockList = (npc.stock || []).map((s) => (typeof s === 'string' ? { id: s, qty: Infinity } : s));
+    npc.stockLeft = npc.stockLeft || {};
+    for (const s of stockList) {
+      if (s.qty !== Infinity && npc.stockLeft[s.id] === undefined) npc.stockLeft[s.id] = s.qty;
+    }
+    const buildBuy = () => stockList
+      .filter((s) => s.qty === Infinity || (npc.stockLeft[s.id] ?? 0) > 0)
+      .map((s) => ITEMS[s.id]).filter((d) => d && d.price != null)
       .map((d) => ({ id: d.id, name: d.name, image: d.image, price: d.price }));
     const buildSell = () => inventory
       .map((e) => ({ e, d: ITEMS[e.id] }))
@@ -751,6 +785,7 @@ async function boot() {
           if (!d || stats.gold < d.price) { audio.sfx(audio.SFX.locked); ui.toast('You can’t afford that.'); return; }
           spendGold(d.price);
           npc.gold = (npc.gold || 0) + d.price;
+          if (npc.stockLeft[id] !== undefined) npc.stockLeft[id] -= 1; // deplete limited stock
           addItem(id, 1, true);
           ui.showReceivedItem(d);
         } else {

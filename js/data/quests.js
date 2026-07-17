@@ -15,4 +15,9 @@ export default {
     name: 'Rat in the Barn',
     description: 'Brenna asked you to clear the blight rat out of the Old Barn.',
   },
+  rare_fish: {
+    id: 'rare_fish',
+    name: 'The Moonscale Trout',
+    description: 'Darius lent you his rod to land the rare Moonscale Trout. You’ll want bait — the general store sells it.',
+  },
 };

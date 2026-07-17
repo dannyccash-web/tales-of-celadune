@@ -929,10 +929,11 @@ function buildItemTile(entry, def, equipment) {
   tile.dataset.quest = def.questItem ? '1' : '';
   tile.dataset.slot = def.slot || '';
   tile.dataset.equipped = equipped ? '1' : '';
-  // Consumables (def.heal) get a dedicated "Use" popout row — their primary
-  // action is Equip/Unequip (battle Use slot, 2026-07-10), so out-of-battle
-  // drinking needs its own entry. Same dataset-only pattern as quest/slot.
-  tile.dataset.usable = def.heal ? '1' : '';
+  // Consumables (heal / restoreMagic / vitality) get a dedicated "Use" popout
+  // row — their primary action is Equip/Unequip (battle Use slot, 2026-07-10),
+  // so out-of-battle use needs its own entry. Same dataset-only pattern as
+  // quest/slot.
+  tile.dataset.usable = (def.heal || def.restoreMagic || def.vitality) ? '1' : '';
   tile.classList.toggle('equipped', equipped);
 
   const frame = document.createElement('div');
