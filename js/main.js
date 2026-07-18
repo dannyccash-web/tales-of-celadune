@@ -319,7 +319,9 @@ async function boot() {
   // Draw steel on a single camp member (a gate guard, a wanderer via aggro, or
   // the Chief). Turns the whole camp hostile (every Bramblekin now attacks on
   // sight) and starts a one-on-one fight with just that NPC — winning marks it
-  // slain (gone for good, on the cached World) and counts as forcing passage.
+  // slain (gone for good, on the cached World). Fighting does NOT buy passage:
+  // it just makes the camp hostile, and a hostile camp's membrane is open, so
+  // the player fights or dodges their way through rather than being waved past.
   // Resolves the LIVE world npc by id (the dialog gets a shallow copy, so
   // mutating that wouldn't stick). Deferred a tick so the dialog closes first.
   function fightCampMember(npcId) {
@@ -327,7 +329,7 @@ async function boot() {
     const live = world.npcs.find((n) => n.id === npcId);
     const enemyId = npcId === 'bramblekin_chief' ? 'bramblekin_chief' : 'bramblekin';
     setTimeout(() => startBattle([enemyId], (result) => {
-      if (result === 'victory' && live) { live.defeated = true; campTollPaid = true; }
+      if (result === 'victory' && live) live.defeated = true;
     }), 0);
   }
 
@@ -1501,7 +1503,7 @@ async function boot() {
       world.pendingAggro = null;
       const enemyId = foe.id === 'bramblekin_chief' ? 'bramblekin_chief' : 'bramblekin';
       startBattle([enemyId], (result) => {
-        if (result === 'victory') { foe.defeated = true; campTollPaid = true; }
+        if (result === 'victory') foe.defeated = true;
       });
     }
     if (world.pendingAmbush) {
