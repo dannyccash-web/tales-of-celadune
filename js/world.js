@@ -485,11 +485,16 @@ export class World {
   }
 
   // Steer one tick toward a target; returns true when the NPC has arrived.
-  walkToward(npc, target, dt) {
+  // `arriveDist` is how close counts as "arrived" (default 4px). goHome passes
+  // a larger tolerance (2026-07-19): a walkout beside an on-wall door can sit
+  // right against the building edge, where the 36px body can't inch to within
+  // 4px and instead jitters in place forever — a bigger threshold lets the NPC
+  // settle at the doorstep and fade inside.
+  walkToward(npc, target, dt, arriveDist = 4) {
     const dx = target.x - npc.x;
     const dy = target.y - npc.y;
     const dist = Math.hypot(dx, dy);
-    if (dist < 4) return true;
+    if (dist < arriveDist) return true;
 
     const moved = this.steer(npc, Math.atan2(dy, dx), Math.min(npc.speed * dt, dist));
     if (moved) {
@@ -544,13 +549,27 @@ export class World {
       case 'goto':
         if (this.walkToward(npc, step, dt)) this.advanceRoutine(npc);
         break;
-      case 'goHome':
-        // Walk to the walkout spot beside the door (reachable), then fade in.
-        if (this.walkToward(npc, npc.home.approach || npc.home.door, dt)) {
+      case 'goHome': {
+        // Walk to the walkout spot beside the door, then fade in. Arrival is
+        // either within 20px, or a PROGRESS watchdog (2026-07-19): track the
+        // closest we've come this trip, and if we stop getting nearer for 3.5s
+        // we're oscillating against a wall/pinch — give up and go inside. The
+        // local steering can occasionally fail to close the last stretch into a
+        // tight walkout and would otherwise circle forever; this caps any
+        // near-home spin at ~3.5s no matter the distance, so an NPC always ends
+        // up home instead of pinwheeling on the doorstep.
+        const target = npc.home.approach || npc.home.door;
+        const arrived = this.walkToward(npc, target, dt, 20);
+        const d = Math.hypot(target.x - npc.x, target.y - npc.y);
+        if (npc._homeBest === undefined || d < npc._homeBest - 2) { npc._homeBest = d; npc._homeNoProg = 0; }
+        else { npc._homeNoProg = (npc._homeNoProg || 0) + dt; }
+        if (arrived || npc._homeNoProg > 3.5) {
           audio.sfx(audio.SFX.door);
           npc.fading = 'out'; // atHome + advance when the fade completes
+          npc._homeBest = undefined; npc._homeNoProg = 0;
         }
         break;
+      }
       default:
         this.advanceRoutine(npc);
     }

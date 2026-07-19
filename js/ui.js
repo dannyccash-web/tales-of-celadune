@@ -48,7 +48,7 @@ const ARROW_BASE_TOP = 48; // first row, arrow vertically centered
 
 // mode: 'text' (normal line + response list) or 'grid' (a vendor's Buy/Sell
 // item grid has taken over the response box — see dialogGridState below).
-const dialogState = { open: false, selected: 0, npc: null, onClose: null, typing: false, mode: 'text' };
+const dialogState = { open: false, selected: 0, npc: null, onClose: null, typing: false, mode: 'text', pages: [''], page: 0, pageResponses: [], paging: false };
 
 // ---- Typewriter effect for the NPC's dialog line ----
 const TYPE_MS_PER_CHAR = 22;
@@ -76,7 +76,51 @@ function finishTyping() {
   clearInterval(typeTimer);
   typeTimer = null;
   dialogState.typing = false;
-  $('dialog-line').textContent = dialogState.npc.dialog.line;
+  $('dialog-line').textContent = dialogState.pages[dialogState.page];
+}
+
+// ---- Paged dialogue (2026-07-19, Danny) ----
+// A long line is split into pages that fit the frame; the player reads a page,
+// picks "Continue" to advance, and the real response options only appear on the
+// final page. Split on sentence boundaries, packing sentences up to PAGE_CHARS.
+const PAGE_CHARS = 200;
+function paginate(text) {
+  if (!text) return [''];
+  const sentences = text.match(/[^.!?]+[.!?]*(?:\s+|$)/g) || [text];
+  const pages = [];
+  let cur = '';
+  for (const s of sentences) {
+    if (cur && (cur + s).length > PAGE_CHARS) { pages.push(cur.trim()); cur = s; }
+    else cur += s;
+  }
+  if (cur.trim()) pages.push(cur.trim());
+  return pages.length ? pages : [text];
+}
+
+// Start showing a (possibly multi-page) line. `responses` are the REAL options,
+// shown only once the last page is reached; earlier pages show just "Continue".
+function beginPagedLine(line, responses, animate = true) {
+  dialogState.pages = paginate(line);
+  dialogState.page = 0;
+  dialogState.pageResponses = responses;
+  showDialogPage(animate);
+}
+
+function showDialogPage(animate = true) {
+  const text = dialogState.pages[dialogState.page] ?? '';
+  if (animate) {
+    startTyping(text);
+  } else {
+    clearInterval(typeTimer);
+    typeTimer = null;
+    dialogState.typing = false;
+    $('dialog-line').textContent = text;
+  }
+  const more = dialogState.page < dialogState.pages.length - 1;
+  dialogState.paging = more;
+  dialogState.selected = 0;
+  renderResponses(more ? ['Continue'] : dialogState.pageResponses);
+  refreshSelection();
 }
 
 export function isDialogOpen() {
@@ -92,7 +136,6 @@ export function openDialog(npc, onClose, onResponse) {
 
   $('dialog-name').textContent = npc.name;
   $('dialog-role').textContent = npc.role || '';
-  startTyping(npc.dialog.line);
 
   // An unoccupied building (npc.isPlace, e.g. "Your House") has no portrait
   // — that slot shows a "Contents" list instead, built once here since which
@@ -116,7 +159,7 @@ export function openDialog(npc, onClose, onResponse) {
     portrait.classList.add('portrait-enter');
   }
 
-  renderResponses(npc.dialog.responses);
+  beginPagedLine(npc.dialog.line, npc.dialog.responses);
 
   // Vendors get the portrait-on-the-left shop layout (see #dialog.vendor in
   // style.css); everyone else keeps the standard portrait-on-the-right one.
@@ -189,7 +232,9 @@ export function dialogKey(key) {
   // entirely while open — Left/Right move the tile selection, Space trades,
   // Escape returns to the Buy/Sell/Leave response list (not a full close).
   if (dialogState.mode === 'grid') { dialogGridKey(key); return; }
-  const count = dialogState.npc.dialog.responses.length;
+  // Count from what's actually rendered — mid-page that's just "Continue" (1),
+  // otherwise the real response list.
+  const count = $('dialog-responses').querySelectorAll('.response').length || 1;
   if (key === 'ArrowUp') { dialogState.selected = (dialogState.selected + count - 1) % count; refreshSelection(); }
   if (key === 'ArrowDown') { dialogState.selected = (dialogState.selected + 1) % count; refreshSelection(); }
   if (key === ' ' || key === 'Enter') {
@@ -201,6 +246,9 @@ export function dialogKey(key) {
 }
 
 function chooseResponse() {
+  // Mid-line "Continue": advance to the next page rather than acting on a
+  // response — the real options only live on the last page (see beginPagedLine).
+  if (dialogState.paging) { dialogState.page += 1; showDialogPage(true); return; }
   // Most responses are still placeholders that just close the dialog, but a
   // response can carry a real effect (e.g. Gaffer's bite, or Mirelle's
   // vegetable-crate quest) — the caller that opened the dialog decides what
@@ -234,17 +282,11 @@ export function updateDialogContent({ line, responses, responseEffects, contents
     ...(contents ? { contents } : {}),
   };
   dialogState.selected = 0;
-  if (lineChanged) {
-    startTyping(line);
-  } else {
-    clearInterval(typeTimer);
-    typeTimer = null;
-    dialogState.typing = false;
-    $('dialog-line').textContent = line;
-  }
-  renderResponses(responses);
+  // Page the new line the same way openDialog does. `lineChanged` gates the
+  // typewriter (a place's static description that didn't change isn't re-typed,
+  // per the 2026-07-09 fix) but pagination applies either way.
+  beginPagedLine(line, responses, lineChanged);
   if (contents) renderContentsList(contents);
-  refreshSelection();
 }
 
 function closeDialog() {

@@ -732,7 +732,7 @@ export default {
       sprite: 'assets/images/Bram Caskwell_overhead.png',
       portrait: 'assets/images/Bram Caskwell.png',
       x: 844, y: 1221, speed: 45, startsHome: false,
-      home: { door: { x: 793, y: 1216 }, approach: { x: 820, y: 1221 }, interior: 'assets/images/tavern_interior.jpg' },
+      home: { door: { x: 793, y: 1216 }, approach: { x: 840, y: 1224 }, interior: 'assets/images/tavern_interior.jpg' },
       routine: [
         { do: 'wait', s: 0 },
         { do: 'goto', x: 974, y: 1296 },
@@ -754,7 +754,7 @@ export default {
       sprite: 'assets/images/Sorcha Emberfell_overhead.png',
       portrait: 'assets/images/Sorcha Emberfell.png',
       speed: 45, startsHome: true,
-      home: { door: { x: 879, y: 1430 }, approach: { x: 852, y: 1435 }, interior: 'assets/images/blacksmith_interior.jpg' },
+      home: { door: { x: 879, y: 1430 }, approach: { x: 862, y: 1525 }, interior: 'assets/images/blacksmith_interior.jpg' },
       routine: [
         { do: 'wait', s: 59 },
         { do: 'leaveHome' },
@@ -775,7 +775,7 @@ export default {
       sprite: 'assets/images/Nadira Thornwell_overhead.png',
       portrait: 'assets/images/Nadira Thornwell.png',
       x: 850, y: 1012, speed: 45, startsHome: false,
-      home: { door: { x: 880, y: 1114 }, approach: { x: 850, y: 1118 }, interior: 'assets/images/apothecary_interior.jpg' },
+      home: { door: { x: 880, y: 1114 }, approach: { x: 842, y: 1218 }, interior: 'assets/images/apothecary_interior.jpg' },
       routine: [
         { do: 'wait', s: 18 },
         { do: 'goto', x: 956, y: 906 },
@@ -797,7 +797,7 @@ export default {
       sprite: 'assets/images/Emeric Vale_overhead.png',
       portrait: 'assets/images/Emeric Vale.png',
       speed: 45, startsHome: true,
-      home: { door: { x: 781, y: 672 }, approach: { x: 819, y: 676 }, interior: 'assets/images/general_goods_interior.jpg' },
+      home: { door: { x: 781, y: 672 }, approach: { x: 838, y: 639 }, interior: 'assets/images/general_goods_interior.jpg' },
       routine: [
         { do: 'wait', s: 103 },
         { do: 'leaveHome' },
@@ -808,7 +808,6 @@ export default {
       dialog: { line: 'Everything a body could need and a few things nobody does. Have a look round — just don’t handle the goods with those hands.', responses: ['Leave.'] },
       chatter: [
         { q: 'Is business good?', a: 'Fair to middling. Folk buy less when the roads are dangerous — and lately the roads are very dangerous. You spot a caravan that made it through, you send it my way, eh?' },
-        { q: 'Heard any rumors?', a: 'I hear everything twice and believe half of it. They say there is an old cave in the woods no one is fool enough to enter. Naturally, someone always is.' },
       ],
     },
     {
@@ -818,7 +817,7 @@ export default {
       sprite: 'assets/images/Kwame Hearthstone_overhead.png',
       portrait: 'assets/images/Kwame Hearthstone.png',
       x: 824, y: 272, speed: 45, startsHome: false,
-      home: { door: { x: 795, y: 405 }, approach: { x: 818, y: 413 }, interior: 'assets/images/home_interior.jpg' },
+      home: { door: { x: 795, y: 405 }, approach: { x: 840, y: 405 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
         { do: 'wait', s: 35 },
         { do: 'goto', x: 863, y: 127 },
@@ -830,7 +829,6 @@ export default {
       dialog: { line: 'Smell that? Second batch of the day. The crusty loaves go fast, so if you want one, don’t dawdle.', responses: ['Leave.'] },
       chatter: [
         { q: 'How is the harvest?', a: 'Grain came in golden this year, praise the rain — bread for all and a fat mill. You can smell my loaves clear across the plaza. Second batch is nearly out, mind.' },
-        { q: 'Any gossip?', a: 'A baker hears it all before the ovens are cold. Old Osric swears he saw lights in the woods; young Jory swears he is brave enough to go look. I would not bet on either, myself.' },
       ],
     },
     {
@@ -838,7 +836,7 @@ export default {
       sprite: 'assets/images/Elowen Dawnmere_overhead.png',
       portrait: 'assets/images/Elowen Dawnmere.png',
       speed: 45, startsHome: true,
-      home: { door: { x: 856, y: 1738 }, approach: { x: 852, y: 1720 }, interior: 'assets/images/temple_interior.jpg' },
+      home: { door: { x: 856, y: 1738 }, approach: { x: 856, y: 1660 }, interior: 'assets/images/temple_interior.jpg' },
       routine: [
         { do: 'wait', s: 71 },
         { do: 'leaveHome' },
@@ -895,7 +893,7 @@ export default {
       sprite: 'assets/images/Alden Hale_overhead.png',
       portrait: 'assets/images/Alden Hale.png',
       x: 876, y: 230, speed: 45, startsHome: false,
-      home: { door: { x: 953, y: 405 }, approach: { x: 934, y: 438 }, interior: 'assets/images/home_interior.jpg' },
+      home: { door: { x: 953, y: 405 }, approach: { x: 962, y: 458 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
         { do: 'wait', s: 52 },
         { do: 'goto', x: 951, y: 100 },
@@ -915,7 +913,7 @@ export default {
       sprite: 'assets/images/Amara Odwyn_overhead.png',
       portrait: 'assets/images/Amara Odwyn.png',
       speed: 45, startsHome: true,
-      home: { door: { x: 355, y: 767 }, approach: { x: 355, y: 740 }, interior: 'assets/images/home_interior.jpg' },
+      home: { door: { x: 355, y: 767 }, approach: { x: 371, y: 722 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
         { do: 'wait', s: 38 },
         { do: 'leaveHome' },
@@ -934,7 +932,7 @@ export default {
       sprite: 'assets/images/Petra Ashby_overhead.png',
       portrait: 'assets/images/Petra Ashby.png',
       x: 960, y: 480, speed: 45, startsHome: false,
-      home: { door: { x: 1048, y: 466 }, approach: { x: 1059, y: 441 }, interior: 'assets/images/home_interior.jpg' },
+      home: { door: { x: 1048, y: 466 }, approach: { x: 962, y: 481 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
         { do: 'wait', s: 7 },
         { do: 'goto', x: 960, y: 750 },
@@ -954,7 +952,7 @@ export default {
       sprite: 'assets/images/Faris Kell_overhead.png',
       portrait: 'assets/images/Faris Kell.png',
       speed: 45, startsHome: true,
-      home: { door: { x: 1060, y: 895 }, approach: { x: 1045, y: 930 }, interior: 'assets/images/home_interior.jpg' },
+      home: { door: { x: 1060, y: 895 }, approach: { x: 1060, y: 949 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
         { do: 'wait', s: 91 },
         { do: 'leaveHome' },
@@ -973,7 +971,7 @@ export default {
       sprite: 'assets/images/Marisol Reyne_overhead.png',
       portrait: 'assets/images/Marisol Reyne.png',
       x: 1389, y: 478, speed: 45, startsHome: false,
-      home: { door: { x: 1532, y: 509 }, approach: { x: 1569, y: 499 }, interior: 'assets/images/home_interior.jpg' },
+      home: { door: { x: 1532, y: 509 }, approach: { x: 1569, y: 478 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
         { do: 'wait', s: 44 },
         { do: 'goto', x: 1569, y: 478 },
@@ -993,7 +991,7 @@ export default {
       sprite: 'assets/images/Ingrith Snowmantle_overhead.png',
       portrait: 'assets/images/Ingrith Snowmantle.png',
       speed: 45, startsHome: true,
-      home: { door: { x: 1185, y: 423 }, approach: { x: 1192, y: 458 }, interior: 'assets/images/home_interior.jpg' },
+      home: { door: { x: 1185, y: 423 }, approach: { x: 1120, y: 461 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
         { do: 'wait', s: 50 },
         { do: 'leaveHome' },
@@ -1012,7 +1010,7 @@ export default {
       sprite: 'assets/images/Osric Blackwood_overhead.png',
       portrait: 'assets/images/Osric Blackwood.png',
       x: 342, y: 338, speed: 45, startsHome: false,
-      home: { door: { x: 296, y: 319 }, approach: { x: 330, y: 336 }, interior: 'assets/images/home_interior.jpg' },
+      home: { door: { x: 296, y: 319 }, approach: { x: 338, y: 343 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
         { do: 'wait', s: 68 },
         { do: 'goto', x: 342, y: 548 },
@@ -1069,11 +1067,11 @@ export default {
       sprite: 'assets/images/Jory Whitlock_overhead.png',
       portrait: 'assets/images/Jory Whitlock.png',
       speed: 45, startsHome: true,
-      home: { door: { x: 1264, y: 498 }, approach: { x: 1244, y: 472 }, interior: 'assets/images/home_interior.jpg' },
+      home: { door: { x: 1264, y: 498 }, approach: { x: 1272, y: 451 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
         { do: 'wait', s: 78 },
         { do: 'leaveHome' },
-        { do: 'goto', x: 1338, y: 659 },
+        { do: 'goto', x: 1338, y: 560 },
         { do: 'wait', s: 8 },
         { do: 'goHome' },
       ],
@@ -1089,7 +1087,7 @@ export default {
       sprite: 'assets/images/Darius Bellwren_overhead.png',
       portrait: 'assets/images/Darius Bellwren.png',
       x: 210, y: 1165, speed: 45, startsHome: false,
-      home: { door: { x: 256, y: 1152 }, approach: { x: 231, y: 1163 }, interior: 'assets/images/home_interior.jpg' },
+      home: { door: { x: 256, y: 1152 }, approach: { x: 212, y: 1160 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
         { do: 'wait', s: 26 },
         { do: 'goto', x: 260, y: 1353 },
@@ -1143,7 +1141,7 @@ export default {
       sprite: 'assets/images/Adaline Beaumont_overhead.png',
       portrait: 'assets/images/Adaline Beaumont.png',
       speed: 45, startsHome: true,
-      home: { door: { x: 1257, y: 1488 }, approach: { x: 1281, y: 1518 }, interior: 'assets/images/home_interior.jpg' },
+      home: { door: { x: 1257, y: 1488 }, approach: { x: 1266, y: 1538 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
         { do: 'wait', s: 113 },
         { do: 'leaveHome' },
@@ -1155,7 +1153,6 @@ export default {
       chatter: [
         { q: 'Fine stitching.', a: 'Kind of you to notice — most do not, till a hem tears. I have dressed half this village for festival and funeral both. A good seam holds a life together, if you think on it.' },
         { q: 'You seem flustered.', a: 'Flustered? I am NEVER — it is only warm. And I may have stitched Kwame a new apron. The baker. Not that he asked. Not that I said a word of it. Do not — do not breathe this to him, there is nothing to breathe. ...Is he still at the bakery, do you happen to know?' },
-        { q: 'Any news?', a: 'I keep to my needle, not the gossip — though one hears plenty with folk standing still for fittings. They say the roads east are not safe. I say stay home and mend something.' },
       ],
     },
     {
@@ -1163,7 +1160,7 @@ export default {
       sprite: 'assets/images/Priya Sarn_overhead.png',
       portrait: 'assets/images/Priya Sarn.png',
       x: 1352, y: 970, speed: 45, startsHome: false,
-      home: { door: { x: 1275, y: 924 }, approach: { x: 1274, y: 960 }, interior: 'assets/images/home_interior.jpg' },
+      home: { door: { x: 1275, y: 924 }, approach: { x: 1308, y: 981 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
         { do: 'wait', s: 13 },
         { do: 'goto', x: 1622, y: 970 },
@@ -1183,7 +1180,7 @@ export default {
       sprite: 'assets/images/Malik Duskweather_overhead.png',
       portrait: 'assets/images/Malik Duskweather.png',
       speed: 45, startsHome: true,
-      home: { door: { x: 1549, y: 944 }, approach: { x: 1579, y: 968 }, interior: 'assets/images/home_interior.jpg' },
+      home: { door: { x: 1549, y: 944 }, approach: { x: 1557, y: 988 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
         { do: 'wait', s: 44 },
         { do: 'leaveHome' },
