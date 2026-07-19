@@ -732,7 +732,7 @@ export default {
       sprite: 'assets/images/Bram Caskwell_overhead.png',
       portrait: 'assets/images/Bram Caskwell.png',
       x: 844, y: 1221, speed: 45, startsHome: false,
-      home: { door: { x: 805, y: 1230 }, interior: 'assets/images/tavern_interior.jpg' },
+      home: { door: { x: 820, y: 1235 }, interior: 'assets/images/tavern_interior.jpg' },
       routine: [
         { do: 'wait', s: 0 },
         { do: 'goto', x: 974, y: 1296 },
@@ -754,7 +754,7 @@ export default {
       sprite: 'assets/images/Sorcha Emberfell_overhead.png',
       portrait: 'assets/images/Sorcha Emberfell.png',
       speed: 45, startsHome: true,
-      home: { door: { x: 950, y: 1504 }, interior: 'assets/images/blacksmith_interior.jpg' },
+      home: { door: { x: 947, y: 1520 }, interior: 'assets/images/blacksmith_interior.jpg' },
       routine: [
         { do: 'wait', s: 59 },
         { do: 'leaveHome' },
@@ -775,7 +775,7 @@ export default {
       sprite: 'assets/images/Nadira Thornwell_overhead.png',
       portrait: 'assets/images/Nadira Thornwell.png',
       x: 850, y: 1012, speed: 45, startsHome: false,
-      home: { door: { x: 915, y: 1206 }, interior: 'assets/images/apothecary_interior.jpg' },
+      home: { door: { x: 914, y: 1218 }, interior: 'assets/images/apothecary_interior.jpg' },
       routine: [
         { do: 'wait', s: 18 },
         { do: 'goto', x: 956, y: 906 },
@@ -797,7 +797,7 @@ export default {
       sprite: 'assets/images/Emeric Vale_overhead.png',
       portrait: 'assets/images/Emeric Vale.png',
       speed: 45, startsHome: true,
-      home: { door: { x: 805, y: 679 }, interior: 'assets/images/general_goods_interior.jpg' },
+      home: { door: { x: 821, y: 681 }, interior: 'assets/images/general_goods_interior.jpg' },
       routine: [
         { do: 'wait', s: 103 },
         { do: 'leaveHome' },
@@ -818,7 +818,7 @@ export default {
       sprite: 'assets/images/Kwame Hearthstone_overhead.png',
       portrait: 'assets/images/Kwame Hearthstone.png',
       x: 824, y: 272, speed: 45, startsHome: false,
-      home: { door: { x: 805, y: 410 }, interior: 'assets/images/home_interior.jpg' },
+      home: { door: { x: 820, y: 415 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
         { do: 'wait', s: 35 },
         { do: 'goto', x: 863, y: 127 },
@@ -838,7 +838,7 @@ export default {
       sprite: 'assets/images/Elowen Dawnmere_overhead.png',
       portrait: 'assets/images/Elowen Dawnmere.png',
       speed: 45, startsHome: true,
-      home: { door: { x: 943, y: 1781 }, interior: 'assets/images/temple_interior.jpg' },
+      home: { door: { x: 961, y: 1772 }, interior: 'assets/images/temple_interior.jpg' },
       routine: [
         { do: 'wait', s: 71 },
         { do: 'leaveHome' },
@@ -858,13 +858,14 @@ export default {
       dialogByQuestStatus: {
         elowen_offering: {
           none: {
-            line: 'You have a traveler’s look — road-worn and a little hollow. Might I ask a small kindness? The shrine wants a fresh offering, and my old knees no longer make the walk to the bakery. Would you carry a loaf back for me?',
+            line: 'You have a traveler’s look — road-worn and a little hollow. Might I ask a small kindness? The shrine wants a fresh offering, but I can’t step away while the candles are lit. Would you carry a loaf back from the bakery for me?',
             responses: ['Of course, sister.', 'Not just now.'],
             responseEffects: [
               {
                 startQuest: 'elowen_offering',
+                addGold: 1,
                 noBack: true,
-                followUp: 'Bless you. Kwame’s bakery is up the north road — a single fresh loaf is all the hearth asks. Bring it here and I’ll see it laid with a prayer.',
+                followUp: 'Bless you. Here — a coin toward it; Kwame won’t hand over a loaf for a prayer alone. The bakery’s up the north road. Bring the bread back and I’ll lay it at the shrine.',
               },
               { followUp: 'The shrine will keep. As will I. Come back if the road turns you kind.' },
             ],
@@ -875,10 +876,11 @@ export default {
             responseEffects: [{ followUp: 'Go gently.' }, null],
           },
           readyToComplete: {
-            line: 'Ah — the bread, still warm. You’ve a good heart under all that road-dust. Here, let me lay it at the shrine... there. And a blessing for you in kind — may it mend what the journey has worn.',
-            responses: ['Thank you, sister.'],
+            line: 'Ah — the bread, still warm. You’ve a good heart under all that road-dust. The loaf cost you two coins, I know, and I only spared you one. So — shall I make you whole, or will you let it be a gift?',
+            responses: ['A coin for the bread, if you can.', 'Let it be a gift, sister.'],
             responseEffects: [
-              { takeItem: 'bread', addGold: 10, heal: 999, completeQuest: 'elowen_offering', noBack: true, followUp: 'Walk in the light, traveler. The hearth remembers those who tend it.' },
+              { takeItem: 'bread', addGold: 1, completeQuest: 'elowen_offering', noBack: true, followUp: 'Fair is fair — here’s your coin. The offering’s made, and the village a little brighter for it. Walk in the light, traveler.' },
+              { takeItem: 'bread', heal: 999, completeQuest: 'elowen_offering', noBack: true, followUp: 'Then take a blessing in its place — may it mend what the journey has worn. There. Whole again. The hearth remembers those who give freely.' },
             ],
           },
           completed: {
@@ -893,7 +895,7 @@ export default {
       sprite: 'assets/images/Alden Hale_overhead.png',
       portrait: 'assets/images/Alden Hale.png',
       x: 876, y: 230, speed: 45, startsHome: false,
-      home: { door: { x: 904, y: 340 }, interior: 'assets/images/home_interior.jpg' },
+      home: { door: { x: 892, y: 340 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
         { do: 'wait', s: 52 },
         { do: 'goto', x: 951, y: 100 },
@@ -913,7 +915,7 @@ export default {
       sprite: 'assets/images/Amara Odwyn_overhead.png',
       portrait: 'assets/images/Amara Odwyn.png',
       speed: 45, startsHome: true,
-      home: { door: { x: 404, y: 815 }, interior: 'assets/images/home_interior.jpg' },
+      home: { door: { x: 431, y: 807 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
         { do: 'wait', s: 38 },
         { do: 'leaveHome' },
@@ -921,10 +923,10 @@ export default {
         { do: 'wait', s: 33 },
         { do: 'goHome' },
       ],
-      dialog: { line: 'Market’s thin this week, but I’ve herbs and eggs if you’re buying. Mind you don’t tread on my basket.', responses: ['Leave.'] },
+      dialog: { line: 'Half my morning’s gone to these hens and I’ve two eggs and a great deal of opinion to show for it. Still — a garden and a few birds keep a body honest. Mind the basket, would you?', responses: ['Leave.'] },
       chatter: [
-        { q: 'What are you selling?', a: 'Herbs, eggs, whatever the garden spares. Market is thin this week — folk are hoarding, and hoarding is a bad sign. When neighbors stop trading, trouble is usually near.' },
-        { q: 'Mind if I look?', a: 'Look all you like, just mind the basket — I will not have a season of eggs cracked by a careless boot. There. Now, was there something you actually wanted?' },
+        { q: 'What keeps you busy?', a: 'This patch of garden and those ungrateful hens. Herbs, greens, eggs when the birds feel generous — enough for my own table, no more. I’m no trader; I just like a thing I can watch grow. Market’s thin lately, mind — folk are hoarding, and hoarding’s a bad sign.' },
+        { q: 'Mind if I look?', a: 'Look all you like, just mind the basket — I’ll not have a season’s eggs cracked by a careless boot. It’s not for selling, this; it’s supper. But you’re welcome to the shade while you gawp.' },
       ],
     },
     {
@@ -932,7 +934,7 @@ export default {
       sprite: 'assets/images/Petra Ashby_overhead.png',
       portrait: 'assets/images/Petra Ashby.png',
       x: 960, y: 480, speed: 45, startsHome: false,
-      home: { door: { x: 996, y: 545 }, interior: 'assets/images/home_interior.jpg' },
+      home: { door: { x: 962, y: 585 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
         { do: 'wait', s: 7 },
         { do: 'goto', x: 960, y: 750 },
@@ -952,7 +954,7 @@ export default {
       sprite: 'assets/images/Faris Kell_overhead.png',
       portrait: 'assets/images/Faris Kell.png',
       speed: 45, startsHome: true,
-      home: { door: { x: 1105, y: 915 }, interior: 'assets/images/home_interior.jpg' },
+      home: { door: { x: 1110, y: 930 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
         { do: 'wait', s: 91 },
         { do: 'leaveHome' },
@@ -971,7 +973,7 @@ export default {
       sprite: 'assets/images/Marisol Reyne_overhead.png',
       portrait: 'assets/images/Marisol Reyne.png',
       x: 1389, y: 478, speed: 45, startsHome: false,
-      home: { door: { x: 1465, y: 585 }, interior: 'assets/images/home_interior.jpg' },
+      home: { door: { x: 1442, y: 591 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
         { do: 'wait', s: 44 },
         { do: 'goto', x: 1569, y: 478 },
@@ -991,7 +993,7 @@ export default {
       sprite: 'assets/images/Ingrith Snowmantle_overhead.png',
       portrait: 'assets/images/Ingrith Snowmantle.png',
       speed: 45, startsHome: true,
-      home: { door: { x: 1190, y: 444 }, interior: 'assets/images/home_interior.jpg' },
+      home: { door: { x: 1193, y: 460 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
         { do: 'wait', s: 50 },
         { do: 'leaveHome' },
@@ -1010,7 +1012,7 @@ export default {
       sprite: 'assets/images/Osric Blackwood_overhead.png',
       portrait: 'assets/images/Osric Blackwood.png',
       x: 342, y: 338, speed: 45, startsHome: false,
-      home: { door: { x: 332, y: 300 }, interior: 'assets/images/home_interior.jpg' },
+      home: { door: { x: 340, y: 300 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
         { do: 'wait', s: 68 },
         { do: 'goto', x: 342, y: 548 },
@@ -1032,21 +1034,21 @@ export default {
       dialogByQuestStatus: {
         osric_boot: {
           none: {
-            line: 'You! Yes, you, the solid one. I require a BOOT. Not a pair — a single, honest, waterlogged boot, the sort the pond keeps like a secret. Fetch me one and I shall make you improbably rich. The jars have agreed to the terms. Well?',
-            responses: ['I’ll find you a boot.', 'You are unwell.'],
+            line: 'Ah. You have the look of a fetcher. Good, good — for a thing has gone missing that was never mine, and I must have it back. A boot. One boot. The left one, I suspect, though it has never said. Do not ask me why. I have not asked me either; we have an understanding, the why and I.',
+            responses: ['…I’ll get you a boot.', 'You are unwell.'],
             responseEffects: [
               {
                 startQuest: 'osric_boot',
                 noBack: true,
-                followUp: 'SPLENDID. Fish the pond down by the old dock — it hoards boots the way I hoard grievances. Bring me one and we shall both be delighted, for entirely different reasons.',
+                followUp: 'Then heed the only counsel that matters: legend tells of an ancient boot, sunk deep in still water, waiting out the years for hands patient enough to call it up. Waters keep what they are given. Give the deep a reason to give something back — and mind what else answers.',
               },
               { followUp: 'A common diagnosis, and yet here you still stand, listening. Come back when the boot calls to you. It will. They always do.' },
             ],
           },
           active: {
-            line: 'The boot, the boot! Have you the boot? The pond by the dock is fairly BRIMMING with them — take a rod to it and be patient.',
+            line: 'The boot. Is it come? No — I would feel it. No matter. Still water hoards the old and the drowned; sit at the edge of the deep, offer it your patience, and it may surrender what it has kept. Or it may not. That is rather the point of the deep.',
             responses: ['Still looking.', 'Leave.'],
-            responseEffects: [{ followUp: 'Patience. A boot cannot be rushed. Believe me, I have tried.' }, null],
+            responseEffects: [{ followUp: 'Patience. A boot cannot be rushed. Believe me — I have tried, and the boot remembers.' }, null],
           },
           readyToComplete: {
             line: 'THAT. That is a boot of RARE character — see the way it drips with meaning? You magnificent creature. A deal is a deal, and Osric always pays. Here — take it, take the gold, take it before I marry the boot instead.',
@@ -1067,7 +1069,7 @@ export default {
       sprite: 'assets/images/Jory Whitlock_overhead.png',
       portrait: 'assets/images/Jory Whitlock.png',
       speed: 45, startsHome: true,
-      home: { door: { x: 1323, y: 565 }, interior: 'assets/images/home_interior.jpg' },
+      home: { door: { x: 1339, y: 583 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
         { do: 'wait', s: 78 },
         { do: 'leaveHome' },
@@ -1079,6 +1081,7 @@ export default {
       chatter: [
         { q: 'Off to the woods, then?', a: 'Shh — not so loud, Ma has ears like an owl. But one day I will go proper, sword and all, and come back a hero. You have been out there, have you not? Is it as grand as they say?' },
         { q: 'The woods are dangerous, you know.', a: 'That is what everyone SAYS. But nothing exciting ever happened to someone who fetched water all day. ...You are not going to tell my Ma, are you?' },
+        { q: 'Heard any rumors?', a: 'Ooh, have I. They say old Osric’s got a whole chest of GOLD buried under that cabin of his — why else live way out there alone, talking to jars? Bram at the tavern swears he saw lantern-light out that way one night, digging. One day I’ll find it. For the village, obviously.' },
       ],
     },
     {
@@ -1086,7 +1089,7 @@ export default {
       sprite: 'assets/images/Darius Bellwren_overhead.png',
       portrait: 'assets/images/Darius Bellwren.png',
       x: 210, y: 1165, speed: 45, startsHome: false,
-      home: { door: { x: 235, y: 1115 }, interior: 'assets/images/home_interior.jpg' },
+      home: { door: { x: 211, y: 1111 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
         { do: 'wait', s: 26 },
         { do: 'goto', x: 260, y: 1353 },
@@ -1140,7 +1143,7 @@ export default {
       sprite: 'assets/images/Adaline Beaumont_overhead.png',
       portrait: 'assets/images/Adaline Beaumont.png',
       speed: 45, startsHome: true,
-      home: { door: { x: 1225, y: 1515 }, interior: 'assets/images/home_interior.jpg' },
+      home: { door: { x: 1225, y: 1531 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
         { do: 'wait', s: 113 },
         { do: 'leaveHome' },
@@ -1148,9 +1151,10 @@ export default {
         { do: 'wait', s: 36 },
         { do: 'goHome' },
       ],
-      dialog: { line: 'Mind the hem — I’ve only just finished this stitching and I’ll not have it dragged through the mud. Was there something?', responses: ['Leave.'] },
+      dialog: { line: 'Mind the hem — I’ve only just finished this and I’ll not have it dragged through the mud. I was only walking past the bakery. For bread. Was there something?', responses: ['Leave.'] },
       chatter: [
         { q: 'Fine stitching.', a: 'Kind of you to notice — most do not, till a hem tears. I have dressed half this village for festival and funeral both. A good seam holds a life together, if you think on it.' },
+        { q: 'You seem flustered.', a: 'Flustered? I am NEVER — it is only warm. And I may have stitched Kwame a new apron. The baker. Not that he asked. Not that I said a word of it. Do not — do not breathe this to him, there is nothing to breathe. ...Is he still at the bakery, do you happen to know?' },
         { q: 'Any news?', a: 'I keep to my needle, not the gossip — though one hears plenty with folk standing still for fittings. They say the roads east are not safe. I say stay home and mend something.' },
       ],
     },
@@ -1159,7 +1163,7 @@ export default {
       sprite: 'assets/images/Priya Sarn_overhead.png',
       portrait: 'assets/images/Priya Sarn.png',
       x: 1352, y: 970, speed: 45, startsHome: false,
-      home: { door: { x: 1281, y: 933 }, interior: 'assets/images/home_interior.jpg' },
+      home: { door: { x: 1283, y: 961 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
         { do: 'wait', s: 13 },
         { do: 'goto', x: 1622, y: 970 },
@@ -1179,7 +1183,7 @@ export default {
       sprite: 'assets/images/Malik Duskweather_overhead.png',
       portrait: 'assets/images/Malik Duskweather.png',
       speed: 45, startsHome: true,
-      home: { door: { x: 1405, y: 923 }, interior: 'assets/images/home_interior.jpg' },
+      home: { door: { x: 1376, y: 950 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
         { do: 'wait', s: 44 },
         { do: 'leaveHome' },

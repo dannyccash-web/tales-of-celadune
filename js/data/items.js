@@ -141,7 +141,7 @@ export default {
     questItem: false,
     slot: 'item',
     heal: 2,
-    price: 3,
+    price: 2,
   },
   short_sword: {
     id: 'short_sword',
