@@ -25,4 +25,14 @@ export default {
     name: 'The Chief’s Bargain',
     description: 'The Bramblekin Chief will grant safe passage through his camp in exchange for the heart of a rootweaver from the surrounding woods.',
   },
+  elowen_offering: {
+    id: 'elowen_offering',
+    name: 'The Hearthlight Offering',
+    description: 'Elowen, the temple priestess, asked you to bring a fresh loaf of bread from the bakery to lay as a shrine offering.',
+  },
+  osric_boot: {
+    id: 'osric_boot',
+    name: 'One Man’s Treasure',
+    description: 'Osric the hermit wants an old boot — the kind you fish out of a pond. He swears it’s worth a fortune to him.',
+  },
 };

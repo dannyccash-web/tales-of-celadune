@@ -514,6 +514,12 @@ async function boot() {
       return true;
     }
     if (effect.damage) damagePlayer(effect.damage);
+    // Hand an item over on turn-in (generic fetch-quest reward, 2026-07-19):
+    // removes it and plays the "Gave" reveal, then addGold/completeQuest/
+    // followUp below finish the exchange. `heal` is a full/large restore used
+    // as a priestess "blessing".
+    if (effect.takeItem) { removeItem(effect.takeItem, effect.takeQty ?? 1, true); ui.showGaveItem(ITEMS[effect.takeItem]); }
+    if (effect.heal) { stats.health = Math.min(stats.healthMax, stats.health + effect.heal); ui.updateHud(stats); }
     if (effect.startQuest) startQuest(effect.startQuest);
     if (effect.addGold) addGold(effect.addGold);
     if (effect.completeQuest) completeQuest(effect.completeQuest);
@@ -692,6 +698,8 @@ async function boot() {
     barn_rat: () => !!world.battles.find((b) => b.id === 'old_barn_rats')?.defeated,
     vegetable_delivery: () => vegetableDeliveredToTavern,
     rare_fish: () => inventory.some((it) => it.id === 'rare_fish'),
+    elowen_offering: () => inventory.some((it) => it.id === 'bread'),
+    osric_boot: () => inventory.some((it) => it.id === 'old_boot'),
   };
   const isQuestReady = (id) => QUEST_READY[id]?.() ?? false;
 
@@ -874,6 +882,10 @@ async function boot() {
   // NPCs without chatter, so it's safe to run on every dialog.
   function withChatter(dialog, npc) {
     if (!npc.chatter?.length) return dialog;
+    // Only fold chatter into an ordinary "…, Leave." dialog — never into a
+    // quest offer/turn-in (whose last response is an Accept/Decline/thank-you,
+    // not "Leave."), so the quest choices stay uncluttered (2026-07-19).
+    if (dialog.responses[dialog.responses.length - 1] !== 'Leave.') return dialog;
     const responses = [...dialog.responses];
     const effects = dialog.responseEffects ? [...dialog.responseEffects] : responses.map(() => null);
     const at = Math.max(0, responses.length - 1); // before the trailing "Leave."

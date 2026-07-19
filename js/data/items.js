@@ -211,6 +211,14 @@ export default {
     description: 'A rare, silver-scaled trout that rises only under moonlight. Darius would pay dearly for this.',
     price: 20,
   },
+  lockpicks: {
+    id: 'lockpicks',
+    name: 'Lockpicks',
+    image: 'assets/images/lockpicks.png',
+    description: 'A slim set of picks and tension wrenches. For doors and chests that would rather stay shut.',
+    questItem: false,
+    price: 15,
+  },
   // Dropped by a slain Rootweaver (2026-07-17). The Bramblekin Chief wants one
   // as proof for safe passage through his camp. A quest item — can't be sold.
   rootweaver_heart: {

@@ -144,19 +144,19 @@ export default {
     {x: 1730, y: 300, w: 190, h: 10},
     {x: 760, y: 310, w: 40, h: 180},
     {x: 1740, y: 310, w: 180, h: 210},
-    {x: 800, y: 320, w: 20, h: 170},
+    {x: 800, y: 320, w: 20, h: 5},
+    {x: 800, y: 475, w: 20, h: 15},
     {x: 1730, y: 320, w: 10, h: 190},
     {x: 610, y: 330, w: 60, h: 10},
     {x: 1720, y: 330, w: 10, h: 160},
     {x: 280, y: 340, w: 10, h: 20},
     {x: 620, y: 340, w: 50, h: 140},
     {x: 1710, y: 340, w: 10, h: 60},
-    {x: 820, y: 350, w: 10, h: 90},
     {x: 1040, y: 350, w: 50, h: 60},
     {x: 1590, y: 350, w: 10, h: 50},
     {x: 1140, y: 360, w: 10, h: 70},
     {x: 250, y: 370, w: 10, h: 10},
-    {x: 900, y: 380, w: 10, h: 10},
+    {x: 905, y: 380, w: 5, h: 10},
     {x: 1350, y: 380, w: 10, h: 10},
     {x: 1370, y: 400, w: 40, h: 30},
     {x: 440, y: 410, w: 110, h: 250},
@@ -178,7 +178,8 @@ export default {
     {x: 390, y: 460, w: 10, h: 120},
     {x: 1010, y: 460, w: 50, h: 170},
     {x: 0, y: 470, w: 190, h: 20},
-    {x: 870, y: 470, w: 50, h: 50},
+    {x: 870, y: 475, w: 50, h: 45},
+    {x: 905, y: 470, w: 15, h: 5},
     {x: 1000, y: 470, w: 10, h: 150},
     {x: 1060, y: 470, w: 20, h: 440},
     {x: 380, y: 480, w: 10, h: 70},
@@ -731,7 +732,7 @@ export default {
       sprite: 'assets/images/Bram Caskwell_overhead.png',
       portrait: 'assets/images/Bram Caskwell.png',
       x: 844, y: 1221, speed: 45, startsHome: false,
-      home: { door: { x: 844, y: 1221 }, zone: { x: 711, y: 1202, r: 135 }, interior: 'assets/images/tavern_interior.jpg' },
+      home: { door: { x: 805, y: 1230 }, interior: 'assets/images/tavern_interior.jpg' },
       routine: [
         { do: 'wait', s: 0 },
         { do: 'goto', x: 974, y: 1296 },
@@ -753,7 +754,7 @@ export default {
       sprite: 'assets/images/Sorcha Emberfell_overhead.png',
       portrait: 'assets/images/Sorcha Emberfell.png',
       speed: 45, startsHome: true,
-      home: { door: { x: 971, y: 1560 }, zone: { x: 966, y: 1414, r: 135 }, interior: 'assets/images/blacksmith_interior.jpg' },
+      home: { door: { x: 950, y: 1504 }, interior: 'assets/images/blacksmith_interior.jpg' },
       routine: [
         { do: 'wait', s: 59 },
         { do: 'leaveHome' },
@@ -774,7 +775,7 @@ export default {
       sprite: 'assets/images/Nadira Thornwell_overhead.png',
       portrait: 'assets/images/Nadira Thornwell.png',
       x: 850, y: 1012, speed: 45, startsHome: false,
-      home: { door: { x: 850, y: 1012 }, zone: { x: 925, y: 1108, r: 135 }, interior: 'assets/images/apothecary_interior.jpg' },
+      home: { door: { x: 915, y: 1206 }, interior: 'assets/images/apothecary_interior.jpg' },
       routine: [
         { do: 'wait', s: 18 },
         { do: 'goto', x: 956, y: 906 },
@@ -791,12 +792,12 @@ export default {
     },
     {
       id: 'emeric', name: 'Emeric Vale', role: 'SHOPKEEPER',
-      vendor: true, stock: [{ id: 'fishing_bait', qty: 3 }], gold: 39,
+      vendor: true, stock: [{ id: 'fishing_bait', qty: 3 }, 'lockpicks'], gold: 39,
       awayLine: 'Come by the shop if you’re buying — I don’t carry the whole inventory in my pockets.',
       sprite: 'assets/images/Emeric Vale_overhead.png',
       portrait: 'assets/images/Emeric Vale.png',
       speed: 45, startsHome: true,
-      home: { door: { x: 844, y: 615 }, zone: { x: 727, y: 667, r: 135 }, interior: 'assets/images/general_goods_interior.jpg' },
+      home: { door: { x: 805, y: 679 }, interior: 'assets/images/general_goods_interior.jpg' },
       routine: [
         { do: 'wait', s: 103 },
         { do: 'leaveHome' },
@@ -817,7 +818,7 @@ export default {
       sprite: 'assets/images/Kwame Hearthstone_overhead.png',
       portrait: 'assets/images/Kwame Hearthstone.png',
       x: 824, y: 272, speed: 45, startsHome: false,
-      home: { door: { x: 824, y: 272 }, zone: { x: 703, y: 374, r: 135 }, interior: 'assets/images/home_interior.jpg' },
+      home: { door: { x: 805, y: 410 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
         { do: 'wait', s: 35 },
         { do: 'goto', x: 863, y: 127 },
@@ -837,7 +838,7 @@ export default {
       sprite: 'assets/images/Elowen Dawnmere_overhead.png',
       portrait: 'assets/images/Elowen Dawnmere.png',
       speed: 45, startsHome: true,
-      home: { door: { x: 985, y: 1783 }, zone: { x: 873, y: 1815, r: 135 }, interior: 'assets/images/temple_interior.jpg' },
+      home: { door: { x: 943, y: 1781 }, interior: 'assets/images/temple_interior.jpg' },
       routine: [
         { do: 'wait', s: 71 },
         { do: 'leaveHome' },
@@ -850,13 +851,49 @@ export default {
         { q: 'Who rests in the graveyard?', a: 'Generations of this village — farmers, smiths, children who never grew. We tend them all the same. The dead ask little; a lit candle and a kind memory is enough.' },
         { q: 'Have you a blessing for me?', a: 'May the road rise gentle and the night find you sheltered. Faith will not stop a blade, traveler — but it may steady the hand that lifts one against it.' },
       ],
+      // Quest: fetch a loaf of bread (buyable from Kwame at the bakery) as a
+      // shrine offering. readyToComplete fires once the player is carrying
+      // bread (QUEST_READY.elowen_offering in main.js); turning it in takes
+      // the loaf, pays a little gold, and grants a full-heal "blessing".
+      dialogByQuestStatus: {
+        elowen_offering: {
+          none: {
+            line: 'You have a traveler’s look — road-worn and a little hollow. Might I ask a small kindness? The shrine wants a fresh offering, and my old knees no longer make the walk to the bakery. Would you carry a loaf back for me?',
+            responses: ['Of course, sister.', 'Not just now.'],
+            responseEffects: [
+              {
+                startQuest: 'elowen_offering',
+                noBack: true,
+                followUp: 'Bless you. Kwame’s bakery is up the north road — a single fresh loaf is all the hearth asks. Bring it here and I’ll see it laid with a prayer.',
+              },
+              { followUp: 'The shrine will keep. As will I. Come back if the road turns you kind.' },
+            ],
+          },
+          active: {
+            line: 'Still no loaf? No matter — the bakery’s just up the north road. Bring one back and the offering can be made.',
+            responses: ['I’m on my way.', 'Leave.'],
+            responseEffects: [{ followUp: 'Go gently.' }, null],
+          },
+          readyToComplete: {
+            line: 'Ah — the bread, still warm. You’ve a good heart under all that road-dust. Here, let me lay it at the shrine... there. And a blessing for you in kind — may it mend what the journey has worn.',
+            responses: ['Thank you, sister.'],
+            responseEffects: [
+              { takeItem: 'bread', addGold: 10, heal: 999, completeQuest: 'elowen_offering', noBack: true, followUp: 'Walk in the light, traveler. The hearth remembers those who tend it.' },
+            ],
+          },
+          completed: {
+            line: 'The shrine’s offering is made, and the village a little brighter for it. Peace be with you, always.',
+            responses: ['Leave.'],
+          },
+        },
+      },
     },
     {
       id: 'alden', name: 'Alden Hale', role: 'VILLAGER',
       sprite: 'assets/images/Alden Hale_overhead.png',
       portrait: 'assets/images/Alden Hale.png',
       x: 876, y: 230, speed: 45, startsHome: false,
-      home: { door: { x: 876, y: 230 }, zone: { x: 990, y: 340, r: 135 }, interior: 'assets/images/home_interior.jpg' },
+      home: { door: { x: 904, y: 340 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
         { do: 'wait', s: 52 },
         { do: 'goto', x: 951, y: 100 },
@@ -876,7 +913,7 @@ export default {
       sprite: 'assets/images/Amara Odwyn_overhead.png',
       portrait: 'assets/images/Amara Odwyn.png',
       speed: 45, startsHome: true,
-      home: { door: { x: 434, y: 762 }, zone: { x: 354, y: 829, r: 135 }, interior: 'assets/images/home_interior.jpg' },
+      home: { door: { x: 404, y: 815 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
         { do: 'wait', s: 38 },
         { do: 'leaveHome' },
@@ -895,7 +932,7 @@ export default {
       sprite: 'assets/images/Petra Ashby_overhead.png',
       portrait: 'assets/images/Petra Ashby.png',
       x: 960, y: 480, speed: 45, startsHome: false,
-      home: { door: { x: 960, y: 480 }, zone: { x: 1030, y: 505, r: 135 }, interior: 'assets/images/home_interior.jpg' },
+      home: { door: { x: 996, y: 545 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
         { do: 'wait', s: 7 },
         { do: 'goto', x: 960, y: 750 },
@@ -915,7 +952,7 @@ export default {
       sprite: 'assets/images/Faris Kell_overhead.png',
       portrait: 'assets/images/Faris Kell.png',
       speed: 45, startsHome: true,
-      home: { door: { x: 1056, y: 950 }, zone: { x: 1081, y: 849, r: 135 }, interior: 'assets/images/home_interior.jpg' },
+      home: { door: { x: 1105, y: 915 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
         { do: 'wait', s: 91 },
         { do: 'leaveHome' },
@@ -934,7 +971,7 @@ export default {
       sprite: 'assets/images/Marisol Reyne_overhead.png',
       portrait: 'assets/images/Marisol Reyne.png',
       x: 1389, y: 478, speed: 45, startsHome: false,
-      home: { door: { x: 1389, y: 478 }, zone: { x: 1459, y: 529, r: 135 }, interior: 'assets/images/home_interior.jpg' },
+      home: { door: { x: 1465, y: 585 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
         { do: 'wait', s: 44 },
         { do: 'goto', x: 1569, y: 478 },
@@ -954,7 +991,7 @@ export default {
       sprite: 'assets/images/Ingrith Snowmantle_overhead.png',
       portrait: 'assets/images/Ingrith Snowmantle.png',
       speed: 45, startsHome: true,
-      home: { door: { x: 1280, y: 428 }, zone: { x: 1168, y: 334, r: 135 }, interior: 'assets/images/home_interior.jpg' },
+      home: { door: { x: 1190, y: 444 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
         { do: 'wait', s: 50 },
         { do: 'leaveHome' },
@@ -973,7 +1010,7 @@ export default {
       sprite: 'assets/images/Osric Blackwood_overhead.png',
       portrait: 'assets/images/Osric Blackwood.png',
       x: 342, y: 338, speed: 45, startsHome: false,
-      home: { door: { x: 342, y: 338 }, zone: { x: 263, y: 303, r: 135 }, interior: 'assets/images/home_interior.jpg' },
+      home: { door: { x: 332, y: 300 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
         { do: 'wait', s: 68 },
         { do: 'goto', x: 342, y: 548 },
@@ -988,13 +1025,49 @@ export default {
         { q: 'What do you do out here?', a: 'I count. Stones, mostly. Also the days, though I lost my place around the second winter and simply kept going out of politeness. You would be amazed what stops making sense once you’ve counted it long enough. Try it with your own name sometime.' },
         { q: 'Seen anything strange?', a: 'Everything’s strange if you stare at it honestly. But since you press — the lights past the treeline dance in THREES, and threes mean the old things are counting backward. When they reach one… well. I’d have my affairs tidy, were I you. And I am not you. I checked.' },
       ],
+      // Quest: bring Osric an Old Boot (a near-worthless thing the player can
+      // fish out of the pond). He pays absurdly well for it — the joke is the
+      // reward. readyToComplete fires once the player carries an old_boot
+      // (QUEST_READY.osric_boot in main.js).
+      dialogByQuestStatus: {
+        osric_boot: {
+          none: {
+            line: 'You! Yes, you, the solid one. I require a BOOT. Not a pair — a single, honest, waterlogged boot, the sort the pond keeps like a secret. Fetch me one and I shall make you improbably rich. The jars have agreed to the terms. Well?',
+            responses: ['I’ll find you a boot.', 'You are unwell.'],
+            responseEffects: [
+              {
+                startQuest: 'osric_boot',
+                noBack: true,
+                followUp: 'SPLENDID. Fish the pond down by the old dock — it hoards boots the way I hoard grievances. Bring me one and we shall both be delighted, for entirely different reasons.',
+              },
+              { followUp: 'A common diagnosis, and yet here you still stand, listening. Come back when the boot calls to you. It will. They always do.' },
+            ],
+          },
+          active: {
+            line: 'The boot, the boot! Have you the boot? The pond by the dock is fairly BRIMMING with them — take a rod to it and be patient.',
+            responses: ['Still looking.', 'Leave.'],
+            responseEffects: [{ followUp: 'Patience. A boot cannot be rushed. Believe me, I have tried.' }, null],
+          },
+          readyToComplete: {
+            line: 'THAT. That is a boot of RARE character — see the way it drips with meaning? You magnificent creature. A deal is a deal, and Osric always pays. Here — take it, take the gold, take it before I marry the boot instead.',
+            responses: ['Uh… thank you?'],
+            responseEffects: [
+              { takeItem: 'old_boot', addGold: 15, completeQuest: 'osric_boot', noBack: true, followUp: 'Go, go! The boot and I have YEARS to catch up on. Mind the east wind on your way out. It owes me a turnip.' },
+            ],
+          },
+          completed: {
+            line: 'The boot and I are inseparable now. We finish each other’s silences. You did that. History will forget it, but I shan’t.',
+            responses: ['Leave.'],
+          },
+        },
+      },
     },
     {
       id: 'jory', name: 'Jory Whitlock', role: 'VILLAGER',
       sprite: 'assets/images/Jory Whitlock_overhead.png',
       portrait: 'assets/images/Jory Whitlock.png',
       speed: 45, startsHome: true,
-      home: { door: { x: 1338, y: 464 }, zone: { x: 1277, y: 515, r: 135 }, interior: 'assets/images/home_interior.jpg' },
+      home: { door: { x: 1323, y: 565 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
         { do: 'wait', s: 78 },
         { do: 'leaveHome' },
@@ -1013,7 +1086,7 @@ export default {
       sprite: 'assets/images/Darius Bellwren_overhead.png',
       portrait: 'assets/images/Darius Bellwren.png',
       x: 210, y: 1165, speed: 45, startsHome: false,
-      home: { door: { x: 210, y: 1165 }, zone: { x: 313, y: 1127, r: 135 }, interior: 'assets/images/home_interior.jpg' },
+      home: { door: { x: 235, y: 1115 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
         { do: 'wait', s: 26 },
         { do: 'goto', x: 260, y: 1353 },
@@ -1067,7 +1140,7 @@ export default {
       sprite: 'assets/images/Adaline Beaumont_overhead.png',
       portrait: 'assets/images/Adaline Beaumont.png',
       speed: 45, startsHome: true,
-      home: { door: { x: 1271, y: 1544 }, zone: { x: 1223, y: 1445, r: 135 }, interior: 'assets/images/home_interior.jpg' },
+      home: { door: { x: 1225, y: 1515 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
         { do: 'wait', s: 113 },
         { do: 'leaveHome' },
@@ -1086,7 +1159,7 @@ export default {
       sprite: 'assets/images/Priya Sarn_overhead.png',
       portrait: 'assets/images/Priya Sarn.png',
       x: 1352, y: 970, speed: 45, startsHome: false,
-      home: { door: { x: 1352, y: 970 }, zone: { x: 1277, y: 859, r: 135 }, interior: 'assets/images/home_interior.jpg' },
+      home: { door: { x: 1281, y: 933 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
         { do: 'wait', s: 13 },
         { do: 'goto', x: 1622, y: 970 },
@@ -1106,7 +1179,7 @@ export default {
       sprite: 'assets/images/Malik Duskweather_overhead.png',
       portrait: 'assets/images/Malik Duskweather.png',
       speed: 45, startsHome: true,
-      home: { door: { x: 1565, y: 990 }, zone: { x: 1459, y: 873, r: 135 }, interior: 'assets/images/home_interior.jpg' },
+      home: { door: { x: 1405, y: 923 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
         { do: 'wait', s: 44 },
         { do: 'leaveHome' },
