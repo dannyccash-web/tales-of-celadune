@@ -732,7 +732,7 @@ export default {
       sprite: 'assets/images/Bram Caskwell_overhead.png',
       portrait: 'assets/images/Bram Caskwell.png',
       x: 844, y: 1221, speed: 45, startsHome: false,
-      home: { door: { x: 820, y: 1235 }, interior: 'assets/images/tavern_interior.jpg' },
+      home: { door: { x: 793, y: 1216 }, approach: { x: 820, y: 1221 }, interior: 'assets/images/tavern_interior.jpg' },
       routine: [
         { do: 'wait', s: 0 },
         { do: 'goto', x: 974, y: 1296 },
@@ -754,7 +754,7 @@ export default {
       sprite: 'assets/images/Sorcha Emberfell_overhead.png',
       portrait: 'assets/images/Sorcha Emberfell.png',
       speed: 45, startsHome: true,
-      home: { door: { x: 947, y: 1520 }, interior: 'assets/images/blacksmith_interior.jpg' },
+      home: { door: { x: 879, y: 1430 }, approach: { x: 852, y: 1435 }, interior: 'assets/images/blacksmith_interior.jpg' },
       routine: [
         { do: 'wait', s: 59 },
         { do: 'leaveHome' },
@@ -775,7 +775,7 @@ export default {
       sprite: 'assets/images/Nadira Thornwell_overhead.png',
       portrait: 'assets/images/Nadira Thornwell.png',
       x: 850, y: 1012, speed: 45, startsHome: false,
-      home: { door: { x: 914, y: 1218 }, interior: 'assets/images/apothecary_interior.jpg' },
+      home: { door: { x: 880, y: 1114 }, approach: { x: 850, y: 1118 }, interior: 'assets/images/apothecary_interior.jpg' },
       routine: [
         { do: 'wait', s: 18 },
         { do: 'goto', x: 956, y: 906 },
@@ -797,7 +797,7 @@ export default {
       sprite: 'assets/images/Emeric Vale_overhead.png',
       portrait: 'assets/images/Emeric Vale.png',
       speed: 45, startsHome: true,
-      home: { door: { x: 821, y: 681 }, interior: 'assets/images/general_goods_interior.jpg' },
+      home: { door: { x: 781, y: 672 }, approach: { x: 819, y: 676 }, interior: 'assets/images/general_goods_interior.jpg' },
       routine: [
         { do: 'wait', s: 103 },
         { do: 'leaveHome' },
@@ -818,7 +818,7 @@ export default {
       sprite: 'assets/images/Kwame Hearthstone_overhead.png',
       portrait: 'assets/images/Kwame Hearthstone.png',
       x: 824, y: 272, speed: 45, startsHome: false,
-      home: { door: { x: 820, y: 415 }, interior: 'assets/images/home_interior.jpg' },
+      home: { door: { x: 795, y: 405 }, approach: { x: 818, y: 413 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
         { do: 'wait', s: 35 },
         { do: 'goto', x: 863, y: 127 },
@@ -838,7 +838,7 @@ export default {
       sprite: 'assets/images/Elowen Dawnmere_overhead.png',
       portrait: 'assets/images/Elowen Dawnmere.png',
       speed: 45, startsHome: true,
-      home: { door: { x: 961, y: 1772 }, interior: 'assets/images/temple_interior.jpg' },
+      home: { door: { x: 856, y: 1738 }, approach: { x: 852, y: 1720 }, interior: 'assets/images/temple_interior.jpg' },
       routine: [
         { do: 'wait', s: 71 },
         { do: 'leaveHome' },
@@ -895,7 +895,7 @@ export default {
       sprite: 'assets/images/Alden Hale_overhead.png',
       portrait: 'assets/images/Alden Hale.png',
       x: 876, y: 230, speed: 45, startsHome: false,
-      home: { door: { x: 892, y: 340 }, interior: 'assets/images/home_interior.jpg' },
+      home: { door: { x: 953, y: 405 }, approach: { x: 934, y: 438 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
         { do: 'wait', s: 52 },
         { do: 'goto', x: 951, y: 100 },
@@ -915,7 +915,7 @@ export default {
       sprite: 'assets/images/Amara Odwyn_overhead.png',
       portrait: 'assets/images/Amara Odwyn.png',
       speed: 45, startsHome: true,
-      home: { door: { x: 431, y: 807 }, interior: 'assets/images/home_interior.jpg' },
+      home: { door: { x: 355, y: 767 }, approach: { x: 355, y: 740 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
         { do: 'wait', s: 38 },
         { do: 'leaveHome' },
@@ -934,7 +934,7 @@ export default {
       sprite: 'assets/images/Petra Ashby_overhead.png',
       portrait: 'assets/images/Petra Ashby.png',
       x: 960, y: 480, speed: 45, startsHome: false,
-      home: { door: { x: 962, y: 585 }, interior: 'assets/images/home_interior.jpg' },
+      home: { door: { x: 1048, y: 466 }, approach: { x: 1059, y: 441 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
         { do: 'wait', s: 7 },
         { do: 'goto', x: 960, y: 750 },
@@ -954,7 +954,7 @@ export default {
       sprite: 'assets/images/Faris Kell_overhead.png',
       portrait: 'assets/images/Faris Kell.png',
       speed: 45, startsHome: true,
-      home: { door: { x: 1110, y: 930 }, interior: 'assets/images/home_interior.jpg' },
+      home: { door: { x: 1060, y: 895 }, approach: { x: 1045, y: 930 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
         { do: 'wait', s: 91 },
         { do: 'leaveHome' },
@@ -973,7 +973,7 @@ export default {
       sprite: 'assets/images/Marisol Reyne_overhead.png',
       portrait: 'assets/images/Marisol Reyne.png',
       x: 1389, y: 478, speed: 45, startsHome: false,
-      home: { door: { x: 1442, y: 591 }, interior: 'assets/images/home_interior.jpg' },
+      home: { door: { x: 1532, y: 509 }, approach: { x: 1569, y: 499 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
         { do: 'wait', s: 44 },
         { do: 'goto', x: 1569, y: 478 },
@@ -993,7 +993,7 @@ export default {
       sprite: 'assets/images/Ingrith Snowmantle_overhead.png',
       portrait: 'assets/images/Ingrith Snowmantle.png',
       speed: 45, startsHome: true,
-      home: { door: { x: 1193, y: 460 }, interior: 'assets/images/home_interior.jpg' },
+      home: { door: { x: 1185, y: 423 }, approach: { x: 1192, y: 458 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
         { do: 'wait', s: 50 },
         { do: 'leaveHome' },
@@ -1012,7 +1012,7 @@ export default {
       sprite: 'assets/images/Osric Blackwood_overhead.png',
       portrait: 'assets/images/Osric Blackwood.png',
       x: 342, y: 338, speed: 45, startsHome: false,
-      home: { door: { x: 340, y: 300 }, interior: 'assets/images/home_interior.jpg' },
+      home: { door: { x: 296, y: 319 }, approach: { x: 330, y: 336 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
         { do: 'wait', s: 68 },
         { do: 'goto', x: 342, y: 548 },
@@ -1069,7 +1069,7 @@ export default {
       sprite: 'assets/images/Jory Whitlock_overhead.png',
       portrait: 'assets/images/Jory Whitlock.png',
       speed: 45, startsHome: true,
-      home: { door: { x: 1339, y: 583 }, interior: 'assets/images/home_interior.jpg' },
+      home: { door: { x: 1264, y: 498 }, approach: { x: 1244, y: 472 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
         { do: 'wait', s: 78 },
         { do: 'leaveHome' },
@@ -1089,7 +1089,7 @@ export default {
       sprite: 'assets/images/Darius Bellwren_overhead.png',
       portrait: 'assets/images/Darius Bellwren.png',
       x: 210, y: 1165, speed: 45, startsHome: false,
-      home: { door: { x: 211, y: 1111 }, interior: 'assets/images/home_interior.jpg' },
+      home: { door: { x: 256, y: 1152 }, approach: { x: 231, y: 1163 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
         { do: 'wait', s: 26 },
         { do: 'goto', x: 260, y: 1353 },
@@ -1143,7 +1143,7 @@ export default {
       sprite: 'assets/images/Adaline Beaumont_overhead.png',
       portrait: 'assets/images/Adaline Beaumont.png',
       speed: 45, startsHome: true,
-      home: { door: { x: 1225, y: 1531 }, interior: 'assets/images/home_interior.jpg' },
+      home: { door: { x: 1257, y: 1488 }, approach: { x: 1281, y: 1518 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
         { do: 'wait', s: 113 },
         { do: 'leaveHome' },
@@ -1163,7 +1163,7 @@ export default {
       sprite: 'assets/images/Priya Sarn_overhead.png',
       portrait: 'assets/images/Priya Sarn.png',
       x: 1352, y: 970, speed: 45, startsHome: false,
-      home: { door: { x: 1283, y: 961 }, interior: 'assets/images/home_interior.jpg' },
+      home: { door: { x: 1275, y: 924 }, approach: { x: 1274, y: 960 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
         { do: 'wait', s: 13 },
         { do: 'goto', x: 1622, y: 970 },
@@ -1183,7 +1183,7 @@ export default {
       sprite: 'assets/images/Malik Duskweather_overhead.png',
       portrait: 'assets/images/Malik Duskweather.png',
       speed: 45, startsHome: true,
-      home: { door: { x: 1376, y: 950 }, interior: 'assets/images/home_interior.jpg' },
+      home: { door: { x: 1549, y: 944 }, approach: { x: 1579, y: 968 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
         { do: 'wait', s: 44 },
         { do: 'leaveHome' },

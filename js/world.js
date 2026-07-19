@@ -515,14 +515,22 @@ export class World {
   updateRoutine(npc, dt) {
     const step = npc.routine[npc.routineIndex];
     switch (step.do) {
-      case 'leaveHome':
+      case 'leaveHome': {
         audio.sfx(audio.SFX.door);
-        npc.x = npc.home.door.x;
-        npc.y = npc.home.door.y;
+        // Step OUT to the walkout spot (a walkable cell beside the door), not
+        // onto the door point itself — the door sits on the building wall
+        // (2026-07-19, matched to Danny's red-dot marks), where the 36px body
+        // can't stand. `home.approach` is that reachable step-out; interaction
+        // still keys off `home.door` (see homeNpcNearDoor). Falls back to the
+        // door for any home without an approach (e.g. D3's path-side doors).
+        const out = npc.home.approach || npc.home.door;
+        npc.x = out.x;
+        npc.y = out.y;
         npc.atHome = false;
         npc.alpha = 0;
         npc.fading = 'in'; // advanceRoutine fires when the fade completes
         break;
+      }
       case 'wait': {
         npc.timer += dt;
         // Cap how long an NPC stands still *in the open* at 5s (2026-07-17,
@@ -537,7 +545,8 @@ export class World {
         if (this.walkToward(npc, step, dt)) this.advanceRoutine(npc);
         break;
       case 'goHome':
-        if (this.walkToward(npc, npc.home.door, dt)) {
+        // Walk to the walkout spot beside the door (reachable), then fade in.
+        if (this.walkToward(npc, npc.home.approach || npc.home.door, dt)) {
           audio.sfx(audio.SFX.door);
           npc.fading = 'out'; // atHome + advance when the fade completes
         }
