@@ -9,6 +9,10 @@ const PLAYER_SPEED = 130; // px/sec
 const WALK_FLIP_INTERVAL = 0.25; // s — icon mirrors while walking to suggest steps
 const COLLIDER = 36; // square collider centered on characters
 const INTERACT_RANGE = 90;
+// How close (px) the player/NPC must be to a home's door point to interact with
+// it — and, now, the exact range at which that building's label appears, so the
+// label shows iff the door is interactable (2026-07-19, Danny). Bumped 40 -> 50.
+const DOOR_RANGE = 50;
 const SHADOW_OFFSET = 3; // px, always to the bottom-right regardless of rotation
 const SHADOW_ALPHA = 0.46; // multiply blend (see drawSprite) — bumped ~15% up from 0.4
 const FADE_S = 0.7; // NPC door fade duration
@@ -183,7 +187,6 @@ export class World {
   // tightly enough that a couple of door radii can overlap. (The old, larger
   // `home.zone` whole-footprint anchor is gone — doorways are precise now.)
   homeNpcNearDoor() {
-    const DOOR_RANGE = 40;
     let best = null;
     let bestDist = DOOR_RANGE;
     for (const npc of this.npcs) {
@@ -517,11 +520,21 @@ export class World {
     npc.routineIndex = (npc.routineIndex + 1) % npc.routine.length;
   }
 
+  // Volume weight (0-0.9) for a door SFX based on how close the player is to
+  // that door (2026-07-19, Danny) — with the town staggered, doors open/close
+  // constantly, so a distant one should be faint and only a nearby one loud.
+  // Full within ~110px, fading to silent past ~620px.
+  doorVolume(door) {
+    const d = Math.hypot(door.x - this.player.x, door.y - this.player.y);
+    const NEAR = 110, FAR = 620;
+    return Math.max(0, Math.min(0.9, 0.9 * (FAR - d) / (FAR - NEAR)));
+  }
+
   updateRoutine(npc, dt) {
     const step = npc.routine[npc.routineIndex];
     switch (step.do) {
       case 'leaveHome': {
-        audio.sfx(audio.SFX.door);
+        audio.sfx(audio.SFX.door, this.doorVolume(npc.home.door));
         // Step OUT to the walkout spot (a walkable cell beside the door), not
         // onto the door point itself — the door sits on the building wall
         // (2026-07-19, matched to Danny's red-dot marks), where the 36px body
@@ -564,7 +577,7 @@ export class World {
         if (npc._homeBest === undefined || d < npc._homeBest - 2) { npc._homeBest = d; npc._homeNoProg = 0; }
         else { npc._homeNoProg = (npc._homeNoProg || 0) + dt; }
         if (arrived || npc._homeNoProg > 3.5) {
-          audio.sfx(audio.SFX.door);
+          audio.sfx(audio.SFX.door, this.doorVolume(npc.home.door));
           npc.fading = 'out'; // atHome + advance when the fade completes
           npc._homeBest = undefined; npc._homeNoProg = 0;
         }
@@ -787,9 +800,15 @@ export class World {
     const near = this.nearestNpcInRange();
     if (near) this.drawNameLabel(near);
 
-    // Building labels when the player is close by
+    // Building labels: a door-linked building (b.door set) shows its label ONLY
+    // while its door is interactable — same DOOR_RANGE the player needs to press
+    // space (2026-07-19, Danny: label visible iff you can interact with it). The
+    // label is drawn at b.x,b.y (centered just above the door). Labels without a
+    // door (e.g. D4's cave/camp) fall back to their own proximity radius b.r.
     for (const b of this.scene.buildings || []) {
-      if (Math.hypot(b.x - p.x, b.y - p.y) < b.r) this.drawLabel(b.label, b.x, b.y);
+      const anchor = b.door || b;
+      const range = b.door ? DOOR_RANGE : b.r;
+      if (Math.hypot(anchor.x - p.x, anchor.y - p.y) < range) this.drawLabel(b.label, b.x, b.y);
     }
 
     // Hidden-collectible labels: same proximity-reveal pattern, no sprite.
