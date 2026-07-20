@@ -7,7 +7,7 @@ const VIEW_W = 1920;
 const VIEW_H = 1080;
 const PLAYER_SPEED = 130; // px/sec
 const WALK_FLIP_INTERVAL = 0.25; // s — icon mirrors while walking to suggest steps
-const COLLIDER = 36; // square collider centered on characters
+const COLLIDER = 36; // character collider diameter — a CIRCLE (radius 18) centred on the body; see circleRectOverlap
 const INTERACT_RANGE = 90;
 // How close (px) the player/NPC must be to a home's door point to interact with
 // it — and, now, the exact range at which that building's label appears, so the
@@ -19,6 +19,21 @@ const FADE_S = 0.7; // NPC door fade duration
 
 function rectsOverlap(ax, ay, aw, ah, b) {
   return ax < b.x + b.w && ax + aw > b.x && ay < b.y + b.h && ay + ah > b.y;
+}
+
+// Circle-vs-rect overlap: true if a circle centred at (cx,cy) radius r overlaps
+// rect b. This is the character collider (2026-07-19, Danny) — a CIRCLE instead
+// of a square so bodies glide around building corners instead of catching on
+// them. A circle of radius COLLIDER/2 is strictly smaller than the old
+// COLLIDER×COLLIDER square (they touch at the edge midpoints; the square's
+// corners poke out to r·√2), so the walkable space only ever grows — every door
+// / walkout / path already validated against the square stays valid, and hard
+// inside corners get "rounded" away.
+function circleRectOverlap(cx, cy, r, b) {
+  const nx = Math.max(b.x, Math.min(cx, b.x + b.w));
+  const ny = Math.max(b.y, Math.min(cy, b.y + b.h));
+  const dx = cx - nx, dy = cy - ny;
+  return dx * dx + dy * dy < r * r;
 }
 
 export class World {
@@ -228,9 +243,7 @@ export class World {
   // Everything blocking a body at (x, y). `self` is excluded; player and all
   // NPCs block each other. Each blocker is returned with its center point.
   blockersAt(x, y, self) {
-    const half = COLLIDER / 2;
-    const cx = x - half;
-    const cy = y - half;
+    const r = COLLIDER / 2; // circular collider radius (see circleRectOverlap)
     const out = [];
     const isPlayer = self === this.player;
     for (const ob of this.scene.obstacles) {
@@ -238,14 +251,16 @@ export class World {
       // autonomous NPCs out of a pocket without blocking the player, who
       // moves deliberately and isn't at risk of getting stuck there.
       if (ob.npcOnly && isPlayer) continue;
-      if (rectsOverlap(cx, cy, COLLIDER, COLLIDER, ob)) {
+      if (circleRectOverlap(x, y, r, ob)) {
         out.push({ id: ob, cx: ob.x + ob.w / 2, cy: ob.y + ob.h / 2 });
       }
     }
+    // Body-vs-body is circle-vs-circle: overlap when centres are closer than the
+    // sum of the two radii (both COLLIDER/2, so < COLLIDER).
     for (const b of [this.player, ...this.npcs]) {
       if (b === self || b.atHome || b.defeated) continue;
-      if (rectsOverlap(cx, cy, COLLIDER, COLLIDER,
-        { x: b.x - half, y: b.y - half, w: COLLIDER, h: COLLIDER })) {
+      const dx = x - b.x, dy = y - b.y;
+      if (dx * dx + dy * dy < COLLIDER * COLLIDER) {
         out.push({ id: b, cx: b.x, cy: b.y });
       }
     }
