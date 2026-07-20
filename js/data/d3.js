@@ -91,11 +91,19 @@ export default {
   // ~70px toward the building's interior) — matching Mirelle's Farmhouse. Old
   // Barn's door faces north, so its label sits *below* the door instead (still
   // toward the interior, just the opposite direction).
+  // Home-building labels carry a `door` so they show ONLY within interaction
+  // range of that door (2026-07-19, matched to D2's behaviour). Label position
+  // stays centered over the building itself: D3's doors sit out on the path
+  // (below the houses), so "just above the door" would float the name on the
+  // road — the label reads best over the building, above the door either way.
+  // (Mirelle's door is on her south wall, so hers sits right above it.)
+  // Well/Silo/Old Barn are structures/interactables, not home doors, so they
+  // keep the plain proximity-radius reveal.
   buildings: [
-    { label: 'Mirelle’s Farmhouse', x: 952, y: 630, r: 170 },
-    { label: 'Tuckwell’s House', x: 537, y: 855, r: 130 },
-    { label: 'Brenna’s House', x: 700, y: 855, r: 130 },
-    { label: 'Your House', x: 1237, y: 855, r: 130 },
+    { label: 'Mirelle’s Farmhouse', x: 952, y: 680, r: 170, door: { x: 952, y: 700 } },
+    { label: 'Tuckwell’s House', x: 537, y: 855, r: 130, door: { x: 537, y: 925 } },
+    { label: 'Brenna’s House', x: 700, y: 855, r: 130, door: { x: 700, y: 925 } },
+    { label: 'Your House', x: 1237, y: 855, r: 130, door: { x: 1237, y: 925 } },
     { label: 'Well', x: 362, y: 835, r: 110 },
     { label: 'Silo', x: 1237, y: 1310, r: 120 },
     { label: 'Old Barn', x: 1030, y: 1385, r: 170 },
