@@ -1039,6 +1039,10 @@ async function boot() {
   // set when the player picks that action slot and consumed by playerAttack
   // once a target is confirmed. Cleared between attacks.
   let pendingAttackSlot = null;
+  // Set when the player picks Use with an OFFENSIVE consumable equipped (a
+  // torch) — it needs a target like an attack, so it enters targeting and
+  // playerAttack redirects to playerUseTorch on confirm (2026-07-19).
+  let pendingUseItem = false;
 
   // Whatever soundtrack was playing when the battle started, so endBattle()
   // can cross-fade back to it (audio.play() handles the fade both ways).
@@ -1090,7 +1094,20 @@ async function boot() {
       if (!ui.startTargeting()) showPlayerActions(); // no alive target — hand control back
       return;
     }
-    if (action === 'use') { playerUseItem(); return; }
+    if (action === 'use') {
+      // An offensive consumable (torch — has useDamage) is aimed at an enemy,
+      // so it enters targeting like a weapon; a restorative one (potion) is
+      // used on yourself immediately.
+      const def = equipment.item && ITEMS[equipment.item];
+      if (def && def.useDamage != null) {
+        if (equippedItemCount() <= 0) { ui.setBattleMessage('You have nothing readied to use.'); showPlayerActions(); return; }
+        pendingUseItem = true;
+        if (!ui.startTargeting()) { pendingUseItem = false; showPlayerActions(); } // no target — hand control back
+        return;
+      }
+      playerUseItem();
+      return;
+    }
     if (action === 'flee') { playerFlee(); }
   }
 
@@ -1106,7 +1123,17 @@ async function boot() {
     }
     const current = battleState.order[battleState.turnPos];
     if (current.kind === 'player') {
-      showPlayerActions();
+      // Fire ticks at the start of the player's turn. If something burned, show
+      // the burn line and pace the action menu after it (a burn can also win
+      // the fight); otherwise go straight to the menu.
+      const burnMsg = tickBurns();
+      if (checkBattleEnd()) return;
+      if (burnMsg) {
+        ui.setBattleMessage(burnMsg);
+        setTimeout(() => { if (battleState.active) showPlayerActions(); }, ENEMY_TURN_DELAY_MS);
+      } else {
+        showPlayerActions();
+      }
       return;
     }
     if (current.enemy.health <= 0) {
@@ -1176,6 +1203,8 @@ async function boot() {
   // the status line carry a +/− sign so ui.setBattleMessage colorizes them
   // per the mockup (+N green = damage done, −N red = damage taken).
   function playerAttack(target) {
+    // A pending offensive-item use (torch) borrows the same targeting flow.
+    if (pendingUseItem) { pendingUseItem = false; playerUseTorch(target); return; }
     const slot = pendingAttackSlot || 'mainhand';
     pendingAttackSlot = null;
     const hit = battle.resolveAttack(effectiveAttack(), target.defense);
@@ -1211,6 +1240,50 @@ async function boot() {
     if (!result.ok) { showPlayerActions(); return; } // no-op action — see showPlayerActions()'s comment
     battleState.turnPos += 1;
     runQueue();
+  }
+
+  // Use the equipped torch on a target (2026-07-19). Base: a little damage.
+  // Against a wood-bodied foe (ENEMIES[id].wood — rootweavers, bramblekin) it
+  // catches: DOUBLE damage this turn and the enemy starts burning, taking
+  // burnDamage at the start of every following player turn (tickBurns) until it
+  // dies. The fire's extra effect on wood is intentionally unannounced — the
+  // player discovers it. Spends the turn regardless.
+  function playerUseTorch(target) {
+    const def = ITEMS[equipment.item];
+    removeItem(equipment.item, 1); // consume one (auto-unequips at 0)
+    const wood = !!ENEMIES[target.id]?.wood;
+    let dmg = battle.rollDamage(def.useDamage);
+    let msg;
+    if (wood) {
+      dmg *= 2;
+      target.burning = true;
+      target.burnDamage = def.burnDamage;
+      msg = `You thrust the torch — the ${target.name} goes up in flames! +${dmg} damage done.`;
+    } else {
+      msg = `You jab the ${target.name} with the torch. +${dmg} damage done.`;
+    }
+    target.health = Math.max(0, target.health - dmg);
+    audio.sfx(audio.SFX.hurt);
+    ui.setBattleMessage(msg);
+    ui.renderBattleEnemies(battleState.enemies);
+    battleState.turnPos += 1;
+    runQueue();
+  }
+
+  // Burn damage for any alight enemy, applied at the start of the player's turn.
+  // Returns a status message (or '' if nothing's burning) so runQueue can pace
+  // it before the action menu comes up.
+  function tickBurns() {
+    const burning = aliveEnemies().filter((e) => e.burning);
+    if (!burning.length) return '';
+    const parts = [];
+    for (const e of burning) {
+      const d = battle.rollDamage(e.burnDamage);
+      e.health = Math.max(0, e.health - d);
+      parts.push(`The ${e.name} burns for −${d}.`);
+    }
+    ui.renderBattleEnemies(battleState.enemies);
+    return parts.join(' ');
   }
 
   // Flee. Normally succeeds outright. But a rootweaver's roots snare you on the
@@ -1317,7 +1390,7 @@ async function boot() {
   window.battleDebug = {
     start: startBattle, state: battleState, stats, equipment,
     effectiveAttack, effectiveDefense, weaponDamage,
-    handleBattleAction, playerAttack, playerFlee, playerUseItem, checkBattleEnd,
+    handleBattleAction, playerAttack, playerFlee, playerUseItem, playerUseTorch, tickBurns, checkBattleEnd,
     nowPlaying: audio.nowPlaying, // for verifying battle-music crossfades in automation
   };
 

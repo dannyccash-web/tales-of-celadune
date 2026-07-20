@@ -35,6 +35,7 @@ export default {
     defense: 2,
     speed: 6,
     damage: { min: 1, max: 4 }, // 1d4
+    wood: true, // thorn/bramble body — catches fire from a torch (see main.js)
   },
 
   bramblekin_chief: {
@@ -46,6 +47,7 @@ export default {
     defense: 2,
     speed: 7,
     damage: { min: 2, max: 5 }, // 1d4+1
+    wood: true, // thorn/bramble body — flammable
   },
 
   // Rootweaver (D4 shortcut ambushes, 2026-07-11) — a deliberate "too tough
@@ -62,6 +64,7 @@ export default {
     defense: 3,
     speed: 9,
     damage: { min: 2, max: 8 },
+    wood: true, // living wood — a torch sets it ablaze (see main.js)
     // Loot on death (2026-07-17): the heart (the Bramblekin Chief's proof for
     // safe passage) + 5–10 gold. Granted in main.js's endBattle('victory') for
     // any enemy carrying a `drops`. `ensnare: true` makes the first flee

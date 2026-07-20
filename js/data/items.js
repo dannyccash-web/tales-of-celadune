@@ -219,6 +219,23 @@ export default {
     questItem: false,
     price: 15,
   },
+  // A battle consumable that equips to the Use slot (like the potions) but is
+  // OFFENSIVE — using it targets an enemy for a little damage. Its fire mechanic
+  // (double + a lingering burn vs wood-bodied foes) is deliberately NOT hinted
+  // at in the description — that's for the player to discover (Danny, 2026-07-19).
+  // useDamage = base hit; burnDamage = per-turn burn once something's alight
+  // (main.js's playerUseTorch / tickBurns read these).
+  torch: {
+    id: 'torch',
+    name: 'Torch',
+    image: 'assets/images/Torch.png',
+    description: 'A pitch-soaked torch, wrapped and oiled. Burns bright enough to light the darkest cave — and a jab of the flame smarts in a scrap.',
+    questItem: false,
+    slot: 'item', // equips to the battle Use slot; stays in the Items tab
+    useDamage: { min: 1, max: 2 },
+    burnDamage: { min: 2, max: 3 },
+    price: 6,
+  },
   // Dropped by a slain Rootweaver (2026-07-17). The Bramblekin Chief wants one
   // as proof for safe passage through his camp. A quest item — can't be sold.
   rootweaver_heart: {
