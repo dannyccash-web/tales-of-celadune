@@ -27,6 +27,13 @@ export const SFX = {
   questComplete: 'assets/audio/tithuh-successful-accepted-reward-523721.mp3',
   cast: 'assets/audio/spinopel-fishing-rod-whoosh-411640.mp3',
   catch: 'assets/audio/tithuh-successful-accepted-reward-523721.mp3',
+  // Battle impact SFX (2026-07-21). punch = a landed weapon/item hit (player
+  // or enemy); magic = an elemental/magical impact (the torch's fire burn, and
+  // future spells); miss = a whiffed swing; enemyDeath = an enemy dissolving.
+  punch: 'assets/audio/universfield-punch-03-352040.mp3',
+  magic: 'assets/audio/rescopicsound-elemental-magic-spell-impact-outgoing-228342.mp3',
+  miss: 'assets/audio/floraphonic-near-miss-swing-whoosh-16-233440.mp3',
+  enemyDeath: 'assets/audio/freesound_community-reverb-89603.mp3',
 };
 
 // One "voice" clip per NPC, played once when their dialogue window opens —

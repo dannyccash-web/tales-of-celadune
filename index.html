@@ -352,6 +352,27 @@
         <button id="btn-try-again">Try Again</button>
       </div>
 
+      <!-- Victory screen (2026-07-21): shown on a won battle in place of the old
+           toast. Left = title/flavor; right = the spoils list, whose rows are
+           revealed AND granted to the player one at a time every ~1.5s using the
+           game's receive-reveal animation (addGold/addItem play their own SFX).
+           Once the last reward lands the window auto-closes; Space/Enter/Esc
+           skips to the end. Built/driven by ui.js's showVictory(); rewards +
+           drop tables computed in main.js's computeBattleRewards(). -->
+      <div id="victory" class="hidden">
+        <div class="victory-box">
+          <div class="victory-left">
+            <h1 id="victory-title">Victory!</h1>
+            <p id="victory-subtitle">Your foes are vanquished.</p>
+            <p class="victory-hint">Press Space to collect your spoils</p>
+          </div>
+          <div class="victory-right">
+            <h2 class="victory-spoils-head">Spoils</h2>
+            <ul id="victory-rewards"></ul>
+          </div>
+        </div>
+      </div>
+
       <div id="start-screen">
         <h1>Tales of Celadune</h1>
         <button id="btn-start">Start</button>

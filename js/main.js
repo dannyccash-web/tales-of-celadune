@@ -1048,6 +1048,8 @@ async function boot() {
   // (see js/data/d3.js) defines a door + an enemy id list; world.js's
   // battleNearDoor() is how interact() finds one to start.
   const ENEMY_TURN_DELAY_MS = 900; // pause between enemy turns so messages are readable
+  const DEATH_ANIM_MS = 800; // hold after a killing blow so the death dissolve plays before the turn advances / victory screen
+  const MIN_BATTLE_GOLD = 2; // every win drops at least a few coins (Danny, 2026-07-21)
 
   const battleState = {
     active: false,
@@ -1060,6 +1062,32 @@ async function boot() {
 
   function aliveEnemies() {
     return battleState.enemies.filter((e) => e.health > 0);
+  }
+
+  // After any enemy takes damage: dissolve + play the death SFX for each enemy
+  // that just hit 0 and hasn't been animated yet. Returns true if any died so
+  // callers can pace the next step by DEATH_ANIM_MS (letting the dissolve play
+  // before the turn advances or the victory screen opens). `deathPlayed` also
+  // tells ui.renderBattleEnemies to draw that slot empty from then on.
+  function handleEnemyDeaths() {
+    let died = false;
+    for (const e of battleState.enemies) {
+      if (e.health <= 0 && !e.deathPlayed) {
+        e.deathPlayed = true;
+        audio.sfx(audio.SFX.enemyDeath);
+        ui.killEnemy(e);
+        died = true;
+      }
+    }
+    return died;
+  }
+
+  // Advance to the next turn, optionally after a delay (used to hold on a
+  // death dissolve). Guards on battleState.active so a fled/ended fight can't
+  // resume via a stale timer.
+  function advanceTurnAfter(ms) {
+    const go = () => { if (battleState.active) { battleState.turnPos += 1; runQueue(); } };
+    if (ms > 0) setTimeout(go, ms); else go();
   }
 
   // Recomputed every round (not just once) — enemies that died last round
@@ -1169,11 +1197,16 @@ async function boot() {
       // the burn line and pace the action menu after it (a burn can also win
       // the fight); otherwise go straight to the menu.
       const burnMsg = tickBurns();
-      if (checkBattleEnd()) return;
       if (burnMsg) {
         ui.setBattleMessage(burnMsg);
-        setTimeout(() => { if (battleState.active) showPlayerActions(); }, ENEMY_TURN_DELAY_MS);
+        handleEnemyDeaths(); // a burn can kill — dissolve before we check for victory
+        setTimeout(() => {
+          if (!battleState.active) return;
+          if (checkBattleEnd()) return;
+          showPlayerActions();
+        }, ENEMY_TURN_DELAY_MS);
       } else {
+        if (checkBattleEnd()) return;
         showPlayerActions();
       }
       return;
@@ -1189,6 +1222,7 @@ async function boot() {
       if (!battleState.active) return;
       resolveEnemyTurn(current.enemy);
       ui.renderBattleEnemies(battleState.enemies);
+      ui.enemyAttackAnim(current.enemy); // lunge the attacker (on the fresh element)
       battleState.turnPos += 1;
       runQueue();
     }, ENEMY_TURN_DELAY_MS);
@@ -1233,9 +1267,12 @@ async function boot() {
     const hit = battle.resolveAttack(enemy.attack, effectiveDefense());
     if (hit) {
       const dmg = battle.rollDamage(enemy.damage);
-      damagePlayer(dmg);
+      damagePlayer(dmg); // plays the player's hurt grunt
+      audio.sfx(audio.SFX.punch); // the impact, layered over the grunt
+      ui.shakeScreen(); // player was hit — shake the whole battle scene
       ui.setBattleMessage(`The ${enemy.name} hits you. −${dmg} damage taken.`);
     } else {
+      audio.sfx(audio.SFX.miss);
       ui.setBattleMessage(`The ${enemy.name} attacks but misses.`);
     }
   }
@@ -1250,19 +1287,23 @@ async function boot() {
     const slot = pendingAttackSlot || 'mainhand';
     pendingAttackSlot = null;
     const hit = battle.resolveAttack(effectiveAttack(), target.defense);
+    let landed = false;
     if (hit) {
       const dmg = battle.rollDamage(weaponDamage(slot));
       target.health = Math.max(0, target.health - dmg);
       ui.setBattleMessage(target.health <= 0
         ? `The ${target.name} falls! +${dmg} damage done.`
         : `You hit the ${target.name}. +${dmg} damage done.`);
-      audio.sfx(audio.SFX.hurt);
+      audio.sfx(audio.SFX.punch);
+      landed = true;
     } else {
+      audio.sfx(audio.SFX.miss);
       ui.setBattleMessage(`You attack the ${target.name} but miss.`);
     }
     ui.renderBattleEnemies(battleState.enemies);
-    battleState.turnPos += 1;
-    runQueue();
+    if (landed && target.health > 0) ui.reactEnemyHit(target); // shake a survivor; a kill dissolves instead
+    const died = handleEnemyDeaths();
+    advanceTurnAfter(died ? DEATH_ANIM_MS : 0);
   }
 
   // Consumes the item equipped to the Use slot (equipment.item, set from
@@ -1305,11 +1346,12 @@ async function boot() {
       msg = `You jab the ${target.name} with the torch. +${dmg} damage done.`;
     }
     target.health = Math.max(0, target.health - dmg);
-    audio.sfx(audio.SFX.hurt);
+    audio.sfx(audio.SFX.punch); // the torch's item strike (its fire crackle comes via the burn ticks below)
     ui.setBattleMessage(msg);
     ui.renderBattleEnemies(battleState.enemies);
-    battleState.turnPos += 1;
-    runQueue();
+    if (target.health > 0) ui.reactEnemyHit(target);
+    const died = handleEnemyDeaths();
+    advanceTurnAfter(died ? DEATH_ANIM_MS : 0);
   }
 
   // Burn damage for any alight enemy, applied at the start of the player's turn.
@@ -1324,6 +1366,7 @@ async function boot() {
       e.health = Math.max(0, e.health - d);
       parts.push(`The ${e.name} burns for −${d}.`);
     }
+    audio.sfx(audio.SFX.magic); // elemental fire tick
     ui.renderBattleEnemies(battleState.enemies);
     return parts.join(' ');
   }
@@ -1342,6 +1385,7 @@ async function boot() {
         if (!battleState.active) return;
         resolveEnemyTurn(snarer);
         ui.renderBattleEnemies(battleState.enemies);
+        ui.enemyAttackAnim(snarer); // lunge the snarer as it strikes
         if (checkBattleEnd()) return; // the snare's free hit could down you
         showPlayerActions(); // your move again: fight or flee
       }, ENEMY_TURN_DELAY_MS);
@@ -1373,28 +1417,54 @@ async function boot() {
       pendingDefeatCallback = onEnd;
       return;
     }
-    ui.closeBattle();
     if (result === 'victory') {
-      // Loot: grant every defeated enemy's `drops` (item + gold), folding what
-      // was taken into the victory banner so it doesn't fight the toast for the
-      // top-of-screen slot. (Rootweaver: a heart + 5–10 gold.)
-      let bonus = '';
-      for (const e of battleState.enemies) {
-        const def = ENEMIES[e.id];
-        if (!def?.drops) continue;
-        if (def.drops.item && ITEMS[def.drops.item]) {
-          addItem(def.drops.item, 1, true);
-          bonus += ` You claim a ${ITEMS[def.drops.item].name}.`;
-        }
-        if (def.drops.gold) {
-          const g = randInt(def.drops.gold.min, def.drops.gold.max);
-          addGold(g);
-          bonus += ` +${g} gold.`;
-        }
-      }
-      ui.toast(`Victory! Your foes are defeated.${bonus}`);
+      // Compute the spoils BEFORE closing (battleState.enemies still holds the
+      // defeated foes), then hand off to the victory screen, which reveals AND
+      // grants each reward one at a time (grantReward) and runs onEnd when it
+      // closes. Replaces the old immediate grant + toast (2026-07-21).
+      const rewards = computeBattleRewards(battleState.enemies);
+      ui.closeBattle();
+      ui.showVictory({
+        rewards,
+        onReward: grantReward,
+        onClose: () => { if (onEnd) onEnd('victory'); },
+      });
+      return;
     }
-    if (onEnd) onEnd(result);
+    ui.closeBattle();
+    if (onEnd) onEnd(result); // fled (or any other non-defeat outcome)
+  }
+
+  // Roll every defeated enemy's drop table into ONE reward list: a single gold
+  // entry (summed, floored at MIN_BATTLE_GOLD so every win pays out) plus one
+  // entry per distinct item won (chance-rolled). Each entry carries display
+  // name/image so ui.showVictory stays presentation-only. Tougher enemies have
+  // fatter `gold` ranges + better `loot` in enemies.js, so they naturally pay
+  // more.
+  function computeBattleRewards(enemies) {
+    let gold = 0;
+    const items = {};
+    for (const e of enemies) {
+      const drops = ENEMIES[e.id]?.drops;
+      if (!drops) continue;
+      if (drops.gold) gold += randInt(drops.gold.min, drops.gold.max);
+      for (const l of drops.loot || []) {
+        if (Math.random() <= (l.chance ?? 1)) items[l.id] = (items[l.id] || 0) + (l.qty || 1);
+      }
+    }
+    gold = Math.max(gold, MIN_BATTLE_GOLD);
+    const rewards = [{ kind: 'gold', amount: gold }];
+    for (const [id, qty] of Object.entries(items)) {
+      rewards.push({ kind: 'item', id, qty, name: ITEMS[id]?.name || id, image: ITEMS[id]?.image });
+    }
+    return rewards;
+  }
+
+  // Grant one reward (called by the victory screen as each row is revealed).
+  // Routes through addGold/addItem so each still plays its own SFX + HUD update.
+  function grantReward(reward) {
+    if (reward.kind === 'gold') addGold(reward.amount);
+    else if (reward.kind === 'item') addItem(reward.id, reward.qty);
   }
 
   // Set right before showGameOver() so ui.initGameOver's onRestart (wired
@@ -1434,6 +1504,7 @@ async function boot() {
     effectiveAttack, effectiveDefense, weaponDamage,
     handleBattleAction, playerAttack, playerFlee, playerUseItem, playerUseTorch, tickBurns, checkBattleEnd,
     rollRoundOrder, playerInitiativeChance, moveMultForSpeed, // Speed-stat testing (2026-07-20)
+    computeBattleRewards, endBattle, handleEnemyDeaths, // battle-feel/loot testing (2026-07-21)
     nowPlaying: audio.nowPlaying, // for verifying battle-music crossfades in automation
   };
 
@@ -1601,6 +1672,12 @@ async function boot() {
       if (['Enter', ' '].includes(e.key)) { e.preventDefault(); respawnAfterDefeat(); }
       return;
     }
+    // Victory screen: Space/Enter/Escape skip the drip-feed (grant everything
+    // remaining and close); otherwise it auto-awards and closes on its own.
+    if (ui.isVictoryOpen()) {
+      if ([' ', 'Enter', 'Escape'].includes(e.key)) { e.preventDefault(); ui.victoryKey(e.key); }
+      return;
+    }
     // Mid-cast: the player is committed for the 10s (movement's already locked
     // in the frame loop); swallow keys so nothing else fires.
     if (fishing) { if (KEYMAP[e.key] || [' ', 'i', 'I', 'm', 'M'].includes(e.key)) e.preventDefault(); return; }
@@ -1646,7 +1723,7 @@ async function boot() {
     const dt = Math.min((now - last) / 1000, 0.05);
     last = now;
 
-    const locked = ui.isDialogOpen() || ui.isAnyPanelOpen() || ui.isBattleOpen() || ui.isGameOverOpen() || fishing || !state.started;
+    const locked = ui.isDialogOpen() || ui.isAnyPanelOpen() || ui.isBattleOpen() || ui.isVictoryOpen() || ui.isGameOverOpen() || fishing || !state.started;
     // Camp membrane state (no-op in scenes without a camp): sealed until the
     // player has passage (paid this visit OR did the Chief's favor) — and never
     // sealed once the camp's hostile, since then the guards attack rather than

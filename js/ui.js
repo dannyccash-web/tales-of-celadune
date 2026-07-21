@@ -1394,9 +1394,18 @@ export function renderBattleEnemies(enemies) {
   const box = $('battle-enemies');
   box.innerHTML = '';
   battleUiState.enemySlots = enemies.map((enemy) => {
-    const defeated = enemy.health <= 0;
     const slot = document.createElement('div');
-    slot.className = 'enemy-slot' + (defeated ? ' defeated' : '');
+    slot.className = 'enemy-slot';
+
+    // Once an enemy's death dissolve has played (main.js sets deathPlayed when
+    // it calls killEnemy), it renders as an EMPTY slot — the column stays for
+    // layout so survivors don't jump, but there's no portrait/bar/name. A
+    // dead-but-not-yet-dissolved enemy still renders its portrait so killEnemy
+    // has something to animate.
+    if (enemy.health <= 0 && enemy.deathPlayed) {
+      box.appendChild(slot);
+      return { el: slot, enemy };
+    }
 
     const windowEl = document.createElement('div');
     windowEl.className = 'enemy-portrait-window';
@@ -1422,13 +1431,65 @@ export function renderBattleEnemies(enemies) {
 
     const name = document.createElement('span');
     name.className = 'enemy-name';
-    name.textContent = defeated ? `${enemy.name} (defeated)` : enemy.name;
+    name.textContent = enemy.name;
 
     slot.append(windowEl, bar, name);
     box.appendChild(slot);
     return { el: slot, enemy };
   });
   refreshTargetFocus();
+}
+
+// ---- Battle-feel hooks (2026-07-21) ----
+// main.js calls these AFTER renderBattleEnemies (which rebuilds the slot DOM),
+// passing the live enemy object so we can find its freshly-built slot.
+function slotFor(enemy) {
+  return battleUiState.enemySlots.find((s) => s.enemy === enemy)?.el || null;
+}
+function replayClass(el, cls) {
+  if (!el) return;
+  el.classList.remove(cls);
+  void el.offsetWidth; // reflow so the CSS animation restarts
+  el.classList.add(cls);
+}
+
+export function reactEnemyHit(enemy) { replayClass(slotFor(enemy), 'hit'); }
+export function enemyAttackAnim(enemy) { replayClass(slotFor(enemy), 'attacking'); }
+export function shakeScreen() { replayClass($('battle'), 'screen-shake'); }
+
+// Dissolve an enemy's portrait into ~22 ember/ash motes: the portrait gets
+// .dying (CSS fade/lift/blur), and the particles are appended to the slot
+// (which isn't animated) so they drift independently. Uses offset math, not
+// getBoundingClientRect, so it's correct under #stage's CSS scale.
+export function killEnemy(enemy) {
+  const slot = slotFor(enemy);
+  if (!slot) return;
+  const win = slot.querySelector('.enemy-portrait-window');
+  slot.classList.add('dying');
+  if (!win) return;
+  const ww = win.offsetWidth;
+  const wh = win.offsetHeight;
+  const baseL = win.offsetLeft - ww / 2; // undo the window's translateX(-50%)
+  const baseT = win.offsetTop;
+  for (let i = 0; i < 22; i += 1) {
+    const p = document.createElement('div');
+    p.className = 'death-particle';
+    p.style.left = `${baseL + Math.random() * ww}px`;
+    p.style.top = `${baseT + Math.random() * wh * 0.7}px`;
+    const ang = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI; // upward fan
+    const dist = 45 + Math.random() * 95;
+    p.style.setProperty('--dx', `${Math.cos(ang) * dist}px`);
+    p.style.setProperty('--dy', `${Math.sin(ang) * dist - 25}px`); // bias upward
+    p.style.setProperty('--dur', `${0.5 + Math.random() * 0.4}s`);
+    const sz = 6 + Math.random() * 10;
+    p.style.width = `${sz}px`;
+    p.style.height = `${sz}px`;
+    p.style.background = Math.random() < 0.55
+      ? 'radial-gradient(circle at 35% 30%, #ffe6a6, #c8892f 75%)'
+      : 'rgba(180, 178, 170, 0.9)';
+    slot.appendChild(p);
+    setTimeout(() => p.remove(), 1100);
+  }
 }
 
 function aliveSlots() {
@@ -1586,4 +1647,98 @@ export function hideGameOver() {
 export function initGameOver(handlers) {
   gameOverHandlers = handlers;
   $('btn-try-again').addEventListener('click', () => gameOverHandlers?.onRestart?.());
+}
+
+// ---- Victory screen (2026-07-21) ----
+// Presentation only: main.js computes the reward list (with display name/image
+// per entry) and passes onReward to actually grant each one. The rewards are
+// revealed AND granted one at a time on a timer, each row dropping in with the
+// same motion as the dialog receive-reveal; addGold/addItem inside onReward
+// play their own SFX. Once the last lands, the window auto-closes after a beat
+// and calls onClose (which runs the battle's own onEnd). Space/Enter/Escape
+// skips: grant everything remaining at once and close.
+const victoryState = { open: false, rewards: [], els: [], idx: 0, onReward: null, onClose: null, timer: null };
+const VICTORY_REVEAL_MS = 1500;
+const VICTORY_CLOSE_MS = 1600;
+
+export function isVictoryOpen() { return victoryState.open; }
+
+export function showVictory({ rewards, onReward, onClose }) {
+  clearTimeout(victoryState.timer);
+  victoryState.open = true;
+  victoryState.rewards = rewards || [];
+  victoryState.els = [];
+  victoryState.idx = 0;
+  victoryState.onReward = onReward || null;
+  victoryState.onClose = onClose || null;
+
+  const list = $('victory-rewards');
+  list.innerHTML = '';
+  victoryState.rewards.forEach((r) => {
+    const li = document.createElement('li');
+    li.className = 'victory-reward pending';
+    const frame = document.createElement('div');
+    frame.className = 'victory-reward-frame';
+    if (r.kind === 'gold') {
+      const coin = document.createElement('div');
+      coin.className = 'coin victory-coin';
+      frame.appendChild(coin);
+    } else {
+      const img = document.createElement('img');
+      img.src = r.image || '';
+      img.alt = r.name || '';
+      frame.appendChild(img);
+    }
+    const label = document.createElement('span');
+    label.className = 'victory-reward-label';
+    label.textContent = r.kind === 'gold'
+      ? `${r.amount} Gold`
+      : (r.qty > 1 ? `${r.name} ×${r.qty}` : r.name);
+    li.append(frame, label);
+    list.appendChild(li);
+    victoryState.els.push(li);
+  });
+
+  $('victory').classList.remove('hidden');
+  victoryState.timer = setTimeout(revealNextReward, 650); // let the screen settle first
+}
+
+function revealNextReward() {
+  const vs = victoryState;
+  if (!vs.open) return;
+  if (vs.idx >= vs.rewards.length) {
+    vs.timer = setTimeout(closeVictory, VICTORY_CLOSE_MS);
+    return;
+  }
+  const li = vs.els[vs.idx];
+  li.classList.remove('pending');
+  li.classList.add('revealed');
+  vs.onReward?.(vs.rewards[vs.idx]); // grants it (plays the gold/item SFX)
+  vs.idx += 1;
+  vs.timer = setTimeout(revealNextReward, VICTORY_REVEAL_MS);
+}
+
+function closeVictory() {
+  const vs = victoryState;
+  if (!vs.open) return;
+  clearTimeout(vs.timer);
+  vs.open = false;
+  $('victory').classList.add('hidden');
+  const cb = vs.onClose;
+  vs.onClose = null;
+  if (cb) cb();
+}
+
+export function victoryKey(key) {
+  if (!victoryState.open) return;
+  if (key !== ' ' && key !== 'Enter' && key !== 'Escape') return;
+  clearTimeout(victoryState.timer);
+  while (victoryState.idx < victoryState.rewards.length) {
+    const li = victoryState.els[victoryState.idx];
+    li.classList.remove('pending');
+    li.classList.add('revealed');
+    victoryState.onReward?.(victoryState.rewards[victoryState.idx]);
+    victoryState.idx += 1;
+  }
+  closeVictory();
 }

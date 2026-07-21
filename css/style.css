@@ -1252,6 +1252,191 @@ html, body {
 
 .battle-action.disabled { opacity: 0.4; }
 
+/* ---- Battle feel / "juice" (2026-07-21) ----
+   All triggered by ui.js toggling a class on the freshly-rendered enemy slot
+   (or on #battle) with the remove-reflow-re-add trick so the animation replays.
+   The enemy-portrait-window carries transform: translateX(-50%) to stay
+   centered, so every keyframe that touches its transform re-includes that. */
+
+/* Enemy struck: a quick horizontal shake + white flash on the portrait. */
+.enemy-slot.hit .enemy-portrait-window { animation: enemy-hit-shake 0.4s ease-out; }
+@keyframes enemy-hit-shake {
+  0%   { transform: translateX(-50%);          filter: brightness(2.6); }
+  15%  { transform: translateX(calc(-50% - 11px)); }
+  30%  { transform: translateX(calc(-50% + 10px)); filter: brightness(1.5); }
+  45%  { transform: translateX(calc(-50% - 8px)); }
+  60%  { transform: translateX(calc(-50% + 6px)); }
+  75%  { transform: translateX(calc(-50% - 4px)); }
+  100% { transform: translateX(-50%);          filter: brightness(1); }
+}
+
+/* Enemy attacking: portrait grows forward from its base, then settles — reads
+   as a lunge toward the player. */
+.enemy-slot.attacking .enemy-portrait-window {
+  animation: enemy-lunge 0.36s ease-out;
+  transform-origin: bottom center;
+}
+@keyframes enemy-lunge {
+  0%   { transform: translateX(-50%) scale(1); }
+  40%  { transform: translateX(-50%) scale(1.17); }
+  100% { transform: translateX(-50%) scale(1); }
+}
+
+/* Enemy death: the portrait brightens, lifts, blurs and fades out (its motes
+   are spawned separately as .death-particle by ui.killEnemy). */
+.enemy-slot.dying .enemy-portrait-window {
+  animation: enemy-dissolve 0.7s ease-in forwards;
+  transform-origin: center;
+}
+@keyframes enemy-dissolve {
+  0%   { opacity: 1; filter: brightness(1); transform: translateX(-50%) scale(1); }
+  30%  { opacity: 1; filter: brightness(2.1) saturate(0.5); transform: translateX(-50%) scale(1.05); }
+  100% { opacity: 0; filter: brightness(1.7) blur(4px) saturate(0); transform: translateX(-50%) scale(0.9) translateY(-16px); }
+}
+
+/* Ember/ash motes flung from the portrait on death. --dx/--dy/--dur set per
+   particle in ui.killEnemy; the element is a child of the (unanimated) slot so
+   it drifts independently of the dissolving portrait. */
+.death-particle {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  pointer-events: none;
+  animation: particle-fly var(--dur, 0.7s) ease-out forwards;
+}
+@keyframes particle-fly {
+  from { transform: translate(0, 0) scale(1); opacity: 1; }
+  to   { transform: translate(var(--dx), var(--dy)) scale(0.2); opacity: 0; }
+}
+
+/* Player struck: shake the whole battle scene. */
+#battle.screen-shake { animation: screen-shake 0.42s ease-out; }
+@keyframes screen-shake {
+  0%, 100% { transform: translate(0, 0); }
+  15% { transform: translate(-9px, 5px); }
+  30% { transform: translate(8px, -6px); }
+  45% { transform: translate(-7px, 4px); }
+  60% { transform: translate(5px, -3px); }
+  80% { transform: translate(-3px, 2px); }
+}
+
+/* ---- Victory screen (2026-07-21) ---- */
+#victory {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, #1c1608 0%, #000 82%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: victory-fade 0.4s ease-out;
+}
+@keyframes victory-fade { from { opacity: 0; } to { opacity: 1; } }
+
+.victory-box {
+  position: relative;
+  width: 1120px;
+  height: 560px;
+  background: var(--panel-bg);
+  border: 2px solid;
+  border-image: linear-gradient(180deg, var(--frame-light), var(--frame-dark)) 1;
+  outline: 4px solid #4d3a1c;
+  outline-offset: 8px;
+  display: flex;
+}
+
+.victory-left {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  padding: 40px;
+  text-align: center;
+}
+
+#victory-title {
+  font-family: var(--font-medieval);
+  font-weight: 400;
+  font-size: 76px;
+  color: var(--gold-bright);
+  text-shadow: 0 4px 18px rgba(0, 0, 0, 0.9);
+}
+
+#victory-subtitle {
+  font-family: var(--font-meta);
+  font-size: 26px;
+  color: var(--text);
+}
+
+.victory-hint {
+  font-family: var(--font-lato);
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-top: 20px;
+}
+
+.victory-right {
+  width: 440px;
+  padding: 44px 48px;
+  border-left: 2px solid;
+  border-image: linear-gradient(180deg, var(--frame-dark), var(--gold-dark), var(--frame-dark)) 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  overflow-y: auto;
+}
+
+.victory-spoils-head {
+  font-family: var(--font-lato);
+  font-weight: 600;
+  font-size: 18px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--role-gold);
+}
+
+#victory-rewards { list-style: none; display: flex; flex-direction: column; gap: 16px; }
+
+.victory-reward {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+/* Pending rows are invisible until revealed; revealing drops the row in with
+   the same motion as the dialog's receive reveal. */
+.victory-reward.pending { opacity: 0; }
+.victory-reward.revealed { animation: received-drop 0.5s ease-out; opacity: 1; }
+
+.victory-reward-frame {
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  width: 76px;
+  height: 76px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid;
+  border-image: linear-gradient(180deg, var(--gold-bright), var(--frame-dark)) 1;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.victory-reward-frame img { width: 100%; height: 100%; object-fit: contain; }
+.victory-coin { width: 42px; height: 42px; }
+
+.victory-reward-label {
+  font-family: var(--font-meta);
+  font-size: 24px;
+  color: var(--text);
+}
+
 /* ---- Game Over ---- */
 #game-over {
   position: absolute;

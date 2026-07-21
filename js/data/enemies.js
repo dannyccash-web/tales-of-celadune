@@ -19,6 +19,11 @@ export default {
     defense: 1,
     speed: 8, // unspecified by Danny — carried over from the old kobold
     damage: 1,
+    // Loot on death (2026-07-21). Unified schema: `gold: {min,max}` rolled per
+    // enemy + `loot: [{id, chance?, qty?}]` (chance defaults to 1). Weakest
+    // foe, so a couple of coins and nothing else. main.js's computeBattleRewards
+    // aggregates every defeated enemy's drops into the victory screen.
+    drops: { gold: { min: 2, max: 4 } },
   },
 
   // The Bramblekin toll-camp (D4, 2026-07-11). Both share +2 attack / +2
@@ -36,6 +41,7 @@ export default {
     speed: 6,
     damage: { min: 1, max: 4 }, // 1d4
     wood: true, // thorn/bramble body — catches fire from a torch (see main.js)
+    drops: { gold: { min: 4, max: 8 }, loot: [{ id: 'health_potion', chance: 0.2 }] },
   },
 
   bramblekin_chief: {
@@ -48,6 +54,7 @@ export default {
     speed: 7,
     damage: { min: 2, max: 5 }, // 1d4+1
     wood: true, // thorn/bramble body — flammable
+    drops: { gold: { min: 10, max: 18 }, loot: [{ id: 'health_potion', chance: 0.5 }, { id: 'magic_potion', chance: 0.2 }] },
   },
 
   // Rootweaver (D4 shortcut ambushes, 2026-07-11) — a deliberate "too tough
@@ -65,11 +72,11 @@ export default {
     speed: 9,
     damage: { min: 2, max: 8 },
     wood: true, // living wood — a torch sets it ablaze (see main.js)
-    // Loot on death (2026-07-17): the heart (the Bramblekin Chief's proof for
-    // safe passage) + 5–10 gold. Granted in main.js's endBattle('victory') for
-    // any enemy carrying a `drops`. `ensnare: true` makes the first flee
-    // attempt against it fail (see main.js's playerFlee).
-    drops: { item: 'rootweaver_heart', gold: { min: 5, max: 10 } },
+    // Loot on death (2026-07-17, reworked 2026-07-21 to the unified schema):
+    // the heart (the Bramblekin Chief's proof for safe passage, guaranteed) +
+    // the fattest purse of any foe, befitting the toughest fight. `ensnare:
+    // true` makes the first flee attempt against it fail (see playerFlee).
+    drops: { gold: { min: 18, max: 30 }, loot: [{ id: 'rootweaver_heart', chance: 1 }, { id: 'vitality_potion', chance: 0.35 }] },
     ensnare: true,
   },
 };
