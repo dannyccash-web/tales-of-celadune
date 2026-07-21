@@ -478,9 +478,7 @@ html, body {
 
 /* ---- Menu / Inventory panels ----
    Full-screen dark backdrop + centered gold-double-framed panel (same frame
-   recipe as .dialog-box), left tab rail + right content area. Empty item
-   slots use .slot-icon (a small gold-bordered diamond) since no item art
-   exists yet — same shape language as the topbar's .diamond icons. */
+   recipe as .dialog-box), left tab rail + right content area. */
 #menu, #inventory {
   position: absolute;
   inset: 0;
@@ -757,42 +755,10 @@ html, body {
   padding-top: 18px;
 }
 
-/* Item slots — Magic's placeholder spell grid is the only remaining user of
-   this (2026-07-09: Equipment/Weapons dropped standalone slot boxes for the
-   per-subcategory section grids below; see .category-section). Inert/
-   display-only, no filled/focused states needed since nothing wires to it. */
-.item-slot {
-  width: 160px;
-  height: 160px;
-  background: rgba(0, 0, 0, 0.4);
-  border: 2px solid;
-  border-image: linear-gradient(180deg, var(--frame-light), var(--frame-dark)) 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 14px;
-}
-
-.slot-icon {
-  width: 32px;
-  height: 32px;
-  border: 2px solid;
-  border-image: linear-gradient(180deg, var(--frame-light), var(--frame-dark)) 1;
-  transform: rotate(45deg);
-  opacity: 0.45;
-}
-
-.slot-label {
-  font-family: var(--font-lato);
-  font-weight: 600;
-  font-size: 14px;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  color: var(--text-dim);
-  text-align: center;
-  padding: 0 8px;
-}
+/* (Removed 2026-07-21: the .item-slot / .slot-icon / .slot-label rules were
+   orphaned once the Magic tab's placeholder spell slots were deleted — no HTML
+   or JS references them anymore. Equipment/Weapons already use the
+   per-subcategory section grids below.) */
 
 /* Equipment/Weapons tabs (2026-07-09 rework): a stacked list of subcategory
    sections — one per equip slot (Main Hand, Off Hand, Head, Clothing...),
@@ -816,14 +782,6 @@ html, body {
   margin-bottom: 24px;
   border-bottom: 2px solid;
   border-image: linear-gradient(90deg, var(--gold-bright), var(--frame-dark)) 1;
-}
-
-/* Magic tab: a simple spell grid */
-.magic-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 150px);
-  gap: 30px;
-  margin-top: 20px;
 }
 
 /* ---- Items tab: the real inventory (consumables, potions, resources...) ---- */
