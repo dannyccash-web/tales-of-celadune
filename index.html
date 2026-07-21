@@ -130,8 +130,8 @@
         <div class="panel-box">
           <div class="panel-tabs">
             <div class="panel-tab active" data-tab="quests">Quests</div>
-            <div class="panel-tab" data-tab="audio">Audio</div>
             <div class="panel-tab" data-tab="stats">Stats</div>
+            <div class="panel-tab" data-tab="audio">Audio</div>
             <div class="panel-tab" data-tab="controls">Controls</div>
           </div>
           <div class="panel-content">
@@ -156,7 +156,9 @@
               </div>
             </section>
             <section class="tab-pane hidden" data-pane="stats">
-              <!-- Level / Experience / Luck hidden for now (Danny, 2026-07-12) -->
+              <!-- Level / Experience hidden for now (Danny, 2026-07-12). Luck
+                   is now SHOWN (2026-07-20): it adds +1 per point to the
+                   player's attack/defense rolls, so it's a real combat stat. -->
               <div class="stat-row hidden"><span class="stat-label">Level</span><span class="stat-value" id="stat-level">4</span></div>
               <div class="stat-row xp-row hidden">
                 <span class="stat-label">Experience</span>
@@ -165,8 +167,8 @@
               </div>
               <div class="stat-row"><span class="stat-label">Attack</span><span class="stat-value" id="stat-attack">1</span></div>
               <div class="stat-row"><span class="stat-label">Defense</span><span class="stat-value" id="stat-defense">1</span></div>
-              <div class="stat-row"><span class="stat-label">Speed</span><span class="stat-value" id="stat-speed">11</span></div>
-              <div class="stat-row hidden"><span class="stat-label">Luck</span><span class="stat-value" id="stat-luck">6</span></div>
+              <div class="stat-row"><span class="stat-label">Speed</span><span class="stat-value" id="stat-speed">1</span></div>
+              <div class="stat-row"><span class="stat-label">Luck</span><span class="stat-value" id="stat-luck">0</span></div>
             </section>
             <section class="tab-pane hidden" data-pane="quests">
               <div class="quest-list" id="quest-list">
@@ -230,16 +232,12 @@
             <section class="tab-pane hidden" data-pane="weapons">
               <div class="category-sections" id="weapons-sections"></div>
             </section>
+            <!-- Magic: no spell-slot placeholders — the player hasn't learned
+                 any magic yet, so this tab is empty until magic items/spells
+                 exist (2026-07-20, Danny). Structurally identical to the Items
+                 tab: the category grid (fed by renderCategoryGrid('magic', ...))
+                 shows "Nothing here yet." until a magic-category item is owned. -->
             <section class="tab-pane hidden" data-pane="magic">
-              <div class="magic-grid">
-                <div class="item-slot"><div class="slot-icon"></div><span class="slot-label">Spell 1</span></div>
-                <div class="item-slot"><div class="slot-icon"></div><span class="slot-label">Spell 2</span></div>
-                <div class="item-slot"><div class="slot-icon"></div><span class="slot-label">Spell 3</span></div>
-                <div class="item-slot"><div class="slot-icon"></div><span class="slot-label">Spell 4</span></div>
-                <div class="item-slot"><div class="slot-icon"></div><span class="slot-label">Spell 5</span></div>
-                <div class="item-slot"><div class="slot-icon"></div><span class="slot-label">Spell 6</span></div>
-              </div>
-              <div class="section-subhead">Inventory</div>
               <div class="item-grid" id="magic-items-grid">
                 <p class="items-empty" id="magic-items-empty">Nothing here yet.</p>
               </div>

@@ -395,8 +395,8 @@ export default {
       // Stationary sentry at the NORTH entrance (top-right opening; no routine).
       x: 1580, y: 1320, speed: 38, startsHome: false,
       sentry: true, gate: 'north',
-      line: '“State your business. Actually, don’t — I don’t care. Nobody crosses this camp without squaring up with the chief first.”',
-      paidLine: '“Chief took your coin. Guess you’re not my problem anymore.”',
+      line: 'State your business. Actually, don’t — I don’t care. Nobody crosses this camp without squaring up with the chief first.',
+      paidLine: 'Chief took your coin. Guess you’re not my problem anymore.',
     },
     {
       id: 'bramblekin_2', name: 'Bramblekin', role: '', bramblekin: true,
@@ -405,8 +405,8 @@ export default {
       // Stationary sentry at the WEST/NW entrance (main path in; no routine).
       x: 1180, y: 1340, speed: 38, startsHome: false,
       sentry: true, gate: 'west',
-      line: '“Thorns out, coin up. That’s the rule. You want through? You talk to the chief, and you bring gold when you do.”',
-      paidLine: '“Paid up, are you? Fine. Don’t touch anything.”',
+      line: 'Thorns out, coin up. That’s the rule. You want through? You talk to the chief, and you bring gold when you do.',
+      paidLine: 'Paid up, are you? Fine. Don’t touch anything.',
     },
     {
       id: 'bramblekin_3', name: 'Bramblekin', role: '', bramblekin: true,
@@ -419,8 +419,8 @@ export default {
         { do: 'goto', x: 1520, y: 1470 }, { do: 'wait', s: 4 },
         { do: 'goHome' }, { do: 'wait', s: 5 }, { do: 'leaveHome' },
       ],
-      line: '“We don’t do charity here, sap. The chief sets the toll, you pay the toll, everybody’s happy. Well — he’s happy.”',
-      paidLine: '“Move along, moneybags. You’re square with us.”',
+      line: 'We don’t do charity here, sap. The chief sets the toll, you pay the toll, everybody’s happy. Well — he’s happy.',
+      paidLine: 'Move along, moneybags. You’re square with us.',
     },
     {
       id: 'bramblekin_4', name: 'Bramblekin', role: '', bramblekin: true,
@@ -433,8 +433,8 @@ export default {
         { do: 'goto', x: 1235, y: 1420 }, { do: 'wait', s: 6 },
         { do: 'goHome' }, { do: 'wait', s: 5 }, { do: 'leaveHome' },
       ],
-      line: '“Keep walking and see what happens. Or better yet, go see the chief before something unfortunate grows out of you.”',
-      paidLine: '“You paid? Huh. Wonders never cease. Off you go.”',
+      line: 'Keep walking and see what happens. Or better yet, go see the chief before something unfortunate grows out of you.',
+      paidLine: 'You paid? Huh. Wonders never cease. Off you go.',
     },
     {
       id: 'bramblekin_5', name: 'Bramblekin', role: '', bramblekin: true,
@@ -447,8 +447,8 @@ export default {
         { do: 'goto', x: 1250, y: 1560 }, { do: 'wait', s: 5 },
         { do: 'goHome' }, { do: 'wait', s: 6 }, { do: 'leaveHome' },
       ],
-      line: '“Fresh face. Fresh purse, I hope. Passage costs, and the chief’s the one who counts it.”',
-      paidLine: '“Toll’s settled. I’ll pretend to be friendly now.”',
+      line: 'Fresh face. Fresh purse, I hope. Passage costs, and the chief’s the one who counts it.',
+      paidLine: 'Toll’s settled. I’ll pretend to be friendly now.',
     },
     {
       id: 'bramblekin_6', name: 'Bramblekin', role: '', bramblekin: true,
@@ -461,8 +461,8 @@ export default {
         { do: 'goto', x: 1450, y: 1600 }, { do: 'wait', s: 4 },
         { do: 'goHome' }, { do: 'wait', s: 7 }, { do: 'leaveHome' },
       ],
-      line: '“Rules are rules, twig. No toll, no trail. Go on and have your little chat with the chief.”',
-      paidLine: '“Gold’s in the chief’s pocket. You’re free to wander, twig.”',
+      line: 'Rules are rules, twig. No toll, no trail. Go on and have your little chat with the chief.',
+      paidLine: 'Gold’s in the chief’s pocket. You’re free to wander, twig.',
     },
     {
       id: 'bramblekin_7', name: 'Bramblekin', role: '', bramblekin: true,
@@ -475,8 +475,8 @@ export default {
         { do: 'goto', x: 1565, y: 1490 }, { do: 'wait', s: 6 },
         { do: 'goHome' }, { do: 'wait', s: 5 }, { do: 'leaveHome' },
       ],
-      line: '“You smell like someone who hasn’t paid yet. Fix that. The chief’s waiting, and his patience isn’t.”',
-      paidLine: '“All square. Try not to trip over a tent rope.”',
+      line: 'You smell like someone who hasn’t paid yet. Fix that. The chief’s waiting, and his patience isn’t.',
+      paidLine: 'All square. Try not to trip over a tent rope.',
     },
     {
       id: 'bramblekin_chief', name: 'Bramblekin Chief', role: '',

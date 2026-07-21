@@ -86,7 +86,13 @@ function finishTyping() {
 const PAGE_CHARS = 200;
 function paginate(text) {
   if (!text) return [''];
-  const sentences = text.match(/[^.!?]+[.!?]*(?:\s+|$)/g) || [text];
+  // Sentence = body + terminator(s) + any closing quotes/brackets + trailing
+  // space; the final `[^.!?]+` alt catches an un-terminated tail. Lossless by
+  // construction — the OLD regex (`[^.!?]+[.!?]*(?:\s+|$)`) silently DROPPED
+  // the last word of any sentence ending in a closer, e.g. `...that one.”`
+  // rendered as `...that ”`, which is the "dialogue cut off mid-sentence" bug
+  // (2026-07-20). Verified lossless across single/multi-page lines.
+  const sentences = text.match(/[^.!?]*[.!?]+[”’"')\]]*\s*|[^.!?]+/g) || [text];
   const pages = [];
   let cur = '';
   for (const s of sentences) {

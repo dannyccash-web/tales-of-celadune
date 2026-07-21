@@ -827,10 +827,13 @@ export class World {
     }
 
     // Hidden-collectible labels: same proximity-reveal pattern, no sprite.
-    // Label-less interactables (e.g. the silo, 2026-07-10 — the structure
-    // itself is the visible thing) draw nothing.
+    // The label shows under the EXACT condition nearestInteractableInRange()
+    // treats the object as interactable — same range, and collected ones are
+    // only dropped when they lack an `emptyMessage` (a still-interactive silo
+    // keeps its 'Silo' label after the corn's gone). So a visible label always
+    // means "press space here" (2026-07-20, Danny). Label-less ones draw nothing.
     for (const it of this.interactables) {
-      if (it.collected || !it.label) continue;
+      if (!it.label || (it.collected && !it.emptyMessage)) continue;
       const range = it.range ?? INTERACT_RANGE;
       if (Math.hypot(it.x - p.x, it.y - p.y) < range) this.drawLabel(it.label, it.x, it.y);
     }

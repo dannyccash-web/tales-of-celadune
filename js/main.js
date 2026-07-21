@@ -12,14 +12,15 @@ import QUESTS from './data/quests.js';
 import ENEMIES from './data/enemies.js';
 import * as battle from './battle.js';
 
-// Attack/Defense start at 1 (Danny's spec, 2026-07-08 battle system) — real
-// combat stats now, not placeholder flavor like the rest of this block.
-// Speed keeps its earlier placeholder value (11) but now has real meaning
-// too: it drives battle.js's turn order against enemies (Blight Rats:
-// speed 8), so the player generally acts first without touching it further.
+// Attack/Defense/Speed/Luck all start at 1/1/1/0 (Danny's spec) — real combat
+// stats now, not placeholder flavor like level/xp. Speed drives battle.js's
+// turn order (Blight Rats: speed 8), so at the starting Speed of 1 most
+// enemies act before the player until Speed is raised. Luck adds +1 per point
+// to the player's attack AND defense rolls (see effectiveAttack/Defense);
+// starts at 0, raised later by gear/effects not yet built.
 const stats = {
   health: 5, healthMax: 5, magic: 5, magicMax: 10, gold: 0,
-  level: 4, xp: 1240, xpMax: 2000, attack: 1, defense: 1, speed: 11, luck: 6,
+  level: 4, xp: 1240, xpMax: 2000, attack: 1, defense: 1, speed: 1, luck: 0,
 };
 const state = { started: false };
 
@@ -106,8 +107,14 @@ function equipmentBonus(field) {
     return sum + (ITEMS[id]?.[field] || 0);
   }, 0);
 }
-function effectiveAttack() { return stats.attack + equipmentBonus('attackBonus'); }
-function effectiveDefense() { return stats.defense + equipmentBonus('defenseBonus'); }
+// Luck adds +1 per point to BOTH the player's attack and defense rolls
+// (Danny, 2026-07-20). effectiveAttack is the attacker score when the player
+// swings (main.js's playerAttack); effectiveDefense is the defender score when
+// an enemy swings at the player — so folding luck into both means every roll
+// the player is party to gets the bonus. Enemies use their own flat stats and
+// are unaffected. Starts at 0; gear/temporary effects may raise it later.
+function effectiveAttack() { return stats.attack + stats.luck + equipmentBonus('attackBonus'); }
+function effectiveDefense() { return stats.defense + stats.luck + equipmentBonus('defenseBonus'); }
 function weaponDamage(slot = 'mainhand') {
   const item = equipment[slot] && ITEMS[equipment[slot]];
   return item?.damage ?? 1;
@@ -424,7 +431,7 @@ async function boot() {
       campTollPaid = true;
       stepSentriesAside();
       ui.updateDialogContent({
-        line: 'The Chief’s grin is all thorns and bad intentions. “Pleasure doing business. The camp’s yours to cross — this once. Wander back through and we’ll dance again.”',
+        line: 'Pleasure doing business. The camp’s yours to cross — this once. Wander back through and we’ll dance again.',
         responses: ['Leave.'],
       });
       return true;
@@ -460,7 +467,7 @@ async function boot() {
       campTollPaid = true;
       stepSentriesAside();
       ui.updateDialogContent({
-        line: 'The Chief turns the heart over in his thorny hands and grunts, almost impressed. “A deal’s a deal. The camp’s open to you — for good, this time. Now get out of my firelight.”',
+        line: 'A deal’s a deal. The camp’s open to you — for good, this time. Now get out of my firelight.',
         responses: ['Leave.'],
       });
       return true;
@@ -475,7 +482,7 @@ async function boot() {
       addGold(5);
       vegetableDeliveredToTavern = true;
       ui.updateDialogContent({
-        line: '“Mirelle’s crate — been waiting on these! Here, five gold for her trouble. See it finds its way back to her, won’t you? Good lass, that one.”',
+        line: 'Mirelle’s crate — been waiting on these! Here, five gold for her trouble. See it finds its way back to her, won’t you? Good lass, that one.',
         responses: ['Leave.'],
       });
       return true;
@@ -485,7 +492,7 @@ async function boot() {
       spendGold(5);
       completeQuest('vegetable_delivery');
       ui.updateDialogContent({
-        line: '“You didn’t have to — but bless you for it. Honest folk are rarer than good weather these days. Safe travels, dear.”',
+        line: 'You didn’t have to — but bless you for it. Honest folk are rarer than good weather these days. Safe travels, dear.',
         responses: ['Leave.'],
       });
       return true;
@@ -498,7 +505,7 @@ async function boot() {
       addGold(20);
       completeQuest('rare_fish');
       ui.updateDialogContent({
-        line: '“Would you look at that — a Moonscale, big as my forearm! Here, twenty gold, and cheap at the price. You’ve made an old fisherman’s year.”',
+        line: 'Would you look at that — a Moonscale, big as my forearm! Here, twenty gold, and cheap at the price. You’ve made an old fisherman’s year.',
         responses: ['Leave.'],
       });
       return true;
@@ -508,7 +515,7 @@ async function boot() {
     if (effect.lieToMirelle) {
       completeQuest('vegetable_delivery');
       ui.updateDialogContent({
-        line: '“Not a copper? That old skinflint. Ah well — thank you for carrying them all the same, dear. Least the stew got made.”',
+        line: 'Not a copper? That old skinflint. Ah well — thank you for carrying them all the same, dear. Least the stew got made.',
         responses: ['Leave.'],
       });
       return true;
@@ -709,7 +716,7 @@ async function boot() {
   // through openNpcDialog's branches below. The gate confrontation is a
   // separate, gate-triggered dialog (openGateConfrontation).
   function buildBramblekinDialog(npc) {
-    if (campTollPaid || campQuestDone) return { line: npc.paidLine || '“Toll’s paid. Move along, then.”', responses: ['Leave.'] };
+    if (campTollPaid || campQuestDone) return { line: npc.paidLine || 'Toll’s paid. Move along, then.', responses: ['Leave.'] };
     return { line: npc.line, responses: ['Leave.'] };
   }
 
@@ -724,7 +731,7 @@ async function boot() {
   function buildChiefDialog() {
     if (campTollPaid || campQuestDone) {
       return {
-        line: 'The Chief barely glances up. “You again. You’ve squared your debt, I remember your ugly face. Move along before I dream up a second toll.”',
+        line: 'You again. You’ve squared your debt — I remember your ugly face. Move along before I dream up a second toll.',
         responses: ['Leave.'],
       };
     }
@@ -733,7 +740,7 @@ async function boot() {
     if (q === 'active') {
       if (hasHeart) {
         return {
-          line: 'The Chief’s eyes fix on the dark, dripping thing in your pack. “...you actually did it. A rootweaver’s heart. Hand it here and the camp’s yours to cross — I’m even good for a little gold.”',
+          line: '...you actually did it. A rootweaver’s heart. Hand it here and the camp’s yours to cross — I’m even good for a little gold.',
           responses: ['Hand over the heart.', 'Draw steel.'],
           responseEffects: [{ turnInHeart: true }, { drawSteel: true }],
         };
@@ -744,20 +751,20 @@ async function boot() {
       responses.push('I’ll be back with the heart.'); effects.push({ leaveCamp: true });
       responses.push('Draw steel.'); effects.push({ drawSteel: true });
       return {
-        line: 'The Chief bares a mouthful of thorns. “No heart, no bargain. The rootweavers still choke my woods — go bring me one’s heart, and don’t come whining back till you have it.”',
+        line: 'No heart, no bargain. The rootweavers still choke my woods — go bring me one’s heart, and don’t come whining back till you have it.',
         responses,
         responseEffects: effects,
       };
     }
     if (stats.gold >= CAMP_FEE) {
       return {
-        line: 'The Bramblekin Chief spits into the fire. “Five gold to cross my camp — and since you’re already standing in it, your choices are the coin or the blade. Pay up, or draw steel. Makes no difference to me.”',
+        line: 'Five gold to cross my camp — and since you’re already standing in it, your choices are the coin or the blade. Pay up, or draw steel. Makes no difference to me.',
         responses: ['Pay 5 gold.', 'Draw steel.'],
         responseEffects: [{ payToll: true }, { drawSteel: true }],
       };
     }
     return {
-      line: 'The Chief eyes your empty purse and grins, all thorns. “No coin? Then earn your way. Rootweavers have grown thick in these woods — bring me the heart of one and you may pass, with a little gold besides. Or we can settle this the bloody way.”',
+      line: 'No coin? Then earn your way. The rootweavers have grown thick in these woods — bring me the heart of one and you may pass, with a little gold besides. Or we can settle this the bloody way.',
       responses: ['Accept the favor.', 'Refuse. (Draw steel)'],
       responseEffects: [{ acceptFavor: true }, { drawSteel: true }],
     };
@@ -778,7 +785,7 @@ async function boot() {
       id: 'bramblekin', name: 'Bramblekin', role: '',
       portrait: 'assets/images/Bramblekin.png',
       dialog: {
-        line: 'A Bramblekin guard plants itself in your path, thorny arms crossed. “Far enough. Nobody crosses this camp without squaring up with the chief — so it’s in to see him, steel if you’d rather, or turn around. Which is it?”',
+        line: 'Far enough. Nobody crosses this camp without squaring up with the chief — so it’s in to see him, steel if you’d rather, or turn around. Which is it?',
         responses: ['Take me to the chief.', 'Fight the guard.', 'Leave.'],
       },
     };
@@ -803,7 +810,7 @@ async function boot() {
       // Leave — the guard waves you off; the membrane keeps you outside.
       parted = true;
       ui.updateDialogContent({
-        line: 'The guard snorts and steps back. “Suit yourself. Mind you don’t wander back this way without coin.”',
+        line: 'Suit yourself. Mind you don’t wander back this way without coin.',
         responses: ['Leave.'],
       });
       return true;
@@ -819,7 +826,7 @@ async function boot() {
       id: 'bramblekin', name: 'Bramblekin', role: '',
       portrait: 'assets/images/Bramblekin.png',
       dialog: {
-        line: 'The guard shoves you back with a thorny arm. “Nobody leaves till the chief’s been paid. Go see him. Pay the toll, or fight your way out — those are your only two ways past me.”',
+        line: 'Nobody leaves till the chief’s been paid. Go see him. Pay the toll, or fight your way out — those are your only two ways past me.',
         responses: ['Fine.'],
       },
     };
@@ -962,7 +969,7 @@ async function boot() {
         } else {
           if (!d || !inventory.find((e) => e.id === id)) return;
           const value = sellValue(d);
-          if ((npc.gold || 0) < value) { audio.sfx(audio.SFX.locked); ui.toast('“I haven’t the coin for that right now.”'); return; }
+          if ((npc.gold || 0) < value) { audio.sfx(audio.SFX.locked); ui.toast('I haven’t the coin for that right now.'); return; }
           removeItem(id, 1, true);
           addGold(value);
           npc.gold -= value;

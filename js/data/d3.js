@@ -105,7 +105,10 @@ export default {
     { label: 'Brenna’s House', x: 700, y: 855, r: 130, door: { x: 700, y: 925 } },
     { label: 'Your House', x: 1237, y: 855, r: 130, door: { x: 1237, y: 925 } },
     { label: 'Well', x: 362, y: 835, r: 110 },
-    { label: 'Silo', x: 1237, y: 1310, r: 120 },
+    // No standalone 'Silo' label here: the silo IS interactable (the corn
+    // interactable below), so its label rides on that object instead — same
+    // anchor + range, so the label appears exactly when you can press space
+    // (2026-07-20, Danny: a visible label must always mean "interactable").
     { label: 'Old Barn', x: 1030, y: 1385, r: 170 },
   ],
 
@@ -141,6 +144,7 @@ export default {
       id: 'silo-corn',
       x: 1270, y: 1240,
       range: 130,
+      label: 'Silo',
       reward: { item: 'corn' },
       message: 'You take an ear of corn from the silo.',
       emptyMessage: 'The silo is empty.',
