@@ -987,7 +987,7 @@ async function boot() {
       onSelect: (id) => {
         const d = ITEMS[id];
         if (mode === 'buy') {
-          if (!d || stats.gold < d.price) { audio.sfx(audio.SFX.locked); ui.toast('You can’t afford that.'); return; }
+          if (!d || stats.gold < d.price) { audio.sfx(audio.SFX.denied); ui.toast('You can’t afford that.'); return; }
           spendGold(d.price);
           npc.gold = (npc.gold || 0) + d.price;
           // Deplete resold stock first, then any limited base stock (infinite
@@ -999,7 +999,7 @@ async function boot() {
         } else {
           if (!d || !inventory.find((e) => e.id === id)) return;
           const value = sellValue(d);
-          if ((npc.gold || 0) < value) { audio.sfx(audio.SFX.locked); ui.toast('I haven’t the coin for that right now.'); return; }
+          if ((npc.gold || 0) < value) { audio.sfx(audio.SFX.denied); ui.toast('I haven’t the coin for that right now.'); return; }
           removeItem(id, 1, true);
           addGold(value);
           npc.gold -= value;
@@ -1439,12 +1439,13 @@ async function boot() {
 
   // The D3 well: a dialogue-style window (Water well.png in the portrait slot,
   // name "Well") offering a repeatable drink (+1 HP) and a one-time coin toss
-  // (+1 Luck). State-built like Gaffer/Chief — the coin option drops out of the
-  // response list once used (wellCoinThrown). The onResponse callback returns
-  // true to keep the window open after drinking/tossing so the player can act
-  // again; 'Leave.' returns falsy and closes it. The coin toss is free (no gold
-  // cost) — the well is a luck fountain, so testing Luck has no prerequisite.
+  // (+1 Luck) that costs 1 gold. State-built like Gaffer/Chief — the coin option
+  // drops out of the response list once used (wellCoinThrown). The onResponse
+  // callback returns true to keep the window open after drinking/tossing so the
+  // player can act again; 'Leave.' returns falsy and closes it. Tossing with an
+  // empty purse plays the denied sound and leaves the offer standing.
   const WELL_LINE = 'The old well sits cool and still, its water dark and deep beneath the mossy stones.';
+  const WELL_COIN_COST = 1;
   function openWellDialog() {
     const buildActs = () => {
       const responses = ['Take a drink.'];
@@ -1471,10 +1472,19 @@ async function boot() {
         return true;
       }
       if (act === 'coin') {
+        if (stats.gold < WELL_COIN_COST) {
+          audio.sfx(audio.SFX.denied);
+          ({ responses, acts } = buildActs());
+          ui.updateDialogContent({
+            line: 'You reach for a coin — but your purse is empty. The well keeps its favor for now.',
+            responses,
+          });
+          return true;
+        }
+        spendGold(WELL_COIN_COST); // deducts 1 gold + plays the coin clink
         wellCoinThrown = true;
         stats.luck += 1;
         ui.updateStatsPanel(stats);
-        audio.sfx(audio.SFX.gold); // coin clink
         ({ responses, acts } = buildActs());
         ui.updateDialogContent({
           line: 'You flip a coin into the dark. A faint plink echoes up — and a strange sense of fortune settles over you. (Luck +1.)',
@@ -1526,7 +1536,7 @@ async function boot() {
           world.interior = null;
         });
       } else {
-        audio.sfx(audio.SFX.locked);
+        audio.sfx(audio.SFX.denied);
         ui.toast('The door is locked.');
       }
       return;
@@ -1564,8 +1574,8 @@ async function boot() {
   const FISH_MS = 10000;
   function startFishing(spot) {
     if (fishing) return;
-    if (!inventory.some((it) => it.id === 'fishing_rod')) { audio.sfx(audio.SFX.locked); ui.toast('You need a fishing rod to fish here.'); return; }
-    if (!inventory.some((it) => it.id === 'fishing_bait')) { audio.sfx(audio.SFX.locked); ui.toast('You’ve no bait — the general store sells some.'); return; }
+    if (!inventory.some((it) => it.id === 'fishing_rod')) { audio.sfx(audio.SFX.denied); ui.toast('You need a fishing rod to fish here.'); return; }
+    if (!inventory.some((it) => it.id === 'fishing_bait')) { audio.sfx(audio.SFX.denied); ui.toast('You’ve no bait — the general store sells some.'); return; }
     fishing = true;
     removeItem('fishing_bait', 1, true);
     audio.sfx(audio.SFX.cast);

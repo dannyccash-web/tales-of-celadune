@@ -18,7 +18,11 @@ export const SFX = {
   gold: 'assets/audio/alexzavesa-clinking-coins-7-468427.mp3',
   hurt: 'assets/audio/freesound_community-male_hurt7-48124.mp3',
   item: 'assets/audio/freesound_community-open-bag-sound-39216.mp3',
-  locked: 'assets/audio/yodguard-locked-door-4-540180.mp3',
+  // The universal "can't / not available / denied" sound (2026-07-21, Danny) —
+  // plays whenever the player tries something they can't: a locked door, an
+  // unaffordable purchase, fishing with no rod/bait, tossing a coin with an
+  // empty purse, etc. Replaced the old dedicated locked-door clip.
+  denied: 'assets/audio/universfield-negative-notification-132470.mp3',
   questAdded: 'assets/audio/universfield-logo-reveal-199582.mp3',
   questComplete: 'assets/audio/tithuh-successful-accepted-reward-523721.mp3',
   cast: 'assets/audio/spinopel-fishing-rod-whoosh-411640.mp3',
