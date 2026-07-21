@@ -104,7 +104,10 @@ export default {
     { label: 'Tuckwell’s House', x: 537, y: 855, r: 130, door: { x: 537, y: 925 } },
     { label: 'Brenna’s House', x: 700, y: 855, r: 130, door: { x: 700, y: 925 } },
     { label: 'Your House', x: 1237, y: 855, r: 130, door: { x: 1237, y: 925 } },
-    { label: 'Well', x: 362, y: 835, r: 110 },
+    // No standalone 'Well' label here (2026-07-21): the well is interactable
+    // (drink / toss a coin — see the interactable below), so its label rides on
+    // that object, same as the silo — label shows exactly when you can press
+    // space to interact.
     // No standalone 'Silo' label here: the silo IS interactable (the corn
     // interactable below), so its label rides on that object instead — same
     // anchor + range, so the label appears exactly when you can press space
@@ -128,6 +131,19 @@ export default {
       x: 950, y: 320, w: 80, h: 80,
       label: 'A shiny object',
       reward: { gold: 3 },
+    },
+    // The well (2026-07-21): not a pickup — `well: true` makes main.js's
+    // interact() open a dialogue window (drink for +1 HP anytime; toss a coin
+    // for +1 Luck, once). Label 'Well' rides on this object so it shows exactly
+    // when interactable. Anchor is the well's centre (matching the old building
+    // label spot); range 130 reaches the path band just south and the x400-450
+    // gap to its east — validated walkable with the 36px collider.
+    {
+      id: 'well',
+      x: 362, y: 835,
+      range: 130,
+      label: 'Well',
+      well: true,
     },
     // The silo hands out exactly ONE ear of corn (Gaffer's favorite — see
     // main.js's buildGafferDialog), then reports empty forever after

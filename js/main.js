@@ -159,6 +159,16 @@ function damagePlayer(amount) {
   audio.sfx(audio.SFX.hurt);
 }
 
+// Restore health, clamped to healthMax. Returns how much was ACTUALLY restored
+// (0 if already full) so callers can tailor their message. Mirrors damagePlayer
+// as the centralized health-up mutator (well drink, and future heal sources).
+function healPlayer(amount) {
+  const before = stats.health;
+  stats.health = Math.min(stats.healthMax, stats.health + amount);
+  ui.updateHud(stats);
+  return stats.health - before;
+}
+
 // Quest *state* — which quests the player has been given and their status,
 // [{id, status}] (status: 'active' | 'completed' | 'failed'), referencing
 // js/data/quests.js (the catalog) by id. Started only via startQuest() so a
@@ -413,6 +423,11 @@ async function boot() {
   // Gaffer only warms up once he's been fed (session state, not persisted —
   // matches how the world's `defeated`/`collected` flags reset per World).
   let gafferHappy = false;
+
+  // The D3 well's coin-for-luck offer is one-time per session (like gafferHappy,
+  // not persisted). Drinking from the well is always available; tossing a coin
+  // for +1 Luck can only happen once. See openWellDialog().
+  let wellCoinThrown = false;
 
   // A response can carry an optional effect (dialog.responseEffects, parallel
   // to dialog.responses) — damage (Gaffer's bite), a plain toast message,
@@ -1422,12 +1437,64 @@ async function boot() {
     nowPlaying: audio.nowPlaying, // for verifying battle-music crossfades in automation
   };
 
+  // The D3 well: a dialogue-style window (Water well.png in the portrait slot,
+  // name "Well") offering a repeatable drink (+1 HP) and a one-time coin toss
+  // (+1 Luck). State-built like Gaffer/Chief — the coin option drops out of the
+  // response list once used (wellCoinThrown). The onResponse callback returns
+  // true to keep the window open after drinking/tossing so the player can act
+  // again; 'Leave.' returns falsy and closes it. The coin toss is free (no gold
+  // cost) — the well is a luck fountain, so testing Luck has no prerequisite.
+  const WELL_LINE = 'The old well sits cool and still, its water dark and deep beneath the mossy stones.';
+  function openWellDialog() {
+    const buildActs = () => {
+      const responses = ['Take a drink.'];
+      const acts = ['drink'];
+      if (!wellCoinThrown) { responses.push('Throw a coin in.'); acts.push('coin'); }
+      responses.push('Leave.'); acts.push('leave');
+      return { responses, acts };
+    };
+    let { responses, acts } = buildActs();
+    const view = {
+      id: 'well', name: 'Well', role: '',
+      portrait: 'assets/images/Water well.png',
+      dialog: { line: WELL_LINE, responses },
+    };
+    ui.openDialog(view, null, (v, index) => {
+      const act = acts[index];
+      if (act === 'drink') {
+        const healed = healPlayer(1);
+        const line = healed > 0
+          ? 'You draw up the bucket and drink deep. The cold water revives you. (Restored 1 HP.)'
+          : 'The water is clear and cold — but you are already at full health.';
+        ({ responses, acts } = buildActs());
+        ui.updateDialogContent({ line, responses });
+        return true;
+      }
+      if (act === 'coin') {
+        wellCoinThrown = true;
+        stats.luck += 1;
+        ui.updateStatsPanel(stats);
+        audio.sfx(audio.SFX.gold); // coin clink
+        ({ responses, acts } = buildActs());
+        ui.updateDialogContent({
+          line: 'You flip a coin into the dark. A faint plink echoes up — and a strange sense of fortune settles over you. (Luck +1.)',
+          responses,
+        });
+        return true;
+      }
+      return; // Leave — falsy closes the window
+    });
+  }
+
   function interact() {
     const npc = world.nearestNpcInRange();
     if (npc) { openNpcDialog(npc); return; }
 
     const item = world.nearestInteractableInRange();
     if (item) {
+      // The well isn't a pickup — it opens its own dialogue window (drink /
+      // toss a coin), so intercept it before any reward/collect handling.
+      if (item.well) { openWellDialog(); return; }
       // Already-collected interactables with an emptyMessage (e.g. the silo
       // after its one ear of corn) stay interactive but just report empty —
       // world.js's nearestInteractableInRange only returns collected ones
