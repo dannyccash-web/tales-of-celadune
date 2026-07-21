@@ -115,6 +115,21 @@ function equipmentBonus(field) {
 // are unaffected. Starts at 0; gear/temporary effects may raise it later.
 function effectiveAttack() { return stats.attack + stats.luck + equipmentBonus('attackBonus'); }
 function effectiveDefense() { return stats.defense + stats.luck + equipmentBonus('defenseBonus'); }
+
+// Speed drives two things (Danny, 2026-07-20):
+//  1) Overworld movement — a multiplier on PLAYER_SPEED: 1 -> ×1.0, 2 -> ×1.25,
+//     3 -> ×1.5. Speed 3 is the cap, so higher values still give ×1.5, and it's
+//     floored at ×1.0 for speed <= 1.
+//  2) Battle initiative (D&D-style "advantage") — the chance the player's whole
+//     block acts before the enemies each round: speed 1 -> 0% (enemies first),
+//     2 -> 50%, 3 -> 100%. chance = (speed-1)/2, clamped to [0,1].
+function moveMultForSpeed(speed) {
+  const s = Math.max(1, Math.min(3, speed));
+  return 1 + 0.25 * (s - 1);
+}
+function playerInitiativeChance(speed = stats.speed) {
+  return Math.max(0, Math.min(1, (speed - 1) / 2));
+}
 function weaponDamage(slot = 'mainhand') {
   const item = equipment[slot] && ITEMS[equipment[slot]];
   return item?.damage ?? 1;
@@ -1032,14 +1047,19 @@ async function boot() {
     return battleState.enemies.filter((e) => e.health > 0);
   }
 
-  // Recomputed every round (not just once) via battle.turnOrder — enemies
-  // that died last round simply won't be in the alive list anymore.
+  // Recomputed every round (not just once) — enemies that died last round
+  // simply won't be in the alive list anymore. Initiative is now Speed-based
+  // (Danny, 2026-07-20): the player acts as one block that goes either BEFORE
+  // all enemies or AFTER them, decided by playerInitiativeChance (speed 1 ->
+  // always last, 2 -> 50/50 each round, 3 -> always first). Enemies keep their
+  // own speed-desc order among themselves via battle.turnOrder.
   function rollRoundOrder() {
-    const combatants = [
-      { kind: 'player', speed: stats.speed },
-      ...aliveEnemies().map((e) => ({ kind: 'enemy', enemy: e, speed: e.speed })),
-    ];
-    return battle.turnOrder(combatants);
+    const enemies = battle.turnOrder(
+      aliveEnemies().map((e) => ({ kind: 'enemy', enemy: e, speed: e.speed })),
+    );
+    const player = { kind: 'player', speed: stats.speed };
+    const playerFirst = Math.random() < playerInitiativeChance();
+    return playerFirst ? [player, ...enemies] : [...enemies, player];
   }
 
   // Which weapon slot the in-flight attack is using ('mainhand'/'offhand'),
@@ -1398,6 +1418,7 @@ async function boot() {
     start: startBattle, state: battleState, stats, equipment,
     effectiveAttack, effectiveDefense, weaponDamage,
     handleBattleAction, playerAttack, playerFlee, playerUseItem, playerUseTorch, tickBurns, checkBattleEnd,
+    rollRoundOrder, playerInitiativeChance, moveMultForSpeed, // Speed-stat testing (2026-07-20)
     nowPlaying: audio.nowPlaying, // for verifying battle-music crossfades in automation
   };
 
@@ -1556,6 +1577,7 @@ async function boot() {
     world.campSealed = !(campTollPaid || campQuestDone || campHostile);
     world.campEntered = campEntered;
     world.campHostile = campHostile;
+    world.playerSpeedMult = moveMultForSpeed(stats.speed);
     world.update(dt, input, locked);
     world.render();
 

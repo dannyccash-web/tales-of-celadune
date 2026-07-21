@@ -306,7 +306,10 @@ export class World {
     p.walkTimer = p.moving ? p.walkTimer + dt : 0;
     if (p.moving) {
       const len = Math.hypot(dx, dy);
-      const step = PLAYER_SPEED * dt;
+      // Movement scales with the player's Speed stat: main.js sets
+      // this.playerSpeedMult each frame (1 -> ×1.0, 2 -> ×1.25, 3 -> ×1.5,
+      // the max). Defaults to ×1 if unset (headless tests, pre-boot).
+      const step = PLAYER_SPEED * (this.playerSpeedMult ?? 1) * dt;
       const nx = p.x + (dx / len) * step;
       const ny = p.y + (dy / len) * step;
 
