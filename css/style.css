@@ -313,7 +313,7 @@ html, body {
 
 .contents-item {
   font-family: var(--font-meta);
-  font-size: 24px;
+  font-size: 22px;
   line-height: 1.6;
   color: var(--text);
 }
@@ -326,25 +326,13 @@ html, body {
 
 .dialog-text { max-width: 760px; }
 
-.dialog-text h2 {
-  font-family: var(--font-medieval);
-  font-weight: 400;
-  font-size: 40px;
-  color: var(--text);
-}
-
-.dialog-text h3 {
-  font-family: var(--font-lato);
-  font-weight: 600;
-  font-size: 24px;
-  letter-spacing: 4px;
-  color: var(--role-gold);
-  margin: 8px 0 20px;
-}
+/* Name + title (dialog-name / dialog-role) now live in #dialog-header ABOVE
+   the frame for all dialogue (2026-07-22) — see the #dialog-header block near
+   the vendor-layout section. */
 
 .dialog-text p {
   font-family: var(--font-meta);
-  font-size: 24px;
+  font-size: 22px;
   line-height: 40px;
 }
 
@@ -376,7 +364,7 @@ html, body {
   display: block;
   text-align: left;
   font-family: var(--font-meta);
-  font-size: 24px;
+  font-size: 22px;
   line-height: 53px;
   color: var(--text-dim);
   cursor: pointer;
@@ -631,7 +619,6 @@ html, body {
 }
 
 .bar-fill.volume { background: linear-gradient(90deg, #8a6a35, #eed694); }
-.bar-fill.xp { background: linear-gradient(90deg, #6b4f28, #eed694); width: 0%; }
 
 /* Stats tab */
 .stat-row {
@@ -642,8 +629,6 @@ html, body {
 }
 
 .stat-row .stat-label { width: 220px; }
-
-.stat-row.xp-row .bar { width: 320px; }
 
 /* Quests tab (Menu) — active quests first, then a "Completed" subhead with
    completed (green check) or failed (red X) quests below it. */
@@ -1016,7 +1001,14 @@ html, body {
   text-shadow: 0 4px 18px rgba(0, 0, 0, 0.9);
 }
 
-#btn-start {
+.start-buttons,
+.confirm-buttons {
+  display: flex;
+  gap: 40px;
+  align-items: center;
+}
+
+.menu-btn {
   font-family: var(--font-meta);
   font-size: 30px;
   color: var(--text);
@@ -1029,10 +1021,52 @@ html, body {
   cursor: pointer;
 }
 
-#btn-start:hover {
+.menu-btn:hover {
   color: var(--gold-bright);
   border-image: linear-gradient(180deg, var(--gold-bright), var(--frame-dark)) 1;
 }
+
+/* Continue with no save on file: dimmed and inert. */
+.menu-btn.disabled {
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+/* New Game confirmation overlay (2026-07-22). */
+#newgame-confirm {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+}
+
+.confirm-box {
+  background: var(--panel-bg);
+  border: 2px solid;
+  border-image: linear-gradient(180deg, var(--frame-light), var(--frame-dark)) 1;
+  outline: 2px solid #4d3a1c;
+  outline-offset: 8px;
+  padding: 60px 80px;
+  max-width: 900px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 50px;
+}
+
+.confirm-box p {
+  font-family: var(--font-meta);
+  font-size: 28px;
+  color: var(--text);
+  text-align: center;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.confirm-box .menu-btn { font-size: 24px; padding: 14px 48px; }
 
 /* ---- Battle (2026-07-08, redesigned 2026-07-09 to Danny's mockup) ----
    Three stacked layers: a trapezoid status banner hanging flush from the top
@@ -1586,27 +1620,30 @@ html, body {
   to { transform: translateX(0) scaleX(-1); opacity: 1; }
 }
 
-/* Name/title + the vendor's gold, lifted above the top box. #dialog-npc is
-   position:absolute, so a negative top places this in the band above it (the
-   portrait already overflows up into that band on the left). */
-#vendor-header {
+/* Name/title (+ the vendor's gold) lifted ABOVE the top box for ALL dialogue
+   (2026-07-22 — unified with the vendor layout). #dialog-npc is
+   position:absolute, so a negative top places this in the band above it. The
+   default sits over the LEFT text column (portrait is on the right); vendors
+   flip the portrait to the left, so the header shifts right (override below). */
+#dialog-header {
   position: absolute;
-  left: 560px;
-  right: 8px;
-  top: -132px;
-  height: 110px;
+  left: 120px;
+  right: 540px;
+  top: -120px;
+  height: 100px;
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
 }
-#vendor-name {
+#dialog.vendor #dialog-header { left: 560px; right: 8px; }
+#dialog-name {
   font-family: var(--font-medieval);
   font-weight: 400;
-  font-size: 44px;
+  font-size: 38px;
   color: var(--text);
   margin: 0;
 }
-#vendor-title {
+#dialog-role {
   font-family: var(--font-lato);
   font-weight: 600;
   font-size: 22px;
@@ -1615,6 +1652,8 @@ html, body {
   text-transform: uppercase;
   margin: 6px 0 0;
 }
+/* Empty role => collapse its margin so a name-only header sits flush. */
+#dialog-role:empty { margin: 0; }
 #vendor-gold {
   display: flex;
   align-items: center;
@@ -1625,10 +1664,8 @@ html, body {
   padding-bottom: 6px;
 }
 
-/* Vendors hide the in-box name/role (they're up in #vendor-header now); the
-   greeting-or-grid column uses the full box height beside the portrait. */
-#dialog.vendor #dialog-name,
-#dialog.vendor #dialog-role { display: none; }
+/* Vendors: the greeting-or-grid column uses the full box height beside the
+   portrait (name/title are up in the header for everyone now). */
 #dialog.vendor #dialog-npc .dialog-text {
   position: absolute;
   left: 580px;

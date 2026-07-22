@@ -450,34 +450,8 @@ export default {
       line: 'Fresh face. Fresh purse, I hope. Passage costs, and the chief’s the one who counts it.',
       paidLine: 'Toll’s settled. I’ll pretend to be friendly now.',
     },
-    {
-      id: 'bramblekin_6', name: 'Bramblekin', role: '', bramblekin: true,
-      sprite: 'assets/images/Bramblekin_Overhead.png',
-      portrait: 'assets/images/Bramblekin.png',
-      x: 1400, y: 1560, speed: 38, startsHome: false,
-      home: { door: { x: 1392, y: 1606 }, interior: 'assets/images/bramblekin_tent_interior.jpg' },
-      routine: [
-        { do: 'goto', x: 1400, y: 1560 }, { do: 'wait', s: 6 },
-        { do: 'goto', x: 1450, y: 1600 }, { do: 'wait', s: 4 },
-        { do: 'goHome' }, { do: 'wait', s: 7 }, { do: 'leaveHome' },
-      ],
-      line: 'Rules are rules, twig. No toll, no trail. Go on and have your little chat with the chief.',
-      paidLine: 'Gold’s in the chief’s pocket. You’re free to wander, twig.',
-    },
-    {
-      id: 'bramblekin_7', name: 'Bramblekin', role: '', bramblekin: true,
-      sprite: 'assets/images/Bramblekin_Overhead.png',
-      portrait: 'assets/images/Bramblekin.png',
-      x: 1520, y: 1565, speed: 38, startsHome: false,
-      home: { door: { x: 1559, y: 1540 }, interior: 'assets/images/bramblekin_tent_interior.jpg' },
-      routine: [
-        { do: 'goto', x: 1520, y: 1565 }, { do: 'wait', s: 5 },
-        { do: 'goto', x: 1565, y: 1490 }, { do: 'wait', s: 6 },
-        { do: 'goHome' }, { do: 'wait', s: 5 }, { do: 'leaveHome' },
-      ],
-      line: 'You smell like someone who hasn’t paid yet. Fix that. The chief’s waiting, and his patience isn’t.',
-      paidLine: 'All square. Try not to trip over a tent rope.',
-    },
+    // (bramblekin_6 and bramblekin_7 removed 2026-07-22, Danny — thinned the
+    // camp's wandering guards; the two stationary sentries at the gates stay.)
     {
       id: 'bramblekin_chief', name: 'Bramblekin Chief', role: '',
       sprite: 'assets/images/Bramblekin_Chief_Overhead.png',

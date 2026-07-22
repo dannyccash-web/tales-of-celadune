@@ -13,15 +13,18 @@ import ENEMIES from './data/enemies.js';
 import * as battle from './battle.js';
 
 // Attack/Defense/Speed/Luck all start at 1/1/1/0 (Danny's spec) — real combat
-// stats now, not placeholder flavor like level/xp. Speed drives battle.js's
-// turn order (Blight Rats: speed 8), so at the starting Speed of 1 most
-// enemies act before the player until Speed is raised. Luck adds +1 per point
+// stats. Speed drives battle.js's turn order + the player's initiative chance
+// (Speed 1 -> 50% to act first, 2 -> 75%, 3 -> 100%). Luck adds +1 per point
 // to the player's attack AND defense rolls (see effectiveAttack/Defense);
-// starts at 0, raised later by gear/effects not yet built.
+// starts at 0, raised later by gear/effects.
+// Level/XP removed 2026-07-22 (Danny) — the game has no experience/leveling
+// loop; progression is gear-driven (weapons/armor + vitality potions).
 const stats = {
   health: 5, healthMax: 5, magic: 5, magicMax: 10, gold: 0,
-  level: 4, xp: 1240, xpMax: 2000, attack: 1, defense: 1, speed: 1, luck: 0,
+  attack: 1, defense: 1, speed: 1, luck: 0,
 };
+// The canonical fresh-start stats, used to reset on New Game (2026-07-22).
+const NEW_GAME_STATS = { ...stats };
 const state = { started: false };
 
 // Inventory *state* — what the player actually has, [{id, qty}], referencing
@@ -128,7 +131,9 @@ function moveMultForSpeed(speed) {
   return 1 + 0.25 * (s - 1);
 }
 function playerInitiativeChance(speed = stats.speed) {
-  return Math.max(0, Math.min(1, (speed - 1) / 2));
+  // Speed 1 -> 50%, 2 -> 75%, 3 -> 100% (2026-07-22, Danny — the player used to
+  // always act last at Speed 1, which was punishing with only 5 HP).
+  return Math.max(0, Math.min(1, 0.25 + 0.25 * speed));
 }
 function weaponDamage(slot = 'mainhand') {
   const item = equipment[slot] && ITEMS[equipment[slot]];
@@ -279,10 +284,25 @@ async function boot() {
   // closes over the binding, not a specific instance.
   const worlds = {};
   let world;
+  let currentSceneId = 'D3'; // tracks the active scene for autosave (2026-07-22)
+  // Per-scene flags to re-apply when a World is (re)built from a loaded save —
+  // collected interactables, cleared battles/ambushes, and slain camp members.
+  // Set by loadGame(); consumed the first time each scene's World is created.
+  let pendingWorldFlags = null;
+  function applyWorldFlags(w, f) {
+    if (!f) return;
+    (f.collected || []).forEach((i) => { if (w.interactables[i]) w.interactables[i].collected = true; });
+    (f.battles || []).forEach((id) => { const b = w.battles.find((x) => x.id === id); if (b) b.defeated = true; });
+    (f.ambushes || []).forEach((id) => { const a = w.ambushes.find((x) => x.id === id); if (a) a.defeated = true; });
+    (f.npcsDefeated || []).forEach((id) => { const n = w.npcs.find((x) => x.id === id); if (n) n.defeated = true; });
+  }
   function enterScene(id) {
-    if (!worlds[id]) worlds[id] = new World(canvas, SCENES[id], images);
+    const fresh = !worlds[id];
+    if (fresh) worlds[id] = new World(canvas, SCENES[id], images);
     world = worlds[id];
+    currentSceneId = id;
     window.world = world; // debug handle follows the active scene
+    if (fresh && pendingWorldFlags) applyWorldFlags(world, pendingWorldFlags[id]);
   }
   enterScene('D3');
   window.quests = quests; // debug handle
@@ -378,6 +398,103 @@ async function boot() {
     if (exit.edge === 'bottom') { world.player.y = EDGE_INSET; world.player.x = px; }
     if (exit.edge === 'top') { world.player.y = s.height - EDGE_INSET; world.player.x = px; }
     world.player.rotation = rotation; // keep facing across the boundary
+    saveGame(); // autosave on entering a new screen (2026-07-22)
+  }
+
+  // ---- Save system (2026-07-22, Danny) ----
+  // One versioned localStorage slot. Autosaves on entering a new screen
+  // (switchScene, above) and on starting a new game, so "the last screen you
+  // walked into" is always the resume point. The start screen offers New Game /
+  // Continue; Continue on the death screen reloads this same save. Progression
+  // is gear-driven (no level/XP), so the save is stats + inventory + equipment +
+  // quests + a few cross-scene story flags + a compact per-scene world snapshot
+  // (which collectibles/battles/ambushes/camp-members are already cleared).
+  const SAVE_KEY = 'celadune_save_v1';
+
+  function hasSave() {
+    try { return !!localStorage.getItem(SAVE_KEY); } catch { return false; }
+  }
+
+  function snapshotWorlds() {
+    const out = {};
+    for (const [id, w] of Object.entries(worlds)) {
+      out[id] = {
+        collected: w.interactables.map((it, i) => (it.collected ? i : -1)).filter((i) => i >= 0),
+        battles: w.battles.filter((b) => b.defeated).map((b) => b.id),
+        ambushes: w.ambushes.filter((a) => a.defeated).map((a) => a.id),
+        npcsDefeated: w.npcs.filter((n) => n.defeated).map((n) => n.id),
+      };
+    }
+    return out;
+  }
+
+  function saveGame() {
+    try {
+      const data = {
+        v: 1,
+        scene: currentSceneId,
+        player: { x: world.player.x, y: world.player.y, rotation: world.player.rotation },
+        stats: { ...stats },
+        inventory: inventory.map((e) => ({ ...e })),
+        equipment: { ...equipment },
+        quests: quests.map((q) => ({ ...q })),
+        flags: { campQuestDone, campHostile, gafferHappy, wellCoinThrown, vegetableDeliveredToTavern },
+        worlds: snapshotWorlds(),
+      };
+      localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+    } catch { /* storage blocked or full — skip silently, gameplay is unaffected */ }
+  }
+
+  function refreshAllUi() {
+    ui.updateHud(stats);
+    ui.updateStatsPanel(stats);
+    refreshItemsUi();
+    ui.updateQuestsPanel(quests, QUESTS);
+  }
+
+  // Wipe every bit of run state back to a pristine start and drop the player at
+  // the D3 spawn. Used by New Game (and as loadGame's fallback).
+  function resetToNewGame() {
+    Object.assign(stats, NEW_GAME_STATS);
+    inventory.length = 0;
+    for (const k of Object.keys(equipment)) equipment[k] = null;
+    quests.length = 0;
+    campTollPaid = false; campEntered = false; campQuestDone = false;
+    campHostile = false; campEntryGate = null;
+    gafferHappy = false; wellCoinThrown = false; vegetableDeliveredToTavern = false;
+    for (const k of Object.keys(worlds)) delete worlds[k];
+    pendingWorldFlags = null;
+    enterScene('D3');
+    world.player.x = world.scene.spawn.x;
+    world.player.y = world.scene.spawn.y;
+    refreshAllUi();
+  }
+
+  function loadGame() {
+    let data;
+    try { data = JSON.parse(localStorage.getItem(SAVE_KEY)); } catch { data = null; }
+    if (!data) return false;
+    Object.assign(stats, NEW_GAME_STATS, data.stats || {});
+    inventory.length = 0; (data.inventory || []).forEach((e) => inventory.push({ ...e }));
+    for (const k of Object.keys(equipment)) equipment[k] = null;
+    Object.assign(equipment, data.equipment || {});
+    quests.length = 0; (data.quests || []).forEach((q) => quests.push({ ...q }));
+    const f = data.flags || {};
+    campQuestDone = !!f.campQuestDone; campHostile = !!f.campHostile;
+    gafferHappy = !!f.gafferHappy; wellCoinThrown = !!f.wellCoinThrown;
+    vegetableDeliveredToTavern = !!f.vegetableDeliveredToTavern;
+    // Per-visit camp state always starts fresh on a load (toll re-armed, not
+    // mid-entry) — only the permanent flags above persist.
+    campTollPaid = false; campEntered = false; campEntryGate = null;
+    for (const k of Object.keys(worlds)) delete worlds[k];
+    pendingWorldFlags = data.worlds || {};
+    enterScene(data.scene && SCENES[data.scene] ? data.scene : 'D3');
+    const p = data.player || {};
+    world.player.x = p.x ?? world.scene.spawn.x;
+    world.player.y = p.y ?? world.scene.spawn.y;
+    if (p.rotation != null) world.player.rotation = p.rotation;
+    refreshAllUi();
+    return true;
   }
 
   // Debug handle for scene transitions (mirrors window.world/battleDebug —
@@ -400,7 +517,7 @@ async function boot() {
   ui.initVendorGrid();
   refreshItemsUi();
   ui.updateQuestsPanel(quests, QUESTS);
-  ui.initGameOver({ onRestart: () => respawnAfterDefeat() });
+  ui.initGameOver({ onRestart: () => continueFromDeath() });
   ui.initBattle();
 
   // Start screen: theme music now (or on first gesture if autoplay is blocked),
@@ -412,13 +529,50 @@ async function boot() {
   window.addEventListener('pointerdown', retryTheme);
   window.addEventListener('keydown', retryTheme);
 
-  function startGame() {
+  // Begin play: hide the start screen, cross-fade to the overworld track. The
+  // actual run state is set up by startNewGame()/continueGame() around this.
+  function beginPlay() {
     if (state.started) return;
     state.started = true;
     document.getElementById('start-screen').classList.add('hidden');
     audio.play(audio.TRACKS.overworld, 1500);
   }
-  document.getElementById('btn-start').addEventListener('click', startGame);
+  function startNewGame() {
+    resetToNewGame();
+    beginPlay();
+    saveGame(); // so Continue works immediately and a right-away death has a save
+  }
+  function continueGame() {
+    if (!loadGame()) { startNewGame(); return; }
+    beginPlay();
+  }
+
+  const btnContinue = document.getElementById('btn-continue');
+  const btnNewGame = document.getElementById('btn-new-game');
+  const confirmOverlay = document.getElementById('newgame-confirm');
+  btnContinue.classList.toggle('disabled', !hasSave());
+  btnContinue.addEventListener('click', () => { if (hasSave()) continueGame(); });
+  btnNewGame.addEventListener('click', () => {
+    if (hasSave()) confirmOverlay.classList.remove('hidden'); // warn before erasing
+    else startNewGame();
+  });
+  document.getElementById('btn-confirm-newgame').addEventListener('click', () => {
+    confirmOverlay.classList.add('hidden');
+    startNewGame();
+  });
+  document.getElementById('btn-cancel-newgame').addEventListener('click', () => {
+    confirmOverlay.classList.add('hidden');
+  });
+
+  // Continue from the death screen (2026-07-22): reload the last save (the start
+  // of the screen the player last walked into). Discards the dead fight's onEnd
+  // callback since loadGame rebuilds the scene from scratch. Falls back to the
+  // old full-heal respawn only if, somehow, there's no save on file.
+  function continueFromDeath() {
+    pendingDefeatCallback = null;
+    ui.hideGameOver();
+    if (!loadGame()) respawnAfterDefeat();
+  }
 
   // Gaffer only warms up once he's been fed (session state, not persisted —
   // matches how the world's `defeated`/`collected` flags reset per World).
@@ -1094,7 +1248,7 @@ async function boot() {
   // simply won't be in the alive list anymore. Initiative is now Speed-based
   // (Danny, 2026-07-20): the player acts as one block that goes either BEFORE
   // all enemies or AFTER them, decided by playerInitiativeChance (speed 1 ->
-  // always last, 2 -> 50/50 each round, 3 -> always first). Enemies keep their
+  // 50/50 each round, 2 -> 75%, 3 -> always first). Enemies keep their
   // own speed-desc order among themselves via battle.turnOrder.
   function rollRoundOrder() {
     const enemies = battle.turnOrder(
@@ -1663,13 +1817,24 @@ async function boot() {
 
   window.addEventListener('keydown', (e) => {
     if (!state.started) {
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); startGame(); }
+      // New Game confirmation overlay open: Enter confirms, Escape cancels.
+      if (!confirmOverlay.classList.contains('hidden')) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); confirmOverlay.classList.add('hidden'); startNewGame(); }
+        if (e.key === 'Escape') { e.preventDefault(); confirmOverlay.classList.add('hidden'); }
+        return;
+      }
+      // Otherwise Enter/Space picks the sensible default: Continue if a save
+      // exists, else a fresh New Game (never silently erases — no save to lose).
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        if (hasSave()) continueGame(); else startNewGame();
+      }
       return;
     }
     // Game Over takes priority over everything (I/M included) — the only
-    // way out is the Try Again button/key.
+    // way out is the Continue button/key (reloads the last save).
     if (ui.isGameOverOpen()) {
-      if (['Enter', ' '].includes(e.key)) { e.preventDefault(); respawnAfterDefeat(); }
+      if (['Enter', ' '].includes(e.key)) { e.preventDefault(); continueFromDeath(); }
       return;
     }
     // Victory screen: Space/Enter/Escape skip the drip-feed (grant everything

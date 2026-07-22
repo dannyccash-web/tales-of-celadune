@@ -167,17 +167,15 @@ export function openDialog(npc, onClose, onResponse) {
 
   beginPagedLine(npc.dialog.line, npc.dialog.responses);
 
-  // Vendors get the portrait-on-the-left shop layout (see #dialog.vendor in
-  // style.css); everyone else keeps the standard portrait-on-the-right one.
-  // A vendor's name/title + their own gold live in the header ABOVE the box.
+  // Name/title always live in the header above the box (dialog-name/dialog-role,
+  // set above — same for every dialog now). Vendors additionally get the
+  // portrait-on-the-left shop layout (see #dialog.vendor in style.css) and show
+  // their own gold in the header; everyone else keeps portrait-on-the-right and
+  // no gold readout.
   const isVendor = !!npc.vendor;
   $('dialog').classList.toggle('vendor', isVendor);
-  $('vendor-header').classList.toggle('hidden', !isVendor);
-  if (isVendor) {
-    $('vendor-name').textContent = npc.name;
-    $('vendor-title').textContent = npc.role || '';
-    setVendorGold(npc.gold || 0);
-  }
+  $('vendor-gold').classList.toggle('hidden', !isVendor);
+  if (isVendor) setVendorGold(npc.gold || 0);
 
   // Defensive reset: a dialog always opens in text mode (greeting shown,
   // grid + arrow shown, grid hidden), even if the last one was closed
@@ -318,7 +316,7 @@ function closeDialog() {
   $('dialog-arrow').classList.remove('hidden');
   $('dialog-responses').classList.remove('hidden');
   $('dialog').classList.remove('vendor');
-  $('vendor-header').classList.add('hidden');
+  $('vendor-gold').classList.add('hidden');
   if (dialogState.onClose) dialogState.onClose();
 }
 
@@ -1214,13 +1212,11 @@ function initSlider(id, initial, onChange) {
 }
 
 export function updateStatsPanel(stats) {
-  $('stat-level').textContent = stats.level;
+  // Level/XP removed 2026-07-22 — progression is gear-driven.
   $('stat-attack').textContent = stats.attack;
   $('stat-defense').textContent = stats.defense;
   $('stat-speed').textContent = stats.speed;
   $('stat-luck').textContent = stats.luck;
-  $('xp-fill').style.width = `${Math.min(100, (stats.xp / stats.xpMax) * 100)}%`;
-  $('xp-value').textContent = `${stats.xp.toLocaleString()} / ${stats.xpMax.toLocaleString()}`;
 }
 
 // ---- Quests tab (Menu) ----

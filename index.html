@@ -55,16 +55,16 @@
 
       <div id="dialog" class="hidden">
         <div class="dialog-box" id="dialog-npc">
-          <!-- Vendor-only header: name + title and the vendor's own gold sit
-               ABOVE the window frame (2026-07-16, Danny's mockup), so trading
-               reads differently from ordinary dialogue. Hidden for normal NPCs
-               (whose name/role stay inside the box, see .dialog-text). -->
-          <div id="vendor-header" class="hidden">
-            <div class="vendor-header-text">
-              <h2 id="vendor-name"></h2>
-              <h3 id="vendor-title"></h3>
+          <!-- Name + title sit ABOVE the window frame for ALL dialogue
+               (2026-07-22, Danny — unified with the vendor layout so every
+               conversation reads the same way). #vendor-gold shows only for
+               vendors; #dialog.vendor also flips the portrait to the left. -->
+          <div id="dialog-header">
+            <div class="dialog-header-text">
+              <h2 id="dialog-name">Mirelle</h2>
+              <h3 id="dialog-role">FARM OWNER</h3>
             </div>
-            <div id="vendor-gold"><span id="vendor-gold-value">0</span><span class="coin"></span></div>
+            <div id="vendor-gold" class="hidden"><span id="vendor-gold-value">0</span><span class="coin"></span></div>
           </div>
           <div id="portrait-frame">
             <img id="dialog-portrait" src="assets/images/Mirelle_Portrait.png" alt="">
@@ -77,8 +77,6 @@
             <ul id="contents-list"></ul>
           </div>
           <div class="dialog-text">
-            <h2 id="dialog-name">Mirelle</h2>
-            <h3 id="dialog-role">FARM OWNER</h3>
             <p id="dialog-line"></p>
             <!-- Vendor Buy/Sell grid (2026-07-16): for a vendor, picking Buy
                  or Sell (an ordinary dialogue response) hides the greeting
@@ -156,15 +154,9 @@
               </div>
             </section>
             <section class="tab-pane hidden" data-pane="stats">
-              <!-- Level / Experience hidden for now (Danny, 2026-07-12). Luck
-                   is now SHOWN (2026-07-20): it adds +1 per point to the
-                   player's attack/defense rolls, so it's a real combat stat. -->
-              <div class="stat-row hidden"><span class="stat-label">Level</span><span class="stat-value" id="stat-level">4</span></div>
-              <div class="stat-row xp-row hidden">
-                <span class="stat-label">Experience</span>
-                <div class="bar"><div class="bar-bg"><div class="bar-fill xp" id="xp-fill"></div></div></div>
-                <span class="stat-value" id="xp-value">1,240 / 2,000</span>
-              </div>
+              <!-- Level/XP removed 2026-07-22 (Danny) — progression is
+                   gear-driven, not level-driven. Luck is SHOWN (2026-07-20):
+                   it adds +1 per point to the player's attack/defense rolls. -->
               <div class="stat-row"><span class="stat-label">Attack</span><span class="stat-value" id="stat-attack">1</span></div>
               <div class="stat-row"><span class="stat-label">Defense</span><span class="stat-value" id="stat-defense">1</span></div>
               <div class="stat-row"><span class="stat-label">Speed</span><span class="stat-value" id="stat-speed">1</span></div>
@@ -349,7 +341,7 @@
            system exists yet, so this is the whole "penalty" for now). -->
       <div id="game-over" class="hidden">
         <h1>You Have Fallen</h1>
-        <button id="btn-try-again">Try Again</button>
+        <button id="btn-try-again">Continue</button>
       </div>
 
       <!-- Victory screen (2026-07-21): shown on a won battle in place of the old
@@ -375,7 +367,22 @@
 
       <div id="start-screen">
         <h1>Tales of Celadune</h1>
-        <button id="btn-start">Start</button>
+        <div class="start-buttons">
+          <button id="btn-new-game" class="menu-btn">New Game</button>
+          <button id="btn-continue" class="menu-btn">Continue</button>
+        </div>
+      </div>
+
+      <!-- New Game confirmation (2026-07-22): shown over the start screen when
+           a save already exists, so a new game can't silently erase progress. -->
+      <div id="newgame-confirm" class="hidden">
+        <div class="confirm-box">
+          <p>Starting a new game will erase your saved progress. Are you sure?</p>
+          <div class="confirm-buttons">
+            <button id="btn-confirm-newgame" class="menu-btn">Erase &amp; Start</button>
+            <button id="btn-cancel-newgame" class="menu-btn">Cancel</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>

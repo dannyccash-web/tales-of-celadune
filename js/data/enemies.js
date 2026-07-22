@@ -66,11 +66,11 @@ export default {
     id: 'rootweaver',
     name: 'Rootweaver',
     portrait: 'assets/images/rootweaver.png',
-    health: 15,
+    health: 10,
     attack: 4,
     defense: 3,
     speed: 9,
-    damage: { min: 2, max: 8 },
+    damage: { min: 2, max: 5 },
     wood: true, // living wood — a torch sets it ablaze (see main.js)
     // Loot on death (2026-07-17, reworked 2026-07-21 to the unified schema):
     // the heart (the Bramblekin Chief's proof for safe passage, guaranteed) +

@@ -106,7 +106,7 @@ export default {
     description: 'A small vial of restorative brew. Restores health when used.',
     questItem: false,
     slot: 'item', // equips to the battle Use slot; stays in the Items tab (see SLOT_CATEGORY)
-    heal: 3,
+    heal: 5,
     price: 8,
   },
   // Consumables (2026-07-16). `restoreMagic` and `vitality` mirror `heal` as
@@ -140,7 +140,7 @@ export default {
     description: 'A crusty loaf, still warm from the oven. Restores a little health.',
     questItem: false,
     slot: 'item',
-    heal: 2,
+    heal: 1,
     price: 2,
   },
   short_sword: {
@@ -151,7 +151,7 @@ export default {
     questItem: false,
     slot: 'mainhand',
     damage: { min: 2, max: 4 },
-    price: 25,
+    price: 22,
   },
   leather_armor: {
     id: 'leather_armor',
@@ -161,7 +161,7 @@ export default {
     questItem: false,
     slot: 'clothing',
     defenseBonus: 1,
-    price: 22,
+    price: 19,
   },
   fishing_bait: {
     id: 'fishing_bait',
