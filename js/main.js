@@ -7,7 +7,7 @@ import sceneD4 from './data/d4.js';
 import { World } from './world.js';
 import * as ui from './ui.js';
 import * as audio from './audio.js';
-import ITEMS from './data/items.js';
+import ITEMS, { statLineFor } from './data/items.js';
 import QUESTS from './data/quests.js';
 import ENEMIES from './data/enemies.js';
 import * as battle from './battle.js';
@@ -259,6 +259,11 @@ async function boot() {
     // scene `battles` entry), so preload them so nothing pops in mid-fight.
     'assets/images/Bramblekin.png',
     'assets/images/Bramblekin_Chief.png',
+    // Per-fight/parley scene backdrops (2026-07-22) — preloaded so they don't
+    // pop in when a battle/dialog overlay opens.
+    'assets/images/barn_interior.jpg',
+    'assets/images/forest_background.jpg',
+    'assets/images/bramblekin_camp.jpg',
     ...Object.values(SCENES).flatMap((scene) => [
       scene.background,
       // Places (isPlace: true, e.g. "Your House") have no sprite — they're
@@ -334,6 +339,7 @@ async function boot() {
   let campEntryGate = null;
   const CAMP_FEE = 5;
   const CAMP_QUEST_REWARD = 10; // gold the Chief pays on top of safe passage
+  const BRAMBLEKIN_BG = 'assets/images/bramblekin_camp.jpg'; // backdrop for any Bramblekin parley (2026-07-22)
   const randInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
 
   // Vegetable-delivery quest progress (2026-07-16): set when the player hands
@@ -786,7 +792,7 @@ async function boot() {
   function onItemAction(itemId, action) {
     const def = ITEMS[itemId];
     if (!def) return;
-    if (action === 'inspect') { ui.toast(def.description); return; }
+    if (action === 'inspect') { ui.showItemInspect(def.description, statLineFor(def)); return; }
     if (action === 'remove') { removeItem(itemId); return; }
     if (action === 'equip') { equipItem(itemId); return; }
     if (action === 'unequip') { unequipItem(def.slot); return; }
@@ -968,6 +974,7 @@ async function boot() {
     const view = {
       id: 'bramblekin', name: 'Bramblekin', role: '',
       portrait: 'assets/images/Bramblekin.png',
+      background: BRAMBLEKIN_BG,
       dialog: {
         line: 'Far enough. Nobody crosses this camp without squaring up with the chief — so it’s in to see him, steel if you’d rather, or turn around. Which is it?',
         responses: ['Take me to the chief.', 'Fight the guard.', 'Leave.'],
@@ -1009,6 +1016,7 @@ async function boot() {
     const view = {
       id: 'bramblekin', name: 'Bramblekin', role: '',
       portrait: 'assets/images/Bramblekin.png',
+      background: BRAMBLEKIN_BG,
       dialog: {
         line: 'Nobody leaves till the chief’s been paid. Go see him. Pay the toll, or fight your way out — those are your only two ways past me.',
         responses: ['Fine.'],
@@ -1163,7 +1171,7 @@ async function boot() {
         refresh();
       },
       // Inspect from the dropdown — toast the item's catalog description.
-      onInspect: (id) => { const d = ITEMS[id]; if (d) ui.toast(d.description || d.name); },
+      onInspect: (id) => { const d = ITEMS[id]; if (d) ui.showItemInspect(d.description || d.name, statLineFor(d)); },
       // Escape backs out of the grid — restore the Buy/Sell/Leave response
       // list in the same dialog window (updateDialogContent swaps content
       // without closing/reopening, same mechanism the goBack/thankYou flows
@@ -1191,7 +1199,9 @@ async function boot() {
     else if (npc.bramblekin) dialog = buildBramblekinDialog(npc);
     else if (npc.vendor) dialog = buildVendorDialog(npc); // adds its own chatter
     else dialog = withChatter(resolveNpcDialog(npc, isQuestReady), npc);
-    ui.openDialog({ ...npc, dialog }, onClose, applyResponseEffect);
+    // Any Bramblekin (guards or Chief) parley shows the camp backdrop (2026-07-22).
+    const background = (npc.bramblekin || npc.id === 'bramblekin_chief') ? BRAMBLEKIN_BG : npc.background;
+    ui.openDialog({ ...npc, dialog, background }, onClose, applyResponseEffect);
   }
 
   // ---- Battle (2026-07-08) ----
@@ -1275,7 +1285,7 @@ async function boot() {
   // track over the real music.
   let preBattleTrack = null;
 
-  function startBattle(enemyIds, onEnd) {
+  function startBattle(enemyIds, onEnd, background) {
     const playing = audio.nowPlaying();
     if (playing !== audio.TRACKS.battle) preBattleTrack = playing;
     audio.play(audio.TRACKS.battle);
@@ -1293,10 +1303,15 @@ async function boot() {
     battleState.turnPos = 0;
     battleState.ensnared = false;
     pendingAttackSlot = null;
+    // Scene backdrop: an explicit override (e.g. the barn encounter) wins,
+    // else the first enemy's catalog `background` (rootweaver/bramblekin), else
+    // none (the dimmed world shows through). 2026-07-22.
+    const bg = background || ENEMIES[enemyIds[0]]?.background || null;
     ui.openBattle({
       enemies: battleState.enemies,
       onAction: handleBattleAction,
       onConfirmTarget: playerAttack,
+      background: bg,
     });
     ui.setBattleMessage('A wild encounter begins!');
     runQueue();
@@ -1775,7 +1790,7 @@ async function boot() {
     if (trigger) {
       startBattle(trigger.enemies, (result) => {
         if (result === 'victory') trigger.defeated = true;
-      });
+      }, trigger.background);
       return;
     }
 

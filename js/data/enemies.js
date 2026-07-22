@@ -40,6 +40,7 @@ export default {
     defense: 2,
     speed: 6,
     damage: { min: 1, max: 4 }, // 1d4
+    background: 'assets/images/bramblekin_camp.jpg', // battle backdrop (2026-07-22)
     wood: true, // thorn/bramble body — catches fire from a torch (see main.js)
     drops: { gold: { min: 4, max: 8 }, loot: [{ id: 'health_potion', chance: 0.2 }] },
   },
@@ -53,6 +54,7 @@ export default {
     defense: 2,
     speed: 7,
     damage: { min: 2, max: 5 }, // 1d4+1
+    background: 'assets/images/bramblekin_camp.jpg', // battle backdrop (2026-07-22)
     wood: true, // thorn/bramble body — flammable
     drops: { gold: { min: 10, max: 18 }, loot: [{ id: 'health_potion', chance: 0.5 }, { id: 'magic_potion', chance: 0.2 }] },
   },
@@ -71,6 +73,7 @@ export default {
     defense: 3,
     speed: 9,
     damage: { min: 2, max: 5 },
+    background: 'assets/images/forest_background.jpg', // battle backdrop (2026-07-22)
     wood: true, // living wood — a torch sets it ablaze (see main.js)
     // Loot on death (2026-07-17, reworked 2026-07-21 to the unified schema):
     // the heart (the Bramblekin Chief's proof for safe passage, guaranteed) +

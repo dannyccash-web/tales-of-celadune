@@ -178,6 +178,7 @@ export default {
       id: 'old_barn_rats',
       door: { x: 1030, y: 1305 },
       enemies: ['blight_rat'],
+      background: 'assets/images/barn_interior.jpg', // battle backdrop (2026-07-22)
     },
   ],
 

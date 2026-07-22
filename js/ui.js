@@ -133,6 +133,23 @@ export function isDialogOpen() {
   return dialogState.open;
 }
 
+// Set (or clear) a full-bleed backdrop image on an overlay (#dialog / #battle),
+// e.g. the barn interior behind a rat fight or the camp behind a Bramblekin
+// parley (2026-07-22). A dark gradient is layered over the image so the framed
+// UI stays readable. Passing a falsy src reverts to the CSS default (the dimmed
+// game world showing through).
+function setOverlayBackground(el, src) {
+  if (src) {
+    el.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.45)), url('${src}')`;
+    el.style.backgroundSize = 'cover';
+    el.style.backgroundPosition = 'center';
+  } else {
+    el.style.backgroundImage = '';
+    el.style.backgroundSize = '';
+    el.style.backgroundPosition = '';
+  }
+}
+
 export function openDialog(npc, onClose, onResponse) {
   dialogState.open = true;
   dialogState.selected = 0;
@@ -176,6 +193,10 @@ export function openDialog(npc, onClose, onResponse) {
   $('dialog').classList.toggle('vendor', isVendor);
   $('vendor-gold').classList.toggle('hidden', !isVendor);
   if (isVendor) setVendorGold(npc.gold || 0);
+
+  // Optional scene backdrop behind the dialog (e.g. the Bramblekin camp) —
+  // cleared in closeDialog. Falsy npc.background = the usual dimmed world.
+  setOverlayBackground($('dialog'), npc.background);
 
   // Defensive reset: a dialog always opens in text mode (greeting shown,
   // grid + arrow shown, grid hidden), even if the last one was closed
@@ -317,6 +338,7 @@ function closeDialog() {
   $('dialog-responses').classList.remove('hidden');
   $('dialog').classList.remove('vendor');
   $('vendor-gold').classList.add('hidden');
+  setOverlayBackground($('dialog'), null);
   if (dialogState.onClose) dialogState.onClose();
 }
 
@@ -362,22 +384,66 @@ export function showGaveItem(itemDef) {
 // gives quest events the medieval-gold heading treatment; the window itself
 // is the same either way, so pop-ups read consistently across the game.
 let toastTimer = null;
+let toastExitTimer = null;
+const TOAST_EXIT_MS = 350; // matches the toast-rise animation in style.css
+
+// Play the shared banner's reveal: drop in, hold, then (2026-07-22) slide up +
+// fade out instead of vanishing instantly. Every banner also holds 1s longer
+// than the caller asked (Danny). #toast-text is populated by the caller first.
+function revealBanner(ms = 2500) {
+  const el = $('toast');
+  el.classList.remove('hidden', 'toast-exit', 'toast-enter');
+  void el.offsetWidth; // reflow so the drop-in replays
+  el.classList.add('toast-enter');
+  clearTimeout(toastTimer);
+  clearTimeout(toastExitTimer);
+  toastTimer = setTimeout(() => {
+    el.classList.remove('toast-enter');
+    el.classList.add('toast-exit');
+    toastExitTimer = setTimeout(() => {
+      el.classList.add('hidden');
+      el.classList.remove('toast-exit');
+    }, TOAST_EXIT_MS);
+  }, ms + 1000);
+}
 
 function showBanner(text, { ms = 2500, gold = false } = {}) {
-  const el = $('toast');
   const txt = $('toast-text');
   txt.textContent = text;
   txt.classList.toggle('banner-gold', gold);
-  el.classList.remove('hidden');
-  el.classList.remove('toast-enter');
-  void el.offsetWidth; // force reflow so the drop-in replays
-  el.classList.add('toast-enter');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.add('hidden'), ms);
+  revealBanner(ms);
 }
 
 export function toast(message, ms = 2500) {
   showBanner(message, { ms });
+}
+
+// Inspect a piece of gear (2026-07-22): the description, then its stat modifier
+// on a second line — beneficial in green, detrimental in red, mirroring how
+// combat colors +N/−N damage. `statLine` is items.js's statLineFor() output
+// (e.g. "2 DMG", "+1 DEF", "+1 ATK / +2 DEF", "-1 DEF"); null/omitted = just
+// the description (non-gear items).
+export function showItemInspect(description, statLine) {
+  const txt = $('toast-text');
+  txt.classList.remove('banner-gold');
+  txt.textContent = '';
+  txt.appendChild(document.createTextNode(description || ''));
+  if (statLine) {
+    txt.appendChild(document.createElement('br'));
+    const wrap = document.createElement('span');
+    wrap.className = 'item-mod';
+    // Each "+1 ATK" / "2 DMG" segment (slash-separated) colored by sign:
+    // a leading minus = detrimental (red), everything else beneficial (green).
+    statLine.split(/\s*\/\s*/).forEach((seg, i) => {
+      if (i) wrap.appendChild(document.createTextNode('   '));
+      const span = document.createElement('span');
+      span.className = /^-\s*\d/.test(seg.trim()) ? 'mod-neg' : 'mod-pos';
+      span.textContent = seg.trim();
+      wrap.appendChild(span);
+    });
+    txt.appendChild(wrap);
+  }
+  revealBanner(2500);
 }
 
 // Quest lifecycle events use the same banner, gold-styled as their own beat.
@@ -1339,12 +1405,15 @@ const battleUiState = {
 
 export function isBattleOpen() { return battleUiState.open; }
 
-export function openBattle({ enemies, onAction, onConfirmTarget }) {
+export function openBattle({ enemies, onAction, onConfirmTarget, background }) {
   battleUiState.open = true;
   battleUiState.mode = 'idle';
   battleUiState.handlers = { onAction, onConfirmTarget };
   battleUiState.actionIndex = 0;
   renderBattleEnemies(enemies);
+  // Optional scene backdrop behind the fight (barn interior, forest, camp) —
+  // cleared in closeBattle. Falsy = the usual dimmed game world (2026-07-22).
+  setOverlayBackground($('battle'), background);
   $('battle').classList.remove('hidden');
 }
 
@@ -1352,6 +1421,7 @@ export function closeBattle() {
   battleUiState.open = false;
   battleUiState.mode = 'idle';
   battleUiState.handlers = null;
+  setOverlayBackground($('battle'), null);
   $('battle').classList.add('hidden');
 }
 

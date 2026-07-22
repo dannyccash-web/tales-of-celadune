@@ -70,7 +70,7 @@ html, body {
   width: 1928px;
   height: 1088px;
   mix-blend-mode: multiply;
-  opacity: 0.8;   /* softened from full-strength multiply (2026-07-11) */
+  opacity: 0.5;   /* softened 0.8 -> 0.5 on 2026-07-22 (Danny) */
   pointer-events: none;
 }
 
@@ -1532,6 +1532,13 @@ html, body {
   from { transform: translateY(-24px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
 }
+/* Exit (2026-07-22): the reverse of the entrance — slide up while fading out.
+   `forwards` holds it at opacity 0 until .hidden is applied, so no flash. */
+#toast.toast-exit { animation: toast-rise 0.35s ease-in forwards; }
+@keyframes toast-rise {
+  from { transform: translateY(0); opacity: 1; }
+  to { transform: translateY(-24px); opacity: 0; }
+}
 
 #toast-inner {
   position: absolute;
@@ -1563,6 +1570,13 @@ html, body {
   font-size: 30px;
   color: var(--gold-bright);
 }
+
+/* Inspect modifier line (2026-07-22): item stat modifiers shown under the
+   description — beneficial in green, detrimental in red, matching combat's
+   +N/−N damage colors. */
+#toast-text .item-mod { font-size: 20px; }
+#toast-text .mod-pos { color: #6fbf73; }
+#toast-text .mod-neg { color: #e04138; }
 
 /* ---- Fishing catch reveal (2026-07-16) ----
    Big centred picture of the catch for a few seconds, over a soft vignette. */
