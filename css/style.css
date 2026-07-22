@@ -60,6 +60,25 @@ html, body {
   pointer-events: none;
 }
 
+/* ---- Layer 2.5: scene backdrop ---- */
+/* A full-stage fight/parley image (barn, forest, camp) shown in place of the
+   world. Below the vignette + UI so the HUD and battle/dialog frames stay on
+   top (2026-07-22 — fixes the backdrop hiding the HUD/menu buttons). Oversized
+   4px like the vignette to avoid edge seams; hidden until a fight/dialog sets
+   its background-image. */
+#scene-backdrop {
+  position: absolute;
+  left: -4px;
+  top: -4px;
+  width: 1928px;
+  height: 1088px;
+  background-size: cover;
+  background-position: center;
+  display: none;
+  pointer-events: none;
+}
+#scene-backdrop.active { display: block; }
+
 /* ---- Layer 3: vignette ---- */
 /* Oversized by 4px on every edge: scaling the stage to arbitrary window sizes
    can leave sub-pixel seams at the borders, so the vignette overshoots them */

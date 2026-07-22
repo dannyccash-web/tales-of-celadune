@@ -14,6 +14,13 @@
     <!-- Layer 1 + 2: world background, player, NPCs (canvas) -->
     <canvas id="game" width="1920" height="1080"></canvas>
 
+    <!-- Layer 2.5: scene backdrop (2026-07-22) — a full-stage image shown during
+         specific fights/parleys (barn, forest, camp) in place of the world. It
+         sits ABOVE the world canvas but BELOW the vignette and the UI, so the
+         HUD, Inventory/Menu buttons, and battle/dialog frames all render on top
+         of it. Empty (display:none) unless a fight/dialog sets it. -->
+    <div id="scene-backdrop"></div>
+
     <!-- Layer 3: vignette, multiply blend, fixed to viewport -->
     <img id="vignette" src="assets/images/Vignette.jpg" alt="">
 

@@ -133,20 +133,21 @@ export function isDialogOpen() {
   return dialogState.open;
 }
 
-// Set (or clear) a full-bleed backdrop image on an overlay (#dialog / #battle),
-// e.g. the barn interior behind a rat fight or the camp behind a Bramblekin
-// parley (2026-07-22). A dark gradient is layered over the image so the framed
-// UI stays readable. Passing a falsy src reverts to the CSS default (the dimmed
-// game world showing through).
-function setOverlayBackground(el, src) {
+// Set (or clear) the shared scene-backdrop layer — a full-stage fight/parley
+// image (barn, forest, camp) that sits BELOW the vignette and UI, so the HUD
+// and battle/dialog frames stay visible on top of it (2026-07-22 — this used to
+// paint onto the #battle/#dialog overlay itself, which covered the HUD). Only
+// one dialog OR battle is ever active at a time, so a single layer suffices.
+// Passing a falsy src hides it (the dimmed game world shows through as before).
+function setSceneBackdrop(src) {
+  const el = $('scene-backdrop');
+  if (!el) return;
   if (src) {
-    el.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.45)), url('${src}')`;
-    el.style.backgroundSize = 'cover';
-    el.style.backgroundPosition = 'center';
+    el.style.backgroundImage = `url('${src}')`;
+    el.classList.add('active');
   } else {
     el.style.backgroundImage = '';
-    el.style.backgroundSize = '';
-    el.style.backgroundPosition = '';
+    el.classList.remove('active');
   }
 }
 
@@ -196,7 +197,7 @@ export function openDialog(npc, onClose, onResponse) {
 
   // Optional scene backdrop behind the dialog (e.g. the Bramblekin camp) —
   // cleared in closeDialog. Falsy npc.background = the usual dimmed world.
-  setOverlayBackground($('dialog'), npc.background);
+  setSceneBackdrop(npc.background);
 
   // Defensive reset: a dialog always opens in text mode (greeting shown,
   // grid + arrow shown, grid hidden), even if the last one was closed
@@ -338,7 +339,7 @@ function closeDialog() {
   $('dialog-responses').classList.remove('hidden');
   $('dialog').classList.remove('vendor');
   $('vendor-gold').classList.add('hidden');
-  setOverlayBackground($('dialog'), null);
+  setSceneBackdrop(null);
   if (dialogState.onClose) dialogState.onClose();
 }
 
@@ -1413,7 +1414,7 @@ export function openBattle({ enemies, onAction, onConfirmTarget, background }) {
   renderBattleEnemies(enemies);
   // Optional scene backdrop behind the fight (barn interior, forest, camp) —
   // cleared in closeBattle. Falsy = the usual dimmed game world (2026-07-22).
-  setOverlayBackground($('battle'), background);
+  setSceneBackdrop(background);
   $('battle').classList.remove('hidden');
 }
 
@@ -1421,7 +1422,7 @@ export function closeBattle() {
   battleUiState.open = false;
   battleUiState.mode = 'idle';
   battleUiState.handlers = null;
-  setOverlayBackground($('battle'), null);
+  setSceneBackdrop(null);
   $('battle').classList.add('hidden');
 }
 
