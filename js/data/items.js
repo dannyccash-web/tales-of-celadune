@@ -163,6 +163,16 @@ export default {
     defenseBonus: 1,
     price: 19,
   },
+  leather_gloves: {
+    id: 'leather_gloves',
+    name: 'Leather Gloves',
+    image: 'assets/images/leather_gloves.png',
+    description: 'Supple leather gloves with a firm grip — steadier in the hand, surer with a blade.',
+    questItem: false,
+    slot: 'hands', // Equipment tab (see SLOT_CATEGORY)
+    attackBonus: 1,
+    price: 17,
+  },
   fishing_bait: {
     id: 'fishing_bait',
     name: 'Fishing Bait',

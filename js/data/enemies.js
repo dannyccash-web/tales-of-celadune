@@ -60,10 +60,10 @@ export default {
   },
 
   // Rootweaver (D4 shortcut ambushes, 2026-07-11) — a deliberate "too tough
-  // for now" wall: high HP + hard hits so a fresh player (5 HP, atk1/def1,
-  // 1–2 dmg) can't grind it down before dying, and is meant to FLEE. Not
-  // absurd though — atk4/def3/15hp, not a 50-HP raid boss — so it becomes
-  // beatable later with a few levels + real gear. Rolls 2d4 (2–8) damage.
+  // for now" wall: solid HP + hard hits so a fresh player (5 HP, atk1/def1)
+  // can't grind it down before dying, and is meant to FLEE. Not absurd though
+  // — atk4/def3/10hp, not a raid boss — so it becomes beatable later with real
+  // gear. Damage softened over time: 2–8 → 2–5 → 1–3 (2026-07-23).
   rootweaver: {
     id: 'rootweaver',
     name: 'Rootweaver',
@@ -72,7 +72,7 @@ export default {
     attack: 4,
     defense: 3,
     speed: 9,
-    damage: { min: 2, max: 5 },
+    damage: { min: 1, max: 3 }, // softened 2-5 -> 1-3 on 2026-07-23 (Danny — still too strong)
     background: 'assets/images/forest_background.jpg', // battle backdrop (2026-07-22)
     wood: true, // living wood — a torch sets it ablaze (see main.js)
     // Loot on death (2026-07-17, reworked 2026-07-21 to the unified schema):

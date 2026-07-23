@@ -745,7 +745,7 @@ export default {
     },
     {
       id: 'sorcha', name: 'Sorcha Emberfell', role: 'BLACKSMITH',
-      vendor: true, stock: ['short_sword', 'leather_armor'], gold: 44,
+      vendor: true, stock: ['short_sword', 'leather_armor', 'leather_gloves'], gold: 44,
       awayLine: 'If it’s steel you’re after, catch me at the forge. I don’t lug the anvil about with me.',
       sprite: 'assets/images/Sorcha Emberfell_overhead.png',
       portrait: 'assets/images/Sorcha Emberfell.png',

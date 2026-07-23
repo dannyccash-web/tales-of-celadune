@@ -888,6 +888,72 @@ async function boot() {
     return true; // keep browsing the room
   }
 
+  // ---- Lockpicking (2026-07-23) ----
+  // A locked, NON-vendor building can be picked open if the player carries
+  // lockpicks. Picking consumes one lockpick and opens the building as an
+  // unoccupied "place" (exactly like Your House) stocked with a small stash of
+  // common items to take. Vendor shops can't be picked. (Chests / dungeon doors
+  // will reuse this down the road.)
+  const COMMON_HOUSE_ITEMS = ['bread', 'corn', 'fishing_bait', 'health_potion', 'torch', 'old_boot'];
+
+  // Deterministic 2-3 item stash per building (seeded by id) so a given house
+  // always holds the same loot and never rerolls when reopened.
+  function rollHouseStash(seed) {
+    let h = 0;
+    for (const ch of String(seed)) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+    const count = 2 + (h % 2); // 2 or 3 items
+    const pool = [...COMMON_HOUSE_ITEMS];
+    const out = [];
+    for (let i = 0; i < count && pool.length; i++) {
+      h = (h * 1103515245 + 12345) >>> 0;
+      out.push(pool.splice(h % pool.length, 1)[0]);
+    }
+    return out;
+  }
+
+  // Enter a picked-open building. Reuses the Your-House "place" machinery: the
+  // stash lives on npc._house (a place object cached on the live World npc, so
+  // taking items persists for the session — a re-picked house stays emptied).
+  function openLockpickedHouse(npc) {
+    if (!npc._house) {
+      npc._house = {
+        isPlace: true,
+        id: `${npc.id}_house`,
+        name: `${npc.name}’s House`,
+        description: 'You slip inside. No one’s home — best make it quick.',
+        home: npc.home,
+        items: rollHouseStash(npc.id),
+      };
+    }
+    audio.sfx(audio.SFX.door);
+    world.interior = images[npc.home.interior];
+    ui.openDialog(
+      buildPlaceView(npc._house),
+      () => { audio.sfx(audio.SFX.door); world.interior = null; },
+      (npcView, index) => applyPlaceResponse(npc._house, npcView, index),
+    );
+  }
+
+  // Locked-door prompt: offer to spend a lockpick. Yes -> consume one + enter;
+  // No/Escape -> just close (the door stays locked, the game proceeds as usual).
+  function openLockpickPrompt(npc) {
+    const view = {
+      id: 'locked_door', name: 'Locked Door', role: '',
+      portrait: 'assets/images/lockpicks.png',
+      dialog: {
+        line: 'The door is locked tight. You could work it open with one of your lockpicks.',
+        responses: ['Pick the lock.', 'Leave it.'],
+      },
+    };
+    ui.openDialog(view, null, (v, index) => {
+      if (index === 0) {
+        removeItem('lockpicks', 1);
+        setTimeout(() => openLockpickedHouse(npc), 0); // let this prompt close first
+      }
+      return; // falsy -> close the prompt either way
+    });
+  }
+
   // Which active quests' world conditions are currently satisfied — feeds
   // resolveNpcDialog's readyToComplete pseudo-status. Lives here (not in
   // scene data) because conditions read live world state.
@@ -1776,8 +1842,14 @@ async function boot() {
           world.interior = null;
         });
       } else {
-        audio.sfx(audio.SFX.denied);
-        ui.toast('The door is locked.');
+        // NPC away -> the door is locked. A non-vendor building can be picked
+        // open if the player has lockpicks; vendor shops can't be picked.
+        if (!homeNpc.vendor && inventory.some((it) => it.id === 'lockpicks')) {
+          openLockpickPrompt(homeNpc);
+        } else {
+          audio.sfx(audio.SFX.denied);
+          ui.toast('The door is locked.');
+        }
       }
       return;
     }
@@ -1903,7 +1975,11 @@ async function boot() {
     const dt = Math.min((now - last) / 1000, 0.05);
     last = now;
 
-    const locked = ui.isDialogOpen() || ui.isAnyPanelOpen() || ui.isBattleOpen() || ui.isVictoryOpen() || ui.isGameOverOpen() || fishing || !state.started;
+    // A modal (dialog/panel/battle/victory/game-over/pre-start) fully pauses the
+    // world; fishing only locks the PLAYER — NPCs keep wandering during a cast
+    // (2026-07-23). `locked` gates the player, `worldFrozen` gates the world.
+    const modalLock = ui.isDialogOpen() || ui.isAnyPanelOpen() || ui.isBattleOpen() || ui.isVictoryOpen() || ui.isGameOverOpen() || !state.started;
+    const locked = modalLock || fishing;
     // Camp membrane state (no-op in scenes without a camp): sealed until the
     // player has passage (paid this visit OR did the Chief's favor) — and never
     // sealed once the camp's hostile, since then the guards attack rather than
@@ -1912,7 +1988,7 @@ async function boot() {
     world.campEntered = campEntered;
     world.campHostile = campHostile;
     world.playerSpeedMult = moveMultForSpeed(stats.speed);
-    world.update(dt, input, locked);
+    world.update(dt, input, locked, modalLock);
     world.render();
 
     audio.setWalking(!locked && world.player.moving);

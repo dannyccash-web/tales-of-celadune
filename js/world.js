@@ -284,7 +284,11 @@ export class World {
     });
   }
 
-  update(dt, input, uiLocked) {
+  // uiLocked freezes the PLAYER (no movement/input). worldFrozen (defaults to
+  // uiLocked) freezes the rest of the world — NPC routines + camp/ambush checks.
+  // Fishing passes uiLocked=true but worldFrozen=false so the player stays put
+  // while NPCs keep wandering (2026-07-23 — they used to freeze mid-cast).
+  update(dt, input, uiLocked, worldFrozen = uiLocked) {
     this.time += dt; // advances even while UI-locked so effects keep drifting
     this.pendingExit = null;
     this.pendingGate = null;
@@ -328,11 +332,11 @@ export class World {
       if (p.y > this.scene.height - half) { p.y = this.scene.height - half; this.checkExit('bottom'); }
     }
 
-    this.updateNpcs(dt, uiLocked);
+    this.updateNpcs(dt, worldFrozen);
 
     // Camp membrane (can't enter/leave while sealed) + hidden ambush triggers —
     // only while the world is live (a rejected move reverts to the pre-move pos).
-    if (!uiLocked) {
+    if (!worldFrozen) {
       this.checkCampGates();
       this.checkCampMembrane(preX, preY);
       this.checkCampAggro();
