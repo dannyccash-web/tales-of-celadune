@@ -1192,7 +1192,9 @@ async function boot() {
       return Object.keys(avail)
         .filter((id) => avail[id] === Infinity || avail[id] > 0)
         .map((id) => ITEMS[id]).filter((d) => d && d.price != null)
-        .map((d) => ({ id: d.id, name: d.name, image: d.image, price: d.price }));
+        // qty = the vendor's remaining stock, so the buy tile can show a count
+        // (the grid only renders it for 2+; Infinity = unbounded, no count).
+        .map((d) => ({ id: d.id, name: d.name, image: d.image, price: d.price, qty: avail[d.id] }));
     };
     const buildSell = () => inventory
       .map((e) => ({ e, d: ITEMS[e.id] }))

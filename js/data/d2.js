@@ -723,7 +723,7 @@ export default {
   npcs: [
     {
       id: 'bram', name: 'Bram Caskwell', role: 'TAVERN KEEPER',
-      vendor: true, stock: ['health_potion', 'dagger'], gold: 31,
+      vendor: true, stock: [{ id: 'health_potion', qty: 3 }, { id: 'dagger', qty: 1 }], gold: 31,
       awayLine: 'The tavern’s just there — come find me and I’ll pour you something proper. Can’t very well do business in the middle of the road.',
       sprite: 'assets/images/Bram Caskwell_overhead.png',
       portrait: 'assets/images/Bram Caskwell.png',
@@ -745,7 +745,7 @@ export default {
     },
     {
       id: 'sorcha', name: 'Sorcha Emberfell', role: 'BLACKSMITH',
-      vendor: true, stock: ['short_sword', 'leather_armor', 'leather_gloves'], gold: 44,
+      vendor: true, stock: [{ id: 'short_sword', qty: 1 }, { id: 'leather_armor', qty: 1 }, { id: 'leather_gloves', qty: 1 }], gold: 44,
       awayLine: 'If it’s steel you’re after, catch me at the forge. I don’t lug the anvil about with me.',
       sprite: 'assets/images/Sorcha Emberfell_overhead.png',
       portrait: 'assets/images/Sorcha Emberfell.png',
@@ -766,7 +766,7 @@ export default {
     },
     {
       id: 'nadira', name: 'Nadira Thornwell', role: 'APOTHECARY',
-      vendor: true, stock: ['health_potion', 'magic_potion', 'vitality_potion'], gold: 26,
+      vendor: true, stock: [{ id: 'health_potion', qty: 3 }, { id: 'magic_potion', qty: 2 }, { id: 'vitality_potion', qty: 1 }], gold: 26,
       awayLine: 'My remedies are all back at the apothecary. Stop in when I’m behind the counter.',
       sprite: 'assets/images/Nadira Thornwell_overhead.png',
       portrait: 'assets/images/Nadira Thornwell.png',
@@ -788,7 +788,7 @@ export default {
     },
     {
       id: 'emeric', name: 'Emeric Vale', role: 'SHOPKEEPER',
-      vendor: true, stock: [{ id: 'fishing_bait', qty: 3 }, 'lockpicks', 'torch'], gold: 39,
+      vendor: true, stock: [{ id: 'fishing_bait', qty: 3 }, { id: 'lockpicks', qty: 1 }, { id: 'torch', qty: 2 }], gold: 39,
       awayLine: 'Come by the shop if you’re buying — I don’t carry the whole inventory in my pockets.',
       sprite: 'assets/images/Emeric Vale_overhead.png',
       portrait: 'assets/images/Emeric Vale.png',
@@ -808,7 +808,7 @@ export default {
     },
     {
       id: 'kwame', name: 'Kwame Hearthstone', role: 'BAKER',
-      vendor: true, stock: ['bread'], gold: 48,
+      vendor: true, stock: [{ id: 'bread', qty: 3 }], gold: 48,
       awayLine: 'The bread’s at the bakery, not out here. Swing by while the oven’s still hot.',
       sprite: 'assets/images/Kwame Hearthstone_overhead.png',
       portrait: 'assets/images/Kwame Hearthstone.png',

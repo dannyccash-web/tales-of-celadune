@@ -573,10 +573,10 @@ function buildDialogGridTile(it, i) {
   const label = document.createElement('div');
   label.className = 'item-label';
   label.textContent = it.name;
-  // Sell grid = the player's own items: always show the quantity, e.g.
-  // "Health Potion (3)" (2026-07-23, Danny). Buy grid is the vendor's stock
-  // (unbounded for now), so no count there.
-  if (!buying && it.qty != null) {
+  // Show a quantity in parentheses only for 2+ (Danny, 2026-07-23) — a lone
+  // item gets no "(1)". Applies to both grids: sell = the player's own count,
+  // buy = the vendor's remaining stock (finite items only; Infinity = unbounded).
+  if (it.qty != null && it.qty !== Infinity && it.qty > 1) {
     const qty = document.createElement('span'); qty.className = 'item-qty'; qty.textContent = ` (${it.qty})`;
     label.appendChild(qty);
   }
@@ -1104,9 +1104,9 @@ function buildItemTile(entry, def, equipment) {
   // The tile shows the item's *name* — kept consistent with how it's
   // named everywhere else (the received-item reveal, Inspect's description).
   label.textContent = def.name;
-  {
-    // Always show the possessed quantity in parentheses — e.g. "Corn (1)"
-    // (2026-07-23, Danny), not only when the player has more than one.
+  // Show the quantity only when the player holds 2+ (Danny, 2026-07-23) — a
+  // single item gets no "(1)" suffix.
+  if (entry.qty > 1) {
     const qty = document.createElement('span');
     qty.className = 'item-qty';
     qty.textContent = ` (${entry.qty})`;
