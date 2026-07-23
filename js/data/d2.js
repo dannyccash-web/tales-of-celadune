@@ -734,7 +734,7 @@ export default {
         { do: 'goto', x: 974, y: 1296 },
         { do: 'wait', s: 5 },
         { do: 'goHome' },
-        { do: 'wait', s: 40 },
+        { do: 'wait', s: 80 }, // time in the tavern doubled (2026-07-23)
         { do: 'leaveHome' },
       ],
       dialog: { line: 'Welcome, welcome! Pull up a stool — though I’ll warn you, the ale’s still fermenting and the stew’s mostly turnip. Come back when the hearth’s lit proper.', responses: ['Leave.'] },
@@ -752,7 +752,7 @@ export default {
       speed: 45, startsHome: true,
       home: { door: { x: 879, y: 1430 }, approach: { x: 862, y: 1525 }, interior: 'assets/images/blacksmith_interior.jpg' },
       routine: [
-        { do: 'wait', s: 6 },
+        { do: 'wait', s: 12 }, // time at the forge doubled (2026-07-23)
         { do: 'leaveHome' },
         { do: 'goto', x: 1121, y: 1560 },
         { do: 'wait', s: 4 },
@@ -777,7 +777,7 @@ export default {
         { do: 'goto', x: 956, y: 906 },
         { do: 'wait', s: 3 },
         { do: 'goHome' },
-        { do: 'wait', s: 24 },
+        { do: 'wait', s: 48 }, // time in the apothecary doubled (2026-07-23)
         { do: 'leaveHome' },
       ],
       dialog: { line: 'Careful what you touch — half these jars will cure you and the other half most certainly won’t. Come by when you’ve an ache I can put a price to.', responses: ['Leave.'] },
@@ -795,7 +795,7 @@ export default {
       speed: 45, startsHome: true,
       home: { door: { x: 781, y: 672 }, approach: { x: 838, y: 639 }, interior: 'assets/images/general_goods_interior.jpg' },
       routine: [
-        { do: 'wait', s: 30 },
+        { do: 'wait', s: 60 }, // time in the shop doubled (2026-07-23)
         { do: 'leaveHome' },
         { do: 'goto', x: 782, y: 847 },
         { do: 'wait', s: 5 },
@@ -819,7 +819,7 @@ export default {
         { do: 'goto', x: 863, y: 127 },
         { do: 'wait', s: 4 },
         { do: 'goHome' },
-        { do: 'wait', s: 48 },
+        { do: 'wait', s: 96 }, // time in the bakery doubled (2026-07-23)
         { do: 'leaveHome' },
       ],
       dialog: { line: 'Smell that? Second batch of the day. The crusty loaves go fast, so if you want one, don’t dawdle.', responses: ['Leave.'] },

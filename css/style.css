@@ -345,6 +345,18 @@ html, body {
 
 .dialog-text { max-width: 760px; }
 
+/* Vertically center the dialogue line in the frame for ordinary dialogue
+   (2026-07-23 — it was top-justified since the name/role moved out of the box).
+   The box interior is 285px (345 tall − 60 padding); .dialog-text is the only
+   in-flow child (portrait/contents/header are all absolute). Vendors have their
+   own absolute .dialog-text layout, so scope this to non-vendor dialogs. */
+#dialog:not(.vendor) .dialog-text {
+  min-height: 285px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
 /* Name + title (dialog-name / dialog-role) now live in #dialog-header ABOVE
    the frame for all dialogue (2026-07-22) — see the #dialog-header block near
    the vendor-layout section. */
