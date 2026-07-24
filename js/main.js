@@ -46,6 +46,15 @@ function refreshItemsUi() {
   ui.updateItemsPanel(inventory, ITEMS, equipment);
 }
 
+// Prompt autosave (2026-07-23): the centralized state mutators below call this
+// after any change so progress — items gained/taken, gold, quests — is saved
+// the moment it happens, not only when the player crosses into a new screen.
+// Without it, a Continue could replay same-screen actions (re-loot a house,
+// re-take a quest). boot() installs the actual saver (which no-ops mid-battle
+// and before the game has started); until then this is a no-op.
+let autosaveHook = null;
+function requestAutosave() { if (autosaveHook) autosaveHook(); }
+
 // `silent` skips the bag SFX — used by vendor trades, which play the coin
 // exchange sound (via addGold/spendGold) instead so the transaction reads as
 // money changing hands, not an item being rummaged out of a bag.
@@ -54,6 +63,7 @@ function addItem(id, qty = 1, silent = false) {
   if (existing) existing.qty += qty; else inventory.push({ id, qty });
   refreshItemsUi();
   if (!silent) audio.sfx(audio.SFX.item);
+  requestAutosave();
 }
 
 function removeItem(id, qty = 1, silent = false) {
@@ -70,6 +80,7 @@ function removeItem(id, qty = 1, silent = false) {
   }
   refreshItemsUi();
   if (!silent) audio.sfx(audio.SFX.item);
+  requestAutosave();
 }
 
 // equipItem/unequipItem are the only two ways `equipment` changes — mirrors
@@ -86,6 +97,7 @@ function equipItem(id) {
   equipment[def.slot] = id;
   refreshItemsUi();
   audio.sfx(audio.SFX.item);
+  requestAutosave();
 }
 
 function unequipItem(slot) {
@@ -93,6 +105,7 @@ function unequipItem(slot) {
   equipment[slot] = null;
   refreshItemsUi();
   audio.sfx(audio.SFX.item);
+  requestAutosave();
 }
 
 // Effective Attack/Defense = base stat + every equipped item's bonus (most
@@ -124,8 +137,9 @@ function effectiveDefense() { return stats.defense + stats.luck + equipmentBonus
 //     3 -> ×1.5. Speed 3 is the cap, so higher values still give ×1.5, and it's
 //     floored at ×1.0 for speed <= 1.
 //  2) Battle initiative (D&D-style "advantage") — the chance the player's whole
-//     block acts before the enemies each round: speed 1 -> 0% (enemies first),
-//     2 -> 50%, 3 -> 100%. chance = (speed-1)/2, clamped to [0,1].
+//     block acts before the enemies. Rolled ONCE at the start of a fight (not
+//     per round): speed 1 -> 50%, 2 -> 75%, 3 -> 100%. chance = 0.25 + 0.25*speed,
+//     clamped to [0,1].
 function moveMultForSpeed(speed) {
   const s = Math.max(1, Math.min(3, speed));
   return 1 + 0.25 * (s - 1);
@@ -147,6 +161,7 @@ function addGold(amount) {
   stats.gold += amount;
   ui.updateHud(stats);
   audio.sfx(audio.SFX.gold);
+  requestAutosave();
 }
 
 // Spend gold (e.g. the Bramblekin toll) — clamped at 0, same HUD + coin SFX
@@ -155,6 +170,7 @@ function spendGold(amount) {
   stats.gold = Math.max(0, stats.gold - amount);
   ui.updateHud(stats);
   audio.sfx(audio.SFX.gold);
+  requestAutosave();
 }
 
 function damagePlayer(amount) {
@@ -162,6 +178,7 @@ function damagePlayer(amount) {
   ui.updateHud(stats);
   ui.flashHealthDamage();
   audio.sfx(audio.SFX.hurt);
+  requestAutosave(); // no-ops mid-battle (the hook guards on that)
 }
 
 // Restore health, clamped to healthMax. Returns how much was ACTUALLY restored
@@ -171,6 +188,7 @@ function healPlayer(amount) {
   const before = stats.health;
   stats.health = Math.min(stats.healthMax, stats.health + amount);
   ui.updateHud(stats);
+  requestAutosave(); // no-ops mid-battle (the hook guards on that)
   return stats.health - before;
 }
 
@@ -188,6 +206,7 @@ function startQuest(id) {
   ui.updateQuestsPanel(quests, QUESTS);
   ui.showQuestAdded(def.name);
   audio.sfx(audio.SFX.questAdded);
+  requestAutosave();
 }
 
 // The one way a quest resolves to 'completed' (2026-07-10, first real user:
@@ -200,6 +219,7 @@ function completeQuest(id) {
   ui.updateQuestsPanel(quests, QUESTS);
   ui.showQuestCompleted(QUESTS[id]?.name || id);
   audio.sfx(audio.SFX.questComplete);
+  requestAutosave();
 }
 
 function questStatus(id) {
@@ -300,6 +320,15 @@ async function boot() {
     (f.battles || []).forEach((id) => { const b = w.battles.find((x) => x.id === id); if (b) b.defeated = true; });
     (f.ambushes || []).forEach((id) => { const a = w.ambushes.find((x) => x.id === id); if (a) a.defeated = true; });
     (f.npcsDefeated || []).forEach((id) => { const n = w.npcs.find((x) => x.id === id); if (n) n.defeated = true; });
+    // Remaining loot in unoccupied buildings — Your House (isPlace) and any
+    // lockpicked home (npc._house) — so a burgled/emptied room stays emptied
+    // across a save (2026-07-23, Danny: no re-taking the same items).
+    for (const [npcId, items] of Object.entries(f.places || {})) {
+      const n = w.npcs.find((x) => x.id === npcId);
+      if (!n) continue;
+      if (n.isPlace) n.items = [...items];
+      else n._house = { isPlace: true, id: `${n.id}_house`, name: `${n.name}’s House`, description: 'You slip inside. No one’s home — best make it quick.', home: n.home, items: [...items] };
+    }
   }
   function enterScene(id) {
     const fresh = !worlds[id];
@@ -424,11 +453,20 @@ async function boot() {
   function snapshotWorlds() {
     const out = {};
     for (const [id, w] of Object.entries(worlds)) {
+      // Remaining loot in unoccupied buildings: Your House (isPlace, items on
+      // the npc itself) and any lockpicked home (items on npc._house). Only
+      // recorded once the room's actually been opened/looted.
+      const places = {};
+      for (const n of w.npcs) {
+        if (n.isPlace) places[n.id] = n.items;
+        else if (n._house) places[n.id] = n._house.items;
+      }
       out[id] = {
         collected: w.interactables.map((it, i) => (it.collected ? i : -1)).filter((i) => i >= 0),
         battles: w.battles.filter((b) => b.defeated).map((b) => b.id),
         ambushes: w.ambushes.filter((a) => a.defeated).map((a) => a.id),
         npcsDefeated: w.npcs.filter((n) => n.defeated).map((n) => n.id),
+        places,
       };
     }
     return out;
@@ -450,6 +488,12 @@ async function boot() {
       localStorage.setItem(SAVE_KEY, JSON.stringify(data));
     } catch { /* storage blocked or full — skip silently, gameplay is unaffected */ }
   }
+
+  // Install the prompt-autosave hook the module-level mutators call (see
+  // requestAutosave up top). Persist after any change, but NOT mid-battle
+  // (battle state isn't saved, and a half-resolved write could strand the
+  // player at low health) and not before the game has begun.
+  autosaveHook = () => { if (state.started && !battleState.active) saveGame(); };
 
   function refreshAllUi() {
     ui.updateHud(stats);
@@ -656,6 +700,7 @@ async function boot() {
       campQuestDone = true;
       campTollPaid = true;
       stepSentriesAside();
+      requestAutosave(); // persist the permanent-passage flag (set after the mutators above)
       ui.updateDialogContent({
         line: 'A deal’s a deal. The camp’s open to you — for good, this time. Now get out of my firelight.',
         responses: ['Leave.'],
@@ -671,6 +716,7 @@ async function boot() {
       ui.showGaveItem(ITEMS.vegetable_crate);
       addGold(5);
       vegetableDeliveredToTavern = true;
+      requestAutosave(); // persist delivery (crate was already removed above)
       ui.updateDialogContent({
         line: 'Mirelle’s crate — been waiting on these! Here, five gold for her trouble. See it finds its way back to her, won’t you? Good lass, that one.',
         responses: ['Leave.'],
@@ -733,6 +779,7 @@ async function boot() {
     if (effect.feedGaffer) {
       removeItem('corn', 1);
       gafferHappy = true;
+      requestAutosave(); // persist that Gaffer's been fed (corn already removed)
       ui.showGaveItem(ITEMS.corn); // the GAVE reveal — mirror of receiving
       ui.updateDialogContent({
         line: 'Gaffer snatches the corn straight from your hand and demolishes it, cob and all. He fixes you with a look of profound reevaluation.',
@@ -1290,6 +1337,7 @@ async function boot() {
     turnPos: 0,
     onEnd: null, // (result) => void, called once the battle is fully resolved
     ensnared: false, // set once a rootweaver's first-flee snare has fired this battle
+    playerFirst: true, // initiative, rolled ONCE at startBattle and kept all fight (2026-07-23)
   };
 
   function aliveEnemies() {
@@ -1322,19 +1370,18 @@ async function boot() {
     if (ms > 0) setTimeout(go, ms); else go();
   }
 
-  // Recomputed every round (not just once) — enemies that died last round
-  // simply won't be in the alive list anymore. Initiative is now Speed-based
-  // (Danny, 2026-07-20): the player acts as one block that goes either BEFORE
-  // all enemies or AFTER them, decided by playerInitiativeChance (speed 1 ->
-  // 50/50 each round, 2 -> 75%, 3 -> always first). Enemies keep their
-  // own speed-desc order among themselves via battle.turnOrder.
+  // Rebuilt every round so enemies that died last round drop out of the queue —
+  // but WHO goes first (the player's whole block before or after the enemies) is
+  // FIXED for the fight: initiative is rolled once in startBattle (Danny,
+  // 2026-07-23 — it used to reroll each round, flipping the order mid-fight).
+  // So a won roll gives player > enemies > player > enemies ... every round.
+  // Enemies keep their own speed-desc order among themselves via battle.turnOrder.
   function rollRoundOrder() {
     const enemies = battle.turnOrder(
       aliveEnemies().map((e) => ({ kind: 'enemy', enemy: e, speed: e.speed })),
     );
     const player = { kind: 'player', speed: stats.speed };
-    const playerFirst = Math.random() < playerInitiativeChance();
-    return playerFirst ? [player, ...enemies] : [...enemies, player];
+    return battleState.playerFirst ? [player, ...enemies] : [...enemies, player];
   }
 
   // Which weapon slot the in-flight attack is using ('mainhand'/'offhand'),
@@ -1367,6 +1414,10 @@ async function boot() {
       };
     });
     battleState.onEnd = onEnd || null;
+    // Roll initiative ONCE for the whole fight (Speed-based advantage): the
+    // player's block goes before or after the enemies, and rollRoundOrder keeps
+    // that placement every round from here on.
+    battleState.playerFirst = Math.random() < playerInitiativeChance();
     battleState.order = rollRoundOrder();
     battleState.turnPos = 0;
     battleState.ensnared = false;
@@ -1789,9 +1840,11 @@ async function boot() {
           });
           return true;
         }
-        spendGold(WELL_COIN_COST); // deducts 1 gold + plays the coin clink
+        // Set the flag + luck BEFORE spending — spendGold's autosave then
+        // captures them, so a Continue can't re-toss for another Luck point.
         wellCoinThrown = true;
         stats.luck += 1;
+        spendGold(WELL_COIN_COST); // deducts 1 gold + plays the coin clink (+ autosave)
         ui.updateStatsPanel(stats);
         ({ responses, acts } = buildActs());
         ui.updateDialogContent({
