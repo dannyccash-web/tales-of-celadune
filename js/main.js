@@ -503,7 +503,7 @@ async function boot() {
         inventory: inventory.map((e) => ({ ...e })),
         equipment: { ...equipment },
         quests: quests.map((q) => ({ ...q })),
-        flags: { campQuestDone, campHostile, gafferHappy, wellCoinThrown, vegetableDeliveredToTavern },
+        flags: { campQuestDone, campHostile, gafferHappy, wellCoinThrown, vegetableDeliveredToTavern, calderToldStory, calderToldDangers },
         worlds: snapshotWorlds(),
       };
       localStorage.setItem(SAVE_KEY, JSON.stringify(data));
@@ -533,6 +533,7 @@ async function boot() {
     campTollPaid = false; campEntered = false; campQuestDone = false;
     campHostile = false; campEntryGate = null;
     gafferHappy = false; wellCoinThrown = false; vegetableDeliveredToTavern = false;
+    calderToldStory = false; calderToldDangers = false;
     for (const k of Object.keys(worlds)) delete worlds[k];
     pendingWorldFlags = null;
     enterScene('D3');
@@ -553,6 +554,7 @@ async function boot() {
     const f = data.flags || {};
     campQuestDone = !!f.campQuestDone; campHostile = !!f.campHostile;
     gafferHappy = !!f.gafferHappy; wellCoinThrown = !!f.wellCoinThrown;
+    calderToldStory = !!f.calderToldStory; calderToldDangers = !!f.calderToldDangers;
     vegetableDeliveredToTavern = !!f.vegetableDeliveredToTavern;
     // Per-visit camp state always starts fresh on a load (toll re-armed, not
     // mid-entry) — only the permanent flags above persist.
@@ -680,6 +682,13 @@ async function boot() {
   // matches how the world's `defeated`/`collected` flags reset per World).
   let gafferHappy = false;
 
+  // Calder Rusk's conversation progress (2026-07-25): he only offers his
+  // keepsake quest once the player has heard BOTH his backstory and his warning
+  // about the creatures. Persisted (flags), so the offer stays available across
+  // a save. See buildCalderDialog().
+  let calderToldStory = false;
+  let calderToldDangers = false;
+
   // The D3 well's coin-for-luck offer is one-time per session (like gafferHappy,
   // not persisted). Drinking from the well is always available; tossing a coin
   // for +1 Luck can only happen once. See openWellDialog().
@@ -701,6 +710,49 @@ async function boot() {
     // other response options instead of only leaving (2026-07-10).
     if (effect.goBack) {
       ui.updateDialogContent(effect.goBack);
+      return true;
+    }
+    // ---- Calder Rusk's keepsake-quest flow (2026-07-25) ----
+    // Story / dangers each set a flag (so the quest offer can unlock once both
+    // are heard) and reply with a "Go back." that REBUILDS his menu (calderMenu)
+    // rather than restoring a stale snapshot, so the newly-available offer shows.
+    if (effect.tellStory || effect.tellDangers) {
+      if (effect.tellStory) calderToldStory = true; else calderToldDangers = true;
+      requestAutosave(); // persist conversation progress
+      ui.updateDialogContent({
+        line: effect.tellStory ? CALDER_STORY : CALDER_DANGERS,
+        responses: ['Go back.', 'Leave.'],
+        responseEffects: [{ calderMenu: true }, null],
+      });
+      return true;
+    }
+    if (effect.calderMenu) { ui.updateDialogContent(buildCalderDialog()); return true; }
+    if (effect.offerKeepsake) {
+      ui.updateDialogContent({
+        line: CALDER_OFFER,
+        responses: ['I’ll bring it back to you.', 'Not just now.'],
+        responseEffects: [{ acceptKeepsake: true }, { calderMenu: true }],
+      });
+      return true;
+    }
+    if (effect.acceptKeepsake) {
+      startQuest('calder_keepsake');
+      ui.updateDialogContent({
+        line: 'You’ve a good heart, or a greedy one — either way, bless you for it. It’s in the aft cabin, or what the sea left of it. Come back the moment you have it.',
+        responses: ['Leave.'],
+      });
+      return true;
+    }
+    if (effect.giveCalderPainting) {
+      removeItem('marisol_rusk_painting', 1, true);
+      ui.showGaveItem(ITEMS.marisol_rusk_painting);
+      completeQuest('calder_keepsake');
+      addGold(CALDER_KEEPSAKE_REWARD);
+      requestAutosave();
+      ui.updateDialogContent({
+        line: 'Marisol… there you are, my love. I thought the sea had taken you along with everything else. I can’t— here. Take the gold, all of it, it’s nothing to me now. You’ve given me back the only thing that ever was.',
+        responses: ['Leave.'],
+      });
       return true;
     }
     // Vendor Buy/Sell: swap the response box into the item grid, in place —
@@ -1446,6 +1498,49 @@ async function boot() {
     });
   }
 
+  // ---- Calder Rusk (D1, 2026-07-25) ----
+  // State-built dialogue. Pre-quest, the player can ask his backstory and about
+  // the dangers; ONLY once both are heard does his keepsake quest offer appear.
+  // Accepting starts `calder_keepsake` (recover Marisol's portrait from the
+  // wreck). While it's active he asks after it — and if the player is carrying
+  // the portrait, offers to turn it in (completes the quest + a gold thanks).
+  const CALDER_STORY = 'Calder Rusk — captain of the Gull’s Regret. She’s that broken-backed hull rotting out on the sand now. We ran her aground in a storm, a black night with waves like moving hills. My crew lived through it… and then they turned on their captain. Split the hold, took their shares of the loot, and rowed north to that little fishing village to play at being honest men. Left me to the gulls. So I stayed. Salvaged what timber the sea hadn’t swallowed, raised this hut plank by plank, and hid away the gold they never got their claws on.';
+  const CALDER_DANGERS = 'Aye — and it’s the whole reason I’m marooned up here like a barnacle. The beach crawls with cragclaws: snapping, scuttling brutes that put their heads down and charge the moment they catch your scent. And there are miremen about too — things that heave up out of the muck without so much as a ripple of warning. Between the lot of them I can’t even reach my own buried gold, let alone leave.';
+  const CALDER_OFFER = 'There is one thing. Out in the wreck — my old cabin, if the sea’s left any of it — there’s something of mine. Worth more to me than every coin I ever buried, and I’ll not say more than that. I can’t get to it past those creatures. But you… bring it back to me and I’ll see you well rewarded. Will you do it?';
+  const CALDER_KEEPSAKE_REWARD = 30;
+
+  function calderHasPainting() { return inventory.some((it) => it.id === 'marisol_rusk_painting'); }
+
+  function buildCalderDialog() {
+    const status = questStatus('calder_keepsake');
+    if (status === 'completed') {
+      return { line: 'You gave an old wreck of a man his heart back, friend. The gold’s yours and my door’s always open. Fair winds to you.', responses: ['Leave.'] };
+    }
+    if (status === 'active') {
+      if (calderHasPainting()) {
+        return {
+          line: 'Hold on — that oilcloth bundle under your arm. Is that… let me see it. Please.',
+          responses: ['Give him the portrait.', 'Not yet.'],
+          responseEffects: [{ giveCalderPainting: true }, { followUp: 'Take your time. Just… mind it stays dry.', noBack: true }],
+        };
+      }
+      return { line: 'Any luck out in the wreck? It’ll be in what’s left of the aft cabin. Watch yourself out there — those creatures don’t give ground.', responses: ['Leave.'] };
+    }
+    // Pre-quest: story + dangers, and — once BOTH are heard — the quest offer.
+    const responses = ['Who are you?', 'Anything I should watch out for?'];
+    const responseEffects = [{ tellStory: true }, { tellDangers: true }];
+    if (calderToldStory && calderToldDangers) {
+      responses.push('You said the creatures keep you from something?');
+      responseEffects.push({ offerKeepsake: true });
+    }
+    responses.push('Leave.');
+    responseEffects.push(null);
+    const line = calderToldStory || calderToldDangers
+      ? 'Back again? Good — the company does me good. What else is on your mind?'
+      : 'Company! Now there’s a tide I didn’t expect. Come in off the sand, friend — mind the driftwood. It’s been a long stretch since a face washed up here that wasn’t a crab’s. Ask what you like.';
+    return { line, responses, responseEffects };
+  }
+
   // Every NPC dialog opens through here so the per-character voice clip
   // (audio.DIALOGUE_SFX, keyed by npc.id) and response-effect handling are
   // consistent whether the NPC was approached directly or met at their door.
@@ -1461,6 +1556,7 @@ async function boot() {
     if (voice) audio.sfx(voice, 1.0);
     let dialog;
     if (npc.id === 'gaffer') dialog = buildGafferDialog(npc);
+    else if (npc.id === 'calder_rusk') dialog = buildCalderDialog(npc);
     else if (npc.id === 'bramblekin_chief') dialog = buildChiefDialog();
     else if (npc.bramblekin) dialog = buildBramblekinDialog(npc);
     else if (npc.vendor) dialog = buildVendorDialog(npc); // adds its own chatter
@@ -2008,6 +2104,18 @@ async function boot() {
     });
   }
 
+  // Rummage the wreck of the Gull's Regret (2026-07-25) — grants gold + a
+  // health potion + Marisol's portrait (Calder's keepsake quest item) ONCE,
+  // then `collected` (persisted) makes it report empty via its emptyMessage.
+  function searchBoat(item) {
+    item.collected = true;
+    const gold = randInt(5, 10);
+    addGold(gold);
+    addItem('health_potion', 1);
+    addItem('marisol_rusk_painting', 1);
+    ui.toast(`You search the wreck of the Gull’s Regret — ${gold} gold, a health potion, and a small oilcloth-wrapped painting.`);
+  }
+
   function interact() {
     const npc = world.nearestNpcInRange();
     if (npc) { openNpcDialog(npc); return; }
@@ -2028,6 +2136,10 @@ async function boot() {
         ui.toast(item.emptyMessage || 'Nothing left.');
         return;
       }
+      // Searching the wreck (2026-07-25): a one-time multi-reward haul (gold +
+      // a health potion + Marisol's portrait) rather than the single-reward
+      // pattern below. Collected boats fall through to the emptyMessage above.
+      if (item.boat) { searchBoat(item); return; }
       if (!item.repeatable) item.collected = true;
       if (item.reward?.gold) {
         addGold(item.reward.gold);

@@ -221,6 +221,16 @@ export default {
     description: 'A rare, silver-scaled trout that rises only under moonlight. Darius would pay dearly for this.',
     price: 20,
   },
+  // Retrieved from the wreck of the Gull's Regret (2026-07-25). A portrait of
+  // Calder Rusk's wife, Marisol — the "something more precious than gold" he
+  // sends the player to recover. Turning it in to Calder completes his quest.
+  marisol_rusk_painting: {
+    id: 'marisol_rusk_painting',
+    name: 'Portrait of Marisol',
+    image: 'assets/images/marisol_rusk_painting.png',
+    description: 'A small oil portrait of a dark-haired woman, wrapped in oilcloth against the sea. Salvaged from the wreck — clearly someone treasured it.',
+    questItem: true,
+  },
   lockpicks: {
     id: 'lockpicks',
     name: 'Lockpicks',

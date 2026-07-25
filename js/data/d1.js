@@ -201,6 +201,18 @@ export default {
       label: 'Something glints in the sand',
       reward: { gold: 5 },
     },
+    // Searching the wreck of the Gull's Regret (2026-07-25). Interactable from a
+    // wide 250px radius around this point on the hull; `boat: true` is intercepted
+    // in main.js's interact() -> searchBoat(), which grants gold + a health potion
+    // + Marisol's portrait (Calder's keepsake quest item) ONCE, then reports empty.
+    {
+      id: 'wreck_search',
+      x: 424, y: 949,
+      range: 250,
+      boat: true,
+      label: 'Search the wreck',
+      emptyMessage: 'You’ve picked the old wreck clean.',
+    },
   ],
 
   battles: [],
@@ -258,7 +270,7 @@ export default {
       id: 'cragclaw_1', name: 'Cragclaw', creature: true, enemyId: 'cragclaw',
       sprite: 'assets/images/cragclaw_overhead.png',
       portrait: 'assets/images/cragclaw.png',
-      x: 443, y: 1257, speed: 34, chaseSpeed: 120, aggroRange: 400,
+      x: 443, y: 1257, speed: 34, chaseSpeed: 140, aggroRange: 400,
       startsHome: false,
       patrol: [
         { x: 443, y: 1257 },
@@ -270,7 +282,7 @@ export default {
       id: 'cragclaw_2', name: 'Cragclaw', creature: true, enemyId: 'cragclaw',
       sprite: 'assets/images/cragclaw_overhead.png',
       portrait: 'assets/images/cragclaw.png',
-      x: 689, y: 826, speed: 34, chaseSpeed: 120, aggroRange: 400,
+      x: 689, y: 826, speed: 34, chaseSpeed: 140, aggroRange: 400,
       startsHome: false,
       patrol: [
         { x: 689, y: 826 },
@@ -286,21 +298,13 @@ export default {
       startsHome: true,
       home: {
         door: { x: 1439, y: 364 }, // the hut's doorway (Danny, 2026-07-24)
-        interior: 'assets/images/home_interior.jpg',
+        interior: 'assets/images/beach_hut_interior.jpg',
       },
-      dialog: {
-        line: 'Company! Now there’s a tide I didn’t expect. Come in off the sand, friend — mind the driftwood. It’s been a long stretch since a face washed up here that wasn’t a crab’s. Sit. Ask what you like.',
-        responses: [
-          'Who are you?',
-          'Anything I should watch out for?',
-          'Leave.',
-        ],
-        responseEffects: [
-          { followUp: 'Calder Rusk — captain of the Gull’s Regret. She’s that broken-backed hull rotting out on the sand now. We ran her aground in a storm, a black night with waves like moving hills. My crew lived through it… and then they turned on their captain. Split the hold, took their shares of the loot, and rowed north to that little fishing village to play at being honest men. Left me to the gulls. So I stayed. Salvaged what timber the sea hadn’t swallowed, raised this hut plank by plank, and hid away the gold they never got their claws on.' },
-          { followUp: 'Aye — and it’s the whole reason I’m marooned up here like a barnacle. The beach crawls with cragclaws: snapping, scuttling brutes that put their heads down and charge the moment they catch your scent. And out east, in the mire, something worse — miremen, that heave up out of the muck when you wander too near. Between the pair of them I can’t even reach my own buried gold, let alone leave. A body with steel and nerve, though… well. Thin out those creatures and there’d be a fair cut in it for you.' },
-          null,
-        ],
-      },
+      // Calder's dialogue is STATE-BUILT in main.js (buildCalderDialog), not
+      // static here (2026-07-25): the backstory + dangers branches gate a
+      // keepsake quest that only appears once both are heard, and the quest has
+      // active / turn-in / completed states. Routed via openNpcDialog's
+      // calder_rusk branch, like Gaffer/the Chief.
     },
   ],
 

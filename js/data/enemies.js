@@ -68,12 +68,14 @@ export default {
     id: 'cragclaw',
     name: 'Cragclaw',
     portrait: 'assets/images/cragclaw.png',
-    health: 3,
+    // Toughened 2026-07-25 (Danny): HP 3->6, defense 1->3 — a meatier beach
+    // hazard. Drops a fatter purse + a chance at fishing bait.
+    health: 6,
     attack: 2,
-    defense: 1,
+    defense: 3,
     speed: 9,
     damage: { min: 1, max: 2 },
-    drops: { gold: { min: 2, max: 5 } },
+    drops: { gold: { min: 5, max: 10 }, loot: [{ id: 'fishing_bait', chance: 0.25 }] },
   },
 
   // Mireman (D1, 2026-07-25) — an unseen bog-thing that rises from the mire

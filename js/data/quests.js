@@ -35,4 +35,9 @@ export default {
     name: 'One Man’s Treasure',
     description: 'Osric the hermit wants an old boot — the kind you fish out of a pond. He swears it’s worth a fortune to him.',
   },
+  calder_keepsake: {
+    id: 'calder_keepsake',
+    name: 'More Precious Than Gold',
+    description: 'Calder Rusk asked you to recover something from the wreck of the Gull’s Regret — he wouldn’t say what, only that it’s worth more to him than all his hidden gold.',
+  },
 };
