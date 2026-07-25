@@ -185,6 +185,19 @@ export class World {
       maxAlpha: s.alpha ?? 0.26,
       seed: s.seed ?? 0,
     }));
+    // Torch/campfire flames from scene data ({x, y}) — small flickering fire
+    // rising from the base point, drawn additively in drawFire(). Tunable per
+    // source; defaults make a small torch flame.
+    this.fires = (scene.fires || []).map((f, i) => ({
+      x: f.x,
+      y: f.y,
+      rise: f.rise ?? 26,   // how high (px) the flame reaches
+      width: f.width ?? 7,  // sideways spread at the base
+      count: f.count ?? 12, // flame particles
+      speed: f.speed ?? 1.1,// life-cycles per second (flicker rate)
+      scale: f.scale ?? 1,  // overall size multiplier
+      seed: f.seed ?? i * 0.37,
+    }));
   }
 
   // Nearest interactable within range (defaults to the same radius as NPC
@@ -822,6 +835,56 @@ export class World {
     ctx.restore();
   }
 
+  // A small flickering flame (torch/campfire): warm particles born at the base
+  // that rise, taper, and fade — hot white-gold at the bottom, orange in the
+  // middle, red at the tip — plus a soft glow at the base. Drawn additively
+  // ('lighter') so it reads as light rather than paint. World-space (scrolls).
+  drawFire(f) {
+    const ctx = this.ctx;
+    const baseY = f.y - this.cameraY;
+    if (baseY < -60 || baseY - f.rise * f.scale > VIEW_H + 60) return;
+
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+
+    // Base glow pool
+    const glowR = 15 * f.scale;
+    const glow = ctx.createRadialGradient(f.x, baseY, 0, f.x, baseY, glowR);
+    glow.addColorStop(0, 'rgba(255,170,70,0.45)');
+    glow.addColorStop(1, 'rgba(255,120,40,0)');
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(f.x, baseY, glowR, 0, Math.PI * 2);
+    ctx.fill();
+
+    for (let i = 0; i < f.count; i++) {
+      const phase = i / f.count + f.seed;
+      let fr = (this.time * f.speed + phase) % 1; // life fraction [0,1)
+      if (fr < 0) fr += 1;
+
+      const a = Math.sin(fr * Math.PI) * 0.9; // fade in, then out
+      if (a <= 0.02) continue;
+
+      const flick = Math.sin(this.time * 9 + i * 2.3) * 2 * f.scale;
+      const px = f.x + Math.sin(fr * 3 + i * 1.3) * f.width * (1 - fr) * f.scale + flick * 0.4;
+      const py = baseY - fr * f.rise * f.scale;
+      const r = (5 * (1 - fr) + 1.5) * f.scale; // fat at the base, tapering up
+
+      let cr, cg, cb;
+      if (fr < 0.35) { cr = 255; cg = 240; cb = 175; }       // white-gold core
+      else if (fr < 0.7) { cr = 255; cg = 155; cb = 50; }    // orange body
+      else { cr = 210; cg = 70; cb = 25; }                    // red tip
+      const grad = ctx.createRadialGradient(px, py, 0, px, py, r);
+      grad.addColorStop(0, `rgba(${cr},${cg},${cb},${a})`);
+      grad.addColorStop(1, `rgba(${cr},${cg},${cb},0)`);
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(px, py, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
   render() {
     const ctx = this.ctx;
 
@@ -863,6 +926,7 @@ export class World {
 
     // Campfire smoke and other code-drawn effects, above the world/characters
     for (const s of this.smokes) this.drawSmoke(s);
+    for (const f of this.fires) this.drawFire(f);
 
     // Fishing ripples where the bait was cast
     if (this.fishing) this.drawRipples();

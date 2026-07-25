@@ -616,20 +616,51 @@ async function boot() {
 
   const btnContinue = document.getElementById('btn-continue');
   const btnNewGame = document.getElementById('btn-new-game');
+  const btnConfirmNew = document.getElementById('btn-confirm-newgame');
+  const btnCancelNew = document.getElementById('btn-cancel-newgame');
   const confirmOverlay = document.getElementById('newgame-confirm');
   btnContinue.classList.toggle('disabled', !hasSave());
+
+  // ---- Start-screen keyboard selection (2026-07-24, Danny) ----
+  // Arrow keys move a visible highlight between the buttons; Enter/Space
+  // activates the highlighted one — no mouse needed. `startSel` indexes into
+  // whichever button set is currently showing (main screen vs. the erase
+  // confirm). Selecting just .click()s the button so all the existing click
+  // handlers stay the single source of truth.
+  let startSel = 0;
+  function startButtonSet() {
+    if (!confirmOverlay.classList.contains('hidden')) return [btnConfirmNew, btnCancelNew];
+    return hasSave() ? [btnNewGame, btnContinue] : [btnNewGame]; // Continue hidden from nav w/o a save
+  }
+  function renderStartSelection() {
+    const set = startButtonSet();
+    startSel = Math.max(0, Math.min(startSel, set.length - 1));
+    for (const b of [btnNewGame, btnContinue, btnConfirmNew, btnCancelNew]) b.classList.remove('selected');
+    set[startSel]?.classList.add('selected');
+  }
+  function moveStartSelection(dir) {
+    const set = startButtonSet();
+    startSel = (startSel + dir + set.length) % set.length;
+    renderStartSelection();
+  }
+  function activateStartSelection() { startButtonSet()[startSel]?.click(); }
+
   btnContinue.addEventListener('click', () => { if (hasSave()) continueGame(); });
   btnNewGame.addEventListener('click', () => {
-    if (hasSave()) confirmOverlay.classList.remove('hidden'); // warn before erasing
+    if (hasSave()) { confirmOverlay.classList.remove('hidden'); startSel = 1; renderStartSelection(); } // default to the safe Cancel
     else startNewGame();
   });
-  document.getElementById('btn-confirm-newgame').addEventListener('click', () => {
+  btnConfirmNew.addEventListener('click', () => {
     confirmOverlay.classList.add('hidden');
     startNewGame();
   });
-  document.getElementById('btn-cancel-newgame').addEventListener('click', () => {
+  btnCancelNew.addEventListener('click', () => {
     confirmOverlay.classList.add('hidden');
+    startSel = hasSave() ? 1 : 0; renderStartSelection(); // back to the main screen
   });
+  // Initial highlight: Continue if a save exists (the likely intent), else New Game.
+  startSel = hasSave() ? 1 : 0;
+  renderStartSelection();
 
   // Continue from the death screen (2026-07-22): reload the last save (the start
   // of the screen the player last walked into). Discards the dead fight's onEnd
@@ -2078,17 +2109,19 @@ async function boot() {
 
   window.addEventListener('keydown', (e) => {
     if (!state.started) {
-      // New Game confirmation overlay open: Enter confirms, Escape cancels.
-      if (!confirmOverlay.classList.contains('hidden')) {
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); confirmOverlay.classList.add('hidden'); startNewGame(); }
-        if (e.key === 'Escape') { e.preventDefault(); confirmOverlay.classList.add('hidden'); }
+      // Keyboard-only start screen (2026-07-24): arrows move the highlight,
+      // Enter/Space activates it, Escape backs out of the erase confirm.
+      if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
+        e.preventDefault();
+        moveStartSelection(e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : -1);
         return;
       }
-      // Otherwise Enter/Space picks the sensible default: Continue if a save
-      // exists, else a fresh New Game (never silently erases — no save to lose).
-      if (e.key === 'Enter' || e.key === ' ') {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activateStartSelection(); return; }
+      if (e.key === 'Escape' && !confirmOverlay.classList.contains('hidden')) {
         e.preventDefault();
-        if (hasSave()) continueGame(); else startNewGame();
+        confirmOverlay.classList.add('hidden');
+        startSel = hasSave() ? 1 : 0;
+        renderStartSelection();
       }
       return;
     }

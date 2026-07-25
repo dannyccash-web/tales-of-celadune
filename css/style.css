@@ -1057,6 +1057,18 @@ html, body {
   border-image: linear-gradient(180deg, var(--gold-bright), var(--frame-dark)) 1;
 }
 
+/* Keyboard selection (2026-07-24): the highlighted button reads clearly as
+   "selected" — bright gold border + outline + a warm glow, so it's obvious
+   which one Enter will activate. Distinct from the subtle mouse :hover. */
+.menu-btn.selected {
+  color: var(--gold-bright);
+  border-image: linear-gradient(180deg, var(--gold-bright), var(--gold-dark)) 1;
+  outline-color: var(--gold-bright);
+  background: linear-gradient(180deg, rgba(94, 71, 33, 0.95), rgba(46, 34, 16, 0.95));
+  box-shadow: 0 0 26px rgba(240, 200, 120, 0.55), inset 0 0 20px rgba(240, 200, 120, 0.18);
+  text-shadow: 0 0 12px rgba(240, 200, 120, 0.7);
+}
+
 /* Continue with no save on file: dimmed and inert. */
 .menu-btn.disabled {
   opacity: 0.35;

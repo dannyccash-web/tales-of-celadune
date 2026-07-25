@@ -205,6 +205,14 @@ export default {
 
   battles: [],
 
+  // Small torch flames flanking the path up to Calder's hut (2026-07-24) —
+  // code-drawn flickering fire (World.drawFire), rising from the two torch
+  // posts. No asset needed.
+  fires: [
+    { x: 1445, y: 450 },
+    { x: 1509, y: 424 },
+  ],
+
   // Treasure chests (2026-07-24). A locked chest half-buried in the sand at the
   // south end of the beach — 18 gold and a few common supplies. Opening it needs
   // a lockpick; once emptied it's removed. State (locked/looted) persists via the
@@ -240,7 +248,7 @@ export default {
       portrait: 'assets/images/calder_rusk.png',
       startsHome: true,
       home: {
-        door: { x: 1440, y: 430 }, // south face of the hut, on the dirt approach
+        door: { x: 1439, y: 364 }, // the hut's doorway (Danny, 2026-07-24)
         interior: 'assets/images/home_interior.jpg',
       },
       dialog: {
