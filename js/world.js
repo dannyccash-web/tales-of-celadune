@@ -233,7 +233,7 @@ export class World {
     let best = null;
     let bestDist = INTERACT_RANGE;
     for (const npc of this.npcs) {
-      if (npc.atHome || npc.defeated) continue;
+      if (npc.atHome || npc.defeated || npc.creature) continue; // creatures attack, not talk
       const d = Math.hypot(npc.x - this.player.x, npc.y - this.player.y);
       if (d < bestDist) { best = npc; bestDist = d; }
     }
@@ -544,6 +544,38 @@ export class World {
       }
 
       if (npc.pause > 0) { npc.pause -= dt; continue; }
+
+      // Roaming creatures (cragclaws, 2026-07-25): mill about their patrol area
+      // when calm, but CHARGE the player the moment they come within aggroRange
+      // — racing in at chaseSpeed and, on contact, firing pendingAggro so
+      // main.js starts the fight (its enemyId picks the combatant). `_strikeArmed`
+      // hysteresis (re-arms past 1.6× the strike range) stops a fled fight from
+      // instantly re-triggering while the creature is still on top of the player.
+      if (npc.creature) {
+        const p = this.player;
+        const d = Math.hypot(p.x - npc.x, p.y - npc.y);
+        // Strike (fight-start) range. The chaser can't physically touch the
+        // player — body-vs-body collision (~36px centres) plus the steer
+        // lookahead (~14px) hold it ~50px off — so the strike range sits a bit
+        // beyond that so "reaching" the player reliably starts the fight.
+        const strike = npc.strikeRange ?? 70;
+        if (d < (npc.aggroRange ?? 400)) {
+          if (d < strike) {
+            if (npc._strikeArmed !== false && !this.pendingAggro) {
+              this.pendingAggro = npc;
+              npc._strikeArmed = false;
+            }
+          } else {
+            if (d > strike * 1.6) npc._strikeArmed = true;
+            const sp = npc.speed;
+            npc.speed = npc.chaseSpeed ?? 120; // race in
+            this.walkToward(npc, { x: p.x, y: p.y }, dt, 8);
+            npc.speed = sp;
+          }
+          continue;
+        }
+        npc._strikeArmed = true; // calm again — reset, then mill about below
+      }
 
       if (npc.routine) { this.updateRoutine(npc, dt); continue; }
 

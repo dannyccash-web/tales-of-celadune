@@ -59,6 +59,39 @@ export default {
     drops: { gold: { min: 10, max: 18 }, loot: [{ id: 'health_potion', chance: 0.5 }, { id: 'magic_potion', chance: 0.2 }] },
   },
 
+  // Cragclaw (D1 beach, 2026-07-25) — a snapping crab-thing that mills about
+  // the sand and CHARGES the player on sight (world.js creature aggro; see
+  // main.js's pendingAggro). Two of them roam D1. Individually beatable by a
+  // fresh player but with real bite, and there are two, so they're a genuine
+  // hazard. 1v1 per encounter.
+  cragclaw: {
+    id: 'cragclaw',
+    name: 'Cragclaw',
+    portrait: 'assets/images/cragclaw.png',
+    health: 3,
+    attack: 2,
+    defense: 1,
+    speed: 9,
+    damage: { min: 1, max: 2 },
+    drops: { gold: { min: 2, max: 5 } },
+  },
+
+  // Mireman (D1, 2026-07-25) — an unseen bog-thing that rises from the mire
+  // when the player wanders too close (a hidden proximity ambush, exactly like
+  // the D4 Rootweavers). Tougher than a cragclaw: a threatening early fight,
+  // but not the Rootweaver's "flee-only" wall.
+  mireman: {
+    id: 'mireman',
+    name: 'Mireman',
+    portrait: 'assets/images/mireman.png',
+    health: 5,
+    attack: 2,
+    defense: 2,
+    speed: 7,
+    damage: { min: 1, max: 3 },
+    drops: { gold: { min: 4, max: 9 }, loot: [{ id: 'health_potion', chance: 0.25 }] },
+  },
+
   // Rootweaver (D4 shortcut ambushes, 2026-07-11) — a deliberate "too tough
   // for now" wall: solid HP + hard hits so a fresh player (5 HP, atk1/def1)
   // can't grind it down before dying, and is meant to FLEE. Not absurd though

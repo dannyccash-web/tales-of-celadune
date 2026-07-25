@@ -289,6 +289,10 @@ async function boot() {
     // shown in the open-chest window. Preloaded so neither pops in.
     'assets/images/treasure_chest_overhead.png',
     'assets/images/treasure_chest.png',
+    // D1 enemy portraits (cragclaw charges via aggro, mireman via ambush — so
+    // neither is in a scene `battles` list the preloader scans; add them here).
+    'assets/images/cragclaw.png',
+    'assets/images/mireman.png',
     ...Object.values(SCENES).flatMap((scene) => [
       scene.background,
       // Places (isPlace: true, e.g. "Your House") have no sprite — they're
@@ -2232,7 +2236,9 @@ async function boot() {
     if (world.pendingAggro) {
       const foe = world.pendingAggro;
       world.pendingAggro = null;
-      const enemyId = foe.id === 'bramblekin_chief' ? 'bramblekin_chief' : 'bramblekin';
+      // A roaming creature (cragclaw) carries its own enemyId; a hostile-camp
+      // Bramblekin falls back to its guard/Chief id.
+      const enemyId = foe.enemyId || (foe.id === 'bramblekin_chief' ? 'bramblekin_chief' : 'bramblekin');
       startBattle([enemyId], (result) => {
         if (result === 'victory') foe.defeated = true;
       });

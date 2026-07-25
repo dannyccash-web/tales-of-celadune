@@ -205,6 +205,14 @@ export default {
 
   battles: [],
 
+  // Hidden Mireman ambush (2026-07-25) — an unseen bog-thing in the eastern
+  // mire. Same system as D4's Rootweavers: walk within `range` and the fight
+  // starts on its own (world.js checkAmbushes / main.js pendingAmbush). No
+  // sprite (it's unseen until it rises); killing it clears it for good.
+  ambushes: [
+    { id: 'mireman_1', x: 1662, y: 1485, range: 180, enemies: ['mireman'] },
+  ],
+
   // Small torch flames flanking the path up to Calder's hut (2026-07-24) —
   // code-drawn flickering fire (World.drawFire), rising from the two torch
   // posts. No asset needed.
@@ -241,6 +249,35 @@ export default {
   // dialog opens over the interior, same as any home NPC. The ~40px walkable
   // fingers Danny painted up to the hut are what make the door reachable.
   npcs: [
+    // Cragclaws (2026-07-25): roaming beach creatures that mill about their
+    // patch of sand, then charge the player on sight (world.js `creature`
+    // behavior — chase within aggroRange 400, fight on contact via its
+    // `enemyId`). `defeated` persists per-World + in the save (npcsDefeated),
+    // so a slain cragclaw stays gone. No queen cragclaw yet.
+    {
+      id: 'cragclaw_1', name: 'Cragclaw', creature: true, enemyId: 'cragclaw',
+      sprite: 'assets/images/cragclaw_overhead.png',
+      portrait: 'assets/images/cragclaw.png',
+      x: 443, y: 1257, speed: 34, chaseSpeed: 120, aggroRange: 400,
+      startsHome: false,
+      patrol: [
+        { x: 443, y: 1257 },
+        { x: 503, y: 1297 },
+        { x: 393, y: 1307 },
+      ],
+    },
+    {
+      id: 'cragclaw_2', name: 'Cragclaw', creature: true, enemyId: 'cragclaw',
+      sprite: 'assets/images/cragclaw_overhead.png',
+      portrait: 'assets/images/cragclaw.png',
+      x: 689, y: 826, speed: 34, chaseSpeed: 120, aggroRange: 400,
+      startsHome: false,
+      patrol: [
+        { x: 689, y: 826 },
+        { x: 749, y: 866 },
+        { x: 639, y: 876 },
+      ],
+    },
     {
       id: 'calder_rusk',
       name: 'Calder Rusk',
@@ -252,15 +289,15 @@ export default {
         interior: 'assets/images/home_interior.jpg',
       },
       dialog: {
-        line: 'Well, blow me down — a visitor! Come in, come in, mind the sand. Haven’t had a living soul to jaw with since my crew weighed anchor. What brings you to my little corner of paradise?',
+        line: 'Company! Now there’s a tide I didn’t expect. Come in off the sand, friend — mind the driftwood. It’s been a long stretch since a face washed up here that wasn’t a crab’s. Sit. Ask what you like.',
         responses: [
           'Who are you?',
           'Anything I should watch out for?',
           'Leave.',
         ],
         responseEffects: [
-          { followUp: 'Calder Rusk, once first mate of the Gull’s Regret — that sorry heap of timber out on the sand used to be her. We ran aground in a squall one black night. The rest of the crew patched a longboat and rowed north for the mainland, but me? I’d had my fill of the sea. Warm sand, fresh coconuts, no captain barking in my ear. I stayed, and I’ve not regretted a single day.' },
-          { followUp: 'Aye — keep your wits about you down on the beach. There’s things that crawl up out of the tide when the light goes long: snapping, scuttling things with a mean streak. They keep to the water’s edge mostly, but a careless wanderer makes an easy supper. Carry something sharp, and don’t go poking about the wrack alone.' },
+          { followUp: 'Calder Rusk — captain of the Gull’s Regret. She’s that broken-backed hull rotting out on the sand now. We ran her aground in a storm, a black night with waves like moving hills. My crew lived through it… and then they turned on their captain. Split the hold, took their shares of the loot, and rowed north to that little fishing village to play at being honest men. Left me to the gulls. So I stayed. Salvaged what timber the sea hadn’t swallowed, raised this hut plank by plank, and hid away the gold they never got their claws on.' },
+          { followUp: 'Aye — and it’s the whole reason I’m marooned up here like a barnacle. The beach crawls with cragclaws: snapping, scuttling brutes that put their heads down and charge the moment they catch your scent. And out east, in the mire, something worse — miremen, that heave up out of the muck when you wander too near. Between the pair of them I can’t even reach my own buried gold, let alone leave. A body with steel and nerve, though… well. Thin out those creatures and there’d be a fair cut in it for you.' },
           null,
         ],
       },
