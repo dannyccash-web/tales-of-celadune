@@ -205,6 +205,24 @@ export default {
 
   battles: [],
 
+  // Treasure chests (2026-07-24). A locked chest half-buried in the sand at the
+  // south end of the beach — 18 gold and a few common supplies. Opening it needs
+  // a lockpick; once emptied it's removed. State (locked/looted) persists via the
+  // save system.
+  chests: [
+    {
+      id: 'd1_beach_chest',
+      x: 284, y: 1347,
+      locked: true,
+      gold: 18,
+      items: [
+        { id: 'bread', qty: 2 },
+        { id: 'health_potion', qty: 1 },
+        { id: 'torch', qty: 1 },
+      ],
+    },
+  ],
+
   // ---- NPCs ----
   // Calder Rusk (2026-07-24) — a retired pirate marooned in the beach hut up in
   // the NE grassland. His ship (the wreck on the sand) ran aground; the crew

@@ -285,6 +285,10 @@ async function boot() {
     'assets/images/barn_interior.jpg',
     'assets/images/forest_background.jpg',
     'assets/images/bramblekin_camp.jpg',
+    // Treasure chests (2026-07-24): the overhead world sprite + the picture
+    // shown in the open-chest window. Preloaded so neither pops in.
+    'assets/images/treasure_chest_overhead.png',
+    'assets/images/treasure_chest.png',
     ...Object.values(SCENES).flatMap((scene) => [
       scene.background,
       // Places (isPlace: true, e.g. "Your House") have no sprite — they're
@@ -321,6 +325,15 @@ async function boot() {
     (f.battles || []).forEach((id) => { const b = w.battles.find((x) => x.id === id); if (b) b.defeated = true; });
     (f.ambushes || []).forEach((id) => { const a = w.ambushes.find((x) => x.id === id); if (a) a.defeated = true; });
     (f.npcsDefeated || []).forEach((id) => { const n = w.npcs.find((x) => x.id === id); if (n) n.defeated = true; });
+    // Restore chest state (2026-07-24): locked/emptied + remaining gold/items.
+    (f.chests || []).forEach((s) => {
+      const c = w.chests.find((x) => x.id === s.id);
+      if (!c) return;
+      c.locked = !!s.locked;
+      c.gold = s.gold || 0;
+      c.items = (s.items || []).map((e) => ({ ...e }));
+      c.emptied = !!s.emptied;
+    });
     // Remaining loot in unoccupied buildings — Your House (isPlace) and any
     // lockpicked home (npc._house) — so a burgled/emptied room stays emptied
     // across a save (2026-07-23, Danny: no re-taking the same items).
@@ -467,6 +480,9 @@ async function boot() {
         battles: w.battles.filter((b) => b.defeated).map((b) => b.id),
         ambushes: w.ambushes.filter((a) => a.defeated).map((a) => a.id),
         npcsDefeated: w.npcs.filter((n) => n.defeated).map((n) => n.id),
+        // Chest state (2026-07-24): unlocked/emptied flags + remaining loot, so a
+        // picked-open or half-looted chest returns exactly as left it.
+        chests: (w.chests || []).map((c) => ({ id: c.id, locked: c.locked, gold: c.gold, items: c.items, emptied: c.emptied })),
         places,
       };
     }
@@ -1000,6 +1016,105 @@ async function boot() {
       }
       return; // falsy -> close the prompt either way
     });
+  }
+
+  // ---- Treasure chests (2026-07-24) ----
+  // A chest is a world sprite (see world.js) with a `locked` state + a stash of
+  // gold and/or items. Interacting:
+  //   - locked + you have lockpicks -> the lockpick prompt (spend one, it opens)
+  //   - locked + no lockpicks       -> denied ("you need a lockpick")
+  //   - open                        -> the contents window (below)
+  // The open state (locked=false) and remaining loot persist on the live World
+  // chest instance for the session and are snapshotted by the save system, so a
+  // half-looted chest comes back exactly as you left it. Emptied -> removed.
+  function openChest(chest) {
+    if (chest.locked) {
+      if (inventory.some((it) => it.id === 'lockpicks')) {
+        openChestLockpickPrompt(chest);
+      } else {
+        audio.sfx(audio.SFX.denied);
+        ui.toast('The chest is locked. You’d need a lockpick to open it.');
+      }
+      return;
+    }
+    openChestContents(chest);
+  }
+
+  function openChestLockpickPrompt(chest) {
+    const view = {
+      id: 'locked_chest', name: 'Locked Chest', role: '',
+      portrait: 'assets/images/treasure_chest.png',
+      dialog: {
+        line: 'The chest is locked fast. You could work it open with one of your lockpicks.',
+        responses: ['Pick the lock.', 'Leave it.'],
+      },
+    };
+    ui.openDialog(view, null, (v, index) => {
+      if (index === 0) {
+        removeItem('lockpicks', 1);
+        chest.locked = false; // stays open for good
+        audio.sfx(audio.SFX.door); // the lid creaks open
+        saveGame();
+        setTimeout(() => openChestContents(chest), 0); // let this prompt close first
+      }
+      return; // falsy -> close the prompt either way
+    });
+  }
+
+  // The open-chest window: a picture of the chest with one "Take …" response per
+  // stashed item (and the gold), a "Take everything." shortcut, and "Leave.".
+  // Reuses the dialog window + updateDialogContent refresh (same "stay open,
+  // rebuild in place" pattern as Your House / the well). Taking the last of the
+  // loot marks the chest emptied (world.js then stops drawing/colliding it).
+  function openChestContents(chest) {
+    const CHEST_LINE = 'You lift the lid. Inside the chest you find:';
+    function build() {
+      const responses = [], acts = [];
+      if (chest.gold > 0) { responses.push(`Take ${chest.gold} gold`); acts.push({ gold: true }); }
+      for (const entry of chest.items) {
+        const nm = ITEMS[entry.id]?.name || entry.id;
+        responses.push(entry.qty > 1 ? `Take ${nm} (x${entry.qty})` : `Take ${nm}`);
+        acts.push({ itemId: entry.id });
+      }
+      if (acts.length > 1) { responses.push('Take everything.'); acts.push({ all: true }); }
+      responses.push('Leave.'); acts.push(null);
+      return { responses, acts };
+    }
+    let { responses, acts } = build();
+    audio.sfx(audio.SFX.door); // lid opening
+    ui.openDialog(
+      { id: 'chest', name: 'Chest', role: '', portrait: 'assets/images/treasure_chest.png',
+        dialog: { line: CHEST_LINE, responses } },
+      null,
+      (v, index) => {
+        const act = acts[index];
+        if (!act) return; // Leave. -> close
+        if (act.all) {
+          for (const entry of [...chest.items]) addItem(entry.id, entry.qty);
+          chest.items = [];
+          if (chest.gold > 0) { const g = chest.gold; chest.gold = 0; addGold(g); }
+        } else if (act.gold) {
+          const g = chest.gold; chest.gold = 0; addGold(g);
+        } else if (act.itemId) {
+          const entry = chest.items.find((e) => e.id === act.itemId);
+          if (entry) {
+            chest.items = chest.items.filter((e) => e.id !== act.itemId);
+            addItem(entry.id, entry.qty);
+            ui.showReceivedItem(ITEMS[entry.id]);
+          }
+        }
+        if (chest.gold <= 0 && chest.items.length === 0) {
+          chest.emptied = true; // world.js removes it from here on
+          saveGame();
+          ui.toast('The chest is empty.');
+          return; // falsy -> close the window
+        }
+        saveGame();
+        ({ responses, acts } = build());
+        ui.updateDialogContent({ line: CHEST_LINE, responses });
+        return true; // keep the chest open
+      },
+    );
   }
 
   // Which active quests' world conditions are currently satisfied — feeds
@@ -1861,6 +1976,9 @@ async function boot() {
   function interact() {
     const npc = world.nearestNpcInRange();
     if (npc) { openNpcDialog(npc); return; }
+
+    const chest = world.nearestChestInRange();
+    if (chest) { openChest(chest); return; }
 
     const item = world.nearestInteractableInRange();
     if (item) {

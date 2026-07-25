@@ -9,6 +9,10 @@ const PLAYER_SPEED = 130; // px/sec
 const WALK_FLIP_INTERVAL = 0.25; // s — icon mirrors while walking to suggest steps
 const COLLIDER = 36; // character collider diameter — a CIRCLE (radius 18) centred on the body; see circleRectOverlap
 const INTERACT_RANGE = 90;
+// Treasure chests (2026-07-24) share one overhead sprite, drawn with the same
+// drop shadow as characters. A chest blocks movement (footprint = sprite size)
+// until it's emptied, then it's removed from the world entirely.
+const CHEST_SPRITE = 'assets/images/treasure_chest_overhead.png';
 // How close (px) the player/NPC must be to a home's door point to interact with
 // it — and, now, the exact range at which that building's label appears, so the
 // label shows iff the door is interactable (2026-07-19, Danny). Bumped 40 -> 50.
@@ -97,6 +101,24 @@ export class World {
     // actually won — see battleNearDoor().
     this.battles = (scene.battles || []).map((b) => ({ ...b, defeated: false }));
 
+    // Treasure chests (2026-07-24): a world sprite with a `locked` state + a
+    // stash of gold and/or items. Instance state (locked, gold, items, emptied)
+    // lives on the copy — like `collected`/`defeated` above — so a fresh World
+    // starts every chest full and shut, and the save system snapshots/restores
+    // this per scene. `w`/`h` are the collision footprint (the sprite size);
+    // an emptied chest stops blocking and stops rendering. Items are deep-copied
+    // so taking from one chest never mutates the shared scene data.
+    const chestImg = this.images[CHEST_SPRITE];
+    this.chests = (scene.chests || []).map((c) => ({
+      ...c,
+      locked: !!c.locked,
+      gold: c.gold || 0,
+      items: (c.items || []).map((it) => ({ ...it })),
+      emptied: false,
+      w: chestImg ? chestImg.width : 50,
+      h: chestImg ? chestImg.height : 28,
+    }));
+
     // Fishing spots (2026-07-17) — specific points the player can fish from,
     // not every body of water. Each is { x, y }; the "Go Fishing" label, the
     // ripple animation, and the interaction all center on this point. The
@@ -181,6 +203,19 @@ export class World {
     return best;
   }
 
+  // Nearest non-emptied chest within interaction range, or null. Same
+  // proximity pattern as interactables/home-doors (2026-07-24).
+  nearestChestInRange() {
+    let best = null;
+    let bestDist = INTERACT_RANGE;
+    for (const c of this.chests) {
+      if (c.emptied) continue;
+      const d = Math.hypot(c.x - this.player.x, c.y - this.player.y);
+      if (d < bestDist) { best = c; bestDist = d; }
+    }
+    return best;
+  }
+
   nearestNpcInRange() {
     let best = null;
     let bestDist = INTERACT_RANGE;
@@ -254,6 +289,14 @@ export class World {
       if (circleRectOverlap(x, y, r, ob)) {
         out.push({ id: ob, cx: ob.x + ob.w / 2, cy: ob.y + ob.h / 2 });
       }
+    }
+    // Treasure chests block movement while they hold loot; an emptied chest is
+    // gone and no longer collides (2026-07-24). Footprint = the sprite size,
+    // centred on the chest, treated just like an obstacle rect.
+    for (const c of this.chests) {
+      if (c.emptied) continue;
+      const rect = { x: c.x - c.w / 2, y: c.y - c.h / 2, w: c.w, h: c.h };
+      if (circleRectOverlap(x, y, r, rect)) out.push({ id: c, cx: c.x, cy: c.y });
     }
     // Body-vs-body is circle-vs-circle: overlap when centres are closer than the
     // sum of the two radii (both COLLIDER/2, so < COLLIDER).
@@ -797,7 +840,13 @@ export class World {
     // Layer 1: background slice for current camera position
     ctx.drawImage(bg, 0, this.cameraY, VIEW_W, VIEW_H, 0, 0, VIEW_W, VIEW_H);
 
-    // Layer 2: NPCs, then player on top
+    // Layer 2: treasure chests (on the ground, so under characters), then NPCs,
+    // then the player on top. Emptied chests are gone. Drawn via drawSprite so
+    // they get the same multiply drop shadow as characters (rotation 0).
+    for (const c of this.chests) {
+      if (c.emptied) continue;
+      this.drawSprite(this.images[CHEST_SPRITE], c.x, c.y, 0);
+    }
     for (const npc of this.npcs) {
       if (npc.atHome || npc.defeated) continue;
       const npcFlip = npc.moving
@@ -843,6 +892,16 @@ export class World {
       if (!it.label || (it.collected && !it.emptyMessage)) continue;
       const range = it.range ?? INTERACT_RANGE;
       if (Math.hypot(it.x - p.x, it.y - p.y) < range) this.drawLabel(it.label, it.x, it.y);
+    }
+
+    // Chest labels: a chest reveals "Locked Chest" / "Chest" while the player is
+    // within interaction range (same "visible label means interactable" rule as
+    // collectibles). Emptied chests are gone, so no label. Drawn above the sprite.
+    for (const c of this.chests) {
+      if (c.emptied) continue;
+      if (Math.hypot(c.x - p.x, c.y - p.y) < INTERACT_RANGE) {
+        this.drawLabel(c.locked ? 'Locked Chest' : 'Chest', c.x, c.y - c.h / 2 - 8);
+      }
     }
 
     // "Go Fishing" prompt above a fishing spot when the player's close enough
