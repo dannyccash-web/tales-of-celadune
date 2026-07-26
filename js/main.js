@@ -285,6 +285,7 @@ async function boot() {
     'assets/images/barn_interior.jpg',
     'assets/images/forest_background.jpg',
     'assets/images/bramblekin_camp.jpg',
+    'assets/images/beach_background.jpg', // cragclaw/mireman battle backdrop (2026-07-25)
     // Treasure chests (2026-07-24): the overhead world sprite + the picture
     // shown in the open-chest window. Preloaded so neither pops in.
     'assets/images/treasure_chest_overhead.png',
@@ -384,7 +385,7 @@ async function boot() {
   let campQuestDone = false;
   let campHostile = false;
   let campEntryGate = null;
-  const CAMP_FEE = 5;
+  const CAMP_FEE = 10; // pay-to-pass toll (raised 5 -> 10, Danny 2026-07-25)
   const CAMP_QUEST_REWARD = 10; // gold the Chief pays on top of safe passage
   const BRAMBLEKIN_BG = 'assets/images/bramblekin_camp.jpg'; // backdrop for any Bramblekin parley (2026-07-22)
   const randInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
@@ -1229,8 +1230,8 @@ async function boot() {
   // The Chief's dialog (2026-07-17 rework). Once passage is granted (paid this
   // visit or the favor's done for good) he just waves you on. Otherwise the
   // options depend on the rootweaver-favor quest and your purse:
-  //   - no quest, can pay -> Pay / Draw steel
-  //   - no quest, too poor -> Accept the favor / Refuse (Draw steel)
+  //   - no quest, can pay -> Pay / Do the favor (rootweaver heart) / Draw steel
+  //   - no quest, too poor -> Accept the favor / Refuse (Draw steel) [pay is off the table]
   //   - favor active, holding a heart -> Turn it in / Draw steel
   //   - favor active, no heart -> (Pay, if now affordable) / step out / Draw steel
   // "Draw steel" is always available — the player can fight the Chief anytime.
@@ -1253,7 +1254,7 @@ async function boot() {
       }
       const responses = [];
       const effects = [];
-      if (stats.gold >= CAMP_FEE) { responses.push('Pay 5 gold.'); effects.push({ payToll: true }); }
+      if (stats.gold >= CAMP_FEE) { responses.push(`Pay ${CAMP_FEE} gold.`); effects.push({ payToll: true }); }
       responses.push('I’ll be back with the heart.'); effects.push({ leaveCamp: true });
       responses.push('Draw steel.'); effects.push({ drawSteel: true });
       return {
@@ -1264,9 +1265,9 @@ async function boot() {
     }
     if (stats.gold >= CAMP_FEE) {
       return {
-        line: 'Five gold to cross my camp — and since you’re already standing in it, your choices are the coin or the blade. Pay up, or draw steel. Makes no difference to me.',
-        responses: ['Pay 5 gold.', 'Draw steel.'],
-        responseEffects: [{ payToll: true }, { drawSteel: true }],
+        line: `${CAMP_FEE} gold to cross my camp — that’s the toll. Pay it and go, or do me a service instead: the rootweavers choke my woods, so bring me the heart of one and you’ll pass with a little gold besides. Or we settle it with steel. Your pick.`,
+        responses: [`Pay ${CAMP_FEE} gold.`, 'Do you a favor. (Rootweaver heart)', 'Draw steel.'],
+        responseEffects: [{ payToll: true }, { acceptFavor: true }, { drawSteel: true }],
       };
     }
     return {

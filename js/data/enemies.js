@@ -75,6 +75,7 @@ export default {
     defense: 3,
     speed: 9,
     damage: { min: 1, max: 2 },
+    background: 'assets/images/beach_background.jpg', // battle backdrop (2026-07-25)
     drops: { gold: { min: 5, max: 10 }, loot: [{ id: 'fishing_bait', chance: 0.25 }] },
   },
 
@@ -91,6 +92,7 @@ export default {
     defense: 2,
     speed: 7,
     damage: { min: 1, max: 3 },
+    background: 'assets/images/beach_background.jpg', // battle backdrop (2026-07-25)
     drops: { gold: { min: 4, max: 9 }, loot: [{ id: 'health_potion', chance: 0.25 }] },
   },
 
