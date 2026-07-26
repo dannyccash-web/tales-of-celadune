@@ -463,7 +463,10 @@ export function showQuestCompleted(questName) {
 // Big centred reveal of a fishing catch — a large picture of the item for a
 // few seconds, plus the usual top banner announcing it (2026-07-16).
 let catchTimer = null;
-export function showCatch(itemDef) {
+// The big drop-in reveal (image + name) used for a fishing catch — and reused
+// for other "found a notable item" moments (e.g. the shipwreck portrait), where
+// `caption` overrides the default "You caught: …" toast (2026-07-26).
+export function showCatch(itemDef, caption) {
   $('catch-image').src = itemDef.image;
   $('catch-image').alt = itemDef.name;
   $('catch-name').textContent = itemDef.name;
@@ -474,7 +477,7 @@ export function showCatch(itemDef) {
   el.classList.add('catch-enter');
   clearTimeout(catchTimer);
   catchTimer = setTimeout(() => el.classList.add('hidden'), 3800);
-  toast(`You caught: ${itemDef.name}!`);
+  toast(caption || `You caught: ${itemDef.name}!`);
 }
 
 // ---- Vendor Buy/Sell grid (2026-07-15, expanded 2026-07-16) ----
@@ -744,6 +747,9 @@ function setActiveTab(panelEl, tabName) {
   panelEl.querySelectorAll('.tab-pane').forEach((el) => {
     el.classList.toggle('hidden', el.dataset.pane !== tabName);
   });
+  // Start each tab scrolled to the top (2026-07-26).
+  const content = panelEl.querySelector('.panel-content');
+  if (content) content.scrollTop = 0;
   closeItemPopout();
 }
 
@@ -906,8 +912,13 @@ export function panelKey(key) {
       return;
     }
 
-    // Stats/Quests have no interactive content yet — nothing to move focus
-    // between, just wait for Escape.
+    // Stats/Quests/Controls have no focusable content — Up/Down just scroll
+    // the (possibly long) list so it doesn't get cut off (2026-07-26).
+    const content = root.querySelector('.panel-content');
+    if (content) {
+      if (key === 'ArrowUp') { content.scrollBy({ top: -90 }); return; }
+      if (key === 'ArrowDown') { content.scrollBy({ top: 90 }); return; }
+    }
     return;
   }
 
@@ -975,6 +986,17 @@ function refreshGridFocus() {
   if (navLevel !== 'content') return;
   const els = currentGridEls(tab);
   els.forEach((el, i) => el.classList.toggle('focused', i === gridFocusIndex));
+  // Scroll the focused tile into view so keyboard nav can reach content below
+  // the fold (2026-07-26 — the panel content area is fixed-height + scrollable,
+  // but the mouse-only scrollbar didn't help a controller/keyboard player).
+  // Landing on the first tile of an Equipment/Weapons section scrolls that
+  // section's header in too, so the header + its items show together.
+  const cur = els[gridFocusIndex];
+  if (cur) {
+    const header = (tab === 'equipment' || tab === 'weapons') && gridFocusIndex === 0
+      ? cur.closest('.item-grid')?.previousElementSibling : null;
+    (header || cur).scrollIntoView({ block: 'nearest' });
+  }
 }
 
 // Renders the whole Inventory panel — Equipment/Weapons as per-slot

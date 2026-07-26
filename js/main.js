@@ -288,6 +288,7 @@ async function boot() {
     'assets/images/bramblekin_camp.jpg',
     'assets/images/beach_background.jpg', // cragclaw/mireman battle backdrop (2026-07-25)
     'assets/images/cave_background.jpg', // cave battle backdrop (2026-07-26)
+    'assets/images/marisol_rusk_painting.png', // shown large in the shipwreck catch-reveal
     // Treasure chests (2026-07-24): the overhead world sprite + the picture
     // shown in the open-chest window. Preloaded so neither pops in.
     'assets/images/treasure_chest_overhead.png',
@@ -2157,16 +2158,14 @@ async function boot() {
     });
   }
 
-  // Rummage the wreck of the Gull's Regret (2026-07-25) — grants gold + a
-  // health potion + Marisol's portrait (Calder's keepsake quest item) ONCE,
-  // then `collected` (persisted) makes it report empty via its emptyMessage.
+  // Rummage the wreck of the Gull's Regret (2026-07-25) — grants ONLY Marisol's
+  // portrait (Calder's keepsake quest item), revealed with the same big drop-in
+  // as a fishing catch (2026-07-26, Danny). `collected` (persisted) then makes
+  // it report empty via its emptyMessage.
   function searchBoat(item) {
     item.collected = true;
-    const gold = randInt(5, 10);
-    addGold(gold);
-    addItem('health_potion', 1);
-    addItem('marisol_rusk_painting', 1);
-    ui.toast(`You search the wreck of the Gull’s Regret — ${gold} gold, a health potion, and a small oilcloth-wrapped painting.`);
+    addItem('marisol_rusk_painting', 1, true); // silent — the reveal announces it
+    ui.showCatch(ITEMS.marisol_rusk_painting, 'You found a portrait, wrapped in oilcloth.');
   }
 
   function interact() {
