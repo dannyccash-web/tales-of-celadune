@@ -2,6 +2,7 @@
 // Loads assets, builds the world for the current scene, runs the game loop.
 
 import sceneD1 from './data/d1.js';
+import sceneD1B from './data/d1b.js';
 import sceneD2 from './data/d2.js';
 import sceneD3 from './data/d3.js';
 import sceneD4 from './data/d4.js';
@@ -269,7 +270,7 @@ function loadImages(sources) {
 // Every scene in the game, keyed by the ids that exits point at. Adding a
 // scene = write its data file, import it, and register it here — the
 // transition system below handles everything else.
-const SCENES = { D1: sceneD1, D2: sceneD2, D3: sceneD3, D4: sceneD4 };
+const SCENES = { D1: sceneD1, D1B: sceneD1B, D2: sceneD2, D3: sceneD3, D4: sceneD4 };
 
 async function boot() {
   // Preload assets for EVERY registered scene up front — scene switches are
@@ -324,6 +325,11 @@ async function boot() {
   // collected interactables, cleared battles/ambushes, and slain camp members.
   // Set by loadGame(); consumed the first time each scene's World is created.
   let pendingWorldFlags = null;
+  // Where to drop the player when they leave the cave/dungeon they're in — the
+  // EXACT overworld spot they entered from (2026-07-26). Captured in enterCave,
+  // consumed in exitCave, and persisted in the save so quitting inside a cave
+  // and continuing still exits to the right place.
+  let caveReturn = null;
   function applyWorldFlags(w, f) {
     if (!f) return;
     (f.collected || []).forEach((i) => { if (w.interactables[i]) w.interactables[i].collected = true; });
@@ -455,6 +461,36 @@ async function boot() {
     saveGame(); // autosave on entering a new screen (2026-07-22)
   }
 
+  // ---- Caves / dungeons (2026-07-26) ----
+  // Interact-based scene entry (not walk-off-edge). enterCave captures the
+  // player's EXACT overworld position so exitCave can drop them right back
+  // there. The cave is a normal scene in SCENES (own bg/collision), cached per
+  // session like every other. Reusable for any cave/dungeon: an overworld
+  // interactable carries `cave: '<sceneId>'`, and the cave's exit interactable
+  // carries `caveExit: true`.
+  function enterCave(caveId) {
+    if (!SCENES[caveId]) { ui.toast('The way in is blocked.'); return; }
+    caveReturn = { scene: currentSceneId, x: world.player.x, y: world.player.y, rotation: world.player.rotation };
+    audio.sfx(audio.SFX.door);
+    enterScene(caveId);
+    world.player.x = world.scene.spawn.x;
+    world.player.y = world.scene.spawn.y;
+    world.player.rotation = Math.PI;
+    saveGame(); // entering a new screen
+  }
+  function exitCave() {
+    // Fall back to the cave's declared overworld (`returns`) spawn if the
+    // captured entry position is somehow missing.
+    const back = caveReturn || { scene: world.scene.returns || 'D1' };
+    audio.sfx(audio.SFX.door);
+    enterScene(back.scene && SCENES[back.scene] ? back.scene : 'D1');
+    world.player.x = back.x ?? world.scene.spawn.x;
+    world.player.y = back.y ?? world.scene.spawn.y;
+    if (back.rotation != null) world.player.rotation = back.rotation;
+    caveReturn = null;
+    saveGame();
+  }
+
   // ---- Save system (2026-07-22, Danny) ----
   // One versioned localStorage slot. Autosaves on entering a new screen
   // (switchScene, above) and on starting a new game, so "the last screen you
@@ -505,6 +541,7 @@ async function boot() {
         equipment: { ...equipment },
         quests: quests.map((q) => ({ ...q })),
         flags: { campQuestDone, campHostile, gafferHappy, wellCoinThrown, vegetableDeliveredToTavern, calderToldStory, calderToldDangers },
+        caveReturn, // where to exit to if saved inside a cave/dungeon
         worlds: snapshotWorlds(),
       };
       localStorage.setItem(SAVE_KEY, JSON.stringify(data));
@@ -535,6 +572,7 @@ async function boot() {
     campHostile = false; campEntryGate = null;
     gafferHappy = false; wellCoinThrown = false; vegetableDeliveredToTavern = false;
     calderToldStory = false; calderToldDangers = false;
+    caveReturn = null;
     for (const k of Object.keys(worlds)) delete worlds[k];
     pendingWorldFlags = null;
     enterScene('D3');
@@ -556,6 +594,7 @@ async function boot() {
     campQuestDone = !!f.campQuestDone; campHostile = !!f.campHostile;
     gafferHappy = !!f.gafferHappy; wellCoinThrown = !!f.wellCoinThrown;
     calderToldStory = !!f.calderToldStory; calderToldDangers = !!f.calderToldDangers;
+    caveReturn = data.caveReturn || null;
     vegetableDeliveredToTavern = !!f.vegetableDeliveredToTavern;
     // Per-visit camp state always starts fresh on a load (toll re-armed, not
     // mid-entry) — only the permanent flags above persist.
@@ -2129,6 +2168,8 @@ async function boot() {
       // The well isn't a pickup — it opens its own dialogue window (drink /
       // toss a coin), so intercept it before any reward/collect handling.
       if (item.well) { openWellDialog(); return; }
+      if (item.cave) { enterCave(item.cave); return; }   // overworld -> cave
+      if (item.caveExit) { exitCave(); return; }         // cave -> overworld
       // Already-collected interactables with an emptyMessage (e.g. the silo
       // after its one ear of corn) stay interactive but just report empty —
       // world.js's nearestInteractableInRange only returns collected ones

@@ -213,6 +213,16 @@ export default {
       label: 'Search the wreck',
       emptyMessage: 'You’ve picked the old wreck clean.',
     },
+    // Cave entrance (2026-07-26) — interact to enter the D1B cave. `cave` names
+    // the target sub-scene; main.js's enterCave() captures the player's exact
+    // position so the cave's exit returns them right here.
+    {
+      id: 'cave_d1b_entrance',
+      x: 1033, y: 1664,
+      range: 90,
+      cave: 'D1B',
+      label: 'Enter the cave',
+    },
   ],
 
   battles: [],
