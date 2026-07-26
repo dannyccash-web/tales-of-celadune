@@ -79,6 +79,22 @@ export default {
     drops: { gold: { min: 5, max: 10 }, loot: [{ id: 'fishing_bait', chance: 0.25 }] },
   },
 
+  // Cragclaw Queen (D1B cave, 2026-07-26) — the big one guarding Calder's
+  // stashed gold. A mini-boss: much more health + a harder hit than a common
+  // cragclaw, but not a flee-only wall like the rootweaver.
+  cragclaw_queen: {
+    id: 'cragclaw_queen',
+    name: 'Cragclaw Queen',
+    portrait: 'assets/images/queen_cragclaw.png',
+    health: 12,
+    attack: 3,
+    defense: 3,
+    speed: 8,
+    damage: { min: 2, max: 4 },
+    background: 'assets/images/beach_background.jpg', // battle backdrop (cragclaw kin -> beach, per Danny)
+    drops: { gold: { min: 15, max: 25 }, loot: [{ id: 'vitality_potion', chance: 0.3 }] },
+  },
+
   // Mireman (D1, 2026-07-25) — an unseen bog-thing that rises from the mire
   // when the player wanders too close (a hidden proximity ambush, exactly like
   // the D4 Rootweavers). Tougher than a cragclaw: a threatening early fight,

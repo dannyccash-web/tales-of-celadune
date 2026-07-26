@@ -295,6 +295,7 @@ async function boot() {
     // neither is in a scene `battles` list the preloader scans; add them here).
     'assets/images/cragclaw.png',
     'assets/images/mireman.png',
+    'assets/images/queen_cragclaw.png',
     ...Object.values(SCENES).flatMap((scene) => [
       scene.background,
       // Places (isPlace: true, e.g. "Your House") have no sprite — they're
@@ -787,10 +788,11 @@ async function boot() {
       removeItem('marisol_rusk_painting', 1, true);
       ui.showGaveItem(ITEMS.marisol_rusk_painting);
       completeQuest('calder_keepsake');
-      addGold(CALDER_KEEPSAKE_REWARD);
       requestAutosave();
+      // No coin to give — instead he points the player to his stashed gold in
+      // the hidden cave (2026-07-26). The gold is the chest in D1B.
       ui.updateDialogContent({
-        line: 'Marisol… there you are, my love. I thought the sea had taken you along with everything else. I can’t— here. Take the gold, all of it, it’s nothing to me now. You’ve given me back the only thing that ever was.',
+        line: 'Marisol… there you are, my love. I thought the sea had her too. I— I owe you more than I can say, and not a copper to pay it with. But listen: when the ship went down I stashed what gold I saved in a cave, and the cragclaws and miremen have kept me from it ever since. You’ve steel enough for them — so take it, all of it, it’s yours. The cave’s to the south, along the cliff face, between the beach and the muddy pond. Find it, and you’ll find my fortune.',
         responses: ['Leave.'],
       });
       return true;
@@ -1547,7 +1549,6 @@ async function boot() {
   const CALDER_STORY = 'Calder Rusk — captain of the Gull’s Regret. She’s that broken-backed hull rotting out on the sand now. We ran her aground in a storm, a black night with waves like moving hills. My crew lived through it… and then they turned on their captain. Split the hold, took their shares of the loot, and rowed north to that little fishing village to play at being honest men. Left me to the gulls. So I stayed. Salvaged what timber the sea hadn’t swallowed, raised this hut plank by plank, and hid away the gold they never got their claws on.';
   const CALDER_DANGERS = 'Aye — and it’s the whole reason I’m marooned up here like a barnacle. The beach crawls with cragclaws: snapping, scuttling brutes that put their heads down and charge the moment they catch your scent. And there are miremen about too — things that heave up out of the muck without so much as a ripple of warning. Between the lot of them I can’t even reach my own buried gold, let alone leave.';
   const CALDER_OFFER = 'There is one thing. Out in the wreck — my old cabin, if the sea’s left any of it — there’s something of mine. Worth more to me than every coin I ever buried, and I’ll not say more than that. I can’t get to it past those creatures. But you… bring it back to me and I’ll see you well rewarded. Will you do it?';
-  const CALDER_KEEPSAKE_REWARD = 30;
 
   function calderHasPainting() { return inventory.some((it) => it.id === 'marisol_rusk_painting'); }
 

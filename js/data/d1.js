@@ -221,7 +221,7 @@ export default {
       x: 1033, y: 1664,
       range: 90,
       cave: 'D1B',
-      label: 'Enter the cave',
+      label: 'Hidden Cave',
     },
   ],
 

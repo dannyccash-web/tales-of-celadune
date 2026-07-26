@@ -170,7 +170,53 @@ export default {
     },
   ],
 
-  npcs: [],
+  // Cave dwellers (2026-07-26) — all roaming `creature` AI (mill via patrol,
+  // charge + fight on proximity, same as D1's cragclaws). They guard Calder's
+  // stashed gold (the chest below). The Mireman here is a visible chasing
+  // creature (its own overhead sprite), not the unseen ambush D1 uses.
+  npcs: [
+    {
+      id: 'cave_mireman', name: 'Mireman', creature: true, enemyId: 'mireman',
+      sprite: 'assets/images/mireman_overhead.png',
+      portrait: 'assets/images/mireman.png',
+      x: 633, y: 355, speed: 32, chaseSpeed: 140, aggroRange: 400, startsHome: false,
+      patrol: [ { x: 633, y: 355 }, { x: 703, y: 355 }, { x: 633, y: 425 } ],
+    },
+    {
+      id: 'cave_cragclaw_1', name: 'Cragclaw', creature: true, enemyId: 'cragclaw',
+      sprite: 'assets/images/cragclaw_overhead.png',
+      portrait: 'assets/images/cragclaw.png',
+      x: 630, y: 1364, speed: 34, chaseSpeed: 140, aggroRange: 400, startsHome: false,
+      patrol: [ { x: 630, y: 1364 }, { x: 700, y: 1364 }, { x: 630, y: 1434 } ],
+    },
+    {
+      id: 'cave_cragclaw_2', name: 'Cragclaw', creature: true, enemyId: 'cragclaw',
+      sprite: 'assets/images/cragclaw_overhead.png',
+      portrait: 'assets/images/cragclaw.png',
+      x: 1224, y: 899, speed: 34, chaseSpeed: 140, aggroRange: 400, startsHome: false,
+      patrol: [ { x: 1224, y: 899 }, { x: 1294, y: 899 }, { x: 1224, y: 969 } ],
+    },
+    {
+      id: 'cave_cragclaw_queen', name: 'Cragclaw Queen', creature: true, enemyId: 'cragclaw_queen',
+      sprite: 'assets/images/queen_cragclaw_overhead.png',
+      portrait: 'assets/images/queen_cragclaw.png',
+      x: 1336, y: 1533, speed: 30, chaseSpeed: 130, aggroRange: 400, startsHome: false,
+      patrol: [ { x: 1336, y: 1533 }, { x: 1406, y: 1533 }, { x: 1336, y: 1603 } ],
+    },
+  ],
   battles: [],
+
+  // Calder's stashed gold — the chest the cave dwellers guard. Unlocked (the
+  // fight is the lock). 20-30 gold + a vitality potion.
+  chests: [
+    {
+      id: 'd1b_treasure',
+      x: 1515, y: 1667,
+      locked: false,
+      gold: { min: 20, max: 30 },
+      items: [ { id: 'vitality_potion', qty: 1 } ],
+    },
+  ],
+
   exits: [],
 };

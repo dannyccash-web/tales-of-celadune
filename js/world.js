@@ -112,7 +112,11 @@ export class World {
     this.chests = (scene.chests || []).map((c) => ({
       ...c,
       locked: !!c.locked,
-      gold: c.gold || 0,
+      // gold can be a fixed number or a {min,max} range rolled once at world
+      // build (persisted via the save snapshot, so it doesn't reroll on revisit).
+      gold: (c.gold && typeof c.gold === 'object')
+        ? Math.floor(Math.random() * (c.gold.max - c.gold.min + 1)) + c.gold.min
+        : (c.gold || 0),
       items: (c.items || []).map((it) => ({ ...it })),
       emptied: false,
       w: chestImg ? chestImg.width : 50,
@@ -553,8 +557,12 @@ export class World {
       // hysteresis — the old hysteresis could get stuck "armed=false" while the
       // creature chased just inside re-arm range, so it followed the player
       // forever without ever striking again (Danny, 2026-07-25). The player
-      // shakes it by getting `giveUpRange` (800px) from the creature's SPAWN:
-      // then it gives up and trots home, resetting for next time.
+      // shakes it by getting `giveUpRange` (500px) from the creature's SPAWN:
+      // then it gives up and trots home, resetting for next time. A `_chasing`
+      // flag gates the return-home: it only trots home right AFTER giving up a
+      // chase, never while calmly patrolling — otherwise the return-home pull
+      // fights the patrol (which walks it away from spawn) and the creature
+      // just shakes back and forth in place (Danny, 2026-07-26).
       if (npc.creature) {
         const p = this.player;
         if (npc._spawnX == null) { npc._spawnX = npc.x; npc._spawnY = npc.y; npc._strikeCd = 0; }
@@ -565,8 +573,9 @@ export class World {
         // lookahead (~14px) hold the chaser (~50px) so "reaching" the player
         // reliably starts the fight.
         const strike = npc.strikeRange ?? 70;
-        const chase = d < (npc.aggroRange ?? 400) && playerFromSpawn < (npc.giveUpRange ?? 800);
+        const chase = d < (npc.aggroRange ?? 400) && playerFromSpawn < (npc.giveUpRange ?? 500);
         if (chase) {
+          npc._chasing = true;
           if (d < strike && npc._strikeCd <= 0 && !this.pendingAggro) {
             this.pendingAggro = npc;
             npc._strikeCd = npc.strikeCooldown ?? 1.2; // brief grace before it lunges again
@@ -578,17 +587,19 @@ export class World {
           }
           continue;
         }
-        // Gave up (player out of aggro, or fled 800px+ from the spawn): head
-        // home, then fall through to the patrol/mill below once back.
-        const dHome = Math.hypot(npc._spawnX - npc.x, npc._spawnY - npc.y);
-        if (dHome > 8) {
-          const sp = npc.speed;
-          npc.speed = npc.chaseSpeed ?? 140;
-          this.walkToward(npc, { x: npc._spawnX, y: npc._spawnY }, dt, 8);
-          npc.speed = sp;
-          continue;
+        // Just gave up a chase: trot home, then resume patrol. Only runs while
+        // `_chasing` — a calmly-patrolling creature skips this and mills below.
+        if (npc._chasing) {
+          const dHome = Math.hypot(npc._spawnX - npc.x, npc._spawnY - npc.y);
+          if (dHome > 8) {
+            const sp = npc.speed;
+            npc.speed = npc.chaseSpeed ?? 140;
+            this.walkToward(npc, { x: npc._spawnX, y: npc._spawnY }, dt, 8);
+            npc.speed = sp;
+            continue;
+          }
+          npc._chasing = false; npc._strikeCd = 0; npc.patrolIndex = 0; // home — resume patrol
         }
-        npc._strikeCd = 0; // home and calm — ready to hunt again
       }
 
       if (npc.routine) { this.updateRoutine(npc, dt); continue; }
