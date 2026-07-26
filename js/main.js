@@ -287,6 +287,7 @@ async function boot() {
     'assets/images/forest_background.jpg',
     'assets/images/bramblekin_camp.jpg',
     'assets/images/beach_background.jpg', // cragclaw/mireman battle backdrop (2026-07-25)
+    'assets/images/cave_background.jpg', // cave battle backdrop (2026-07-26)
     // Treasure chests (2026-07-24): the overhead world sprite + the picture
     // shown in the open-chest window. Preloaded so neither pops in.
     'assets/images/treasure_chest_overhead.png',
@@ -477,6 +478,7 @@ async function boot() {
     world.player.x = world.scene.spawn.x;
     world.player.y = world.scene.spawn.y;
     world.player.rotation = Math.PI;
+    audio.play(sceneMusicTrack(caveId), 1200); // cross-fade to the cave theme
     saveGame(); // entering a new screen
   }
   function exitCave() {
@@ -488,6 +490,7 @@ async function boot() {
     world.player.x = back.x ?? world.scene.spawn.x;
     world.player.y = back.y ?? world.scene.spawn.y;
     if (back.rotation != null) world.player.rotation = back.rotation;
+    audio.play(sceneMusicTrack(currentSceneId), 1200); // cross-fade back to the overworld theme
     caveReturn = null;
     saveGame();
   }
@@ -643,13 +646,21 @@ async function boot() {
   window.addEventListener('pointerdown', retryTheme);
   window.addEventListener('keydown', retryTheme);
 
-  // Begin play: hide the start screen, cross-fade to the overworld track. The
-  // actual run state is set up by startNewGame()/continueGame() around this.
+  // The looped track for a scene: caves (scene `music: 'cave'`) play the cave
+  // theme, everything else the overworld theme (2026-07-26). Used on begin/
+  // continue and on cave enter/exit so the ambience always matches the scene.
+  function sceneMusicTrack(sceneId) {
+    return SCENES[sceneId]?.music === 'cave' ? audio.TRACKS.cave : audio.TRACKS.overworld;
+  }
+
+  // Begin play: hide the start screen, cross-fade to the scene's track (cave
+  // theme if a save is continued straight into a cave). Run state is set up by
+  // startNewGame()/continueGame() around this.
   function beginPlay() {
     if (state.started) return;
     state.started = true;
     document.getElementById('start-screen').classList.add('hidden');
-    audio.play(audio.TRACKS.overworld, 1500);
+    audio.play(sceneMusicTrack(currentSceneId), 1500);
   }
   function startNewGame() {
     resetToNewGame();
@@ -1711,9 +1722,10 @@ async function boot() {
     battleState.ensnared = false;
     pendingAttackSlot = null;
     // Scene backdrop: an explicit override (e.g. the barn encounter) wins,
-    // else the first enemy's catalog `background` (rootweaver/bramblekin), else
-    // none (the dimmed world shows through). 2026-07-22.
-    const bg = background || ENEMIES[enemyIds[0]]?.background || null;
+    // then the current scene's `battleBackground` (caves force the cave backdrop
+    // over each enemy's own, 2026-07-26), then the first enemy's catalog
+    // `background` (beach/forest/camp), else none (dimmed world shows through).
+    const bg = background || world.scene.battleBackground || ENEMIES[enemyIds[0]]?.background || null;
     ui.openBattle({
       enemies: battleState.enemies,
       onAction: handleBattleAction,

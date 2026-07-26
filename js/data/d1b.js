@@ -28,6 +28,12 @@ export default {
   // the captured entry position is somehow missing (e.g. a save edited by hand).
   returns: 'D1',
 
+  // Cave ambience (2026-07-26): `music: 'cave'` plays celadune_cave.mp3 while
+  // here; `battleBackground` overrides each enemy's own backdrop so fights in
+  // the cave use the cave backdrop (not, e.g., the cragclaw's beach one).
+  music: 'cave',
+  battleBackground: 'assets/images/cave_background.jpg',
+
   obstacles: [
     { x: 0, y: 0, w: 1320, h: 20 },
     { x: 1620, y: 0, w: 300, h: 700 },

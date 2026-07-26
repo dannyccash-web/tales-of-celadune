@@ -6,6 +6,7 @@ export const TRACKS = {
   theme: 'assets/audio/celadune_theme.mp3',
   overworld: 'assets/audio/celadune_overworld.mp3',
   battle: 'assets/audio/celadune_battle.mp3',
+  cave: 'assets/audio/celadune_cave.mp3',
 };
 
 export const SFX = {
