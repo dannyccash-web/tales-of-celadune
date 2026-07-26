@@ -993,22 +993,26 @@ function refreshGridFocus() {
   // section's header in too, so the header + its items show together.
   const cur = els[gridFocusIndex];
   if (cur) {
+    // Landing on the first tile of an Equipment/Weapons section: reveal the
+    // range from the section header down through the (tall) tile, so both show.
     const header = (tab === 'equipment' || tab === 'weapons') && gridFocusIndex === 0
       ? cur.closest('.item-grid')?.previousElementSibling : null;
-    scrollIntoPanel(header || cur);
+    scrollIntoPanel(cur, header);
   }
 }
 
-// Scroll a panel's `.panel-content` so `el` is visible. Uses offset math (not
-// el.scrollIntoView) because the game runs inside a CSS-scaled #stage, which
-// makes scrollIntoView compute the wrong scroll (2026-07-26). offsetTop is in
-// the element's own un-transformed space, so this is scale-independent.
-function scrollIntoPanel(el) {
+// Scroll a panel's `.panel-content` so `el` (its full height) is visible; if
+// `topEl` is given, keep ITS top visible too (e.g. a section header above a
+// tall tile). Uses offset math, NOT el.scrollIntoView, because the game runs
+// inside a CSS-scaled #stage which makes scrollIntoView mis-compute the scroll
+// (2026-07-26). offsetTop is in the element's own un-transformed space, so this
+// is scale-independent.
+function scrollIntoPanel(el, topEl) {
   const c = el && el.closest('.panel-content');
   if (!c) return;
-  let top = 0;
-  for (let n = el; n && n !== c && c.contains(n); n = n.offsetParent) top += n.offsetTop;
-  const bottom = top + el.offsetHeight;
+  const offTop = (n) => { let t = 0; for (let x = n; x && x !== c && c.contains(x); x = x.offsetParent) t += x.offsetTop; return t; };
+  const top = offTop(topEl || el);
+  const bottom = offTop(el) + el.offsetHeight;
   const pad = 16;
   if (top < c.scrollTop + pad) c.scrollTop = Math.max(0, top - pad);
   else if (bottom > c.scrollTop + c.clientHeight - pad) c.scrollTop = bottom - c.clientHeight + pad;
