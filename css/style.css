@@ -582,6 +582,7 @@ html, body {
   flex: 1;
   padding: 50px 60px;
   overflow: auto;
+  position: relative; /* offsetParent for the keyboard scroll math (ui.js) */
 }
 
 /* Sliders (Audio tab) — reuse the .bar/.bar-bg/.bar-fill hex-clip component

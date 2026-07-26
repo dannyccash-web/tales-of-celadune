@@ -995,8 +995,23 @@ function refreshGridFocus() {
   if (cur) {
     const header = (tab === 'equipment' || tab === 'weapons') && gridFocusIndex === 0
       ? cur.closest('.item-grid')?.previousElementSibling : null;
-    (header || cur).scrollIntoView({ block: 'nearest' });
+    scrollIntoPanel(header || cur);
   }
+}
+
+// Scroll a panel's `.panel-content` so `el` is visible. Uses offset math (not
+// el.scrollIntoView) because the game runs inside a CSS-scaled #stage, which
+// makes scrollIntoView compute the wrong scroll (2026-07-26). offsetTop is in
+// the element's own un-transformed space, so this is scale-independent.
+function scrollIntoPanel(el) {
+  const c = el && el.closest('.panel-content');
+  if (!c) return;
+  let top = 0;
+  for (let n = el; n && n !== c && c.contains(n); n = n.offsetParent) top += n.offsetTop;
+  const bottom = top + el.offsetHeight;
+  const pad = 16;
+  if (top < c.scrollTop + pad) c.scrollTop = Math.max(0, top - pad);
+  else if (bottom > c.scrollTop + c.clientHeight - pad) c.scrollTop = bottom - c.clientHeight + pad;
 }
 
 // Renders the whole Inventory panel — Equipment/Weapons as per-slot
