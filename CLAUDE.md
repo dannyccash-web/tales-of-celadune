@@ -6,6 +6,16 @@
 - Keep development clean and streamlined.
 - Design spec lives in `docs/Fantasy_RPG_Game.pdf` (6 pages: dialog UI, battle UI, item-received UI, D3 overworld mockup, 4-layer spec, overworld map).
 
+## Story / narrative arc (canonical, from Danny 2026-07-26)
+
+Use this to keep dialogue and new content pointed the right way. **SPOILER-SENSITIVE — the player learns it gradually.**
+
+- **Protagonist:** a **former soldier of the king's army** who quit for a quiet life on the farm (the D3 farm is home). **Reluctant** to go adventuring again — one thing leads to another until they're summoned to meet the **King**. (Silent, unnamed; NPCs address them as "traveler"/"friend." Their competence — Calder's "you've steel enough," the Chief expecting a fight — quietly fits the soldier past; that's the only characterization so far.)
+- **Main quest (not yet revealed in-game):** the **court wizard** has kidnapped the **King's daughter (the princess)** and taken her to the **wizard's keep in the mountains** (overworld A4, "Wizard's Fortress"). The player is recruited to find and return her.
+- **The twist:** the princess wasn't kidnapped — she **became obsessed with power and kidnapped the WIZARD**, to siphon his magic. Reveal this late.
+- **Geography = difficulty + tone ramp.** The overworld is rows **D (bottom) → A (top)**; the player pushes NORTH toward the castle/mountains. **D = general, low-stakes, mostly self-contained side content** (farm, village, beach, woods — where we are now; the main quest hasn't surfaced). As the player climbs **C → B → A**, the game gets **harder, more complex, more narrative, and more magical.** **B2 is the King's Castle** (where the King recruits them); **A4 is the Wizard's Fortress** (the finale). **Magic** (a later, alternate attack form for the player) belongs to the upper rows.
+- **What this means for now (D-row):** current content is deliberately side-story, so it needn't reference the main plot — but it should NOT contradict it, and **new D-row moments can start planting a northward pull** (rumors of the castle/king, a reason to head north) so the transition into C feels motivated rather than abrupt. Don't reveal the princess/wizard plot in D.
+
 ## Deployment (do this after every change set)
 
 1. Commit and push to `main` at https://github.com/dannyccash-web/tales-of-celadune
