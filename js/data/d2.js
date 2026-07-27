@@ -740,6 +740,9 @@ export default {
       dialog: { line: 'Welcome, welcome! Pull up a stool — though I’ll warn you, the ale’s still fermenting and the stew’s mostly turnip. Come back when the hearth’s lit proper.', responses: ['Leave.'] },
       chatter: [
         { q: 'Heard any news?', a: 'Travelers bring more news than coin through that door. Word is the woods east of the village have gone unfriendly — folk paying tolls just to pass. I would steer clear till it settles.' },
+        // First northward story seed (2026-07-26) — creates a pull toward C/B
+        // (the King's castle is B2) without revealing the princess/wizard plot.
+        { q: 'Anything stirring up north?', a: 'Funny you should ask. The King’s road north has been thick with riders these past weeks — royal colors, riding hard, saying nothing to anyone. Something’s got the castle up in the hills in a stir, mark me. A quiet sort like yourself would do well to steer clear of whatever it is… though in my experience the road north has a way of finding the folk who’d rather it didn’t.' },
         { q: 'What is good to drink?', a: 'Ha! Nothing, presently. The good barrel is still fermenting and the other is mostly for cleaning boots. Give it a fortnight and I will pour you something worth the walk.' },
       ],
     },

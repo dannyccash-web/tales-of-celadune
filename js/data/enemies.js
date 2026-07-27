@@ -68,11 +68,13 @@ export default {
     id: 'cragclaw',
     name: 'Cragclaw',
     portrait: 'assets/images/cragclaw.png',
-    // Toughened 2026-07-25 (Danny): HP 3->6, defense 1->3 — a meatier beach
-    // hazard. Drops a fatter purse + a chance at fishing bait.
+    // HP 3->6 (2026-07-25); defense 3->2 (2026-07-26) — def 3 made a low-attack
+    // player whiff ~57% of swings, so the fights read as a grind rather than a
+    // threat. HP 6 keeps them meaty (2× a bramblekin); the Queen stays the def-3
+    // wall. Drops a fatter purse + a chance at fishing bait.
     health: 6,
     attack: 2,
-    defense: 3,
+    defense: 2,
     speed: 9,
     damage: { min: 1, max: 2 },
     background: 'assets/images/beach_background.jpg', // battle backdrop (2026-07-25)
@@ -80,8 +82,10 @@ export default {
   },
 
   // Cragclaw Queen (D1B cave, 2026-07-26) — the big one guarding Calder's
-  // stashed gold. A mini-boss: much more health + a harder hit than a common
-  // cragclaw, but not a flee-only wall like the rootweaver.
+  // stashed gold. **The boss of level D** (Danny): kept deliberately tough
+  // (12hp, atk3/def3, no elemental weakness) so a fresh-off-the-beach player
+  // CAN'T take her first try — she's a "come back fully geared + potion-stocked"
+  // fight, not a wall you can never beat. Do NOT soften her much.
   cragclaw_queen: {
     id: 'cragclaw_queen',
     name: 'Cragclaw Queen',

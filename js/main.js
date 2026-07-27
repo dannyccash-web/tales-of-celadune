@@ -746,6 +746,9 @@ async function boot() {
   // a save. See buildCalderDialog().
   let calderToldStory = false;
   let calderToldDangers = false;
+  // One-time (session) tutorial nudge the first time a roaming creature charges
+  // the player, teaching Flee + the give-up-when-far mechanic (2026-07-26).
+  let creatureFleeHintShown = false;
 
   // The D3 well's coin-for-luck offer is one-time per session (like gafferHappy,
   // not persisted). Drinking from the well is always available; tossing a coin
@@ -1564,7 +1567,7 @@ async function boot() {
   // wreck). While it's active he asks after it — and if the player is carrying
   // the portrait, offers to turn it in (completes the quest + a gold thanks).
   const CALDER_STORY = 'Calder Rusk — captain of the Gull’s Regret. She’s that broken-backed hull rotting out on the sand now. We ran her aground in a storm, a black night with waves like moving hills. My crew lived through it… and then they turned on their captain. Split the hold, took their shares of the loot, and rowed north to that little fishing village to play at being honest men. Left me to the gulls. So I stayed. Salvaged what timber the sea hadn’t swallowed, raised this hut plank by plank, and hid away the gold they never got their claws on.';
-  const CALDER_DANGERS = 'Aye — and it’s the whole reason I’m marooned up here like a barnacle. The beach crawls with cragclaws: snapping, scuttling brutes that put their heads down and charge the moment they catch your scent. And there are miremen about too — things that heave up out of the muck without so much as a ripple of warning. Between the lot of them I can’t even reach my own buried gold, let alone leave.';
+  const CALDER_DANGERS = 'Aye — and it’s the whole reason I’m marooned up here like a barnacle. The beach crawls with cragclaws: snapping, scuttling brutes that put their heads down and charge the moment they catch your scent. And there are miremen about too — things that heave up out of the muck without so much as a ripple of warning. Don’t go tangling with them half-armed, friend — if one comes at you and you’re not ready, put your back to it and RUN, and don’t stop till you’re well clear. Come back with good steel and a full purse of remedies, and then we’ll talk. Between the lot of them I can’t even reach my own buried gold, let alone leave.';
   const CALDER_OFFER = 'There is one thing. Out in the wreck — my old cabin, if the sea’s left any of it — there’s something of mine. Worth more to me than every coin I ever buried, and I’ll not say more than that. I can’t get to it past those creatures. But you… bring it back to me and I’ll see you well rewarded. Will you do it?';
 
   function calderHasPainting() { return inventory.some((it) => it.id === 'marisol_rusk_painting'); }
@@ -2430,6 +2433,13 @@ async function boot() {
       startBattle([enemyId], (result) => {
         if (result === 'victory') foe.defeated = true;
       });
+      // First time a creature charges you, teach the escape route: Flee, then
+      // get away from where it lurks and it gives up (2026-07-26). Overrides
+      // startBattle's default opener; one-time so it doesn't nag.
+      if (foe.creature && !creatureFleeHintShown) {
+        creatureFleeHintShown = true;
+        ui.setBattleMessage('It’s on you! If you’re outmatched, choose Flee — then get well away from its lair and it’ll give up the chase.');
+      }
     }
     if (world.pendingAmbush) {
       const a = world.pendingAmbush;
