@@ -133,6 +133,10 @@ function equipmentBonus(field) {
 // are unaffected. Starts at 0; gear/temporary effects may raise it later.
 function effectiveAttack() { return stats.attack + stats.luck + equipmentBonus('attackBonus'); }
 function effectiveDefense() { return stats.defense + stats.luck + equipmentBonus('defenseBonus'); }
+// Speed including gear (leather boots' speedBonus, 2026-07-26). Capped at 3
+// (the movement/initiative curves top out there). Drives BOTH overworld
+// movement (moveMultForSpeed) and battle initiative (playerInitiativeChance).
+function effectiveSpeed() { return Math.min(3, stats.speed + equipmentBonus('speedBonus')); }
 
 // Speed drives two things (Danny, 2026-07-20):
 //  1) Overworld movement — a multiplier on PLAYER_SPEED: 1 -> ×1.0, 2 -> ×1.25,
@@ -146,7 +150,7 @@ function moveMultForSpeed(speed) {
   const s = Math.max(1, Math.min(3, speed));
   return 1 + 0.25 * (s - 1);
 }
-function playerInitiativeChance(speed = stats.speed) {
+function playerInitiativeChance(speed = effectiveSpeed()) {
   // Speed 1 -> 50%, 2 -> 75%, 3 -> 100% (2026-07-22, Danny — the player used to
   // always act last at Speed 1, which was punishing with only 5 HP).
   return Math.max(0, Math.min(1, 0.25 + 0.25 * speed));
@@ -1881,10 +1885,18 @@ async function boot() {
     if (hit) {
       const dmg = battle.rollDamage(weaponDamage(slot));
       target.health = Math.max(0, target.health - dmg);
+      // Fire weapon (the torch, `burn`): a flammable (`wood`) foe — rootweaver,
+      // bramblekin — catches alight and burns for `burn` at the start of every
+      // player turn (tickBurns) until it dies (2026-07-26).
+      const weapon = equipment[slot] && ITEMS[equipment[slot]];
+      const ignites = weapon?.burn != null && !!ENEMIES[target.id]?.wood && !target.burning && target.health > 0;
+      if (ignites) { target.burning = true; target.burnDamage = weapon.burn; }
       ui.setBattleMessage(target.health <= 0
         ? `The ${target.name} falls! +${dmg} damage done.`
-        : `You hit the ${target.name}. +${dmg} damage done.`);
-      audio.sfx(audio.SFX.punch);
+        : ignites
+          ? `You hit the ${target.name} — the flames catch! +${dmg} damage done.`
+          : `You hit the ${target.name}. +${dmg} damage done.`);
+      audio.sfx(ignites ? audio.SFX.magic : audio.SFX.punch);
       landed = true;
     } else {
       audio.sfx(audio.SFX.miss);
@@ -2365,14 +2377,14 @@ async function boot() {
     world.campSealed = !(campTollPaid || campQuestDone || campHostile);
     world.campEntered = campEntered;
     world.campHostile = campHostile;
-    world.playerSpeedMult = moveMultForSpeed(stats.speed);
+    world.playerSpeedMult = moveMultForSpeed(effectiveSpeed());
     // Cave darkness (2026-07-26): a `dark` scene is pitch-dark UNLESS the player
     // has a torch equipped (`equipment.item === 'torch'`). Torch → lift the
     // darkening + draw a warm glow under the player (world.playerGlow, on the
     // world canvas). No torch → the #cave-dark overlay (above the vignette,
     // below labels/UI, so UI+labels stay bright) darkens the whole world.
     const darkScene = state.started && !!world.scene.dark;
-    const hasTorch = equipment.item === 'torch';
+    const hasTorch = equipment.offhand === 'torch'; // torch is an off-hand weapon (2026-07-26)
     if (caveDarkEl) caveDarkEl.classList.toggle('active', darkScene && !hasTorch);
     world.playerGlow = darkScene && hasTorch;
     world.update(dt, input, locked, modalLock);

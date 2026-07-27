@@ -70,6 +70,7 @@ export function statLineFor(item) {
   const parts = [];
   if (item.attackBonus) parts.push(`+${item.attackBonus} ATK`);
   if (item.defenseBonus) parts.push(`+${item.defenseBonus} DEF`);
+  if (item.speedBonus) parts.push(`+${item.speedBonus} SPD`);
   return parts.length ? parts.join(' / ') : null;
 }
 
@@ -173,6 +174,18 @@ export default {
     attackBonus: 1,
     price: 17,
   },
+  // +1 Speed (2026-07-26) — raises the player's effective Speed, which speeds
+  // overworld movement AND improves battle initiative (main.js's effectiveSpeed).
+  leather_boots: {
+    id: 'leather_boots',
+    name: 'Leather Boots',
+    image: 'assets/images/leather_boots.png',
+    description: 'Well-worn travelling boots, soft and quick — they put a spring in your step and a jump on your foes.',
+    questItem: false,
+    slot: 'feet', // Equipment tab
+    speedBonus: 1,
+    price: 18,
+  },
   fishing_bait: {
     id: 'fishing_bait',
     name: 'Fishing Bait',
@@ -242,18 +255,22 @@ export default {
   // A battle consumable that equips to the Use slot (like the potions) but is
   // OFFENSIVE — using it targets an enemy for a little damage. Its fire mechanic
   // (double + a lingering burn vs wood-bodied foes) is deliberately NOT hinted
-  // at in the description — that's for the player to discover (Danny, 2026-07-19).
-  // useDamage = base hit; burnDamage = per-turn burn once something's alight
-  // (main.js's playerUseTorch / tickBurns read these).
+  // Torch (reworked to an OFF-HAND WEAPON 2026-07-26, Danny). Used indefinitely
+  // like any handheld weapon (not consumed): 1 damage on hit, and it sets
+  // flammable (`wood`) foes — rootweavers, bramblekin — ALIGHT, burning them
+  // for `burn` (2) at the start of every player turn (main.js's playerAttack
+  // applies it; tickBurns ticks it). Also the cave light source (equipping it
+  // in the off-hand lifts a `dark` scene's darkness — see main.js). Only one
+  // exists in the game so far (in D1's locked chest).
   torch: {
     id: 'torch',
     name: 'Torch',
     image: 'assets/images/Torch.png',
     description: 'A pitch-soaked torch, wrapped and oiled. Burns bright enough to light the darkest cave — and a jab of the flame smarts in a scrap.',
     questItem: false,
-    slot: 'item', // equips to the battle Use slot; stays in the Items tab
-    useDamage: { min: 1, max: 2 },
-    burnDamage: { min: 2, max: 3 },
+    slot: 'offhand', // an off-hand weapon (Weapons tab)
+    damage: 1,
+    burn: 2, // per-turn burn inflicted on flammable (wood) foes
     price: 6,
   },
   // Dropped by a slain Rootweaver (2026-07-17). The Bramblekin Chief wants one

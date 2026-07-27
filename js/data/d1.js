@@ -257,6 +257,7 @@ export default {
         { id: 'bread', qty: 2 },
         { id: 'health_potion', qty: 1 },
         { id: 'torch', qty: 1 },
+        { id: 'leather_boots', qty: 1 },
       ],
     },
   ],

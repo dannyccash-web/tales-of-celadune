@@ -92,7 +92,10 @@ export default {
     speed: 8,
     damage: { min: 2, max: 4 },
     background: 'assets/images/beach_background.jpg', // battle backdrop (cragclaw kin -> beach, per Danny)
-    drops: { gold: { min: 15, max: 25 }, loot: [{ id: 'vitality_potion', chance: 0.3 }] },
+    // No vitality-potion drop (2026-07-26, Danny): vitality is permanent, so its
+    // count is deliberately limited to fixed placements (the D1B chest + the
+    // apothecary's stock), not random loot.
+    drops: { gold: { min: 15, max: 25 } },
   },
 
   // Mireman (D1, 2026-07-25) — an unseen bog-thing that rises from the mire
@@ -132,7 +135,9 @@ export default {
     // the heart (the Bramblekin Chief's proof for safe passage, guaranteed) +
     // the fattest purse of any foe, befitting the toughest fight. `ensnare:
     // true` makes the first flee attempt against it fail (see playerFlee).
-    drops: { gold: { min: 18, max: 30 }, loot: [{ id: 'rootweaver_heart', chance: 1 }, { id: 'vitality_potion', chance: 0.35 }] },
+    // Heart guaranteed; no vitality-potion drop (2026-07-26 — vitality is
+    // permanent, kept to fixed placements only).
+    drops: { gold: { min: 18, max: 30 }, loot: [{ id: 'rootweaver_heart', chance: 1 }] },
     ensnare: true,
   },
 };
