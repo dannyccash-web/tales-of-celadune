@@ -258,11 +258,15 @@ export default {
   },
   // Dropped by a slain Rootweaver (2026-07-17). The Bramblekin Chief wants one
   // as proof for safe passage through his camp. A quest item — can't be sold.
+  // Dropped by a slain rootweaver. The Bramblekin Chief wants one as proof for
+  // safe passage — but it's NOT a quest item (2026-07-26, Danny): there's more
+  // than one in the game, so it's an ordinary tradeable item with a price.
   rootweaver_heart: {
     id: 'rootweaver_heart',
     name: 'Rootweaver Heart',
     image: 'assets/images/rootweaver_heart.png',
-    description: 'The dense, still-warm heartwood of a slain rootweaver. The Bramblekin Chief wanted proof of the deed.',
-    questItem: true,
+    description: 'The dense, still-warm heartwood of a slain rootweaver. Prized by hedge-witches and camp chiefs alike.',
+    questItem: false,
+    price: 20,
   },
 };

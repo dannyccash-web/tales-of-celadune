@@ -942,6 +942,27 @@ export class World {
     ctx.restore();
   }
 
+  // Soft warm radial light under the player — the torch's glow in a dark cave.
+  // Drawn additively so it brightens the ground, the player, and anything
+  // nearby, giving a "light travels with you" feel (2026-07-26).
+  drawPlayerGlow() {
+    const ctx = this.ctx;
+    const x = this.player.x;
+    const y = this.player.y - this.cameraY;
+    const R = 270;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    const g = ctx.createRadialGradient(x, y, 8, x, y, R);
+    g.addColorStop(0, 'rgba(255,224,168,0.50)');
+    g.addColorStop(0.45, 'rgba(255,196,120,0.20)');
+    g.addColorStop(1, 'rgba(255,170,90,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(x, y, R, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
   render() {
     const ctx = this.ctx;
 
@@ -980,6 +1001,11 @@ export class World {
       this.images['assets/images/Player_Overhead_1.png'],
       p.x, p.y, p.rotation, stepFlip,
     );
+
+    // Torch glow: a soft warm pool of light under the player in a dark scene
+    // (main.js sets this.playerGlow when a torch is equipped). Drawn additively
+    // over the world so the player + immediate area read as torch-lit.
+    if (this.playerGlow) this.drawPlayerGlow();
 
     // Campfire smoke and other code-drawn effects, above the world/characters
     for (const s of this.smokes) this.drawSmoke(s);

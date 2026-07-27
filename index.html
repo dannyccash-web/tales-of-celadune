@@ -24,6 +24,12 @@
     <!-- Layer 3: vignette, multiply blend, fixed to viewport -->
     <img id="vignette" src="assets/images/Vignette.jpg" alt="">
 
+    <!-- Layer 3.2: cave darkening (2026-07-26) — a 50% black multiply layer ABOVE
+         the vignette but BELOW labels + UI, so the world (map/player/enemies)
+         goes dark while the HUD and labels stay bright. Toggled .active by
+         main.js when in a `dark` scene without a torch equipped. -->
+    <div id="cave-dark"></div>
+
     <!-- Layer 3.5: world-space labels (building names, NPC names) drawn ABOVE
          the multiply vignette so they stay crisp and readable -->
     <canvas id="labels" width="1920" height="1080"></canvas>

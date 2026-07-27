@@ -31,8 +31,11 @@ export default {
   // Cave ambience (2026-07-26): `music: 'cave'` plays celadune_cave.mp3 while
   // here; `battleBackground` overrides each enemy's own backdrop so fights in
   // the cave use the cave backdrop (not, e.g., the cragclaw's beach one).
+  // `dark: true` means the cave is pitch-dark unless the player has a torch
+  // equipped (main.js's #cave-dark overlay + player glow).
   music: 'cave',
   battleBackground: 'assets/images/cave_background.jpg',
+  dark: true,
 
   obstacles: [
     { x: 0, y: 0, w: 1320, h: 20 },

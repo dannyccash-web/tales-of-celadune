@@ -315,6 +315,7 @@ async function boot() {
   try { await document.fonts.load('22px MedievalSharp'); } catch { /* fallback font */ }
 
   const canvas = document.getElementById('game');
+  const caveDarkEl = document.getElementById('cave-dark'); // darkening overlay for torchless dark scenes
 
   // One World instance PER SCENE, created on first visit and kept for the
   // whole session — so per-scene state (battle `defeated` flags, collected
@@ -2365,6 +2366,15 @@ async function boot() {
     world.campEntered = campEntered;
     world.campHostile = campHostile;
     world.playerSpeedMult = moveMultForSpeed(stats.speed);
+    // Cave darkness (2026-07-26): a `dark` scene is pitch-dark UNLESS the player
+    // has a torch equipped (`equipment.item === 'torch'`). Torch → lift the
+    // darkening + draw a warm glow under the player (world.playerGlow, on the
+    // world canvas). No torch → the #cave-dark overlay (above the vignette,
+    // below labels/UI, so UI+labels stay bright) darkens the whole world.
+    const darkScene = state.started && !!world.scene.dark;
+    const hasTorch = equipment.item === 'torch';
+    if (caveDarkEl) caveDarkEl.classList.toggle('active', darkScene && !hasTorch);
+    world.playerGlow = darkScene && hasTorch;
     world.update(dt, input, locked, modalLock);
     world.render();
 

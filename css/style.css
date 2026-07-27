@@ -93,6 +93,23 @@ html, body {
   pointer-events: none;
 }
 
+/* ---- Layer 3.2: cave darkening (2026-07-26) ---- */
+/* 50% black, multiply-blended, over the world+vignette but under labels/UI.
+   Toggled by main.js in a `dark` scene when no torch is equipped. */
+#cave-dark {
+  position: absolute;
+  left: -4px;
+  top: -4px;
+  width: 1928px;
+  height: 1088px;
+  background: #000;
+  opacity: 0.5;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+  display: none;
+}
+#cave-dark.active { display: block; }
+
 /* ---- Layer 4: UI ---- */
 #ui {
   position: absolute;
