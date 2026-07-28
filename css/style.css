@@ -89,7 +89,7 @@ html, body {
   width: 1928px;
   height: 1088px;
   mix-blend-mode: multiply;
-  opacity: 0.5;   /* softened 0.8 -> 0.5 on 2026-07-22 (Danny) */
+  opacity: 0.7;   /* 0.8 -> 0.5 (2026-07-22) -> 0.7 (2026-07-28, Danny — deepen so the battle layout reads better) */
   pointer-events: none;
 }
 
@@ -1187,57 +1187,52 @@ html, body {
 #battle-message .dmg-pos { color: #6fbf73; }
 #battle-message .dmg-neg { color: #e04138; }
 
-/* Enemy row: each slot is an equal column; the portrait fills a cropping
-   window (object-fit cover, top-anchored, so big art crops at the bottom
-   like the mockup). Per Danny's layout (round 2 feedback 2026-07-09): the
-   window is a fixed 443px tall, bottom-anchored inside the box, so its top
-   extends up OUT of the frame — the box doesn't clip, and children paint
-   over the border, so the art visibly rises past the top frame lines like
-   the mockup. Width stays fluid (100% of the slot) since enemy count
-   varies. The health bar sits fully on the art near its bottom (art runs a
-   little past below it), name under both. */
+/* Enemy row (PDF layout, 2026-07-28): each enemy is a fixed 400x580 art
+   container with its name + HP bar stacked ABOVE it, and NO frame (the
+   enemies sit straight on the backdrop). The art is scaled to FILL the
+   container (object-fit cover) and bottom-justified. Containers are centered
+   as a group with 73px gaps, which lands the outer edges ~50px from the
+   screen sides at the 4-enemy max and keeps 1-3 enemies nicely centered. */
 #battle-enemies {
-  top: 170px;
-  height: 415px;
+  position: absolute;
+  top: 88px;
+  left: 0;
+  right: 0;
+  height: 652px;
   display: flex;
-  gap: 10px;
-  padding: 6px;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 73px;
 }
 
 .enemy-slot {
   position: relative;
-  flex: 1 1 0;
-  min-width: 0;
+  flex: 0 0 400px;
+  width: 400px;
+  height: 652px;
 }
 
-.enemy-portrait-window {
+.enemy-name {
   position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100%;
-  max-width: 400px; /* Danny's layout: 400x443 at 3 enemies (slots are ~490,
-                       so the cap is what applies there, leaving the mockup's
-                       dark gaps between portraits); 4+ enemies shrink the
-                       slots below 400 and width goes fluid instead */
-  bottom: 45px;
-  height: 443px; /* > box height -> top pokes ~70px above the frame */
+  top: 0;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-family: var(--font-medieval);
+  font-size: 30px;
+  color: var(--text);
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9);
+  white-space: nowrap;
   overflow: hidden;
-}
-
-.enemy-portrait {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: top center;
+  text-overflow: ellipsis;
 }
 
 .enemy-health-bar {
   position: absolute;
-  bottom: 58px; /* bar is 26px tall -> spans 58-84px, fully overlaying the
-                   portrait (art bottom is at 45px, running ~13px below it) */
+  top: 42px;
   left: 50%;
   transform: translateX(-50%);
-  width: 320px;
+  width: 300px;
 }
 
 /* Numeric HP centered on the bar itself ("7/10" overlaid, per the mockup). */
@@ -1255,97 +1250,177 @@ html, body {
   pointer-events: none;
 }
 
-.enemy-name {
+/* The 400x580 art container. Kept centered via left:50% + translateX(-50%)
+   (NOT flex-centering) so the hit/lunge/dissolve keyframes — which all take
+   translateX(-50%) as their baseline — keep working unchanged. */
+.enemy-portrait-window {
   position: absolute;
-  bottom: 14px;
-  left: 0;
-  right: 0;
-  text-align: center;
-  font-family: var(--font-meta);
-  font-size: 28px;
-  color: var(--text-dim);
+  top: 72px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 400px;
+  height: 580px;
+  overflow: hidden;
+}
+
+.enemy-portrait {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: bottom center; /* fill + bottom-justify */
 }
 
 /* Target-select highlight (battleKey() 'target' mode): silhouette glow
    (enemy art is transparent-background, so drop-shadow hugs the figure) +
-   the name going bright white, per the mockup's middle kobold. */
+   the name going bright white, per the mockup's middle enemy. */
 .enemy-slot.targeted .enemy-portrait {
   filter: drop-shadow(0 0 14px var(--gold-bright));
 }
 
-.enemy-slot.targeted .enemy-name { color: #fff; }
+.enemy-slot.targeted .enemy-name { color: var(--gold-bright); }
 
 .enemy-slot.defeated { opacity: 0.35; }
 
-/* Action row: five columns, each label-over-diamond-over-sublabel. The
-   diamond is a rotated square, so its layout box (74px) is narrower than
-   its visual point-to-point extent (~105px) — the 30px/26px margins around
-   it read visually as ~15px/11px. */
+/* Action row (PDF layout, 2026-07-28): a 1520x150 gold frame (the .dialog-box
+   double frame) whose five circle icons STRADDLE its top edge, evenly spaced
+   as flex:1 columns. Each column has a name label below its circle and a detail
+   card that floats above the FOCUSED circle. A gold diamond + vertical divider
+   sits between each pair of circles. overflow:visible so the circles + cards
+   paint above the frame. */
 #battle-actions {
-  top: 615px;
-  height: 230px;
+  top: 800px;
+  left: 200px;
+  right: 200px;      /* 1920 - 2*200 = 1520 wide, centered */
+  height: 150px;
   display: flex;
-  align-items: center;
-  justify-content: space-evenly;
-  padding: 0 60px;
+  align-items: stretch;
+  overflow: visible;
 }
 
 .battle-action {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  position: relative;
+  flex: 1 1 0;
   cursor: pointer;
-  width: 240px;
 }
 
-.battle-action-label {
-  font-family: var(--font-meta);
-  font-size: 30px;
-  color: var(--text);
-  white-space: nowrap;
+/* Divider between columns (skip the first). The column's left edge is exactly
+   the midpoint between two adjacent circle centers, so this lands centered
+   between the circles. */
+.battle-action:not(:first-child)::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  background: linear-gradient(180deg, var(--gold-bright), var(--gold-dark));
+  opacity: 0.65;
+}
+/* small gold diamond sitting on the frame's top border at each divider */
+.battle-action:not(:first-child)::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 13px;
+  height: 13px;
+  transform: translate(-50%, -50%) rotate(45deg);
+  background: linear-gradient(135deg, var(--gold-bright), var(--gold-dark));
 }
 
+/* Icon circle centered ON the frame's top border (straddling it). */
 .battle-action-icon {
-  width: 74px;
-  height: 74px;
-  margin: 30px 0 26px;
-  border: 2px solid;
-  /* same gradient direction as the topbar diamonds: bright corner up-right */
-  border-image: linear-gradient(to top, var(--gold-dark), var(--gold-bright)) 1;
-  transform: rotate(45deg);
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 38%, #241a10, #0c0805 82%);
+  border: 2px solid var(--gold-dark);
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: width 0.13s ease, height 0.13s ease, border-color 0.13s ease, box-shadow 0.13s ease;
 }
 
-/* The equipped item's art, counter-rotated back upright inside the diamond.
-   Hidden (ui.showBattleActions) when the slot has nothing to show. */
-.battle-action-img {
-  width: 58px;
-  height: 58px;
-  object-fit: contain;
-  transform: rotate(-45deg);
-}
-
+/* Selected: circle grows 70 -> 100 and its ring brightens. */
 .battle-action.focused .battle-action-icon {
-  border-image: linear-gradient(180deg, var(--gold-bright), var(--gold-bright)) 1;
-  box-shadow: 0 0 12px rgba(238, 214, 148, 0.55);
+  width: 100px;
+  height: 100px;
+  border-color: var(--gold-bright);
+  box-shadow: 0 0 16px rgba(238, 214, 148, 0.55);
 }
 
-.battle-action.focused .battle-action-label { color: var(--gold-bright); }
+/* The equipped item/weapon art (or the fist / run icon), inside the circle.
+   Hidden by ui.showBattleActions when the slot has nothing to show. */
+.battle-action-img {
+  width: 58%;
+  height: 58%;
+  object-fit: contain;
+}
 
-.battle-action-sub {
-  font-family: var(--font-lato);
-  font-weight: 600;
-  font-size: 13px;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  color: var(--text-dim);
-  min-height: 16px;
+/* Name label below the circle, inside the frame. Beige default, WHITE when
+   the action is selected. */
+.battle-action-label {
+  position: absolute;
+  top: 86px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-family: var(--font-medieval);
+  font-size: 30px;
+  color: var(--role-gold); /* beige */
   white-space: nowrap;
 }
 
-.battle-action.disabled { opacity: 0.4; }
+.battle-action.focused .battle-action-label { color: var(--text); } /* white */
+
+.battle-action.disabled { cursor: default; }
+
+/* Detail card floating above the FOCUSED action's circle: weapon/item name,
+   a short description, and a stat line. ui.js populates + un-hides it only on
+   the focused action; blank (unequipped) actions and Flee never show one. */
+.battle-action-detail {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 206px; /* card bottom sits just above the grown (100px) circle */
+  width: 300px;
+  background: rgba(8, 6, 4, 0.92);
+  border: 1px solid var(--gold-dark);
+  padding: 12px 16px;
+  text-align: left;
+  pointer-events: none;
+}
+
+.ba-detail-name {
+  font-family: var(--font-medieval);
+  font-size: 20px;
+  color: var(--role-gold);
+  margin-bottom: 5px;
+}
+
+.ba-detail-desc {
+  font-family: var(--font-meta);
+  font-size: 14px;
+  color: var(--text-dim);
+  line-height: 1.32;
+  margin-bottom: 9px;
+}
+
+.ba-detail-stats {
+  font-family: var(--font-lato);
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--role-gold);
+}
+
+.ba-detail-stats .stat-pos { color: #6fbf73; }
+.ba-detail-stats .stat-neg { color: #e04138; }
 
 /* ---- Battle feel / "juice" (2026-07-21) ----
    All triggered by ui.js toggling a class on the freshly-rendered enemy slot

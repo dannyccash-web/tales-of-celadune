@@ -1805,19 +1805,22 @@ async function boot() {
   // 2026-07-10 spec), Use spends it only if the equipped item was actually
   // consumed, Flee ends the battle. Every path that *doesn't* spend the
   // turn must re-show the action menu — see showPlayerActions()'s comment.
-  // (Magic was removed from the row entirely 2026-07-10 — no magic system
-  // exists yet; restore its div in index.html + a slot config below when it
-  // does.)
+  // (Row is Main Hand / Off Hand / Magic / Item / Flee as of 2026-07-28 — Magic
+  // is a blank, skipped placeholder until a spell system exists.)
   function handleBattleAction(action) {
     if (action === 'mainhand' || action === 'offhand') {
       pendingAttackSlot = action;
       if (!ui.startTargeting()) showPlayerActions(); // no alive target — hand control back
       return;
     }
-    if (action === 'use') {
-      // An offensive consumable (torch — has useDamage) is aimed at an enemy,
-      // so it enters targeting like a weapon; a restorative one (potion) is
-      // used on yourself immediately.
+    // Magic is a placeholder for now (no spell system) — it's a disabled/blank
+    // slot the UI already skips, but guard defensively so a stray select can't
+    // strand the action menu (re-show it, spending no turn).
+    if (action === 'magic') { showPlayerActions(); return; }
+    if (action === 'item') {
+      // An offensive consumable (has useDamage) is aimed at an enemy, so it
+      // enters targeting like a weapon; a restorative one (potion) is used on
+      // yourself immediately.
       const def = equipment.item && ITEMS[equipment.item];
       if (def && def.useDamage != null) {
         if (equippedItemCount() <= 0) { ui.setBattleMessage('You have nothing readied to use.'); showPlayerActions(); return; }
@@ -1898,18 +1901,47 @@ async function boot() {
   // slot showing whatever Items-category consumable is equipped to the
   // 'item' slot, and a runner icon on Flee. Only Use can be disabled
   // (nothing equipped, or the equipped item ran out — keyboard skips it).
+  // Build the floating detail card for a weapon slot (null def = unarmed).
+  const fmtBonus = (n) => (n > 0 ? `+${n}` : `${n}`);
+  function weaponDetailCard(def) {
+    if (!def) {
+      return { name: 'Unarmed', desc: 'Bare fists — better than nothing.', stats: [{ label: 'Damage', value: '1' }] };
+    }
+    const stats = [];
+    if (def.damage != null) {
+      const dv = typeof def.damage === 'object' ? `${def.damage.min}-${def.damage.max}` : `${def.damage}`;
+      stats.push({ label: 'Damage', value: dv });
+    }
+    if (def.attackBonus) stats.push({ label: 'Atk', value: fmtBonus(def.attackBonus), tone: def.attackBonus > 0 ? 'pos' : 'neg' });
+    if (def.defenseBonus) stats.push({ label: 'Def', value: fmtBonus(def.defenseBonus), tone: def.defenseBonus > 0 ? 'pos' : 'neg' });
+    if (def.speedBonus) stats.push({ label: 'Spd', value: fmtBonus(def.speedBonus), tone: def.speedBonus > 0 ? 'pos' : 'neg' });
+    if (def.burn) stats.push({ label: 'Burn', value: `${def.burn}`, tone: 'pos' });
+    return { name: def.name, desc: def.description || '', stats };
+  }
+  // Detail card for the equipped consumable in the Item slot.
+  function itemDetailCard(def, count) {
+    const stats = [];
+    if (def.heal) stats.push({ label: 'Heals', value: `${def.heal}`, tone: 'pos' });
+    if (def.restoreMagic) stats.push({ label: 'Magic', value: `+${def.restoreMagic}`, tone: 'pos' });
+    stats.push({ label: 'Held', value: `${count}` });
+    return { name: def.name, desc: def.description || '', stats };
+  }
+
   function showPlayerActions() {
     const mainhand = equipment.mainhand && ITEMS[equipment.mainhand];
     const offhand = equipment.offhand && ITEMS[equipment.offhand];
     const useItem = equipment.item && ITEMS[equipment.item];
     const useCount = equippedItemCount();
     ui.showBattleActions({
-      mainhand: { sub: mainhand ? mainhand.name : 'Unarmed', image: mainhand?.image || 'assets/images/icon_fist.svg' },
-      offhand: { sub: offhand ? offhand.name : 'Unarmed', image: offhand?.image || 'assets/images/icon_fist.svg' },
-      use: useItem
-        ? { sub: `${useItem.name} (${useCount})`, image: useItem.image, disabled: useCount === 0 }
-        : { sub: 'Nothing', disabled: true },
-      flee: { sub: '', image: 'assets/images/icon_run.svg' },
+      mainhand: { image: mainhand?.image || 'assets/images/icon_fist.svg', detail: weaponDetailCard(mainhand) },
+      offhand: { image: offhand?.image || 'assets/images/icon_fist.svg', detail: weaponDetailCard(offhand) },
+      // No magic system yet: a blank circle that's skipped when toggling
+      // (2026-07-28 — re-added to the row per Danny's mockup as a placeholder).
+      magic: { disabled: true },
+      item: useItem
+        ? { image: useItem.image, disabled: useCount === 0, detail: itemDetailCard(useItem, useCount) }
+        : { disabled: true },
+      flee: { image: 'assets/images/icon_run.svg' },
     });
   }
 

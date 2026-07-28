@@ -1614,7 +1614,38 @@ function actionEls() {
 }
 
 function refreshActionFocus() {
-  actionEls().forEach((el, i) => el.classList.toggle('focused', battleUiState.mode === 'action' && i === battleUiState.actionIndex));
+  actionEls().forEach((el, i) => {
+    const focused = battleUiState.mode === 'action' && i === battleUiState.actionIndex;
+    el.classList.toggle('focused', focused);
+    // The detail card shows ONLY on the focused action, and only if that
+    // action actually has detail data (a weapon/item — not Flee or a blank slot).
+    const card = el.querySelector('.battle-action-detail');
+    if (card) card.classList.toggle('hidden', !(focused && card.dataset.has === '1'));
+  });
+}
+
+// Fill (or clear) one action's floating detail card from a { name, desc, stats }
+// object. stats: [{ label, value, tone? }] — tone 'pos'/'neg' colors the value
+// green/red (per the mockup's "+1" / "-5"). Visibility is left to
+// refreshActionFocus (only the focused card is shown).
+function populateActionDetail(el, detail) {
+  const card = el.querySelector('.battle-action-detail');
+  if (!card) return;
+  if (!detail) { card.dataset.has = ''; card.classList.add('hidden'); return; }
+  card.dataset.has = '1';
+  card.querySelector('.ba-detail-name').textContent = detail.name || '';
+  card.querySelector('.ba-detail-desc').textContent = detail.desc || '';
+  const stats = card.querySelector('.ba-detail-stats');
+  stats.textContent = '';
+  (detail.stats || []).forEach((s, i) => {
+    if (i) stats.appendChild(document.createTextNode(' ')); // en-space between stats
+    stats.appendChild(document.createTextNode(`${s.label} `));
+    const val = document.createElement('span');
+    val.textContent = s.value;
+    if (s.tone === 'pos') val.className = 'stat-pos';
+    else if (s.tone === 'neg') val.className = 'stat-neg';
+    stats.appendChild(val);
+  });
 }
 
 function refreshTargetFocus() {
@@ -1626,18 +1657,18 @@ function refreshTargetFocus() {
 }
 
 // Called by main.js's runQueue() whenever it's actually the player's turn —
-// fills every action slot (item art in the diamond, sub-label under it,
-// disabled state) and hands the action row keyboard focus. `slots` is keyed
-// by data-action: { mainhand: {sub, image}, offhand: {sub, image, disabled},
-// magic: {sub}, use: {sub, image, disabled}, flee: {sub} } — any field
-// omitted clears/enables that part.
+// fills every action slot (icon art in the circle, disabled state, detail
+// card) and hands the action row keyboard focus. `slots` is keyed by
+// data-action: { mainhand: {image, detail}, offhand: {image, detail},
+// magic: {disabled}, item: {image, disabled, detail}, flee: {image} }. A
+// slot with no image renders a blank circle; a disabled slot is skipped when
+// toggling. `detail` (optional) fills the floating card shown while focused.
 export function showBattleActions(slots) {
   battleUiState.mode = 'action';
   battleUiState.actionIndex = 0; // Main Hand — never disabled (unarmed still works)
   actionEls().forEach((el) => {
     const cfg = slots[el.dataset.action] || {};
     el.classList.toggle('disabled', !!cfg.disabled);
-    el.querySelector('.battle-action-sub').textContent = cfg.sub || ' ';
     const img = el.querySelector('.battle-action-img');
     if (cfg.image) {
       img.src = cfg.image;
@@ -1646,7 +1677,11 @@ export function showBattleActions(slots) {
       img.classList.add('hidden');
       img.removeAttribute('src');
     }
+    populateActionDetail(el, cfg.detail);
   });
+  // Should never start on a disabled slot (Main Hand is always enabled), but
+  // guard anyway so focus can't land on a blank circle.
+  if (actionEls()[battleUiState.actionIndex]?.classList.contains('disabled')) cycleAction(1);
   refreshActionFocus();
 }
 

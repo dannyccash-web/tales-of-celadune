@@ -318,32 +318,41 @@
             <p id="battle-message">Battle status message in this area.</p>
           </div>
         </div>
-        <div class="dialog-box" id="battle-enemies"></div>
-        <!-- Four action slots (Magic removed 2026-07-10 per Danny — no magic
-             system exists yet; re-add its div here + a slot config in
-             main.js's showPlayerActions() when it does). Empty hand slots
-             show a fist icon + "Unarmed" and still attack (1 dmg); Use shows
-             whatever Items-category item is equipped to the 'item' slot. -->
+        <!-- Enemies sit directly on the backdrop (no frame), matching the PDF. -->
+        <div id="battle-enemies"></div>
+        <!-- Action row (reworked 2026-07-28 to the PDF mockup): a 1520x150 gold
+             frame whose five circle icons straddle its top edge, a diamond +
+             vertical divider between each. Main/Off Hand default to the fist
+             (unarmed, still attacks); Magic + Item render a blank circle and are
+             SKIPPED when toggling until something's equipped. The focused
+             action's detail card floats above its circle (weapon/item name +
+             description + stat line). Icon circle is 70px, grows to 100px on
+             selection; the label goes beige -> white when selected. -->
         <div class="dialog-box" id="battle-actions">
           <div class="battle-action" data-action="mainhand">
-            <span class="battle-action-label">Main Hand</span>
+            <div class="battle-action-detail hidden"><div class="ba-detail-name"></div><div class="ba-detail-desc"></div><div class="ba-detail-stats"></div></div>
             <div class="battle-action-icon"><img class="battle-action-img hidden" alt=""></div>
-            <span class="battle-action-sub">Unarmed</span>
+            <span class="battle-action-label">Main Hand</span>
           </div>
           <div class="battle-action" data-action="offhand">
+            <div class="battle-action-detail hidden"><div class="ba-detail-name"></div><div class="ba-detail-desc"></div><div class="ba-detail-stats"></div></div>
+            <div class="battle-action-icon"><img class="battle-action-img hidden" alt=""></div>
             <span class="battle-action-label">Off Hand</span>
-            <div class="battle-action-icon"><img class="battle-action-img hidden" alt=""></div>
-            <span class="battle-action-sub">Unarmed</span>
           </div>
-          <div class="battle-action" data-action="use">
-            <span class="battle-action-label">Use</span>
+          <div class="battle-action" data-action="magic">
+            <div class="battle-action-detail hidden"><div class="ba-detail-name"></div><div class="ba-detail-desc"></div><div class="ba-detail-stats"></div></div>
             <div class="battle-action-icon"><img class="battle-action-img hidden" alt=""></div>
-            <span class="battle-action-sub">Nothing</span>
+            <span class="battle-action-label">Magic</span>
+          </div>
+          <div class="battle-action" data-action="item">
+            <div class="battle-action-detail hidden"><div class="ba-detail-name"></div><div class="ba-detail-desc"></div><div class="ba-detail-stats"></div></div>
+            <div class="battle-action-icon"><img class="battle-action-img hidden" alt=""></div>
+            <span class="battle-action-label">Item</span>
           </div>
           <div class="battle-action" data-action="flee">
-            <span class="battle-action-label">Flee</span>
+            <div class="battle-action-detail hidden"><div class="ba-detail-name"></div><div class="ba-detail-desc"></div><div class="ba-detail-stats"></div></div>
             <div class="battle-action-icon"><img class="battle-action-img hidden" alt=""></div>
-            <span class="battle-action-sub">&nbsp;</span>
+            <span class="battle-action-label">Flee</span>
           </div>
         </div>
       </div>
