@@ -186,7 +186,9 @@ export default {
 
   // Proximity label (same system as D3's building labels / D4's cave label).
   buildings: [
-    { label: 'Shipwreck', x: 380, y: 820, r: 220 },
+    // No standalone 'Shipwreck' proximity label here (2026-07-28): the wreck is
+    // interactable (search it), so its single label rides on that interactable
+    // below — one label per thing, shown exactly when you can press space.
     { label: 'Calder’s Hut', x: 1440, y: 350, r: 180 },
   ],
 
@@ -210,7 +212,8 @@ export default {
       x: 424, y: 949,
       range: 250,
       boat: true,
-      label: 'Search the wreck',
+      label: 'Shipwreck', // single label for the wreck (2026-07-28) — was a
+                          // separate 'Shipwreck' building label + 'Search the wreck'
       emptyMessage: 'You’ve picked the old wreck clean.',
     },
     // Cave entrance (2026-07-26) — interact to enter the D1B cave. `cave` names
@@ -254,9 +257,10 @@ export default {
       locked: true,
       gold: 18,
       items: [
+        // Torch moved to Emeric's general store (2026-07-28, Danny) — buyable
+        // directly there now, so it's no longer in this chest.
         { id: 'bread', qty: 2 },
         { id: 'health_potion', qty: 1 },
-        { id: 'torch', qty: 1 },
         { id: 'leather_boots', qty: 1 },
       ],
     },

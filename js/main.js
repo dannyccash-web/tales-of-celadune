@@ -550,7 +550,7 @@ async function boot() {
         inventory: inventory.map((e) => ({ ...e })),
         equipment: { ...equipment },
         quests: quests.map((q) => ({ ...q })),
-        flags: { campQuestDone, campHostile, gafferHappy, wellCoinThrown, vegetableDeliveredToTavern, calderToldStory, calderToldDangers },
+        flags: { campQuestDone, campHostile, gafferHappy, wellCoinThrown, wellDrinks, vegetableDeliveredToTavern, calderToldStory, calderToldDangers },
         caveReturn, // where to exit to if saved inside a cave/dungeon
         worlds: snapshotWorlds(),
       };
@@ -580,7 +580,7 @@ async function boot() {
     quests.length = 0;
     campTollPaid = false; campEntered = false; campQuestDone = false;
     campHostile = false; campEntryGate = null;
-    gafferHappy = false; wellCoinThrown = false; vegetableDeliveredToTavern = false;
+    gafferHappy = false; wellCoinThrown = false; wellDrinks = 0; vegetableDeliveredToTavern = false;
     calderToldStory = false; calderToldDangers = false;
     caveReturn = null;
     for (const k of Object.keys(worlds)) delete worlds[k];
@@ -603,6 +603,7 @@ async function boot() {
     const f = data.flags || {};
     campQuestDone = !!f.campQuestDone; campHostile = !!f.campHostile;
     gafferHappy = !!f.gafferHappy; wellCoinThrown = !!f.wellCoinThrown;
+    wellDrinks = f.wellDrinks || 0;
     calderToldStory = !!f.calderToldStory; calderToldDangers = !!f.calderToldDangers;
     caveReturn = data.caveReturn || null;
     vegetableDeliveredToTavern = !!f.vegetableDeliveredToTavern;
@@ -751,9 +752,13 @@ async function boot() {
   let creatureFleeHintShown = false;
 
   // The D3 well's coin-for-luck offer is one-time per session (like gafferHappy,
-  // not persisted). Drinking from the well is always available; tossing a coin
-  // for +1 Luck can only happen once. See openWellDialog().
+  // not persisted). Tossing a coin for +1 Luck can only happen once. See
+  // openWellDialog().
   let wellCoinThrown = false;
+  // Drinking is limited: the well runs dry after WELL_MAX_DRINKS drinks
+  // (2026-07-28, Danny). Persisted in the save flags so the total carries across
+  // sessions ("after drinking 5 times in the game").
+  let wellDrinks = 0;
 
   // A response can carry an optional effect (dialog.responseEffects, parallel
   // to dialog.responses) — damage (Gaffer's bite), a plain toast message,
@@ -773,29 +778,53 @@ async function boot() {
       ui.updateDialogContent(effect.goBack);
       return true;
     }
+    // Temple blessing (2026-07-28): 1 gold for +1 HP. Keeps the dialog open with
+    // a Go-back/Leave follow-up so the player can be blessed again. Free (and
+    // skipped) if already at full health; blocked with the denied sound if broke.
+    if (effect.blessing) {
+      const prev = { line: npc.dialog.line, responses: npc.dialog.responses, responseEffects: npc.dialog.responseEffects };
+      const backTo = { responses: ['Go back.', 'Leave.'], responseEffects: [{ goBack: prev }, null] };
+      if (stats.health >= stats.healthMax) {
+        ui.updateDialogContent({ line: 'Elowen studies you a moment, then smiles. You carry no wound today, traveler — keep your coin. Go steady, and come back if the road bloodies you.', ...backTo });
+        return true;
+      }
+      if (stats.gold < 1) {
+        audio.sfx(audio.SFX.denied);
+        ui.updateDialogContent({ line: 'A blessing asks only a single coin for the shrine, traveler — and your purse is bare. Come back when fortune allows; the doors are always open.', ...backTo });
+        return true;
+      }
+      spendGold(1); // deducts 1 gold + coin SFX + autosave
+      healPlayer(1);
+      ui.updateDialogContent({ line: 'Elowen presses a cool palm to your brow and murmurs a soft prayer. A gentle warmth spreads through you, and your hurts ease. (Restored 1 HP.)', ...backTo });
+      return true;
+    }
     // ---- Calder Rusk's keepsake-quest flow (2026-07-25) ----
     // Story / dangers each set a flag (so the quest offer can unlock once both
     // are heard) and reply with a "Go back." that REBUILDS his menu (calderMenu)
     // rather than restoring a stale snapshot, so the newly-available offer shows.
-    if (effect.tellStory || effect.tellDangers) {
-      if (effect.tellStory) calderToldStory = true; else calderToldDangers = true;
+    if (effect.tellStory) {
+      calderToldStory = true;
       requestAutosave(); // persist conversation progress
       ui.updateDialogContent({
-        line: effect.tellStory ? CALDER_STORY : CALDER_DANGERS,
+        line: CALDER_STORY,
         responses: ['Go back.', 'Leave.'],
         responseEffects: [{ calderMenu: true }, null],
       });
       return true;
     }
-    if (effect.calderMenu) { ui.updateDialogContent(buildCalderDialog()); return true; }
-    if (effect.offerKeepsake) {
+    if (effect.tellDangers) {
+      calderToldDangers = true;
+      requestAutosave();
+      // Dangers roll straight into his request — accept or decline right here,
+      // so the player can't leave the conversation without seeing the offer.
       ui.updateDialogContent({
-        line: CALDER_OFFER,
+        line: CALDER_DANGERS,
         responses: ['I’ll bring it back to you.', 'Not just now.'],
         responseEffects: [{ acceptKeepsake: true }, { calderMenu: true }],
       });
       return true;
     }
+    if (effect.calderMenu) { ui.updateDialogContent(buildCalderDialog()); return true; }
     if (effect.acceptKeepsake) {
       startQuest('calder_keepsake');
       ui.updateDialogContent({
@@ -807,6 +836,9 @@ async function boot() {
     if (effect.giveCalderPainting) {
       removeItem('marisol_rusk_painting', 1, true);
       ui.showGaveItem(ITEMS.marisol_rusk_painting);
+      // Complete the quest even if it was never formally started — the player
+      // may have found the portrait before asking Calder about it (2026-07-28).
+      if (questStatus('calder_keepsake') !== 'active') startQuest('calder_keepsake');
       completeQuest('calder_keepsake');
       requestAutosave();
       // No coin to give — instead he points the player to his stashed gold in
@@ -1471,6 +1503,25 @@ async function boot() {
     return { ...dialog, responses, responseEffects: effects };
   }
 
+  // The temple priestess (Elowen) offers a blessing service: 1 gold for +1 HP
+  // (2026-07-28, Danny). Injected just before the dialog's trailing close/decline
+  // response, the same way chatter is — but its effect is a real transaction
+  // ({ blessing: true }) rather than a flavor reply. It attaches to her ordinary
+  // dialog AND her pre-quest bread offer (last response 'Not just now.'), so the
+  // blessing is always available at the temple; it's deliberately NOT added to
+  // her quest turn-in screen (a reward choice, neither of those closers).
+  const BLESSING_CLOSERS = ['Leave.', 'Not just now.'];
+  function withBlessing(dialog, npc) {
+    if (npc.id !== 'elowen' || !dialog.responses?.length) return dialog;
+    if (!BLESSING_CLOSERS.includes(dialog.responses[dialog.responses.length - 1])) return dialog;
+    const responses = [...dialog.responses];
+    const effects = dialog.responseEffects ? [...dialog.responseEffects] : responses.map(() => null);
+    const at = Math.max(0, responses.length - 1);
+    responses.splice(at, 0, 'Receive a blessing. (1 gold)');
+    effects.splice(at, 0, { blessing: true });
+    return { ...dialog, responses, responseEffects: effects };
+  }
+
   function openVendorGrid(npcArg, mode) {
     // openNpcDialog passes a shallow COPY of the npc (`{ ...npc, dialog }`), so
     // mutating its gold wouldn't stick. Resolve the live world instance by id
@@ -1567,39 +1618,41 @@ async function boot() {
   // wreck). While it's active he asks after it — and if the player is carrying
   // the portrait, offers to turn it in (completes the quest + a gold thanks).
   const CALDER_STORY = 'Calder Rusk — captain of the Gull’s Regret. She’s that broken-backed hull rotting out on the sand now. We ran her aground in a storm, a black night with waves like moving hills. My crew lived through it… and then they turned on their captain. Split the hold, took their shares of the loot, and rowed north to that little fishing village to play at being honest men. Left me to the gulls. So I stayed. Salvaged what timber the sea hadn’t swallowed, raised this hut plank by plank, and hid away the gold they never got their claws on.';
-  const CALDER_DANGERS = 'Aye — and it’s the whole reason I’m marooned up here like a barnacle. The beach crawls with cragclaws: snapping, scuttling brutes that put their heads down and charge the moment they catch your scent. And there are miremen about too — things that heave up out of the muck without so much as a ripple of warning. Don’t go tangling with them half-armed, friend — if one comes at you and you’re not ready, put your back to it and RUN, and don’t stop till you’re well clear. Come back with good steel and a full purse of remedies, and then we’ll talk. Between the lot of them I can’t even reach my own buried gold, let alone leave.';
-  const CALDER_OFFER = 'There is one thing. Out in the wreck — my old cabin, if the sea’s left any of it — there’s something of mine. Worth more to me than every coin I ever buried, and I’ll not say more than that. I can’t get to it past those creatures. But you… bring it back to me and I’ll see you well rewarded. Will you do it?';
+  // Simplified 2026-07-28 (Danny): asking about the dangers describes the
+  // creatures AND rolls straight into his request, so the quest is offered on
+  // the spot — the player can't wander off without ever seeing it.
+  const CALDER_DANGERS = 'Aye, and it’s the very reason I’m marooned up here like a barnacle. The beach crawls with cragclaws — snapping, scuttling brutes that lower their heads and charge the moment they catch your scent. And there are miremen about too, things that heave up out of the muck without so much as a ripple of warning. Don’t go tangling with them half-armed — if one comes at you and you’re not ready, put your back to it and run. But listen — that’s where I could use you. Out in the wreck, in what’s left of the aft cabin, there’s something of mine. Worth more to me than every coin I ever buried, and I’ll say no more than that. I can’t get past those creatures to reach it — but you might. Bring it back to me, and you’ll have my deepest thanks. Will you do it?';
 
   function calderHasPainting() { return inventory.some((it) => it.id === 'marisol_rusk_painting'); }
 
   function buildCalderDialog() {
     const status = questStatus('calder_keepsake');
     if (status === 'completed') {
-      return { line: 'You gave an old wreck of a man his heart back, friend. The gold’s yours and my door’s always open. Fair winds to you.', responses: ['Leave.'] };
+      return { line: 'You gave an old wreck of a man his heart back, friend. My door’s always open — and the gold in that southern cave is yours, every coin. Fair winds to you.', responses: ['Leave.'] };
+    }
+    // Turning in the portrait works whether or not the quest was ever formally
+    // started (2026-07-28, Danny): if the player finds it before asking, his
+    // reaction is the same, and handing it over completes the quest all the same.
+    if (calderHasPainting()) {
+      return {
+        line: 'Hold on — that oilcloth bundle under your arm. Is that… let me see it. Please.',
+        responses: ['Give him the portrait.', 'Not yet.'],
+        responseEffects: [{ giveCalderPainting: true }, { followUp: 'Take your time. Just… mind it stays dry.', noBack: true }],
+      };
     }
     if (status === 'active') {
-      if (calderHasPainting()) {
-        return {
-          line: 'Hold on — that oilcloth bundle under your arm. Is that… let me see it. Please.',
-          responses: ['Give him the portrait.', 'Not yet.'],
-          responseEffects: [{ giveCalderPainting: true }, { followUp: 'Take your time. Just… mind it stays dry.', noBack: true }],
-        };
-      }
       return { line: 'Any luck out in the wreck? It’ll be in what’s left of the aft cabin. Watch yourself out there — those creatures don’t give ground.', responses: ['Leave.'] };
     }
-    // Pre-quest: story + dangers, and — once BOTH are heard — the quest offer.
-    const responses = ['Who are you?', 'Anything I should watch out for?'];
-    const responseEffects = [{ tellStory: true }, { tellDangers: true }];
-    if (calderToldStory && calderToldDangers) {
-      responses.push('You said the creatures keep you from something?');
-      responseEffects.push({ offerKeepsake: true });
-    }
-    responses.push('Leave.');
-    responseEffects.push(null);
-    const line = calderToldStory || calderToldDangers
+    // Pre-quest (status 'none', no painting yet): ask his story, or ask about
+    // the dangers — which leads straight into his request (accept/decline there).
+    const line = (calderToldStory || calderToldDangers)
       ? 'Back again? Good — the company does me good. What else is on your mind?'
       : 'Company! Now there’s a tide I didn’t expect. Come in off the sand, friend — mind the driftwood. It’s been a long stretch since a face washed up here that wasn’t a crab’s. Ask what you like.';
-    return { line, responses, responseEffects };
+    return {
+      line,
+      responses: ['Who are you?', 'Anything I should watch out for?', 'Leave.'],
+      responseEffects: [{ tellStory: true }, { tellDangers: true }, null],
+    };
   }
 
   // Every NPC dialog opens through here so the per-character voice clip
@@ -1621,7 +1674,7 @@ async function boot() {
     else if (npc.id === 'bramblekin_chief') dialog = buildChiefDialog();
     else if (npc.bramblekin) dialog = buildBramblekinDialog(npc);
     else if (npc.vendor) dialog = buildVendorDialog(npc); // adds its own chatter
-    else dialog = withChatter(resolveNpcDialog(npc, isQuestReady), npc);
+    else dialog = withBlessing(withChatter(resolveNpcDialog(npc, isQuestReady), npc), npc);
     // Any Bramblekin (guards or Chief) parley shows the camp backdrop (2026-07-22).
     const background = (npc.bramblekin || npc.id === 'bramblekin_chief') ? BRAMBLEKIN_BG : npc.background;
     ui.openDialog({ ...npc, dialog, background }, onClose, applyResponseEffect);
@@ -2122,27 +2175,42 @@ async function boot() {
   // empty purse plays the denied sound and leaves the offer standing.
   const WELL_LINE = 'The old well sits cool and still, its water dark and deep beneath the mossy stones.';
   const WELL_COIN_COST = 1;
+  const WELL_MAX_DRINKS = 5; // the well runs dry after this many drinks (2026-07-28)
   function openWellDialog() {
     const buildActs = () => {
-      const responses = ['Take a drink.'];
-      const acts = ['drink'];
+      const responses = [];
+      const acts = [];
+      // Drinking is offered only until the well runs dry.
+      if (wellDrinks < WELL_MAX_DRINKS) { responses.push('Take a drink.'); acts.push('drink'); }
       if (!wellCoinThrown) { responses.push('Throw a coin in.'); acts.push('coin'); }
       responses.push('Leave.'); acts.push('leave');
       return { responses, acts };
     };
     let { responses, acts } = buildActs();
+    const dry = wellDrinks >= WELL_MAX_DRINKS;
+    const openingLine = dry
+      ? 'The old well has run dry — nothing below but damp stones and shadow.'
+      : WELL_LINE;
     const view = {
       id: 'well', name: 'Well', role: '',
       portrait: 'assets/images/Water well.png',
-      dialog: { line: WELL_LINE, responses },
+      dialog: { line: openingLine, responses },
     };
     ui.openDialog(view, null, (v, index) => {
       const act = acts[index];
       if (act === 'drink') {
         const healed = healPlayer(1);
-        const line = healed > 0
+        wellDrinks += 1;
+        requestAutosave(); // persist the running drink count
+        const wentDry = wellDrinks >= WELL_MAX_DRINKS;
+        let line = healed > 0
           ? 'You draw up the bucket and drink deep. The cold water revives you. (Restored 1 HP.)'
           : 'The water is clear and cold — but you are already at full health.';
+        if (wentDry) {
+          // The last of the water — the well is now dry (message at the top, too).
+          line += ' The bucket scrapes the bottom — the well has run dry.';
+          ui.toast('The well is dry.');
+        }
         ({ responses, acts } = buildActs());
         ui.updateDialogContent({ line, responses });
         return true;
@@ -2256,6 +2324,11 @@ async function boot() {
       }, trigger.background);
       return;
     }
+
+    // Re-approaching an already-cleared encounter (e.g. the barn after the rat's
+    // dead) — report it's empty rather than doing nothing (2026-07-28).
+    const emptied = world.emptiedBattleNearDoor();
+    if (emptied) { ui.toast(emptied.emptyMessage || 'There’s nothing here anymore.'); return; }
 
     // Near a fishing spot — cast a line (needs rod + bait).
     const spot = world.fishingSpotNearby();
@@ -2390,6 +2463,9 @@ async function boot() {
     const hasTorch = equipment.offhand === 'torch'; // torch is an off-hand weapon (2026-07-26)
     if (caveDarkEl) caveDarkEl.classList.toggle('active', darkScene && !hasTorch);
     world.playerGlow = darkScene && hasTorch;
+    // Hide proximity labels while any modal (dialog/panel/battle/…) is open so
+    // they don't render over the overlay (2026-07-28, the "Old Barn" label bug).
+    world.suppressLabels = modalLock;
     world.update(dt, input, locked, modalLock);
     world.render();
 

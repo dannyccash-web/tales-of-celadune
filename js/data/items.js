@@ -260,8 +260,8 @@ export default {
   // flammable (`wood`) foes — rootweavers, bramblekin — ALIGHT, burning them
   // for `burn` (2) at the start of every player turn (main.js's playerAttack
   // applies it; tickBurns ticks it). Also the cave light source (equipping it
-  // in the off-hand lifts a `dark` scene's darkness — see main.js). Only one
-  // exists in the game so far (in D1's locked chest).
+  // in the off-hand lifts a `dark` scene's darkness — see main.js). Sold at
+  // Emeric's general store in D2 (2026-07-28, moved there from the D1 chest).
   torch: {
     id: 'torch',
     name: 'Torch',

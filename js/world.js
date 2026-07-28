@@ -279,6 +279,20 @@ export class World {
     return best;
   }
 
+  // The nearest ALREADY-DEFEATED battle door within interaction range, or null.
+  // Lets interact() report "The barn is empty." when the player re-approaches a
+  // cleared encounter (battleNearDoor() skips defeated ones) — 2026-07-28.
+  emptiedBattleNearDoor() {
+    let best = null;
+    let bestDist = INTERACT_RANGE;
+    for (const b of this.battles) {
+      if (!b.defeated) continue;
+      const d = Math.hypot(b.door.x - this.player.x, b.door.y - this.player.y);
+      if (d < bestDist) { best = b; bestDist = d; }
+    }
+    return best;
+  }
+
   // The nearest fishing spot the player is close enough to fish from (within
   // FISH_SPOT_RANGE), or null. The returned spot's { x, y } is where the label
   // shows, where ripples animate, and where the line is cast.
@@ -1014,6 +1028,12 @@ export class World {
     // Fishing ripples where the bait was cast
     if (this.fishing) this.drawRipples();
 
+    // Interaction labels (NPC names, buildings, interactables, chests, fishing)
+    // are hidden while a modal overlay (dialog/panel/battle/game-over/…) is up,
+    // so they don't bleed through it onto the (above-vignette) label canvas —
+    // e.g. the "Old Barn" label showing during the barn battle. main.js sets
+    // this.suppressLabels = modalLock each frame (2026-07-28).
+    if (!this.suppressLabels) {
     // Name label above the NPC the player could interact with
     const near = this.nearestNpcInRange();
     if (near) this.drawNameLabel(near);
@@ -1057,5 +1077,6 @@ export class World {
       const spot = this.fishingSpotNearby();
       if (spot) this.drawLabel('Go Fishing', spot.x, spot.y);
     }
+    } // end !suppressLabels guard
   }
 }

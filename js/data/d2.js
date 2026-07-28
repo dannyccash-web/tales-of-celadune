@@ -791,7 +791,7 @@ export default {
     },
     {
       id: 'emeric', name: 'Emeric Vale', role: 'SHOPKEEPER',
-      vendor: true, stock: [{ id: 'fishing_bait', qty: 3 }, { id: 'lockpicks', qty: 2 }], gold: 39,
+      vendor: true, stock: [{ id: 'fishing_bait', qty: 3 }, { id: 'lockpicks', qty: 2 }, { id: 'torch', qty: 1 }], gold: 39,
       awayLine: 'Come by the shop if you’re buying — I don’t carry the whole inventory in my pockets.',
       sprite: 'assets/images/Emeric Vale_overhead.png',
       portrait: 'assets/images/Emeric Vale.png',
@@ -846,7 +846,6 @@ export default {
       dialog: { line: 'Peace be with you, traveler. The temple doors are always open, and the dead rest quiet in our care. Light a candle, if it eases you.', responses: ['Leave.'] },
       chatter: [
         { q: 'Who rests in the graveyard?', a: 'Generations of this village — farmers, smiths, children who never grew. We tend them all the same. The dead ask little; a lit candle and a kind memory is enough.' },
-        { q: 'Have you a blessing for me?', a: 'May the road rise gentle and the night find you sheltered. Faith will not stop a blade, traveler — but it may steady the hand that lifts one against it.' },
       ],
       // Quest: fetch a loaf of bread (buyable from Kwame at the bakery) as a
       // shrine offering. readyToComplete fires once the player is carrying

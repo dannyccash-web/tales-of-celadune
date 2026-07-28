@@ -148,8 +148,8 @@ export default {
     // The silo hands out exactly ONE ear of corn (Gaffer's favorite — see
     // main.js's buildGafferDialog), then reports empty forever after
     // (2026-07-10, Danny's spec — replaced the earlier infinitely-repeatable
-    // version). No `label`: the silo itself is the visible thing, no
-    // floating prompt (the 'Silo' building label still draws nearby).
+    // version). Its single 'Silo' label rides on THIS interactable (there is no
+    // separate 'Silo' building label — verified 2026-07-28; one label per thing).
     // `emptyMessage` keeps it interactive after collection — world.js's
     // nearestInteractableInRange() skips collected interactables UNLESS
     // they carry one, and main.js's interact() toasts it instead of
@@ -179,6 +179,7 @@ export default {
       door: { x: 1030, y: 1305 },
       enemies: ['blight_rat'],
       background: 'assets/images/barn_interior.jpg', // battle backdrop (2026-07-22)
+      emptyMessage: 'The barn is empty.', // shown if you return after clearing it (2026-07-28)
     },
   ],
 
