@@ -126,14 +126,15 @@ html, body {
   top: 50px;
   right: 50px;
   display: flex;
-  gap: 44px;
+  gap: 22px; /* tightened 44 -> 22 (2026-07-28) — pulls Inventory rightward toward
+                Menu so the cluster is smaller and clears the enemy names */
 }
 
 .icon-btn {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 20px;
+  gap: 10px; /* tightened 20 -> 10 to shrink the top-right cluster */
   cursor: pointer;
 }
 
@@ -157,8 +158,10 @@ html, body {
 }
 
 .icon-btn label {
-  font-family: var(--font-medieval);
-  font-size: 24px;
+  /* Same font + size as the player's HP value (.stat-value) so the top-right
+     labels read smaller (2026-07-28, Danny). */
+  font-family: var(--font-lato);
+  font-size: 17px;
   color: var(--text);
   cursor: pointer;
 }
@@ -1254,27 +1257,28 @@ html, body {
   pointer-events: none;
 }
 
-/* Ground shadow: a soft 400x130 oval centered at design Y730 (665..795),
-   multiply-blended at 60% so enemies read as standing, not floating. */
+/* Ground shadow: a soft 400x130 oval whose CENTER sits ~at the enemy's feet
+   (design ~Y715 — raised from Y730 on 2026-07-28 so the ring/shadow don't hang
+   low below the feet). multiply-blended at 70% so enemies read as standing. */
 .enemy-shadow {
   position: absolute;
-  top: 665px;
+  top: 650px; /* 130 tall -> center ~Y715, just under the Y710 foot baseline */
   left: 50%;
   transform: translateX(-50%);
   width: 400px;
   height: 130px;
   background: radial-gradient(ellipse 50% 50% at 50% 50%, rgba(0, 0, 0, 0.78) 0%, rgba(0, 0, 0, 0.42) 45%, rgba(0, 0, 0, 0) 72%);
   mix-blend-mode: multiply;
-  opacity: 0.6;
+  opacity: 0.7;
   pointer-events: none;
 }
 
-/* Gold selection ring (enemy_selector.svg): same 400x130 footprint + baseline
-   as the shadow, BEHIND the enemy image but in front of the shadow. Shown only
-   for the targeted enemy. */
+/* Gold selection ring (enemy_selector.svg): EXACT same 400x130 box + baseline
+   as the shadow (so they always share a baseline), BEHIND the enemy image but
+   in front of the shadow. Shown only for the targeted enemy. */
 .enemy-ring {
   position: absolute;
-  top: 665px;
+  top: 650px;
   left: 50%;
   transform: translateX(-50%);
   width: 400px;
