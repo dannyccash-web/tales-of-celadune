@@ -1305,7 +1305,8 @@ html, body {
    their baseline — keep working. */
 .enemy-portrait {
   position: absolute;
-  bottom: 90px; /* slot is 800 tall -> bottom edge at Y710 */
+  bottom: 75px; /* slot is 800 tall -> bottom edge at Y725 (moved down 15px 2026-07-28
+                   so enemies sit lower / better grounded in the ring + shadow) */
   left: 50%;
   transform: translateX(-50%);
   max-width: 380px;
@@ -1328,13 +1329,14 @@ html, body {
    sits between each pair of circles. overflow:visible so the circles + cards
    paint above the frame. */
 #battle-actions {
-  /* Bottom baseline stays at y950; height trimmed 150 -> 120 (2026-07-28), so
-     the top line (where the circles straddle) drops from y800 to y830 and the
-     circles come down with it (they're pinned to the frame's top edge). */
+  /* Top line (where the circles straddle) stays at y830; height 120 -> 146
+     (2026-07-28) — extended DOWN to y976 so a vertically-centered label clears
+     the 100px focused circle (whose bottom sits at ~y880) instead of being
+     overlapped by it. */
   top: 830px;
   left: 200px;
   right: 200px;      /* 1920 - 2*200 = 1520 wide, centered */
-  height: 120px;
+  height: 146px;
   display: flex;
   align-items: stretch;
   overflow: visible;
@@ -1430,7 +1432,7 @@ html, body {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
-  bottom: 180px; /* card bottom sits just above the grown (100px) circle (frame trimmed 2026-07-28) */
+  bottom: 206px; /* card bottom sits just above the grown (100px) circle (frame is y830-976) */
   width: 300px;
   background: rgba(8, 6, 4, 0.92);
   border: 1px solid var(--gold-dark);
