@@ -1187,34 +1187,38 @@ html, body {
 #battle-message .dmg-pos { color: #6fbf73; }
 #battle-message .dmg-neg { color: #e04138; }
 
-/* Enemy row (PDF layout, 2026-07-28): each enemy is a fixed 400x580 art
-   container with its name + HP bar stacked ABOVE it, and NO frame (the
-   enemies sit straight on the backdrop). The art is scaled to FILL the
-   container (object-fit cover) and bottom-justified. Containers are centered
-   as a group with 73px gaps, which lands the outer edges ~50px from the
-   screen sides at the 4-enemy max and keeps 1-3 enemies nicely centered. */
+/* Enemy row (reworked 2026-07-28, round 2 to Danny's spec): no clipping
+   container — the art is a bare <img> so the target glow can't be cut off.
+   Each enemy image is scaled proportionally (never stretched/cropped) to fit
+   within 380x540 and BOTTOM-justified so every enemy rests on the same
+   baseline (design Y710). A soft oval shadow + (when targeted) a gold ring
+   sit on the ground behind each enemy, centered at design Y730. The slots
+   span the full battle area (0..800, above the action frame) so these design
+   Y's map straight to `top`/`bottom` within a slot. Centered as a group with
+   73px gaps -> ~50px edge padding at the 4-enemy max. */
 #battle-enemies {
   position: absolute;
-  top: 88px;
+  top: 0;
   left: 0;
   right: 0;
-  height: 652px;
+  height: 800px;
   display: flex;
   justify-content: center;
-  align-items: flex-start;
+  align-items: stretch;
   gap: 73px;
+  pointer-events: none; /* only the slots take clicks (targeting) */
 }
 
 .enemy-slot {
   position: relative;
   flex: 0 0 400px;
   width: 400px;
-  height: 652px;
+  pointer-events: auto;
 }
 
 .enemy-name {
   position: absolute;
-  top: 0;
+  top: 88px;
   left: 0;
   right: 0;
   text-align: center;
@@ -1229,7 +1233,7 @@ html, body {
 
 .enemy-health-bar {
   position: absolute;
-  top: 42px;
+  top: 128px;
   left: 50%;
   transform: translateX(-50%);
   width: 300px;
@@ -1250,31 +1254,56 @@ html, body {
   pointer-events: none;
 }
 
-/* The 400x580 art container. Kept centered via left:50% + translateX(-50%)
-   (NOT flex-centering) so the hit/lunge/dissolve keyframes — which all take
-   translateX(-50%) as their baseline — keep working unchanged. */
-.enemy-portrait-window {
+/* Ground shadow: a soft 400x130 oval centered at design Y730 (665..795),
+   multiply-blended at 60% so enemies read as standing, not floating. */
+.enemy-shadow {
   position: absolute;
-  top: 72px;
+  top: 665px;
   left: 50%;
   transform: translateX(-50%);
   width: 400px;
-  height: 580px;
-  overflow: hidden;
+  height: 130px;
+  background: radial-gradient(ellipse 50% 50% at 50% 50%, rgba(0, 0, 0, 0.78) 0%, rgba(0, 0, 0, 0.42) 45%, rgba(0, 0, 0, 0) 72%);
+  mix-blend-mode: multiply;
+  opacity: 0.6;
+  pointer-events: none;
 }
 
+/* Gold selection ring (enemy_selector.svg): same 400x130 footprint + baseline
+   as the shadow, BEHIND the enemy image but in front of the shadow. Shown only
+   for the targeted enemy. */
+.enemy-ring {
+  position: absolute;
+  top: 665px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 400px;
+  height: 130px;
+  background: url('../assets/images/enemy_selector.svg') center / contain no-repeat;
+  pointer-events: none;
+  display: none;
+}
+.enemy-slot.targeted .enemy-ring { display: block; }
+
+/* The enemy art: proportional fit within 380x540 (never stretched/cropped),
+   BOTTOM edge on the shared baseline (design Y710). Kept centered via left:50%
+   + translateX(-50%) so the hit/lunge/dissolve keyframes — which take that as
+   their baseline — keep working. */
 .enemy-portrait {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: bottom center; /* fill + bottom-justify */
+  position: absolute;
+  bottom: 90px; /* slot is 800 tall -> bottom edge at Y710 */
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 380px;
+  max-height: 540px;
+  width: auto;
+  height: auto;
 }
 
-/* Target-select highlight (battleKey() 'target' mode): silhouette glow
-   (enemy art is transparent-background, so drop-shadow hugs the figure) +
-   the name going bright white, per the mockup's middle enemy. */
+/* Target-select highlight (battleKey() 'target' mode): a silhouette glow on
+   the (now unclipped) art + the name going bright gold. */
 .enemy-slot.targeted .enemy-portrait {
-  filter: drop-shadow(0 0 14px var(--gold-bright));
+  filter: drop-shadow(0 0 16px var(--gold-bright)) drop-shadow(0 0 6px var(--gold-bright));
 }
 
 .enemy-slot.targeted .enemy-name { color: var(--gold-bright); }
@@ -1425,11 +1454,11 @@ html, body {
 /* ---- Battle feel / "juice" (2026-07-21) ----
    All triggered by ui.js toggling a class on the freshly-rendered enemy slot
    (or on #battle) with the remove-reflow-re-add trick so the animation replays.
-   The enemy-portrait-window carries transform: translateX(-50%) to stay
+   The .enemy-portrait img carries transform: translateX(-50%) to stay
    centered, so every keyframe that touches its transform re-includes that. */
 
 /* Enemy struck: a quick horizontal shake + white flash on the portrait. */
-.enemy-slot.hit .enemy-portrait-window { animation: enemy-hit-shake 0.4s ease-out; }
+.enemy-slot.hit .enemy-portrait { animation: enemy-hit-shake 0.4s ease-out; }
 @keyframes enemy-hit-shake {
   0%   { transform: translateX(-50%);          filter: brightness(2.6); }
   15%  { transform: translateX(calc(-50% - 11px)); }
@@ -1442,7 +1471,7 @@ html, body {
 
 /* Enemy attacking: portrait grows forward from its base, then settles — reads
    as a lunge toward the player. */
-.enemy-slot.attacking .enemy-portrait-window {
+.enemy-slot.attacking .enemy-portrait {
   animation: enemy-lunge 0.36s ease-out;
   transform-origin: bottom center;
 }
@@ -1454,7 +1483,7 @@ html, body {
 
 /* Enemy death: the portrait brightens, lifts, blurs and fades out (its motes
    are spawned separately as .death-particle by ui.killEnemy). */
-.enemy-slot.dying .enemy-portrait-window {
+.enemy-slot.dying .enemy-portrait {
   animation: enemy-dissolve 0.7s ease-in forwards;
   transform-origin: center;
 }

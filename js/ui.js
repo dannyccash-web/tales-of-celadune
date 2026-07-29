@@ -1520,14 +1520,6 @@ export function renderBattleEnemies(enemies) {
       return { el: slot, enemy };
     }
 
-    const windowEl = document.createElement('div');
-    windowEl.className = 'enemy-portrait-window';
-    const portrait = document.createElement('img');
-    portrait.className = 'enemy-portrait';
-    portrait.src = enemy.portrait;
-    portrait.alt = enemy.name;
-    windowEl.appendChild(portrait);
-
     const bar = document.createElement('div');
     bar.className = 'bar enemy-health-bar';
     const bg = document.createElement('div');
@@ -1546,7 +1538,21 @@ export function renderBattleEnemies(enemies) {
     name.className = 'enemy-name';
     name.textContent = enemy.name;
 
-    slot.append(windowEl, bar, name);
+    // Ground shadow oval + (targeted-only) gold ring, both behind the art.
+    const shadow = document.createElement('div');
+    shadow.className = 'enemy-shadow';
+    const ring = document.createElement('div');
+    ring.className = 'enemy-ring';
+
+    // Bare <img> (no clipping container) so the target glow can't be cut off;
+    // sized by max-width/height + bottom-anchored via CSS.
+    const portrait = document.createElement('img');
+    portrait.className = 'enemy-portrait';
+    portrait.src = enemy.portrait;
+    portrait.alt = enemy.name;
+
+    // Order matters for stacking: shadow (back) -> ring -> portrait (front).
+    slot.append(name, bar, shadow, ring, portrait);
     box.appendChild(slot);
     return { el: slot, enemy };
   });
@@ -1577,12 +1583,12 @@ export function shakeScreen() { replayClass($('battle'), 'screen-shake'); }
 export function killEnemy(enemy) {
   const slot = slotFor(enemy);
   if (!slot) return;
-  const win = slot.querySelector('.enemy-portrait-window');
+  const win = slot.querySelector('.enemy-portrait');
   slot.classList.add('dying');
   if (!win) return;
   const ww = win.offsetWidth;
   const wh = win.offsetHeight;
-  const baseL = win.offsetLeft - ww / 2; // undo the window's translateX(-50%)
+  const baseL = win.offsetLeft - ww / 2; // undo the img's translateX(-50%)
   const baseT = win.offsetTop;
   for (let i = 0; i < 22; i += 1) {
     const p = document.createElement('div');
