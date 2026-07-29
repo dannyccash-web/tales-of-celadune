@@ -1262,7 +1262,7 @@ html, body {
    low below the feet). multiply-blended at 70% so enemies read as standing. */
 .enemy-shadow {
   position: absolute;
-  top: 650px; /* 130 tall -> center ~Y715, just under the Y710 foot baseline */
+  top: 640px; /* 130 tall -> center ~Y705, right at the Y710 foot baseline (2026-07-28) */
   left: 50%;
   transform: translateX(-50%);
   width: 400px;
@@ -1278,7 +1278,7 @@ html, body {
    in front of the shadow. Shown only for the targeted enemy. */
 .enemy-ring {
   position: absolute;
-  top: 650px;
+  top: 640px;
   left: 50%;
   transform: translateX(-50%);
   width: 400px;
@@ -1287,7 +1287,17 @@ html, body {
   pointer-events: none;
   display: none;
 }
-.enemy-slot.targeted .enemy-ring { display: block; }
+/* The ring itself is the selection indicator (2026-07-28, Danny — replaced the
+   silhouette glow): shown for the targeted enemy and slowly pulsing a warm gold
+   glow. drop-shadow follows the ring SVG's alpha, so the glow hugs the ring. */
+.enemy-slot.targeted .enemy-ring {
+  display: block;
+  animation: ring-pulse 1.8s ease-in-out infinite;
+}
+@keyframes ring-pulse {
+  0%, 100% { filter: drop-shadow(0 0 3px rgba(238, 214, 148, 0.45)); }
+  50%      { filter: drop-shadow(0 0 15px rgba(238, 214, 148, 0.95)); }
+}
 
 /* The enemy art: proportional fit within 380x540 (never stretched/cropped),
    BOTTOM edge on the shared baseline (design Y710). Kept centered via left:50%
@@ -1304,12 +1314,9 @@ html, body {
   height: auto;
 }
 
-/* Target-select highlight (battleKey() 'target' mode): a silhouette glow on
-   the (now unclipped) art + the name going bright gold. */
-.enemy-slot.targeted .enemy-portrait {
-  filter: drop-shadow(0 0 16px var(--gold-bright)) drop-shadow(0 0 6px var(--gold-bright));
-}
-
+/* Target-select highlight (battleKey() 'target' mode): the selection indicator
+   is now the pulsing gold RING (see .enemy-slot.targeted .enemy-ring above) —
+   NOT a silhouette glow on the art anymore. The name still goes bright gold. */
 .enemy-slot.targeted .enemy-name { color: var(--gold-bright); }
 
 .enemy-slot.defeated { opacity: 0.35; }
@@ -1321,10 +1328,13 @@ html, body {
    sits between each pair of circles. overflow:visible so the circles + cards
    paint above the frame. */
 #battle-actions {
-  top: 800px;
+  /* Bottom baseline stays at y950; height trimmed 150 -> 120 (2026-07-28), so
+     the top line (where the circles straddle) drops from y800 to y830 and the
+     circles come down with it (they're pinned to the frame's top edge). */
+  top: 830px;
   left: 200px;
   right: 200px;      /* 1920 - 2*200 = 1520 wide, centered */
-  height: 150px;
+  height: 120px;
   display: flex;
   align-items: stretch;
   overflow: visible;
@@ -1398,7 +1408,8 @@ html, body {
    the action is selected. */
 .battle-action-label {
   position: absolute;
-  top: 86px;
+  top: 50%;                       /* vertically centered in the frame (2026-07-28) */
+  transform: translateY(-50%);
   left: 0;
   right: 0;
   text-align: center;
@@ -1419,7 +1430,7 @@ html, body {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
-  bottom: 206px; /* card bottom sits just above the grown (100px) circle */
+  bottom: 180px; /* card bottom sits just above the grown (100px) circle (frame trimmed 2026-07-28) */
   width: 300px;
   background: rgba(8, 6, 4, 0.92);
   border: 1px solid var(--gold-dark);
