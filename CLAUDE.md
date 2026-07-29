@@ -243,6 +243,11 @@ Reworked the battle overlay (`battle_scene.pdf`) — layout numbers measured off
 - **Ground shadow** (`.enemy-shadow`) behind every enemy: a soft 400×130 radial-gradient oval, `mix-blend-mode:multiply; opacity:0.6`, centered at design **Y730** (`top:665`). Makes enemies read as standing, not floating. Subtle over dark ground, stronger over the beach — that's the 60% multiply as specced.
 - **Gold selection ring** (`.enemy-ring`, `assets/images/enemy_selector.svg` — Danny's Illustrator gold-gradient ellipse ring) same 400×130 footprint + Y730 baseline, **behind the enemy img but in front of the shadow** (DOM order shadow→ring→img). Shown only on `.enemy-slot.targeted`. The targeted enemy also keeps the unclipped silhouette drop-shadow glow.
 - Live-verified (4-enemy fight, targeting on): ring + unclipped glow on the targeted Cragclaw, all four proportional + bottom-aligned, zero console errors, save restored pristine.
+- **Round-2 polish (2026-07-28):** shadow opacity 0.6 → **0.7**; shadow + ring baseline raised from `top:665` (center Y730) to **`top:650` (center ~Y715)** so the ring/shadow sit at the enemy's feet instead of hanging low below them (both stay at the SAME `top`, so they always share a baseline).
+
+## Top-right HUD buttons shrunk (2026-07-28)
+
+The Inventory/Menu cluster (`#topbar` → two `.icon-btn`, each a gold `.diamond` + `label`) was made smaller so it stops crowding the rightmost enemy's name/other UI: **`.icon-btn label` is now Lato 17px** (was MedievalSharp 24px) — matching the HP value (`.stat-value`); **`#topbar` gap 44 → 22px** (pulls Inventory rightward toward Menu) and **`.icon-btn` gap 20 → 10px**. Diamonds unchanged at 36px.
 
 ## Status / roadmap
 
