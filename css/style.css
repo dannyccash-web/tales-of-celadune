@@ -1146,36 +1146,48 @@ html, body {
   background: rgba(0, 0, 0, 0.35);
 }
 
-/* Banner geometry (round 3, 2026-07-10, from Danny's feedback): the banner's
-   TOP edge is what lines up with the other frames' 205px insets (round 2 had
-   the bottom edge aligned, which made the top overhang wider than everything
-   else — "too wide"). Sides still slant at exactly 45° (horizontal inset =
-   height), pulling the bottom corners inward. */
-#battle-status {
+/* Shared top notification banner (2026-07-28) — ONE definition for every top
+   banner in the game (the battle status line AND the transient #toast) so their
+   size, position and animation are always identical. A 45°-sided trapezoid that
+   hangs flush off the top edge (top:0), 205px in from the sides like the other
+   frames. The FILL is --panel-bg (same semi-transparent value as dialog boxes),
+   so the SCENE shows through it — the gold gradient is now only a ~3px rim drawn
+   by ::before (a trapezoid ring via an even-odd clip hole), instead of an opaque
+   gold trapezoid filling behind the panel-bg (which read as opaque brown). */
+.top-banner {
   position: absolute;
   top: 0;
   left: 205px;
   right: 205px;
-  height: 70px;
-  background: linear-gradient(180deg, var(--frame-light), var(--frame-dark));
-  clip-path: polygon(0 0, 100% 0, calc(100% - 70px) 100%, 70px 100%);
-}
-
-/* The dark interior — same semi-transparent --panel-bg fill as every other
-   frame, inset 3px from the gold trapezoid on the sides/bottom (no top
-   edge: the banner hangs off the top of the screen). The slant is 68px vs
-   the outer's 70px so the 45° gold edges stay ~3px thick too. */
-#battle-status-inner {
-  position: absolute;
-  top: 0;
-  left: 3px;
-  right: 3px;
-  bottom: 3px;
+  min-height: 70px;
   background: var(--panel-bg);
-  clip-path: polygon(0 0, 100% 0, calc(100% - 68px) 100%, 68px 100%);
+  clip-path: polygon(0 0, 100% 0, calc(100% - 70px) 100%, 70px 100%);
   display: flex;
   align-items: center;
   justify-content: center;
+}
+.top-banner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, var(--frame-light), var(--frame-dark));
+  /* even-odd: outer trapezoid MINUS an inner one (3px rim on the sides/bottom,
+     flush at the top) = a gold ring. */
+  clip-path: polygon(evenodd,
+    0 0, 100% 0, calc(100% - 70px) 100%, 70px 100%,
+    68px calc(100% - 3px), calc(100% - 68px) calc(100% - 3px), calc(100% - 3px) 0, 3px 0);
+  pointer-events: none;
+}
+
+/* The battle status line is a persistent top-banner (size/position from
+   .top-banner, identical to the toast); it drops in once when the battle opens
+   (ui.replayClass 'banner-enter' — same motion as a toast). */
+#battle-status-inner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 80px;
 }
 
 #battle-message {
@@ -1541,7 +1553,10 @@ html, body {
 #victory {
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse at center, #1c1608 0%, #000 82%);
+  /* Default fallback scrim (a bg-less fight). showVictory() overrides this inline
+     with the battle's backdrop image + a light scrim so the spoils sit over the
+     battle scene rather than a black screen (2026-07-28). */
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1698,18 +1713,13 @@ html, body {
    pop-ups are consistent. Same nested-clip trapezoid recipe as #battle-status:
    a gold-gradient outer trapezoid + a --panel-bg inner inset 3px, hanging off
    the top edge of the screen. It drops in briefly, then auto-hides. */
-#toast {
-  position: absolute;
-  top: 0;
-  left: 205px;
-  right: 205px;
-  min-height: 70px;
-  background: linear-gradient(180deg, var(--frame-light), var(--frame-dark));
-  clip-path: polygon(0 0, 100% 0, calc(100% - 70px) 100%, 70px 100%);
-  z-index: 15;
-}
+/* Transient toast — geometry/fill/rim inherited from .top-banner (add that
+   class in the HTML). Only the stacking + drop/rise animation are toast-specific. */
+#toast { z-index: 15; }
 
-#toast.toast-enter { animation: toast-drop 0.35s ease-out; }
+/* Both the toast and the battle status banner drop in with the same motion. */
+#toast.toast-enter,
+.top-banner.banner-enter { animation: toast-drop 0.35s ease-out; }
 @keyframes toast-drop {
   from { transform: translateY(-24px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
@@ -1723,14 +1733,7 @@ html, body {
 }
 
 #toast-inner {
-  position: absolute;
-  top: 0;
-  left: 3px;
-  right: 3px;
-  bottom: 3px;
-  min-height: 64px;
-  background: var(--panel-bg);
-  clip-path: polygon(0 0, 100% 0, calc(100% - 68px) 100%, 68px 100%);
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;

@@ -1760,6 +1760,9 @@ async function boot() {
   // playing (e.g. back-to-back debug starts) can't "restore" the battle
   // track over the real music.
   let preBattleTrack = null;
+  // The backdrop image used for the current fight — reused as the victory/spoils
+  // screen's background so the spoils show over the battle scene (2026-07-28).
+  let currentBattleBg = null;
 
   function startBattle(enemyIds, onEnd, background) {
     const playing = audio.nowPlaying();
@@ -1788,13 +1791,15 @@ async function boot() {
     // over each enemy's own, 2026-07-26), then the first enemy's catalog
     // `background` (beach/forest/camp), else none (dimmed world shows through).
     const bg = background || world.scene.battleBackground || ENEMIES[enemyIds[0]]?.background || null;
+    currentBattleBg = bg;
     ui.openBattle({
       enemies: battleState.enemies,
       onAction: handleBattleAction,
       onConfirmTarget: playerAttack,
       background: bg,
     });
-    ui.setBattleMessage('A wild encounter begins!');
+    // No standalone "encounter begins" line — runQueue immediately sets the
+    // idle turn message ("Your Turn" / "Enemy's Turn"), 2026-07-28.
     runQueue();
   }
 
@@ -1856,10 +1861,15 @@ async function boot() {
         setTimeout(() => {
           if (!battleState.active) return;
           if (checkBattleEnd()) return;
+          ui.setBattleMessage('Your Turn');
           showPlayerActions();
         }, ENEMY_TURN_DELAY_MS);
       } else {
         if (checkBattleEnd()) return;
+        // Idle prompt while the player decides (2026-07-28). No-op re-shows of
+        // the menu keep their own message; only a genuine new player turn sets
+        // this, so an explanatory line (e.g. "nothing readied") isn't clobbered.
+        ui.setBattleMessage('Your Turn');
         showPlayerActions();
       }
       return;
@@ -1871,6 +1881,9 @@ async function boot() {
       runQueue();
       return;
     }
+    // Idle prompt for the enemy's turn — shown during the pacing delay, then
+    // overwritten by the attack's specific result (2026-07-28).
+    ui.setBattleMessage('Enemy’s Turn');
     setTimeout(() => {
       if (!battleState.active) return;
       resolveEnemyTurn(current.enemy);
@@ -2113,9 +2126,11 @@ async function boot() {
       // grants each reward one at a time (grantReward) and runs onEnd when it
       // closes. Replaces the old immediate grant + toast (2026-07-21).
       const rewards = computeBattleRewards(battleState.enemies);
+      const spoilsBg = currentBattleBg; // captured before closeBattle clears the backdrop
       ui.closeBattle();
       ui.showVictory({
         rewards,
+        background: spoilsBg, // spoils shown over the battle scene, not black (2026-07-28)
         onReward: grantReward,
         onClose: () => { if (onEnd) onEnd('victory'); },
       });

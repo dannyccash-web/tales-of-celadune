@@ -1462,6 +1462,7 @@ export function openBattle({ enemies, onAction, onConfirmTarget, background }) {
   // cleared in closeBattle. Falsy = the usual dimmed game world (2026-07-22).
   setSceneBackdrop(background);
   $('battle').classList.remove('hidden');
+  replayClass($('battle-status'), 'banner-enter'); // drop the status banner in, like a toast
 }
 
 export function closeBattle() {
@@ -1817,9 +1818,17 @@ const VICTORY_CLOSE_MS = 1600;
 
 export function isVictoryOpen() { return victoryState.open; }
 
-export function showVictory({ rewards, onReward, onClose }) {
+export function showVictory({ rewards, onReward, onClose, background }) {
   clearTimeout(victoryState.timer);
   victoryState.open = true;
+  // Show the spoils over the battle's backdrop image (a light scrim keeps the
+  // text readable) instead of a black screen (2026-07-28). Cleared in closeVictory.
+  const vEl = $('victory');
+  if (background) {
+    vEl.style.background = `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url("${background}") center / cover no-repeat`;
+  } else {
+    vEl.style.background = '';
+  }
   victoryState.rewards = rewards || [];
   victoryState.els = [];
   victoryState.idx = 0;
@@ -1877,7 +1886,9 @@ function closeVictory() {
   if (!vs.open) return;
   clearTimeout(vs.timer);
   vs.open = false;
-  $('victory').classList.add('hidden');
+  const vEl = $('victory');
+  vEl.classList.add('hidden');
+  vEl.style.background = ''; // drop the inline battle-bg so the CSS default returns
   const cb = vs.onClose;
   vs.onClose = null;
   if (cb) cb();
