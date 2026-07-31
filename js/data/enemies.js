@@ -26,6 +26,23 @@ export default {
     drops: { gold: { min: 2, max: 4 } },
   },
 
+  // Cave Bat (D4B woods cave, 2026-07-31) — a flitting cave-dweller that drops
+  // on travelers in swarms (an auto-ambush enemy, no overhead sprite; unseen
+  // until it strikes). Frail like a blight rat but FAST (high speed → usually
+  // acts first) and comes in numbers. Portrait cave_bat.png; no `background`,
+  // so its fight uses the scene's battleBackground (the cave backdrop).
+  cave_bat: {
+    id: 'cave_bat',
+    name: 'Cave Bat',
+    portrait: 'assets/images/cave_bat.png',
+    health: 2,
+    attack: 1,
+    defense: 1,
+    speed: 12, // fast/erratic flyer — beats the player's initiative often
+    damage: 1,
+    drops: { gold: { min: 1, max: 3 } },
+  },
+
   // The Bramblekin toll-camp (D4, 2026-07-11). Both share +2 attack / +2
   // defense; the Chief hits harder and has more health. damage is a
   // {min,max} range (1d4 / 1d4+1) rolled by battle.rollDamage(). speed is

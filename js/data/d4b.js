@@ -426,48 +426,33 @@ export default {
       caveExit: true,
       label: 'Cave Exit',
     },
-    // A hidden glint of coins on an easy left-hand ledge — a reward you can grab
-    // without braving the rootweaver at the back.
-    {
-      id: 'shiny-cave-glint',
-      x: 320, y: 760, w: 80, h: 80,
-      label: 'Something glimmers in the dark',
-      reward: { gold: 5 },
-    },
   ],
 
-  // Enemies. Blight Rats swarm the middle chambers (auto-ambushes like D4's
-  // rootweavers / D1's mireman — no overhead sprite needed, they're unseen
-  // until they rush you); the fight uses the cave backdrop via battleBackground.
-  // A lone Rootweaver has taken root by the treasure at the back of the cave —
-  // a "flee for now" wall (same as D4's shortcut ambushes), so a fresh player
-  // can grab the glint but must come back geared for the chest. `retreat` pushes
-  // the player back far enough (>range*1.6) that pressing on re-arms the ambush.
   // No walking NPCs down here — the threats are all auto-ambushes below.
   npcs: [],
 
+  // Enemies (2026-07-31, Danny): the ONLY enemies here are auto-ambushes placed
+  // at the tunnel INTERSECTIONS — each is 1-3 Blight Rats or 1-3 Cave Bats
+  // (single-type per encounter). Auto-ambushes like D4's rootweavers / D1's
+  // mireman: no overhead sprite, unseen until they swarm; the fight uses the
+  // cave backdrop via battleBackground. `retreat` pushes the player back far
+  // enough (>range*1.6) that pressing on re-arms the ambush. The corner
+  // chambers are deliberately left EMPTY for now (future content). All four
+  // junction + retreat points engine-verified reachable by the 36px collider.
   ambushes: [
-    { id: 'cave_rats_1', x: 660, y: 540, range: 90, enemies: ['blight_rat', 'blight_rat'], retreat: { x: 500, y: 340 } },
-    { id: 'cave_rats_2', x: 960, y: 700, range: 90, enemies: ['blight_rat', 'blight_rat', 'blight_rat'], retreat: { x: 670, y: 640 } },
-    { id: 'cave_rootweaver', x: 1400, y: 1500, range: 100, enemies: ['rootweaver'], retreat: { x: 1340, y: 1170 } },
+    // Junction A — where the entrance passage meets the central tunnel.
+    { id: 'cave_ambush_a', x: 660, y: 620, range: 90, enemies: ['blight_rat', 'blight_rat'], retreat: { x: 520, y: 360 } },
+    // Junction B — the central crossroads.
+    { id: 'cave_ambush_b', x: 950, y: 760, range: 90, enemies: ['cave_bat', 'cave_bat', 'cave_bat'], retreat: { x: 680, y: 640 } },
+    // Junction C — the right-hand vertical passage junction.
+    { id: 'cave_ambush_c', x: 1300, y: 640, range: 90, enemies: ['blight_rat', 'blight_rat', 'blight_rat'], retreat: { x: 1020, y: 740 } },
+    // Junction D — the lower-central branch toward the bottom chambers.
+    { id: 'cave_ambush_d', x: 820, y: 1240, range: 90, enemies: ['cave_bat', 'cave_bat'], retreat: { x: 890, y: 950 } },
   ],
   battles: [],
 
-  // The prize the rootweaver guards — an unlocked chest (the fight is the lock,
-  // like D1B). A decent purse plus common supplies and a lockpick.
-  chests: [
-    {
-      id: 'd4b_treasure',
-      x: 1560, y: 1660,
-      locked: false,
-      gold: { min: 15, max: 25 },
-      items: [
-        { id: 'bread', qty: 2 },
-        { id: 'health_potion', qty: 1 },
-        { id: 'lockpicks', qty: 1 },
-      ],
-    },
-  ],
+  // Corner chambers left empty for now — no treasure/content yet (2026-07-31).
+  chests: [],
 
   exits: [],
 };

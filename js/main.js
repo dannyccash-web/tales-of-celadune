@@ -303,7 +303,8 @@ async function boot() {
     'assets/images/cragclaw.png',
     'assets/images/mireman.png',
     'assets/images/queen_cragclaw.png',
-    'assets/images/rootweaver.png', // D4/D4B rootweaver — an ambush enemy, not in a `battles` list
+    'assets/images/rootweaver.png', // D4 rootweaver — an ambush enemy, not in a `battles` list
+    'assets/images/cave_bat.png', // D4B cave bat — an ambush enemy, not in a `battles` list
     ...Object.values(SCENES).flatMap((scene) => [
       scene.background,
       // Places (isPlace: true, e.g. "Your House") have no sprite — they're
