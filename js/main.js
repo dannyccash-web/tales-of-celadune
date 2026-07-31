@@ -6,6 +6,7 @@ import sceneD1B from './data/d1b.js';
 import sceneD2 from './data/d2.js';
 import sceneD3 from './data/d3.js';
 import sceneD4 from './data/d4.js';
+import sceneD4B from './data/d4b.js';
 import { World } from './world.js';
 import * as ui from './ui.js';
 import * as audio from './audio.js';
@@ -274,7 +275,7 @@ function loadImages(sources) {
 // Every scene in the game, keyed by the ids that exits point at. Adding a
 // scene = write its data file, import it, and register it here — the
 // transition system below handles everything else.
-const SCENES = { D1: sceneD1, D1B: sceneD1B, D2: sceneD2, D3: sceneD3, D4: sceneD4 };
+const SCENES = { D1: sceneD1, D1B: sceneD1B, D2: sceneD2, D3: sceneD3, D4: sceneD4, D4B: sceneD4B };
 
 async function boot() {
   // Preload assets for EVERY registered scene up front — scene switches are
@@ -302,6 +303,7 @@ async function boot() {
     'assets/images/cragclaw.png',
     'assets/images/mireman.png',
     'assets/images/queen_cragclaw.png',
+    'assets/images/rootweaver.png', // D4/D4B rootweaver — an ambush enemy, not in a `battles` list
     ...Object.values(SCENES).flatMap((scene) => [
       scene.background,
       // Places (isPlace: true, e.g. "Your House") have no sprite — they're

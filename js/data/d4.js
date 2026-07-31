@@ -305,9 +305,10 @@ export default {
     { x: 1420, y: 1760, w: 60, h: 160 },
   ],
 
-  // Proximity labels (same system as D3's building labels).
+  // Proximity labels (same system as D3's building labels). The cave mouth's
+  // label moved onto the cave-entrance interactable below (2026-07-31) — one
+  // label per thing, shown exactly when you can press space to enter.
   buildings: [
-    { label: 'cave', x: 250, y: 170, r: 140 },
     { label: 'Woodland Camp', x: 1420, y: 1300, r: 220 },
   ],
 
@@ -319,6 +320,17 @@ export default {
       x: 830, y: 1640, w: 80, h: 80,
       label: 'A shiny object',
       reward: { gold: 4 },
+    },
+    // Cave entrance (2026-07-31) — interact to enter the D4B woods cave. `cave`
+    // names the target sub-scene; main.js's enterCave() captures the player's
+    // exact position so the cave's exit returns them right here. Placed at the
+    // nearest reachable point to the NW cave-mouth art (engine-verified).
+    {
+      id: 'cave_d4b_entrance',
+      x: 280, y: 220,
+      range: 110,
+      cave: 'D4B',
+      label: 'Old Cave',
     },
   ],
 
