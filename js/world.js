@@ -956,19 +956,20 @@ export class World {
     ctx.restore();
   }
 
-  // Soft warm radial light under the player — the torch's glow in a dark cave.
-  // Drawn additively so it brightens the ground, the player, and anything
-  // nearby, giving a "light travels with you" feel (2026-07-26).
+  // Torch light in a dark cave: a small warm pool cast on the floor AROUND the
+  // player (drawn BEFORE the player, so it sits behind them, not as a cloud on
+  // top). `soft-light` blend modulates the floor texture — it reads as the
+  // ground being lit rather than an additive glowing blob (2026-07-28, Danny).
   drawPlayerGlow() {
     const ctx = this.ctx;
     const x = this.player.x;
     const y = this.player.y - this.cameraY;
-    const R = 270;
+    const R = 150; // smaller torch pool (was 270)
     ctx.save();
-    ctx.globalCompositeOperation = 'lighter';
-    const g = ctx.createRadialGradient(x, y, 8, x, y, R);
-    g.addColorStop(0, 'rgba(255,224,168,0.50)');
-    g.addColorStop(0.45, 'rgba(255,196,120,0.20)');
+    ctx.globalCompositeOperation = 'soft-light';
+    const g = ctx.createRadialGradient(x, y, 6, x, y, R);
+    g.addColorStop(0, 'rgba(255,222,150,0.95)');
+    g.addColorStop(0.5, 'rgba(255,194,112,0.5)');
     g.addColorStop(1, 'rgba(255,170,90,0)');
     ctx.fillStyle = g;
     ctx.beginPath();
@@ -995,6 +996,11 @@ export class World {
     // Layer 1: background slice for current camera position
     ctx.drawImage(bg, 0, this.cameraY, VIEW_W, VIEW_H, 0, 0, VIEW_W, VIEW_H);
 
+    // Torch glow (dark cave + torch equipped): cast on the floor here, BEFORE the
+    // characters, so it lights the ground behind/around the player rather than
+    // painting over them (2026-07-28).
+    if (this.playerGlow) this.drawPlayerGlow();
+
     // Layer 2: treasure chests (on the ground, so under characters), then NPCs,
     // then the player on top. Emptied chests are gone. Drawn via drawSprite so
     // they get the same multiply drop shadow as characters (rotation 0).
@@ -1015,11 +1021,6 @@ export class World {
       this.images['assets/images/Player_Overhead_1.png'],
       p.x, p.y, p.rotation, stepFlip,
     );
-
-    // Torch glow: a soft warm pool of light under the player in a dark scene
-    // (main.js sets this.playerGlow when a torch is equipped). Drawn additively
-    // over the world so the player + immediate area read as torch-lit.
-    if (this.playerGlow) this.drawPlayerGlow();
 
     // Campfire smoke and other code-drawn effects, above the world/characters
     for (const s of this.smokes) this.drawSmoke(s);

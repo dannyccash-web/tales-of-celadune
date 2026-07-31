@@ -1156,23 +1156,32 @@ html, body {
    gold trapezoid filling behind the panel-bg (which read as opaque brown). */
 .top-banner {
   position: absolute;
-  top: 0;
+  top: -2px;              /* nudged up 2px so it sits flush at the very top (2026-07-28) */
   left: 205px;
   right: 205px;
-  min-height: 70px;
-  background: var(--panel-bg);
-  clip-path: polygon(0 0, 100% 0, calc(100% - 70px) 100%, 70px 100%);
+  min-height: 72px;       /* ~70px visible below the top edge */
   display: flex;
   align-items: center;
   justify-content: center;
 }
+/* Translucent interior (::before, BACK) — panel-bg over the SCENE, tucked ~2px
+   INSIDE the gold rim so it can never poke out past the frame. */
 .top-banner::before {
   content: '';
   position: absolute;
   inset: 0;
+  background: var(--panel-bg);
+  clip-path: polygon(2px 0, calc(100% - 2px) 0, calc(100% - 69px) calc(100% - 2px), 69px calc(100% - 2px));
+  pointer-events: none;
+}
+/* Gold rim (::after, FRONT) — a 3px trapezoid ring (even-odd hole), painted ON
+   TOP of the translucent interior so the gold outline is clearly in front and
+   covers the interior's edge (2026-07-28, Danny). Flush/no rim at the very top. */
+.top-banner::after {
+  content: '';
+  position: absolute;
+  inset: 0;
   background: linear-gradient(180deg, var(--frame-light), var(--frame-dark));
-  /* even-odd: outer trapezoid MINUS an inner one (3px rim on the sides/bottom,
-     flush at the top) = a gold ring. */
   clip-path: polygon(evenodd,
     0 0, 100% 0, calc(100% - 70px) 100%, 70px 100%,
     68px calc(100% - 3px), calc(100% - 68px) calc(100% - 3px), calc(100% - 3px) 0, 3px 0);
@@ -1184,6 +1193,7 @@ html, body {
    (ui.replayClass 'banner-enter' — same motion as a toast). */
 #battle-status-inner {
   position: relative;
+  z-index: 2; /* above the ::before/::after banner layers */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1734,6 +1744,7 @@ html, body {
 
 #toast-inner {
   position: relative;
+  z-index: 2; /* above the ::before/::after banner layers */
   display: flex;
   align-items: center;
   justify-content: center;
