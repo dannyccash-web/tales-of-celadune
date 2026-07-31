@@ -1156,35 +1156,39 @@ html, body {
    gold trapezoid filling behind the panel-bg (which read as opaque brown). */
 .top-banner {
   position: absolute;
-  top: -2px;              /* nudged up 2px so it sits flush at the very top (2026-07-28) */
+  top: 0;                 /* flush at the very top of the stage (2026-07-31) */
   left: 205px;
   right: 205px;
-  min-height: 72px;       /* ~70px visible below the top edge */
+  min-height: 72px;       /* ~72px visible below the top edge */
   display: flex;
   align-items: center;
   justify-content: center;
 }
-/* Translucent interior (::before, BACK) — panel-bg over the SCENE, tucked ~2px
-   INSIDE the gold rim so it can never poke out past the frame. */
+/* Translucent interior (::before, BACK) — panel-bg over the SCENE, clipped to
+   exactly the rim's inner hole so the SCENE shows through the fill and the gold
+   rim (::after) is never dimmed by fill painted over it. */
 .top-banner::before {
   content: '';
   position: absolute;
   inset: 0;
   background: var(--panel-bg);
-  clip-path: polygon(2px 0, calc(100% - 2px) 0, calc(100% - 69px) calc(100% - 2px), 69px calc(100% - 2px));
+  clip-path: polygon(3px 0, calc(100% - 3px) 0, calc(100% - 73px) calc(100% - 3px), 73px calc(100% - 3px));
   pointer-events: none;
 }
-/* Gold rim (::after, FRONT) — a 3px trapezoid ring (even-odd hole), painted ON
-   TOP of the translucent interior so the gold outline is clearly in front and
-   covers the interior's edge (2026-07-28, Danny). Flush/no rim at the very top. */
+/* Gold rim (::after, FRONT) — a bright 3px trapezoid ring (even-odd hole),
+   painted ON TOP so the outline is clearly in front (2026-07-31, Danny: the rim
+   was reading as dim/behind the fill). Brighter gold-bright→frame-light gradient
+   and the interior is left transparent (no gold behind the fill), so what you
+   see is a crisp gold outline on the two slanted sides + bottom, flush/no rim at
+   the very top. */
 .top-banner::after {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, var(--frame-light), var(--frame-dark));
+  background: linear-gradient(180deg, var(--gold-bright), var(--frame-light));
   clip-path: polygon(evenodd,
     0 0, 100% 0, calc(100% - 70px) 100%, 70px 100%,
-    68px calc(100% - 3px), calc(100% - 68px) calc(100% - 3px), calc(100% - 3px) 0, 3px 0);
+    73px calc(100% - 3px), calc(100% - 73px) calc(100% - 3px), calc(100% - 3px) 0, 3px 0);
   pointer-events: none;
 }
 
@@ -1322,15 +1326,17 @@ html, body {
 }
 
 /* The enemy art: proportional fit within 380x540 (never stretched/cropped),
-   BOTTOM edge on the shared baseline (design Y710). Kept centered via left:50%
-   + translateX(-50%) so the hit/lunge/dissolve keyframes — which take that as
-   their baseline — keep working. */
+   VERTICALLY CENTERED in its 800px-tall slot (2026-07-31, Danny — was
+   bottom-justified). Kept centered horizontally via left:50% + translate so the
+   hit/lunge/dissolve keyframes (which take translate(-50%,-50%) as their
+   baseline) keep working. The ground shadow + gold ring are re-anchored to each
+   image's actual base by ui.js's renderBattleEnemies (positionGround), since a
+   centered variable-height image can't be tracked by a fixed CSS `top`. */
 .enemy-portrait {
   position: absolute;
-  bottom: 75px; /* slot is 800 tall -> bottom edge at Y725 (moved down 15px 2026-07-28
-                   so enemies sit lower / better grounded in the ring + shadow) */
+  top: 50%;
   left: 50%;
-  transform: translateX(-50%);
+  transform: translate(-50%, -50%);
   max-width: 380px;
   max-height: 540px;
   width: auto;
@@ -1493,31 +1499,32 @@ html, body {
 /* ---- Battle feel / "juice" (2026-07-21) ----
    All triggered by ui.js toggling a class on the freshly-rendered enemy slot
    (or on #battle) with the remove-reflow-re-add trick so the animation replays.
-   The .enemy-portrait img carries transform: translateX(-50%) to stay
-   centered, so every keyframe that touches its transform re-includes that. */
+   The .enemy-portrait img carries transform: translate(-50%, -50%) to stay
+   centered (both axes, 2026-07-31), so every keyframe that touches its transform
+   re-includes that. */
 
 /* Enemy struck: a quick horizontal shake + white flash on the portrait. */
 .enemy-slot.hit .enemy-portrait { animation: enemy-hit-shake 0.4s ease-out; }
 @keyframes enemy-hit-shake {
-  0%   { transform: translateX(-50%);          filter: brightness(2.6); }
-  15%  { transform: translateX(calc(-50% - 11px)); }
-  30%  { transform: translateX(calc(-50% + 10px)); filter: brightness(1.5); }
-  45%  { transform: translateX(calc(-50% - 8px)); }
-  60%  { transform: translateX(calc(-50% + 6px)); }
-  75%  { transform: translateX(calc(-50% - 4px)); }
-  100% { transform: translateX(-50%);          filter: brightness(1); }
+  0%   { transform: translate(-50%, -50%);          filter: brightness(2.6); }
+  15%  { transform: translate(calc(-50% - 11px), -50%); }
+  30%  { transform: translate(calc(-50% + 10px), -50%); filter: brightness(1.5); }
+  45%  { transform: translate(calc(-50% - 8px), -50%); }
+  60%  { transform: translate(calc(-50% + 6px), -50%); }
+  75%  { transform: translate(calc(-50% - 4px), -50%); }
+  100% { transform: translate(-50%, -50%);          filter: brightness(1); }
 }
 
 /* Enemy attacking: portrait grows forward from its base, then settles — reads
    as a lunge toward the player. */
 .enemy-slot.attacking .enemy-portrait {
   animation: enemy-lunge 0.36s ease-out;
-  transform-origin: bottom center;
+  transform-origin: center bottom;
 }
 @keyframes enemy-lunge {
-  0%   { transform: translateX(-50%) scale(1); }
-  40%  { transform: translateX(-50%) scale(1.17); }
-  100% { transform: translateX(-50%) scale(1); }
+  0%   { transform: translate(-50%, -50%) scale(1); }
+  40%  { transform: translate(-50%, -50%) scale(1.17); }
+  100% { transform: translate(-50%, -50%) scale(1); }
 }
 
 /* Enemy death: the portrait brightens, lifts, blurs and fades out (its motes
@@ -1527,9 +1534,9 @@ html, body {
   transform-origin: center;
 }
 @keyframes enemy-dissolve {
-  0%   { opacity: 1; filter: brightness(1); transform: translateX(-50%) scale(1); }
-  30%  { opacity: 1; filter: brightness(2.1) saturate(0.5); transform: translateX(-50%) scale(1.05); }
-  100% { opacity: 0; filter: brightness(1.7) blur(4px) saturate(0); transform: translateX(-50%) scale(0.9) translateY(-16px); }
+  0%   { opacity: 1; filter: brightness(1); transform: translate(-50%, -50%) scale(1); }
+  30%  { opacity: 1; filter: brightness(2.1) saturate(0.5); transform: translate(-50%, -50%) scale(1.05); }
+  100% { opacity: 0; filter: brightness(1.7) blur(4px) saturate(0); transform: translate(-50%, -50%) scale(0.9) translateY(-16px); }
 }
 
 /* Ember/ash motes flung from the portrait on death. --dx/--dy/--dur set per

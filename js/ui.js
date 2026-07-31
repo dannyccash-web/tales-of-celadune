@@ -1555,6 +1555,24 @@ export function renderBattleEnemies(enemies) {
     // Order matters for stacking: shadow (back) -> ring -> portrait (front).
     slot.append(name, bar, shadow, ring, portrait);
     box.appendChild(slot);
+
+    // The portrait is vertically CENTERED in the slot now (2026-07-31), so the
+    // ground shadow + gold ring — which used to sit at a fixed CSS baseline —
+    // must be re-anchored to THIS image's actual base (its visual bottom), which
+    // depends on the image's height. Do it once the image has laid out.
+    const positionGround = () => {
+      const h = portrait.offsetHeight;
+      if (!h) return;
+      const slotH = slot.offsetHeight || 800;   // #battle-enemies is 800 tall
+      const gh = shadow.offsetHeight || 130;     // ground oval / ring height
+      const base = slotH / 2 + h / 2;            // visual bottom of a centered image
+      const top = `${Math.round(base - gh / 2)}px`;
+      shadow.style.top = top;
+      ring.style.top = top;
+    };
+    portrait.addEventListener('load', positionGround);
+    if (portrait.complete) requestAnimationFrame(positionGround);
+
     return { el: slot, enemy };
   });
   refreshTargetFocus();
