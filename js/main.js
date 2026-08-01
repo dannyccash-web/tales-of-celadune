@@ -1480,25 +1480,36 @@ async function boot() {
     };
     let beat = 0;
     ui.openDialog(view, null, (v, index) => {
+      // Beat 0 (opening accusation): engaging (0/1) makes him offer to "show"
+      // his hoard; "Leave him be." (2) just closes.
       if (beat === 0) {
-        if (index === 2) return; // "Leave him be." -> just go
-        beat = 1;
-        ui.updateDialogContent({
-          line: 'Ha! That’s what they ALL say, right up to the moment their fingers are in my hoard. ...And yet. You’ve an honest sort of greed about you, I’ll grant it. Tell me true — you’d LIKE to see them, wouldn’t you? My treasures. My precious, precious things. Go on. Say you would.',
-          responses: ['…Alright, show me.', 'Not really.', 'Leave.'],
-        });
-        return true; // keep the window open
+        if (index === 0 || index === 1) {
+          beat = 1;
+          ui.updateDialogContent({
+            line: 'Ha! That’s what they ALL say, right up to the moment their fingers are in my hoard. ...And yet. You’ve an honest sort of greed about you, I’ll grant it. Tell me true — you’d LIKE to see them, wouldn’t you? My treasures. My precious, precious things. Go on. Say you would.',
+            responses: ['…Alright, show me.', 'Not really.', 'Leave.'],
+          });
+          return true; // keep the window open
+        }
+        return; // "Leave him be." -> close
       }
-      // beat === 1
-      if (index === 0) { // "…Alright, show me." -> he panics, shows nothing
-        beat = 2;
-        ui.updateDialogContent({
-          line: 'NO! No — no-no-no, I KNEW it! You’d feast your eyes and mark where they lie and come creeping back with your friends and your little shovels! You’ll see NOTHING. Nothing, d’you hear?! Away! AWAY with you, before I set the dark on you and the dark keeps you!',
-          responses: ['Leave.'],
-        });
-        return true;
+      // Beat 1 (the offer): "…Alright, show me." (0) tips him into a panic; the
+      // other two ("Not really." / "Leave.") close.
+      if (beat === 1) {
+        if (index === 0) {
+          beat = 2;
+          ui.updateDialogContent({
+            line: 'NO! No — no-no-no, I KNEW it! You’d feast your eyes and mark where they lie and come creeping back with your friends and your little shovels! You’ll see NOTHING. Nothing, d’you hear?! Away! AWAY with you, before I set the dark on you and the dark keeps you!',
+            responses: ['Leave.'],
+          });
+          return true;
+        }
+        return; // "Not really." / "Leave." -> close
       }
-      return; // "Not really." / "Leave." -> close
+      // Beat 2 (the panic): its only option is "Leave." -> always close. (This
+      // explicit guard is the fix: without it, "Leave." — index 0 — fell into
+      // beat 1's `index === 0` branch and re-opened the panic, trapping the player.)
+      return;
     });
   }
 
