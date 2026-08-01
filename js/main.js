@@ -1829,9 +1829,9 @@ async function boot() {
   // set when the player picks that action slot and consumed by playerAttack
   // once a target is confirmed. Cleared between attacks.
   let pendingAttackSlot = null;
-  // Set when the player picks Use with an OFFENSIVE consumable equipped (a
-  // torch) — it needs a target like an attack, so it enters targeting and
-  // playerAttack redirects to playerUseTorch on confirm (2026-07-19).
+  // Set when the player picks Use with an OFFENSIVE consumable equipped (the
+  // Spider Fang) — it needs a target like an attack, so it enters targeting and
+  // playerAttack redirects to playerUseOffensiveItem on confirm.
   let pendingUseItem = false;
 
   // Whatever soundtrack was playing when the battle started, so endBattle()
@@ -2327,7 +2327,7 @@ async function boot() {
   window.battleDebug = {
     start: startBattle, state: battleState, stats, equipment,
     effectiveAttack, effectiveDefense, weaponDamage,
-    handleBattleAction, playerAttack, playerFlee, playerUseItem, playerUseTorch, tickBurns, checkBattleEnd,
+    handleBattleAction, playerAttack, playerFlee, playerUseItem, playerUseOffensiveItem, tickBurns, checkBattleEnd,
     rollRoundOrder, playerInitiativeChance, moveMultForSpeed, // Speed-stat testing (2026-07-20)
     computeBattleRewards, endBattle, handleEnemyDeaths, // battle-feel/loot testing (2026-07-21)
     nowPlaying: audio.nowPlaying, // for verifying battle-music crossfades in automation
