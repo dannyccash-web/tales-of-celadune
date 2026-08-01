@@ -989,9 +989,17 @@ export class World {
   // current position; a little smaller than Calder's hut flames (scale 0.5).
   drawPlayerTorchFire() {
     const p = this.player;
+    // The torch rides the icon's LEFT side and must turn WITH the icon as the
+    // player rotates (2026-07-31, Danny — it used to stay pinned screen-left,
+    // which looked wrong once you turned). (-16,+4) is the good position when
+    // facing south (rotation 0); rotate that offset by p.rotation so it stays on
+    // the same side of the sprite. The flame itself still rises upward in
+    // drawFire — fire doesn't tip over, only its base point moves.
+    const ox = -16, oy = 4;
+    const cos = Math.cos(p.rotation), sin = Math.sin(p.rotation);
     this.drawFire({
-      x: p.x - 16,          // off the icon's left side (icon is ~40px)
-      y: p.y + 4,           // base just below center, so the flame licks up the side
+      x: p.x + ox * cos - oy * sin,
+      y: p.y + ox * sin + oy * cos,
       rise: 18, width: 5, count: 10, speed: 1.3, scale: 0.5,
       seed: 0.2,
     });

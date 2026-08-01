@@ -392,10 +392,10 @@ export default {
   // D2 chimney smoke — no asset needed). Co-located so the smoke rises off the
   // flame.
   fires: [
-    { x: 1700, y: 430 },
+    { x: 1632, y: 263 },
   ],
   smoke: [
-    { x: 1700, y: 418 },
+    { x: 1632, y: 251 },
   ],
 
   // Treasure chest (2026-07-31, Danny) in the bottom-left corner chamber,

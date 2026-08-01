@@ -338,6 +338,11 @@ async function boot() {
   // collected interactables, cleared battles/ambushes, and slain camp members.
   // Set by loadGame(); consumed the first time each scene's World is created.
   let pendingWorldFlags = null;
+  // Elowen's blessing is limited to ONCE PER VISIT (2026-07-31, Danny): the
+  // player must leave the scene and come back for another. Reset on every scene
+  // entry (enterScene, below) — NOT persisted, so it's a per-visit gate.
+  // Declared up here (before enterScene's first call at boot) to avoid a TDZ.
+  let elowenBlessedThisVisit = false;
   // Where to drop the player when they leave the cave/dungeon they're in — the
   // EXACT overworld spot they entered from (2026-07-26). Captured in enterCave,
   // consumed in exitCave, and persisted in the save so quitting inside a cave
@@ -383,6 +388,7 @@ async function boot() {
     world = worlds[id];
     currentSceneId = id;
     window.world = world; // debug handle follows the active scene
+    elowenBlessedThisVisit = false; // per-visit blessing gate resets each scene entry (2026-07-31)
     if (fresh && pendingWorldFlags) applyWorldFlags(world, pendingWorldFlags[id]);
   }
   enterScene('D3');
@@ -810,18 +816,30 @@ async function boot() {
     if (effect.blessing) {
       const prev = { line: npc.dialog.line, responses: npc.dialog.responses, responseEffects: npc.dialog.responseEffects };
       const backTo = { responses: ['Go back.', 'Leave.'], responseEffects: [{ goBack: prev }, null] };
+      // Already blessed this visit (2026-07-31) — deny, and hand back a menu
+      // WITHOUT the blessing option so it can't be re-picked until they return.
+      if (elowenBlessedThisVisit) {
+        const cleanedBack = { responses: ['Go back.', 'Leave.'], responseEffects: [{ goBack: stripBlessingOption(prev) }, null] };
+        ui.updateDialogContent({ line: 'One blessing to a visit, traveler — the shrine gives freely, but not without measure. Walk the road a while and return; my door stays open.', ...cleanedBack });
+        return true;
+      }
       if (stats.health >= stats.healthMax) {
+        // Not consumed (no wound to mend) — the option stays available.
         ui.updateDialogContent({ line: 'Elowen studies you a moment, then smiles. You carry no wound today, traveler — keep your coin. Go steady, and come back if the road bloodies you.', ...backTo });
         return true;
       }
       if (stats.gold < 1) {
+        // Not consumed (couldn't pay) — the option stays available.
         audio.sfx(audio.SFX.denied);
         ui.updateDialogContent({ line: 'A blessing asks only a single coin for the shrine, traveler — and your purse is bare. Come back when fortune allows; the doors are always open.', ...backTo });
         return true;
       }
       spendGold(1); // deducts 1 gold + coin SFX + autosave
       healPlayer(1);
-      ui.updateDialogContent({ line: 'Elowen presses a cool palm to your brow and murmurs a soft prayer. A gentle warmth spreads through you, and your hurts ease. (Restored 1 HP.)', ...backTo });
+      elowenBlessedThisVisit = true; // one blessing per visit — reset on the next scene entry
+      // Go-back now returns to a menu with the blessing option removed.
+      const cleanedBack = { responses: ['Go back.', 'Leave.'], responseEffects: [{ goBack: stripBlessingOption(prev) }, null] };
+      ui.updateDialogContent({ line: 'Elowen presses a cool palm to your brow and murmurs a soft prayer. A gentle warmth spreads through you, and your hurts ease. (Restored 1 HP.)', ...cleanedBack });
       return true;
     }
     // ---- Calder Rusk's keepsake-quest flow (2026-07-25) ----
@@ -1590,15 +1608,28 @@ async function boot() {
   // blessing is always available at the temple; it's deliberately NOT added to
   // her quest turn-in screen (a reward choice, neither of those closers).
   const BLESSING_CLOSERS = ['Leave.', 'Not just now.'];
+  const BLESSING_LABEL = 'Receive a blessing. (1 gold)';
   function withBlessing(dialog, npc) {
     if (npc.id !== 'elowen' || !dialog.responses?.length) return dialog;
+    if (elowenBlessedThisVisit) return dialog; // already blessed this visit — no option until you return
     if (!BLESSING_CLOSERS.includes(dialog.responses[dialog.responses.length - 1])) return dialog;
     const responses = [...dialog.responses];
     const effects = dialog.responseEffects ? [...dialog.responseEffects] : responses.map(() => null);
     const at = Math.max(0, responses.length - 1);
-    responses.splice(at, 0, 'Receive a blessing. (1 gold)');
+    responses.splice(at, 0, BLESSING_LABEL);
     effects.splice(at, 0, { blessing: true });
     return { ...dialog, responses, responseEffects: effects };
+  }
+  // Return a copy of a dialog-content object with the blessing option removed —
+  // used for the go-back menu after a blessing is spent this visit (2026-07-31).
+  function stripBlessingOption(d) {
+    const idx = (d.responses || []).indexOf(BLESSING_LABEL);
+    if (idx < 0) return d;
+    const responses = d.responses.slice();
+    const responseEffects = (d.responseEffects || d.responses.map(() => null)).slice();
+    responses.splice(idx, 1);
+    responseEffects.splice(idx, 1);
+    return { line: d.line, responses, responseEffects };
   }
 
   function openVendorGrid(npcArg, mode) {

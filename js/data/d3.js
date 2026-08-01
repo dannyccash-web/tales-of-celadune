@@ -409,7 +409,7 @@ export default {
             ],
           },
           completed: {
-            line: 'Barn’s all quiet now, thanks to you. The hay’s still there, mind — the offer stands.',
+            line: 'Well, well — the great rat-catcher returns. Barn’s quiet, hay’s whole, not a whisker in sight. Suppose you do serve a purpose around here after all. ...Thank you, truly. I mean it.',
             responses: [
               'Leave.',
             ],
