@@ -1186,9 +1186,13 @@ html, body {
   position: absolute;
   inset: 0;
   background: linear-gradient(180deg, var(--gold-bright), var(--frame-light));
+  /* Even-odd ring = OUTER trapezoid (fully closed, incl. the LEFT slant) minus
+     the INNER trapezoid. The outer loop is closed by repeating its start point
+     `0 0` before the inner loop begins — WITHOUT that closure the left edge was
+     never drawn and the gold rim was missing on the left (2026-07-31, Danny). */
   clip-path: polygon(evenodd,
-    0 0, 100% 0, calc(100% - 70px) 100%, 70px 100%,
-    73px calc(100% - 3px), calc(100% - 73px) calc(100% - 3px), calc(100% - 3px) 0, 3px 0);
+    0 0, 100% 0, calc(100% - 70px) 100%, 70px 100%, 0 0,
+    3px 0, calc(100% - 3px) 0, calc(100% - 73px) calc(100% - 3px), 73px calc(100% - 3px), 3px 0);
   pointer-events: none;
 }
 
