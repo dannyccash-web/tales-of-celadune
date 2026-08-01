@@ -326,6 +326,23 @@ export default {
   // via `enemyId: 'cave_spider'` on contact; `defeated` persists per-World + in
   // the save (npcsDefeated). Positions engine-verified walkable + reachable.
   npcs: [
+    // Edras Holloweye (2026-07-31, Danny) — a paranoid old hermit holed up in
+    // the top-right chamber, convinced everyone's after his "treasures" (which
+    // read as worthless junk now, but become quest items later). He WANDERS his
+    // patch (patrol) and BUTTONHOLES the player on approach (`proximityTalk` +
+    // `talkRange` → world.pendingApproach → main.js's openEdrasDialog), the same
+    // "talk when you get too close" feel as the Bramblekin gate guards. To folk
+    // in the village he's legendary as "the Pale Warning" for his prophetic
+    // ramblings (see Ingrith's chatter in d2.js). Dialogue is state-built in
+    // main.js, routed via openNpcDialog's edras_holloweye branch.
+    {
+      id: 'edras_holloweye', name: 'Edras Holloweye', role: 'HERMIT',
+      proximityTalk: true, talkRange: 165,
+      sprite: 'assets/images/Edras Holloweye_overhead.png',
+      portrait: 'assets/images/Edras Holloweye.png',
+      x: 1667, y: 383, speed: 26, startsHome: false,
+      patrol: [ { x: 1667, y: 383 }, { x: 1757, y: 383 }, { x: 1667, y: 473 } ],
+    },
     {
       id: 'cave_spider_1', name: 'Cave Spider', creature: true, enemyId: 'cave_spider',
       sprite: 'assets/images/cave_spider_overhead.png',

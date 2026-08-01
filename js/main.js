@@ -306,6 +306,7 @@ async function boot() {
     'assets/images/rootweaver.png', // D4 rootweaver — an ambush enemy, not in a `battles` list
     'assets/images/cave_bat.png', // D4B cave bat — an ambush enemy, not in a `battles` list
     'assets/images/cave_spider.png', // D4B cave spider — a roaming creature enemy (aggro, not in `battles`)
+    'assets/images/Edras Holloweye.png', // D4B hermit — dialog auto-opens on approach, so preload the portrait
     ...Object.values(SCENES).flatMap((scene) => [
       scene.background,
       // Places (isPlace: true, e.g. "Your House") have no sprite — they're
@@ -1458,6 +1459,49 @@ async function boot() {
     ui.openDialog(view, null, () => {});
   }
 
+  // Edras Holloweye, "the Pale Warning" (2026-07-31, Danny) — a paranoid old
+  // hermit. Fired by world.pendingApproach when the player wanders within his
+  // talkRange (also reachable by pressing space near him, both route here via
+  // openNpcDialog). A short scripted rant: he accuses the player of coming for
+  // his "treasures," teases showing them off, then panics and throws them out
+  // without revealing a thing. The "treasures" read as worthless junk for now
+  // but are earmarked as quest items later — so keep him cagey, never actually
+  // showing/handing over anything. Custom onResponse walks the beats via
+  // updateDialogContent (same pattern as openGateConfrontation / the well).
+  function openEdrasDialog(npc) {
+    const view = {
+      id: 'edras_holloweye', name: 'Edras Holloweye', role: 'HERMIT',
+      portrait: 'assets/images/Edras Holloweye.png',
+      background: 'assets/images/cave_background.jpg',
+      dialog: {
+        line: 'Eh?! Who’s that, skulking in my dark? You’ve come for them — my treasures — don’t you DENY it, thief! Everyone’s after them. The crows. The roots. The little men made of thorns. And now YOU.',
+        responses: ['I’m not here for your treasures.', 'What treasures?', 'Leave him be.'],
+      },
+    };
+    let beat = 0;
+    ui.openDialog(view, null, (v, index) => {
+      if (beat === 0) {
+        if (index === 2) return; // "Leave him be." -> just go
+        beat = 1;
+        ui.updateDialogContent({
+          line: 'Ha! That’s what they ALL say, right up to the moment their fingers are in my hoard. ...And yet. You’ve an honest sort of greed about you, I’ll grant it. Tell me true — you’d LIKE to see them, wouldn’t you? My treasures. My precious, precious things. Go on. Say you would.',
+          responses: ['…Alright, show me.', 'Not really.', 'Leave.'],
+        });
+        return true; // keep the window open
+      }
+      // beat === 1
+      if (index === 0) { // "…Alright, show me." -> he panics, shows nothing
+        beat = 2;
+        ui.updateDialogContent({
+          line: 'NO! No — no-no-no, I KNEW it! You’d feast your eyes and mark where they lie and come creeping back with your friends and your little shovels! You’ll see NOTHING. Nothing, d’you hear?! Away! AWAY with you, before I set the dark on you and the dark keeps you!',
+          responses: ['Leave.'],
+        });
+        return true;
+      }
+      return; // "Not really." / "Leave." -> close
+    });
+  }
+
   // A hidden Rootweaver ambush sprang — start the fight. Winning clears it for
   // good; fleeing shoves the player back down the path to the ambush's
   // `retreat` point (far enough that pressing on walks them right back into it,
@@ -1689,6 +1733,7 @@ async function boot() {
       ui.openDialog(buildPlaceView(npc), onClose, (npcView, index) => applyPlaceResponse(npc, npcView, index));
       return;
     }
+    if (npc.id === 'edras_holloweye') { openEdrasDialog(npc); return; }
     const voice = audio.DIALOGUE_SFX[npc.id];
     if (voice) audio.sfx(voice, 1.0);
     let dialog;
@@ -2591,6 +2636,13 @@ async function boot() {
       const a = world.pendingAmbush;
       world.pendingAmbush = null;
       startAmbush(a);
+    }
+    // A wandering `proximityTalk` NPC (Edras the hermit) buttonholes the player
+    // on approach — open their dialog (routed to the right builder in openNpcDialog).
+    if (world.pendingApproach) {
+      const npc = world.pendingApproach;
+      world.pendingApproach = null;
+      openNpcDialog(npc);
     }
 
     requestAnimationFrame(frame);

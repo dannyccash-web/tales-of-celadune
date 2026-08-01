@@ -1001,6 +1001,7 @@ export default {
       chatter: [
         { q: 'Lived here long?', a: 'Longer than these hills have had names I would repeat. I have buried three winters harder than this one and I will likely bury more. The cold teaches patience, if it does not take you first.' },
         { q: 'Any old tales?', a: 'Plenty, and most of them warnings dressed as stories. There is a thing in the deep woods the old folk will not name aloud. Call it superstition — just do not go looking to prove me wrong.' },
+        { q: 'Any strange folk about?', a: 'Only the Pale Warning — that is what we call the old hermit, up in the woods cave to the east. Had a proper name once; no one has used it in years. Guards a “hoard” of treasures that is mostly rat bones and broken crockery, and he will swear on it that you have come to rob him. Laugh if you like. But the man’s ravings have a habit of coming true, and those who mocked him loudest tend to be the ones who stop laughing first.' },
       ],
     },
     {

@@ -173,6 +173,12 @@ export class World {
     this.ambushes = (scene.ambushes || []).map((a) => ({ ...a, triggered: false, defeated: false }));
     this.pendingAmbush = null;
 
+    // Wandering NPCs flagged `proximityTalk` (Edras the hermit) buttonhole the
+    // player on approach: coming within `talkRange` fires `pendingApproach`
+    // (main.js opens their dialog), de-bounced per NPC via `_talkArmed` so it
+    // fires once and re-arms only after the player backs off past 1.6× range.
+    this.pendingApproach = null;
+
     // Animation clock for code-drawn effects (currently campfire smoke).
     this.time = 0;
     // Smoke sources from scene data ({x, y} in world coords), each expanded
@@ -369,6 +375,7 @@ export class World {
     this.pendingLeave = null;
     this.pendingAmbush = null;
     this.pendingAggro = null;
+    this.pendingApproach = null;
     const p = this.player;
     const preX = p.x, preY = p.y; // pre-move position for the camp membrane clamp
     let dx = 0, dy = 0;
@@ -415,6 +422,7 @@ export class World {
       this.checkCampMembrane(preX, preY);
       this.checkCampAggro();
       this.checkAmbushes();
+      this.checkApproachTalk();
     }
 
     // Camera: horizontal fixed (world width == viewport width); vertical follows
@@ -535,6 +543,26 @@ export class World {
         if (!a.triggered && !this.pendingAmbush) { this.pendingAmbush = a; a.triggered = true; }
       } else if (d > range * 1.6) {
         a.triggered = false;
+      }
+    }
+  }
+
+  // Proximity dialogue for wandering `proximityTalk` NPCs (Edras the hermit):
+  // getting within `talkRange` fires pendingApproach once (main.js opens the
+  // NPC's dialog), re-arming only after the player leaves past 1.6× range — so
+  // it doesn't re-fire the instant the dialog closes while you're still next to
+  // them. Mirrors checkAmbushes' hysteresis; skips defeated / at-home NPCs.
+  checkApproachTalk() {
+    if (this.pendingApproach) return;
+    const p = this.player;
+    for (const npc of this.npcs) {
+      if (npc.defeated || npc.atHome || !npc.proximityTalk) continue;
+      const range = npc.talkRange ?? 150;
+      const d = Math.hypot(npc.x - p.x, npc.y - p.y);
+      if (d < range) {
+        if (npc._talkArmed !== false) { this.pendingApproach = npc; npc._talkArmed = false; }
+      } else if (d > range * 1.6) {
+        npc._talkArmed = true;
       }
     }
   }
