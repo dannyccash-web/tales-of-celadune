@@ -984,6 +984,19 @@ export class World {
     ctx.restore();
   }
 
+  // A small torch flame flickering off the LEFT side of the player's icon while
+  // a torch is equipped (2026-07-31, Danny). Rebuilt each frame at the player's
+  // current position; a little smaller than Calder's hut flames (scale 0.5).
+  drawPlayerTorchFire() {
+    const p = this.player;
+    this.drawFire({
+      x: p.x - 16,          // off the icon's left side (icon is ~40px)
+      y: p.y + 4,           // base just below center, so the flame licks up the side
+      rise: 18, width: 5, count: 10, speed: 1.3, scale: 0.5,
+      seed: 0.2,
+    });
+  }
+
   // Torch light in a dark cave: a small warm pool cast on the floor AROUND the
   // player (drawn BEFORE the player, so it sits behind them, not as a cloud on
   // top). `soft-light` blend modulates the floor texture — it reads as the
@@ -1049,6 +1062,12 @@ export class World {
       this.images['assets/images/Player_Overhead_1.png'],
       p.x, p.y, p.rotation, stepFlip,
     );
+
+    // Lit torch: a small flame flickering off the LEFT side of the player icon
+    // whenever a torch is equipped (main.js sets playerTorch). Reuses drawFire
+    // (Calder's hut flames), scaled down. Drawn after the player so it reads as
+    // a held torch in front of them.
+    if (this.playerTorch) this.drawPlayerTorchFire();
 
     // Campfire smoke and other code-drawn effects, above the world/characters
     for (const s of this.smokes) this.drawSmoke(s);

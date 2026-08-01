@@ -758,6 +758,7 @@ async function boot() {
   // old full-heal respawn only if, somehow, there's no save on file.
   function continueFromDeath() {
     pendingDefeatCallback = null;
+    deathFading = false;      // clear the fade lock (hideGameOver also clears the black overlay)
     ui.hideGameOver();
     if (!loadGame()) respawnAfterDefeat();
   }
@@ -2195,7 +2196,9 @@ async function boot() {
     preBattleTrack = null;
     if (result === 'defeat') {
       ui.closeBattle();
-      ui.showGameOver();
+      audio.sfx(audio.SFX.enemyDeath); // the player falls with the same sound a slain enemy makes
+      deathFading = true;              // freeze input while the screen fades to black
+      ui.startDeathFade(() => { deathFading = false; ui.showGameOver(); }); // 2s to black, then the death screen fades in
       pendingDefeatCallback = onEnd;
       return;
     }
@@ -2255,6 +2258,7 @@ async function boot() {
   // once, above) knows what to finish up — same "defer the callback" shape
   // as battleState.onEnd, just surviving past endBattle() clearing it.
   let pendingDefeatCallback = null;
+  let deathFading = false; // true during the 2s fade-to-black before Game Over (freezes input)
 
   // No real death penalty/checkpoint system yet (2026-07-08 — Danny opted
   // for a Game Over screen over an instant respawn): full-heal and return
@@ -2476,8 +2480,16 @@ async function boot() {
   const FISH_MS = 10000;
   function startFishing(spot) {
     if (fishing) return;
-    if (!inventory.some((it) => it.id === 'fishing_rod')) { audio.sfx(audio.SFX.denied); ui.toast('You need a fishing rod to fish here.'); return; }
-    if (!inventory.some((it) => it.id === 'fishing_bait')) { audio.sfx(audio.SFX.denied); ui.toast('You’ve no bait — the general store sells some.'); return; }
+    const hasRod = inventory.some((it) => it.id === 'fishing_rod');
+    const hasBait = inventory.some((it) => it.id === 'fishing_bait');
+    if (!hasRod || !hasBait) {
+      audio.sfx(audio.SFX.denied);
+      const need = (!hasRod && !hasBait) ? 'a fishing rod and some bait'
+                 : !hasRod ? 'a fishing rod'
+                 : 'some bait';
+      ui.toast(`You’ll need ${need} to fish here.`);
+      return;
+    }
     fishing = true;
     removeItem('fishing_bait', 1, true);
     audio.sfx(audio.SFX.cast);
@@ -2570,7 +2582,7 @@ async function boot() {
     // A modal (dialog/panel/battle/victory/game-over/pre-start) fully pauses the
     // world; fishing only locks the PLAYER — NPCs keep wandering during a cast
     // (2026-07-23). `locked` gates the player, `worldFrozen` gates the world.
-    const modalLock = ui.isDialogOpen() || ui.isAnyPanelOpen() || ui.isBattleOpen() || ui.isVictoryOpen() || ui.isGameOverOpen() || !state.started;
+    const modalLock = ui.isDialogOpen() || ui.isAnyPanelOpen() || ui.isBattleOpen() || ui.isVictoryOpen() || ui.isGameOverOpen() || deathFading || !state.started;
     const locked = modalLock || fishing;
     // Camp membrane state (no-op in scenes without a camp): sealed until the
     // player has passage (paid this visit OR did the Chief's favor) — and never
@@ -2589,6 +2601,9 @@ async function boot() {
     const hasTorch = equipment.offhand === 'torch'; // torch is an off-hand weapon (2026-07-26)
     if (caveDarkEl) caveDarkEl.classList.toggle('active', darkScene && !hasTorch);
     world.playerGlow = darkScene && hasTorch;
+    // A lit torch flickers beside the player's icon whenever it's equipped —
+    // anywhere, not just dark caves (2026-07-31, Danny). world.js draws it.
+    world.playerTorch = state.started && hasTorch;
     // Hide proximity labels while any modal (dialog/panel/battle/…) is open so
     // they don't render over the overlay (2026-07-28, the "Old Barn" label bug).
     world.suppressLabels = modalLock;
@@ -2635,10 +2650,12 @@ async function boot() {
       startBattle([enemyId], (result) => {
         if (result === 'victory') foe.defeated = true;
       });
-      // First time a creature charges you, teach the escape route: Flee, then
-      // get away from where it lurks and it gives up (2026-07-26). Overrides
-      // startBattle's default opener; one-time so it doesn't nag.
-      if (foe.creature && !creatureFleeHintShown) {
+      // First time a creature charges you OUTSIDE a cave, teach the escape
+      // route: Flee, then get away from where it lurks and it gives up
+      // (2026-07-26). Overrides startBattle's default opener; one-time so it
+      // doesn't nag. Suppressed inside caves — no tutorial-type language down
+      // there (2026-07-31, Danny), so a cave creature fight reads clean.
+      if (foe.creature && !creatureFleeHintShown && world.scene.music !== 'cave') {
         creatureFleeHintShown = true;
         ui.setBattleMessage('It’s on you! If you’re outmatched, choose Flee — then get well away from its lair and it’ll give up the chase.');
       }

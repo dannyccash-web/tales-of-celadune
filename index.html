@@ -361,6 +361,9 @@
            battle. Only way out is Try Again (main.js's respawnAfterDefeat —
            full heal, back to the scene's spawn point; no save/checkpoint
            system exists yet, so this is the whole "penalty" for now). -->
+      <!-- On death the screen fades to black over 2s (ui.startDeathFade) before
+           the Game Over screen fades in on top (2026-07-31, Danny). -->
+      <div id="death-fade" class="hidden"></div>
       <div id="game-over" class="hidden">
         <h1>You Have Fallen</h1>
         <button id="btn-try-again">Continue</button>

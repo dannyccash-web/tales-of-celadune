@@ -1553,26 +1553,11 @@ export function renderBattleEnemies(enemies) {
     portrait.alt = enemy.name;
 
     // Order matters for stacking: shadow (back) -> ring -> portrait (front).
+    // The portrait is bottom-justified again (2026-07-31), so the ground shadow
+    // + gold ring keep their fixed CSS baseline (top:640) — no per-image
+    // re-anchoring needed.
     slot.append(name, bar, shadow, ring, portrait);
     box.appendChild(slot);
-
-    // The portrait is vertically CENTERED in the slot now (2026-07-31), so the
-    // ground shadow + gold ring — which used to sit at a fixed CSS baseline —
-    // must be re-anchored to THIS image's actual base (its visual bottom), which
-    // depends on the image's height. Do it once the image has laid out.
-    const positionGround = () => {
-      const h = portrait.offsetHeight;
-      if (!h) return;
-      const slotH = slot.offsetHeight || 800;   // #battle-enemies is 800 tall
-      const gh = shadow.offsetHeight || 130;     // ground oval / ring height
-      const base = slotH / 2 + h / 2;            // visual bottom of a centered image
-      const top = `${Math.round(base - gh / 2)}px`;
-      shadow.style.top = top;
-      ring.style.top = top;
-    };
-    portrait.addEventListener('load', positionGround);
-    if (portrait.complete) requestAnimationFrame(positionGround);
-
     return { el: slot, enemy };
   });
   refreshTargetFocus();
@@ -1809,12 +1794,30 @@ export function isGameOverOpen() {
   return !$('game-over').classList.contains('hidden');
 }
 
+// Fade the screen to black over 2s, then run `onDone` (2026-07-31, Danny). Used
+// on death before the Game Over screen fades in. Removing `.hidden` shows the
+// overlay at opacity 0; a forced reflow then `.show` runs the CSS transition
+// from 0 -> 1.
+export function startDeathFade(onDone) {
+  const fade = $('death-fade');
+  fade.classList.remove('hidden', 'show');
+  void fade.offsetWidth; // reflow so the opacity transition starts from 0
+  fade.classList.add('show');
+  setTimeout(() => { if (onDone) onDone(); }, 2000);
+}
+
 export function showGameOver() {
-  $('game-over').classList.remove('hidden');
+  const go = $('game-over');
+  go.classList.remove('hidden');
+  replayClass(go, 'go-fade-in'); // fade the death screen in over the black
 }
 
 export function hideGameOver() {
   $('game-over').classList.add('hidden');
+  // Clear the fade-to-black so the reloaded scene isn't left blacked out.
+  const fade = $('death-fade');
+  fade.classList.add('hidden');
+  fade.classList.remove('show');
 }
 
 export function initGameOver(handlers) {

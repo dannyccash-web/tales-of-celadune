@@ -1329,18 +1329,21 @@ html, body {
   50%      { filter: drop-shadow(0 0 15px rgba(238, 214, 148, 0.95)); }
 }
 
-/* The enemy art: proportional fit within 380x540 (never stretched/cropped),
-   VERTICALLY CENTERED in its 800px-tall slot (2026-07-31, Danny — was
-   bottom-justified). Kept centered horizontally via left:50% + translate so the
-   hit/lunge/dissolve keyframes (which take translate(-50%,-50%) as their
-   baseline) keep working. The ground shadow + gold ring are re-anchored to each
-   image's actual base by ui.js's renderBattleEnemies (positionGround), since a
-   centered variable-height image can't be tracked by a fixed CSS `top`. */
+/* The enemy art: proportional fit within a 380x540 box (never stretched or
+   cropped), BOTTOM-justified so every enemy rests on the same foot baseline
+   (design Y725, from bottom:75 in the 800-tall slot) — reverted to bottom-
+   justified 2026-07-31, Danny. The band it lives in is clear of everything: the
+   name (Y88) + 26px HP bar (Y128-154) sit above it, and a full-height 540 image
+   tops out at Y185 (31px below the HP bar) while its base at Y725 clears the
+   action row (frame at Y830, its circles reaching up to ~Y780). Centered
+   horizontally via left:50% + translateX(-50%), the baseline the hit/lunge/
+   dissolve keyframes are built on. The ground shadow + gold ring keep their
+   fixed CSS baseline (top:640) since the image is bottom-anchored again. */
 .enemy-portrait {
   position: absolute;
-  top: 50%;
+  bottom: 75px;
   left: 50%;
-  transform: translate(-50%, -50%);
+  transform: translateX(-50%);
   max-width: 380px;
   max-height: 540px;
   width: auto;
@@ -1503,32 +1506,32 @@ html, body {
 /* ---- Battle feel / "juice" (2026-07-21) ----
    All triggered by ui.js toggling a class on the freshly-rendered enemy slot
    (or on #battle) with the remove-reflow-re-add trick so the animation replays.
-   The .enemy-portrait img carries transform: translate(-50%, -50%) to stay
-   centered (both axes, 2026-07-31), so every keyframe that touches its transform
-   re-includes that. */
+   The .enemy-portrait img carries transform: translateX(-50%) to stay centered
+   horizontally (bottom-justified vertically), so every keyframe that touches its
+   transform re-includes that. */
 
 /* Enemy struck: a quick horizontal shake + white flash on the portrait. */
 .enemy-slot.hit .enemy-portrait { animation: enemy-hit-shake 0.4s ease-out; }
 @keyframes enemy-hit-shake {
-  0%   { transform: translate(-50%, -50%);          filter: brightness(2.6); }
-  15%  { transform: translate(calc(-50% - 11px), -50%); }
-  30%  { transform: translate(calc(-50% + 10px), -50%); filter: brightness(1.5); }
-  45%  { transform: translate(calc(-50% - 8px), -50%); }
-  60%  { transform: translate(calc(-50% + 6px), -50%); }
-  75%  { transform: translate(calc(-50% - 4px), -50%); }
-  100% { transform: translate(-50%, -50%);          filter: brightness(1); }
+  0%   { transform: translateX(-50%);          filter: brightness(2.6); }
+  15%  { transform: translateX(calc(-50% - 11px)); }
+  30%  { transform: translateX(calc(-50% + 10px)); filter: brightness(1.5); }
+  45%  { transform: translateX(calc(-50% - 8px)); }
+  60%  { transform: translateX(calc(-50% + 6px)); }
+  75%  { transform: translateX(calc(-50% - 4px)); }
+  100% { transform: translateX(-50%);          filter: brightness(1); }
 }
 
 /* Enemy attacking: portrait grows forward from its base, then settles — reads
    as a lunge toward the player. */
 .enemy-slot.attacking .enemy-portrait {
   animation: enemy-lunge 0.36s ease-out;
-  transform-origin: center bottom;
+  transform-origin: bottom center;
 }
 @keyframes enemy-lunge {
-  0%   { transform: translate(-50%, -50%) scale(1); }
-  40%  { transform: translate(-50%, -50%) scale(1.17); }
-  100% { transform: translate(-50%, -50%) scale(1); }
+  0%   { transform: translateX(-50%) scale(1); }
+  40%  { transform: translateX(-50%) scale(1.17); }
+  100% { transform: translateX(-50%) scale(1); }
 }
 
 /* Enemy death: the portrait brightens, lifts, blurs and fades out (its motes
@@ -1538,9 +1541,9 @@ html, body {
   transform-origin: center;
 }
 @keyframes enemy-dissolve {
-  0%   { opacity: 1; filter: brightness(1); transform: translate(-50%, -50%) scale(1); }
-  30%  { opacity: 1; filter: brightness(2.1) saturate(0.5); transform: translate(-50%, -50%) scale(1.05); }
-  100% { opacity: 0; filter: brightness(1.7) blur(4px) saturate(0); transform: translate(-50%, -50%) scale(0.9) translateY(-16px); }
+  0%   { opacity: 1; filter: brightness(1); transform: translateX(-50%) scale(1); }
+  30%  { opacity: 1; filter: brightness(2.1) saturate(0.5); transform: translateX(-50%) scale(1.05); }
+  100% { opacity: 0; filter: brightness(1.7) blur(4px) saturate(0); transform: translateX(-50%) scale(0.9) translateY(-16px); }
 }
 
 /* Ember/ash motes flung from the portrait on death. --dx/--dy/--dur set per
@@ -1690,9 +1693,25 @@ html, body {
 }
 
 /* ---- Game Over ---- */
+/* Death fade-to-black (2026-07-31): on defeat this blacks the screen out over
+   2s before the Game Over screen fades in on top. Removing `.hidden` shows it
+   at opacity 0; adding `.show` runs the 2s transition (JS forces a reflow
+   between so it animates from 0). Sits just under #game-over. */
+#death-fade {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 19;
+  transition: opacity 2s ease-in;
+}
+#death-fade.show { opacity: 1; }
+
 #game-over {
   position: absolute;
   inset: 0;
+  z-index: 20;
   background: radial-gradient(ellipse at center, #2a0a0a 0%, #000 78%);
   display: flex;
   flex-direction: column;
@@ -1700,6 +1719,10 @@ html, body {
   justify-content: center;
   gap: 60px;
 }
+/* The death screen fades in (over the already-black screen) once the fade
+   completes — ui.showGameOver replays this class. */
+#game-over.go-fade-in { animation: go-fade-in 0.7s ease-in; }
+@keyframes go-fade-in { from { opacity: 0; } to { opacity: 1; } }
 
 #game-over h1 {
   font-family: var(--font-medieval);
