@@ -320,8 +320,34 @@ export default {
     },
   ],
 
-  // No walking NPCs down here — the threats are all auto-ambushes below.
-  npcs: [],
+  // Cave Spiders (2026-07-31, Danny) — three roaming `creature` enemies (mill
+  // via a small patrol loop, CHARGE the player within aggroRange, give up and
+  // return home when the player leaves — same AI as D1's cragclaws). They fight
+  // via `enemyId: 'cave_spider'` on contact; `defeated` persists per-World + in
+  // the save (npcsDefeated). Positions engine-verified walkable + reachable.
+  npcs: [
+    {
+      id: 'cave_spider_1', name: 'Cave Spider', creature: true, enemyId: 'cave_spider',
+      sprite: 'assets/images/cave_spider_overhead.png',
+      portrait: 'assets/images/cave_spider.png',
+      x: 309, y: 1633, speed: 34, chaseSpeed: 140, aggroRange: 400, startsHome: false,
+      patrol: [ { x: 309, y: 1633 }, { x: 379, y: 1633 }, { x: 309, y: 1703 } ],
+    },
+    {
+      id: 'cave_spider_2', name: 'Cave Spider', creature: true, enemyId: 'cave_spider',
+      sprite: 'assets/images/cave_spider_overhead.png',
+      portrait: 'assets/images/cave_spider.png',
+      x: 303, y: 527, speed: 34, chaseSpeed: 140, aggroRange: 400, startsHome: false,
+      patrol: [ { x: 303, y: 527 }, { x: 373, y: 527 }, { x: 303, y: 597 } ],
+    },
+    {
+      id: 'cave_spider_3', name: 'Cave Spider', creature: true, enemyId: 'cave_spider',
+      sprite: 'assets/images/cave_spider_overhead.png',
+      portrait: 'assets/images/cave_spider.png',
+      x: 1647, y: 1187, speed: 34, chaseSpeed: 140, aggroRange: 400, startsHome: false,
+      patrol: [ { x: 1647, y: 1187 }, { x: 1717, y: 1187 }, { x: 1647, y: 1257 } ],
+    },
+  ],
 
   // Enemies (2026-07-31, Danny): the ONLY enemies here are auto-ambushes placed
   // at the tunnel INTERSECTIONS — each is 1-3 Blight Rats or 1-3 Cave Bats

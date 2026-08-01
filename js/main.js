@@ -305,6 +305,7 @@ async function boot() {
     'assets/images/queen_cragclaw.png',
     'assets/images/rootweaver.png', // D4 rootweaver — an ambush enemy, not in a `battles` list
     'assets/images/cave_bat.png', // D4B cave bat — an ambush enemy, not in a `battles` list
+    'assets/images/cave_spider.png', // D4B cave spider — a roaming creature enemy (aggro, not in `battles`)
     ...Object.values(SCENES).flatMap((scene) => [
       scene.background,
       // Places (isPlace: true, e.g. "Your House") have no sprite — they're
@@ -347,6 +348,15 @@ async function boot() {
     (f.battles || []).forEach((id) => { const b = w.battles.find((x) => x.id === id); if (b) b.defeated = true; });
     (f.ambushes || []).forEach((id) => { const a = w.ambushes.find((x) => x.id === id); if (a) a.defeated = true; });
     (f.npcsDefeated || []).forEach((id) => { const n = w.npcs.find((x) => x.id === id); if (n) n.defeated = true; });
+    // Restore vendor inventory/purse (2026-07-31) so bought-out limited stock
+    // stays depleted and resold items stay buyable across a save.
+    (f.vendors || []).forEach((s) => {
+      const n = w.npcs.find((x) => x.id === s.id);
+      if (!n) return;
+      if (s.stockLeft) n.stockLeft = { ...s.stockLeft };
+      if (s.resale) n.resale = { ...s.resale };
+      if (s.gold != null) n.gold = s.gold;
+    });
     // Restore chest state (2026-07-24): locked/emptied + remaining gold/items.
     (f.chests || []).forEach((s) => {
       const c = w.chests.find((x) => x.id === s.id);
@@ -534,6 +544,11 @@ async function boot() {
         battles: w.battles.filter((b) => b.defeated).map((b) => b.id),
         ambushes: w.ambushes.filter((a) => a.defeated).map((a) => a.id),
         npcsDefeated: w.npcs.filter((n) => n.defeated).map((n) => n.id),
+        // Vendor inventory + purse (2026-07-31, Danny): limited stock counts
+        // (npc.stockLeft), items resold to the vendor (npc.resale), and the
+        // vendor's own coin (npc.gold) — so a shop you've bought out STAYS
+        // bought out across a save/reload, no farming the same limited stock.
+        vendors: w.npcs.filter((n) => n.vendor).map((n) => ({ id: n.id, stockLeft: n.stockLeft, resale: n.resale, gold: n.gold })),
         // Chest state (2026-07-24): unlocked/emptied flags + remaining loot, so a
         // picked-open or half-looted chest returns exactly as left it.
         chests: (w.chests || []).map((c) => ({ id: c.id, locked: c.locked, gold: c.gold, items: c.items, emptied: c.emptied })),
@@ -561,11 +576,17 @@ async function boot() {
     } catch { /* storage blocked or full — skip silently, gameplay is unaffected */ }
   }
 
-  // Install the prompt-autosave hook the module-level mutators call (see
-  // requestAutosave up top). Persist after any change, but NOT mid-battle
-  // (battle state isn't saved, and a half-resolved write could strand the
-  // player at low health) and not before the game has begun.
-  autosaveHook = () => { if (state.started && !battleState.active) saveGame(); };
+  // Saves are written ONLY on entering a scene (switchScene / enterCave /
+  // exitCave) and on New Game — NOT on every mutation (2026-07-31, Danny's
+  // checkpoint model). The save therefore always represents "state as of
+  // entering the current scene": dying and continuing reverts the current
+  // scene's progress and resumes at its entrance, while everything carried
+  // BETWEEN scenes (stats, gold, items, quests, vendor stock, defeated enemies)
+  // locks in the moment you leave one scene for the next. The module-level
+  // mutators still call requestAutosave(), but the hook is deliberately left
+  // unset so those calls are harmless no-ops (keeps the mutators simple, and a
+  // mid-scene/mid-battle write can never strand a half-resolved state).
+  autosaveHook = null;
 
   function refreshAllUi() {
     ui.updateHud(stats);
@@ -1238,7 +1259,8 @@ async function boot() {
         removeItem('lockpicks', 1);
         chest.locked = false; // stays open for good
         audio.sfx(audio.SFX.door); // the lid creaks open
-        saveGame();
+        // (No mid-scene save — chest state persists via the world snapshot on
+        // the next scene-entry save; see the save-system note above.)
         setTimeout(() => openChestContents(chest), 0); // let this prompt close first
       }
       return; // falsy -> close the prompt either way
@@ -1289,11 +1311,9 @@ async function boot() {
         }
         if (chest.gold <= 0 && chest.items.length === 0) {
           chest.emptied = true; // world.js removes it from here on
-          saveGame();
           ui.toast('The chest is empty.');
-          return; // falsy -> close the window
+          return; // falsy -> close the window (state persists on next scene-entry save)
         }
-        saveGame();
         ({ responses, acts } = build());
         ui.updateDialogContent({ line: CHEST_LINE, responses });
         return true; // keep the chest open

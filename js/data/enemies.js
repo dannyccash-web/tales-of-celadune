@@ -43,6 +43,23 @@ export default {
     drops: { gold: { min: 1, max: 3 } },
   },
 
+  // Cave Spider (D4B woods cave, 2026-07-31) — a skittering cave-dweller that
+  // patrols its patch and CHARGES the player on sight (world.js `creature` AI,
+  // same as D1's cragclaws), giving up when the player leaves its area. Meatier
+  // than a rat/bat but not a wall. Portrait cave_spider.png; no own `background`,
+  // so its fight uses the scene's battleBackground (the cave backdrop).
+  cave_spider: {
+    id: 'cave_spider',
+    name: 'Cave Spider',
+    portrait: 'assets/images/cave_spider.png',
+    health: 4,
+    attack: 2,
+    defense: 1,
+    speed: 10,
+    damage: { min: 1, max: 2 },
+    drops: { gold: { min: 2, max: 5 } },
+  },
+
   // The Bramblekin toll-camp (D4, 2026-07-11). Both share +2 attack / +2
   // defense; the Chief hits harder and has more health. damage is a
   // {min,max} range (1d4 / 1d4+1) rolled by battle.rollDamage(). speed is

@@ -1,1 +1,6 @@
 .DS_Store
+
+# "walkable" collision-guide images are working/reference files only — never
+# meant to ship in the game. Danny deletes them as he goes; keep them out of
+# the repo so an `add -A` can't re-commit one (2026-07-31).
+*[Ww]alkable*
