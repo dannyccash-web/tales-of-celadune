@@ -286,4 +286,45 @@ export default {
     questItem: false,
     price: 20,
   },
+  // Spider Fang (2026-07-31, Danny) — a general item (Items tab, `slot: 'item'`,
+  // like the potions) that's OFFENSIVE: equip it to the battle Use slot and use
+  // it on an enemy for 1 damage, and if the foe is `poisonable` (flesh, not the
+  // wood-bodied bramblekin/rootweaver) it's ENVENOMED — 1 poison damage at the
+  // start of each of its own turns until it dies. Consumed on use (like a
+  // potion). `useDamage` routes it through the offensive-item targeting flow;
+  // `poison` is the per-tick venom (see main.js's playerUseOffensiveItem +
+  // the poison tick in runQueue). Dropped 30% by the toughened cave spiders.
+  spider_fang: {
+    id: 'spider_fang',
+    name: 'Spider Fang',
+    image: 'assets/images/spider_fang.png',
+    description: 'A curved, hollow fang still beaded with venom. Jab a foe with it in a scrap and the poison does the rest.',
+    questItem: false,
+    slot: 'item',
+    useDamage: 1,
+    poison: 1,
+    price: 6,
+  },
+  // Queen Cragclaw Eggs (2026-07-31, Danny) — a 100% drop from the Cragclaw
+  // Queen. A basic curio that does nothing yet (tradeable for a little gold).
+  queen_cragclaw_eggs: {
+    id: 'queen_cragclaw_eggs',
+    name: 'Cragclaw Eggs',
+    image: 'assets/images/queen_cragclaw_eggs.png',
+    description: 'A clutch of leathery, faintly pulsing eggs taken from the Cragclaw Queen. Best not ask what hatches.',
+    questItem: false,
+    price: 10,
+  },
+  // Leather Hood (2026-07-31, Danny) — head-slot armor, +1 defense. In the D4B
+  // treasure chest.
+  leather_hood: {
+    id: 'leather_hood',
+    name: 'Leather Hood',
+    image: 'assets/images/leather_hood.png',
+    description: 'A snug boiled-leather hood. Turns a glancing blow and keeps the cave-drip off your neck.',
+    questItem: false,
+    slot: 'head',
+    defenseBonus: 1,
+    price: 15,
+  },
 };

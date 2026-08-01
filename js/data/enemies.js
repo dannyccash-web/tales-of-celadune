@@ -19,6 +19,7 @@ export default {
     defense: 1,
     speed: 8, // unspecified by Danny — carried over from the old kobold
     damage: 1,
+    poisonable: true, // flesh-and-blood — a spider-fang jab can envenom it
     // Loot on death (2026-07-21). Unified schema: `gold: {min,max}` rolled per
     // enemy + `loot: [{id, chance?, qty?}]` (chance defaults to 1). Weakest
     // foe, so a couple of coins and nothing else. main.js's computeBattleRewards
@@ -40,24 +41,30 @@ export default {
     defense: 1,
     speed: 12, // fast/erratic flyer — beats the player's initiative often
     damage: 1,
+    poisonable: true,
     drops: { gold: { min: 1, max: 3 } },
   },
 
   // Cave Spider (D4B woods cave, 2026-07-31) — a skittering cave-dweller that
   // patrols its patch and CHARGES the player on sight (world.js `creature` AI,
-  // same as D1's cragclaws), giving up when the player leaves its area. Meatier
-  // than a rat/bat but not a wall. Portrait cave_spider.png; no own `background`,
-  // so its fight uses the scene's battleBackground (the cave backdrop).
+  // same as D1's cragclaws), giving up when the player leaves its area. Made
+  // CONSIDERABLY TOUGHER 2026-07-31 (Danny): 4→7 hp, atk 2→3, def stays 2 (not
+  // 3 — def 3 makes low-attack players whiff too much, per the cragclaw note),
+  // dmg 1-2 → 2-3. Three of them roam D4B, so they're a real hazard now. Drops
+  // a **spider fang 30% of the time** (a poison item — see items.js).
   cave_spider: {
     id: 'cave_spider',
     name: 'Cave Spider',
     portrait: 'assets/images/cave_spider.png',
-    health: 4,
-    attack: 2,
-    defense: 1,
+    health: 7,
+    attack: 3,
+    defense: 2,
     speed: 10,
-    damage: { min: 1, max: 2 },
-    drops: { gold: { min: 2, max: 5 } },
+    damage: { min: 2, max: 3 },
+    poisonable: true,
+    // Gold 5-9 (avg 7) so a now-tougher-than-a-cragclaw spider pays like one,
+    // plus its 30% Spider Fang (2026-07-31 economy pass).
+    drops: { gold: { min: 5, max: 9 }, loot: [{ id: 'spider_fang', chance: 0.30 }] },
   },
 
   // The Bramblekin toll-camp (D4, 2026-07-11). Both share +2 attack / +2
@@ -112,6 +119,7 @@ export default {
     speed: 9,
     damage: { min: 1, max: 2 },
     background: 'assets/images/beach_background.jpg', // battle backdrop (2026-07-25)
+    poisonable: true,
     drops: { gold: { min: 5, max: 10 }, loot: [{ id: 'fishing_bait', chance: 0.25 }] },
   },
 
@@ -130,10 +138,12 @@ export default {
     speed: 8,
     damage: { min: 2, max: 4 },
     background: 'assets/images/beach_background.jpg', // battle backdrop (cragclaw kin -> beach, per Danny)
+    poisonable: true,
     // No vitality-potion drop (2026-07-26, Danny): vitality is permanent, so its
     // count is deliberately limited to fixed placements (the D1B chest + the
-    // apothecary's stock), not random loot.
-    drops: { gold: { min: 15, max: 25 } },
+    // apothecary's stock), not random loot. ALWAYS drops her eggs (2026-07-31,
+    // Danny) — a basic curio that does nothing yet.
+    drops: { gold: { min: 15, max: 25 }, loot: [{ id: 'queen_cragclaw_eggs', chance: 1 }] },
   },
 
   // Mireman (D1, 2026-07-25) — an unseen bog-thing that rises from the mire
@@ -150,6 +160,7 @@ export default {
     speed: 7,
     damage: { min: 1, max: 3 },
     background: 'assets/images/beach_background.jpg', // battle backdrop (2026-07-25)
+    poisonable: true,
     drops: { gold: { min: 4, max: 9 }, loot: [{ id: 'health_potion', chance: 0.25 }] },
   },
 

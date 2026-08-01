@@ -1047,7 +1047,9 @@ export class World {
     // they get the same multiply drop shadow as characters (rotation 0).
     for (const c of this.chests) {
       if (c.emptied) continue;
-      this.drawSprite(this.images[CHEST_SPRITE], c.x, c.y, 0);
+      // `rotation` (radians) lets a chest sit at an angle; scene data gives it in
+      // degrees (2026-07-31) — convert here. Defaults to upright.
+      this.drawSprite(this.images[CHEST_SPRITE], c.x, c.y, ((c.rotation || 0) * Math.PI) / 180);
     }
     for (const npc of this.npcs) {
       if (npc.atHome || npc.defeated) continue;

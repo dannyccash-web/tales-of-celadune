@@ -126,14 +126,14 @@ function equipmentBonus(field) {
     return sum + (ITEMS[id]?.[field] || 0);
   }, 0);
 }
-// Luck adds +1 per point to BOTH the player's attack and defense rolls
-// (Danny, 2026-07-20). effectiveAttack is the attacker score when the player
-// swings (main.js's playerAttack); effectiveDefense is the defender score when
-// an enemy swings at the player — so folding luck into both means every roll
-// the player is party to gets the bonus. Enemies use their own flat stats and
-// are unaffected. Starts at 0; gear/temporary effects may raise it later.
-function effectiveAttack() { return stats.attack + stats.luck + equipmentBonus('attackBonus'); }
-function effectiveDefense() { return stats.defense + stats.luck + equipmentBonus('defenseBonus'); }
+// Attack/Defense scores are base stat + equipped gear only. Luck is NO LONGER a
+// combat modifier (2026-07-31, Danny) — it now only affects non-combat
+// PERCENTAGE-CHANCE mechanics (fishing catch odds, battle loot). See luckChance().
+function effectiveAttack() { return stats.attack + equipmentBonus('attackBonus'); }
+function effectiveDefense() { return stats.defense + equipmentBonus('defenseBonus'); }
+// Luck as a probability bonus: +10% (0.10) per point, applied to non-combat
+// chances — the Moonscale catch (rollCatch) and enemy gold/loot (computeBattleRewards).
+function luckChance() { return stats.luck * 0.10; }
 // Speed including gear (leather boots' speedBonus, 2026-07-26). Capped at 3
 // (the movement/initiative curves top out there). Drives BOTH overworld
 // movement (moveMultForSpeed) and battle initiative (playerInitiativeChance).
@@ -1962,13 +1962,39 @@ async function boot() {
       return;
     }
     // Idle prompt for the enemy's turn — shown during the pacing delay, then
-    // overwritten by the attack's specific result (2026-07-28).
+    // overwritten by the poison/attack result (2026-07-28).
     ui.setBattleMessage('Enemy’s Turn');
     setTimeout(() => {
       if (!battleState.active) return;
-      resolveEnemyTurn(current.enemy);
+      const enemy = current.enemy;
+      // Poison ticks at the START of the poisoned enemy's OWN turn (2026-07-31,
+      // Danny — Spider Fang). If the venom finishes it, skip its attack.
+      if (enemy.poisoned && enemy.health > 0) {
+        const pd = battle.rollDamage(enemy.poisonDamage);
+        enemy.health = Math.max(0, enemy.health - pd);
+        ui.setBattleMessage(`The ${enemy.name} festers — −${pd} poison.`);
+        ui.renderBattleEnemies(battleState.enemies);
+        audio.sfx(audio.SFX.magic);
+        if (enemy.health <= 0) {
+          handleEnemyDeaths();
+          battleState.turnPos += 1;
+          setTimeout(() => runQueue(), DEATH_ANIM_MS);
+          return;
+        }
+        // Survived the venom — pause so the poison line reads, then it attacks.
+        setTimeout(() => {
+          if (!battleState.active) return;
+          resolveEnemyTurn(enemy);
+          ui.renderBattleEnemies(battleState.enemies);
+          ui.enemyAttackAnim(enemy);
+          battleState.turnPos += 1;
+          runQueue();
+        }, ENEMY_TURN_DELAY_MS);
+        return;
+      }
+      resolveEnemyTurn(enemy);
       ui.renderBattleEnemies(battleState.enemies);
-      ui.enemyAttackAnim(current.enemy); // lunge the attacker (on the fresh element)
+      ui.enemyAttackAnim(enemy); // lunge the attacker (on the fresh element)
       battleState.turnPos += 1;
       runQueue();
     }, ENEMY_TURN_DELAY_MS);
@@ -2057,8 +2083,8 @@ async function boot() {
   // the status line carry a +/− sign so ui.setBattleMessage colorizes them
   // per the mockup (+N green = damage done, −N red = damage taken).
   function playerAttack(target) {
-    // A pending offensive-item use (torch) borrows the same targeting flow.
-    if (pendingUseItem) { pendingUseItem = false; playerUseTorch(target); return; }
+    // A pending offensive-item use (spider fang) borrows the same targeting flow.
+    if (pendingUseItem) { pendingUseItem = false; playerUseOffensiveItem(target); return; }
     const slot = pendingAttackSlot || 'mainhand';
     pendingAttackSlot = null;
     const hit = battle.resolveAttack(effectiveAttack(), target.defense);
@@ -2108,28 +2134,34 @@ async function boot() {
     runQueue();
   }
 
-  // Use the equipped torch on a target (2026-07-19). Base: a little damage.
-  // Against a wood-bodied foe (ENEMIES[id].wood — rootweavers, bramblekin) it
-  // catches: DOUBLE damage this turn and the enemy starts burning, taking
-  // burnDamage at the start of every following player turn (tickBurns) until it
-  // dies. The fire's extra effect on wood is intentionally unannounced — the
-  // player discovers it. Spends the turn regardless.
-  function playerUseTorch(target) {
+  // Use the equipped offensive Use-slot item on a target (2026-07-31,
+  // generalized from the old torch-only path). Deals `useDamage` and applies a
+  // status if the item + foe match:
+  //  - `poison` (Spider Fang) on a `poisonable` (flesh) foe → ENVENOMED: takes
+  //    `poison` damage at the start of each of its OWN turns until it dies (see
+  //    the poison tick in runQueue). Consumed on use (like a potion), per Danny.
+  //  - `burn` (currently no Use-slot item — the torch is an off-hand weapon now)
+  //    on a `wood` foe → alight (kept for completeness).
+  // Spends the turn regardless.
+  function playerUseOffensiveItem(target) {
     const def = ITEMS[equipment.item];
     removeItem(equipment.item, 1); // consume one (auto-unequips at 0)
-    const wood = !!ENEMIES[target.id]?.wood;
     let dmg = battle.rollDamage(def.useDamage);
     let msg;
-    if (wood) {
+    if (def.burn != null && ENEMIES[target.id]?.wood) {
       dmg *= 2;
       target.burning = true;
-      target.burnDamage = def.burnDamage;
-      msg = `You thrust the torch — the ${target.name} goes up in flames! +${dmg} damage done.`;
+      target.burnDamage = def.burn;
+      msg = `You thrust the ${def.name.toLowerCase()} — the ${target.name} goes up in flames! +${dmg} damage done.`;
+    } else if (def.poison != null && ENEMIES[target.id]?.poisonable) {
+      target.poisoned = true;
+      target.poisonDamage = def.poison;
+      msg = `You sink the fang into the ${target.name} — venom takes hold. +${dmg} damage done.`;
     } else {
-      msg = `You jab the ${target.name} with the torch. +${dmg} damage done.`;
+      msg = `You strike the ${target.name}. +${dmg} damage done.`;
     }
     target.health = Math.max(0, target.health - dmg);
-    audio.sfx(audio.SFX.punch); // the torch's item strike (its fire crackle comes via the burn ticks below)
+    audio.sfx(audio.SFX.punch);
     ui.setBattleMessage(msg);
     ui.renderBattleEnemies(battleState.enemies);
     if (target.health > 0) ui.reactEnemyHit(target);
@@ -2231,12 +2263,17 @@ async function boot() {
   function computeBattleRewards(enemies) {
     let gold = 0;
     const items = {};
+    // LUCK (2026-07-31, Danny): +10% per point to the gold haul AND to every
+    // item's drop chance (a non-combat probability bonus — luck no longer touches
+    // combat rolls). luckChance() = luck*0.10.
+    const luck = luckChance();
     for (const e of enemies) {
       const drops = ENEMIES[e.id]?.drops;
       if (!drops) continue;
-      if (drops.gold) gold += randInt(drops.gold.min, drops.gold.max);
+      if (drops.gold) gold += Math.round(randInt(drops.gold.min, drops.gold.max) * (1 + luck));
       for (const l of drops.loot || []) {
-        if (Math.random() <= (l.chance ?? 1)) items[l.id] = (items[l.id] || 0) + (l.qty || 1);
+        const chance = Math.min(1, (l.chance ?? 1) + luck);
+        if (Math.random() <= chance) items[l.id] = (items[l.id] || 0) + (l.qty || 1);
       }
     }
     gold = Math.max(gold, MIN_BATTLE_GOLD);
@@ -2465,13 +2502,18 @@ async function boot() {
     if (spot) startFishing(spot);
   }
 
-  // Weighted catch table (2026-07-16, Danny's odds).
+  // Weighted catch table (2026-07-16, Danny's odds). LUCK raises the Moonscale
+  // Trout chance by +10% per point (2026-07-31, Danny): base 10% → 20% at Luck 1,
+  // 30% at Luck 2, and so on (capped at 70%). Roll the Moonscale first at that
+  // boosted chance; otherwise fall through to the ordinary catches in their
+  // original 50:30:10 weighting.
   function rollCatch() {
-    const r = Math.random() * 100;
-    if (r < 50) return 'trout';       // 50%
-    if (r < 80) return 'bluegill';    // 30%
-    if (r < 90) return 'old_boot';    // 10%
-    return 'rare_fish';               // 10% (Moonscale Trout)
+    const moon = Math.min(70, 10 + luckChance() * 100); // luckChance()*100 = luck*10 percentage points
+    if (Math.random() * 100 < moon) return 'rare_fish';
+    const r = Math.random() * 90;
+    if (r < 50) return 'trout';
+    if (r < 80) return 'bluegill';
+    return 'old_boot';
   }
 
   // Cast a line: spend one bait, splash the water, wait 10s, then reveal the
@@ -2648,7 +2690,12 @@ async function boot() {
       // Bramblekin falls back to its guard/Chief id.
       const enemyId = foe.enemyId || (foe.id === 'bramblekin_chief' ? 'bramblekin_chief' : 'bramblekin');
       startBattle([enemyId], (result) => {
-        if (result === 'victory') foe.defeated = true;
+        if (result === 'victory') { foe.defeated = true; }
+        // Fleeing a charging creature/guard: it stands down for 2s (world.js's
+        // updateNpcs skips the whole aggro/chase branch while `pause` > 0) so
+        // the player gets a head start to run before it can re-charge
+        // (2026-07-31, Danny). Also drop its chase state so it re-evaluates fresh.
+        else if (result === 'fled') { foe.pause = 2; foe._chasing = false; foe._strikeCd = 0; }
       });
       // First time a creature charges you OUTSIDE a cave, teach the escape
       // route: Flee, then get away from where it lurks and it gives up

@@ -387,8 +387,33 @@ export default {
   ],
   battles: [],
 
-  // Corner chambers left empty for now — no treasure/content yet (2026-07-31).
-  chests: [],
+  // Edras's campfire (2026-07-31, Danny): a small code-drawn flame + rising
+  // smoke in the hermit's top-right chamber (same effects as Calder's hut fire /
+  // D2 chimney smoke — no asset needed). Co-located so the smoke rises off the
+  // flame.
+  fires: [
+    { x: 1700, y: 430 },
+  ],
+  smoke: [
+    { x: 1700, y: 418 },
+  ],
+
+  // Treasure chest (2026-07-31, Danny) in the bottom-left corner chamber,
+  // rotated 90°. Unlocked; holds a Vitality Potion + a Leather Hood (+1 def head
+  // armor). Position engine-verified reachable.
+  chests: [
+    {
+      id: 'd4b_corner_chest',
+      x: 146, y: 1660,
+      rotation: 90,
+      locked: false,
+      gold: 0,
+      items: [
+        { id: 'vitality_potion', qty: 1 },
+        { id: 'leather_hood', qty: 1 },
+      ],
+    },
+  ],
 
   exits: [],
 };
