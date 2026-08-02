@@ -7,6 +7,7 @@ import sceneD2 from './data/d2.js';
 import sceneD3 from './data/d3.js';
 import sceneD4 from './data/d4.js';
 import sceneD4B from './data/d4b.js';
+import sceneC4 from './data/c4.js';
 import { World } from './world.js';
 import * as ui from './ui.js';
 import * as audio from './audio.js';
@@ -275,7 +276,7 @@ function loadImages(sources) {
 // Every scene in the game, keyed by the ids that exits point at. Adding a
 // scene = write its data file, import it, and register it here — the
 // transition system below handles everything else.
-const SCENES = { D1: sceneD1, D1B: sceneD1B, D2: sceneD2, D3: sceneD3, D4: sceneD4, D4B: sceneD4B };
+const SCENES = { D1: sceneD1, D1B: sceneD1B, D2: sceneD2, D3: sceneD3, D4: sceneD4, D4B: sceneD4B, C4: sceneC4 };
 
 async function boot() {
   // Preload assets for EVERY registered scene up front — scene switches are
@@ -889,6 +890,37 @@ async function boot() {
       // the hidden cave (2026-07-26). The gold is the chest in D1B.
       ui.updateDialogContent({
         line: 'Marisol… there you are, my love. I thought the sea had her too. I— I owe you more than I can say, and not a copper to pay it with. But listen: when the ship went down I stashed what gold I saved in a cave, and the cragclaws and miremen have kept me from it ever since. You’ve steel enough for them — so take it, all of it, it’s yours. The cave’s to the south, along the cliff face, between the beach and the muddy pond. Find it, and you’ll find my fortune.',
+        responses: ['Leave.'],
+      });
+      return true;
+    }
+    // ---- Mara Vellorne's stolen-belongings quest (C4, 2026-08-02) ----
+    if (effect.maraAccept) {
+      startQuest('mara_belongings');
+      ui.updateDialogContent({
+        line: 'Bless you. The clearing’s east, through the trees — you’ll not miss the thorn-things, nor the chest they’re hoarding. Bring back what’s ours and you’ll have a fair share of it. You have my word.',
+        responses: ['Leave.'],
+      });
+      return true;
+    }
+    // Honest turn-in: a gold reward, and she INSISTS the player keep the royal
+    // summons (the northward-pull hook). The summons is NOT removed.
+    if (effect.maraHandOver) {
+      if (questStatus('mara_belongings') !== 'active') startQuest('mara_belongings');
+      addGold(MARA_REWARD);
+      completeQuest('mara_belongings');
+      ui.updateDialogContent({
+        line: 'Honest to a fault — the world could stand more of your sort. Here, for your trouble. And the summons… no. You keep it. Whatever’s festering in Aldermoor is worse than the king let on, and I fear Vozhik and I won’t see it through. If the road carries you to the castle before it carries us, better it’s in your hands than lost to these woods again.',
+        responses: ['Leave.'],
+      });
+      return true;
+    }
+    // Lie and keep everything (the summons included) — still completes the quest.
+    if (effect.maraLie) {
+      if (questStatus('mara_belongings') !== 'active') startQuest('mara_belongings');
+      completeQuest('mara_belongings');
+      ui.updateDialogContent({
+        line: 'Nothing at all? Ah… a shame, that. Well — thank you for looking, truly. We’ll manage. We always do.',
         responses: ['Leave.'],
       });
       return true;
@@ -1765,6 +1797,80 @@ async function boot() {
     };
   }
 
+  // ---- Mara Vellorne (C4, 2026-08-02) — state-built dialog, like Calder's ----
+  // An adventurer from distant Vaelanor, summoned to Aldermoor by King Aldric
+  // over a grave matter and robbed by the clearing's bramblekin. She offers a
+  // fetch quest for her stolen belongings (a royal summons among them). On
+  // turn-in the player either hands them over honestly (a gold reward — and she
+  // INSISTS they keep the summons) or lies and keeps everything; EITHER way the
+  // quest completes, and the player keeps the royal summons both ways (a
+  // deliberate northward-pull hook toward the King's Castle). Concise, per the
+  // game's dialogue style, with the lore woven in lightly.
+  const MARA_REWARD = 20; // honest turn-in reward
+  function hasSummons() { return inventory.some((it) => it.id === 'royal_summons'); }
+  function buildMaraDialog() {
+    const status = questStatus('mara_belongings');
+    if (status === 'completed') {
+      return { line: 'Safe roads, friend. And if you reach the castle before Vozhik and I do — you know what to carry. Aldermoor won’t wait forever.', responses: ['Leave.'] };
+    }
+    // Turn-in offered whenever the summons is in hand — even if the quest was
+    // never formally accepted (the player may loot the chest before talking to
+    // her); the effects start the quest first if needed, like Calder's painting.
+    if (hasSummons()) {
+      return {
+        line: 'You found them — and the summons, thank the tides for that! So… how did it go out there? Did you get it all back?',
+        responses: ['Here — it’s all yours.', 'I couldn’t find a thing. Sorry.', 'Give me a moment.'],
+        responseEffects: [{ maraHandOver: true }, { maraLie: true }, { followUp: 'Don’t keep me waiting long. Nightfall’s no friend to us out here.', noBack: true }],
+      };
+    }
+    if (status === 'active') {
+      return { line: 'Any luck at the clearing? It’s the summons I need above all — I can’t face King Aldric without it, and I’ll not ride home to Vaelanor a failure.', responses: ['Leave.'] };
+    }
+    return {
+      line: 'You there — you’ve the look of someone who can handle a scrap. Mara Vellorne, at your service. The quiet one’s Vozhik. We rode all the way from Vaelanor at King Aldric’s summons — some grave trouble in Aldermoor he’d trust only to outside hands. Then those thorn-things jumped us in the clearing and made off with everything we carried. Even the king’s own summons.',
+      responses: ['I’ll get your things back.', 'Why send so far for help?', 'Leave.'],
+      responseEffects: [
+        { maraAccept: true },
+        { followUp: 'When a king reaches past his own borders, it means he doesn’t trust the trouble to anyone within them. Vaelanor’s a long ride, but the coin was good and Vozhik gets restless. And now look at us — waylaid by shrubbery.' },
+        null,
+      ],
+    };
+  }
+
+  // ---- Vozhik (C4, 2026-08-02) — Mara's companion, speaks no common tongue ----
+  // A made-up language: pure nonsense, but every line closes on a real full
+  // stop / bang / question mark. The player gets fun, confused reactions to each
+  // line (gestures, since the protagonist is silent). Quit anytime via "Leave.",
+  // but press on and after ~5 lines his patience runs out and he gives up on
+  // you. A beat machine like openEdrasDialog / the well confrontation.
+  const VOZHIK_LINES = [
+    { line: 'Vresh-ka! Doln ma vresk tunda? Skree-lo, veth-morrund.',
+      responses: ['Nod slowly.', 'Um… hello?', 'Leave.'] },
+    { line: 'Ai, ai — glavæ tunn skree bo! Nyee doln vorra, ha?',
+      responses: ['Nod enthusiastically.', 'Point at Vozhik. Point at yourself. Shrug.', 'Leave.'] },
+    { line: 'Zhek. Zhek zhek zhek. Morrund ba tunda, skorn!',
+      responses: ['Say “zhek” back to him.', 'Laugh nervously.', 'Leave.'] },
+    { line: 'Melua skorn… bo veth doln, tunn nyee vresk-ta?',
+      responses: ['Give a confident thumbs-up.', 'Stare blankly.', 'Leave.'] },
+    { line: 'Vorra bo skree-lo! Doln ma? DOLN MA, tunda?',
+      responses: ['Nod one final time.', 'Shrug helplessly.', 'Leave.'] },
+  ];
+  const VOZHIK_ANGRY = 'Nyee — NYEE! Bah. Vresh-ta skorn, bo-doln, nggh! Vozhik throws up his hands, mutters something that plainly needs no translation, and pointedly turns his back on you.';
+  function openVozhikDialog(npc) {
+    const view = { id: 'vozhik', name: 'Vozhik', role: '', portrait: 'assets/images/Vozhik.png', dialog: VOZHIK_LINES[0] };
+    let beat = 0, ended = false;
+    ui.openDialog(view, null, (v, index) => {
+      if (ended) return; // the angry line's only option just closes
+      const cur = VOZHIK_LINES[beat];
+      if (index === cur.responses.length - 1) return; // "Leave." -> close
+      beat += 1;
+      if (beat < VOZHIK_LINES.length) { ui.updateDialogContent(VOZHIK_LINES[beat]); return true; }
+      ended = true;
+      ui.updateDialogContent({ line: VOZHIK_ANGRY, responses: ['Leave.'] });
+      return true;
+    });
+  }
+
   // Every NPC dialog opens through here so the per-character voice clip
   // (audio.DIALOGUE_SFX, keyed by npc.id) and response-effect handling are
   // consistent whether the NPC was approached directly or met at their door.
@@ -1777,10 +1883,12 @@ async function boot() {
       return;
     }
     if (npc.id === 'edras_holloweye') { openEdrasDialog(npc); return; }
+    if (npc.id === 'vozhik') { openVozhikDialog(npc); return; }
     const voice = audio.DIALOGUE_SFX[npc.id];
     if (voice) audio.sfx(voice, 1.0);
     let dialog;
     if (npc.id === 'gaffer') dialog = buildGafferDialog(npc);
+    else if (npc.id === 'mara_vellorne') dialog = buildMaraDialog();
     else if (npc.id === 'calder_rusk') dialog = buildCalderDialog(npc);
     else if (npc.id === 'bramblekin_chief') dialog = buildChiefDialog();
     else if (npc.bramblekin) dialog = buildBramblekinDialog(npc);
@@ -2720,14 +2828,23 @@ async function boot() {
       // A roaming creature (cragclaw) carries its own enemyId; a hostile-camp
       // Bramblekin falls back to its guard/Chief id.
       const enemyId = foe.enemyId || (foe.id === 'bramblekin_chief' ? 'bramblekin_chief' : 'bramblekin');
-      startBattle([enemyId], (result) => {
-        if (result === 'victory') { foe.defeated = true; }
+      // A `pack` creature (C4's clearing bramblekin) drags its WHOLE pack into
+      // one fight: striking any one of them starts a battle with every alive
+      // pack member, and winning removes them all (2026-08-02). A lone creature
+      // just fights solo.
+      const foes = foe.pack ? world.npcs.filter((n) => n.pack === foe.pack && !n.defeated) : [foe];
+      const enemyIds = foes.map((m) => m.enemyId || enemyId);
+      // A pack fight happens out in the woods, not the camp — use the forest
+      // backdrop rather than the bramblekin enemy's default camp one.
+      const bg = foe.pack ? 'assets/images/forest_background.jpg' : undefined;
+      startBattle(enemyIds, (result) => {
+        if (result === 'victory') { foes.forEach((m) => { m.defeated = true; }); }
         // Fleeing a charging creature/guard: it stands down for 2s (world.js's
         // updateNpcs skips the whole aggro/chase branch while `pause` > 0) so
         // the player gets a head start to run before it can re-charge
         // (2026-07-31, Danny). Also drop its chase state so it re-evaluates fresh.
-        else if (result === 'fled') { foe.pause = 2; foe._chasing = false; foe._strikeCd = 0; }
-      });
+        else if (result === 'fled') { foes.forEach((m) => { m.pause = 2; m._chasing = false; m._strikeCd = 0; }); }
+      }, bg);
       // First time a creature charges you OUTSIDE a cave, teach the escape
       // route: Flee, then get away from where it lurks and it gives up
       // (2026-07-26). Overrides startBattle's default opener; one-time so it

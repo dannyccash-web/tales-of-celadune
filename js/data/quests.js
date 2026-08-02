@@ -35,6 +35,11 @@ export default {
     name: 'One Man’s Treasure',
     description: 'Osric the hermit wants an old boot — the kind you fish out of a pond. He swears it’s worth a fortune to him.',
   },
+  mara_belongings: {
+    id: 'mara_belongings',
+    name: 'Waylaid on the Road',
+    description: 'Mara Vellorne and her companion Vozhik were ambushed by bramblekin in the woodland clearing and robbed. Recover their stolen belongings — a royal summons among them — from the thieves.',
+  },
   calder_keepsake: {
     id: 'calder_keepsake',
     name: 'More Precious Than Gold',

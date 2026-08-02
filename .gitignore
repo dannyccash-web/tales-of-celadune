@@ -4,3 +4,7 @@
 # meant to ship in the game. Danny deletes them as he goes; keep them out of
 # the repo so an `add -A` can't re-commit one (2026-07-31).
 *[Ww]alkable*
+
+# Scratch/headless test files (this session's sandbox mount can't unlink them,
+# so keep them out of the repo). Safe to delete locally on a real machine.
+_test_*.mjs

@@ -315,6 +315,19 @@ export default {
     questItem: false,
     price: 10,
   },
+  // Royal Summons (C4, 2026-08-02) — the king's sealed proclamation, stolen
+  // from Mara Vellorne by the clearing's bramblekin and stashed in their chest.
+  // A quest item (can't be sold). The player ends up KEEPING it whichever way
+  // they resolve Mara's quest — a deliberate northward-pull hook toward the
+  // King's Castle (B2). King Aldric of Aldermoor summoned Mara from distant
+  // Vaelanor over a grave and urgent matter.
+  royal_summons: {
+    id: 'royal_summons',
+    name: 'Royal Summons',
+    image: 'assets/images/royal_summons.png',
+    description: 'A sealed proclamation, heavy with the wax crest of King Aldric of Aldermoor, summoning its bearer to the castle on a matter of the gravest urgency.',
+    questItem: true,
+  },
   // Leather Hood (2026-07-31, Danny) — head-slot armor, +1 defense. In the D4B
   // treasure chest.
   leather_hood: {
