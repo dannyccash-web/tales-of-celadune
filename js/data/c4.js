@@ -365,5 +365,16 @@ export default {
       x: 460, y: 300, speed: 40, startsHome: false,
       patrol: [ { x: 460, y: 300 }, { x: 560, y: 300 } ],
     },
+    // Cinder (2026-08-02) — Mara and Vozhik's horse, grazing by the camp. An
+    // animal NPC like D3's Gaffer, but friendly through and through: petting is
+    // always warm (no bite), and you can offer her corn (state-built dialog in
+    // main.js, buildCinderDialog). A good horse.
+    {
+      id: 'cinder', name: 'Cinder', role: '',
+      sprite: 'assets/images/Cinder_overhead.png',
+      portrait: 'assets/images/Cinder.png',
+      x: 720, y: 400, speed: 26, startsHome: false,
+      patrol: [ { x: 720, y: 400 }, { x: 700, y: 320 } ],
+    },
   ],
 };

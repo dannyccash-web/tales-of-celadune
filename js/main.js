@@ -1050,6 +1050,16 @@ async function boot() {
       }
       return true;
     }
+    if (effect.feedCinder) {
+      removeItem('corn', 1);
+      ui.showGaveItem(ITEMS.corn); // the GAVE reveal
+      ui.updateDialogContent({
+        line: 'Cinder lips the corn from your open palm and crunches it down, tail swishing with plain delight, then nuzzles your shoulder in thanks.',
+        responses: ['Pet Cinder.', 'Leave.'],
+        responseEffects: [{ followUp: CINDER_PET_LINE }, null],
+      });
+      return true;
+    }
     if (effect.feedGaffer) {
       removeItem('corn', 1);
       gafferHappy = true;
@@ -1871,6 +1881,28 @@ async function boot() {
     });
   }
 
+  // ---- Cinder (C4, 2026-08-02) — Mara & Vozhik's horse ----
+  // State-built like Gaffer's dialog, but Cinder's a GOOD horse: petting is
+  // always warm (never a bite), and a "Feed Cinder some corn." option appears
+  // whenever the player's carrying corn (consumes one ear, GAVE reveal). No
+  // quest, no persistent state — just a pettable, feedable companion.
+  const CINDER_PET_LINE = 'You run a hand down Cinder’s neck. She leans into it, ears swivelling, and lets out a long, contented huff. A good horse, through and through.';
+  function buildCinderDialog() {
+    const responses = ['Pet Cinder.'];
+    const effects = [{ followUp: CINDER_PET_LINE }];
+    if (inventory.some((it) => it.id === 'corn')) {
+      responses.push('Feed Cinder some corn.');
+      effects.push({ feedCinder: true });
+    }
+    responses.push('Leave.');
+    effects.push(null);
+    return {
+      line: 'Cinder the horse lifts her head as you approach, regarding you with warm, liquid eyes, and gives a soft whicker of greeting.',
+      responses,
+      responseEffects: effects,
+    };
+  }
+
   // Every NPC dialog opens through here so the per-character voice clip
   // (audio.DIALOGUE_SFX, keyed by npc.id) and response-effect handling are
   // consistent whether the NPC was approached directly or met at their door.
@@ -1888,6 +1920,7 @@ async function boot() {
     if (voice) audio.sfx(voice, 1.0);
     let dialog;
     if (npc.id === 'gaffer') dialog = buildGafferDialog(npc);
+    else if (npc.id === 'cinder') dialog = buildCinderDialog();
     else if (npc.id === 'mara_vellorne') dialog = buildMaraDialog();
     else if (npc.id === 'calder_rusk') dialog = buildCalderDialog(npc);
     else if (npc.id === 'bramblekin_chief') dialog = buildChiefDialog();
