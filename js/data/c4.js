@@ -20,6 +20,11 @@
 // stub, the clearing, the chest, the campfire camp, both Rootweaver points and
 // all four bramblekin waypoints are reachable. Regenerate from the art (see the
 // session scripts) rather than hand-editing.
+//
+// 2026-08-02 (Danny): carved an EAST SNEAK CORRIDOR from the chest's east side
+// (~x1280) to the right-hand loop path (~x1700) around y880-960, so the player
+// can slip in from the right and rob the chest without wading through the
+// bramblekin (who now guard the western clearing — see the pack below).
 
 export default {
   id: 'C4',
@@ -143,10 +148,7 @@ export default {
     { x: 1200, y: 840, w: 20, h: 20 },
     { x: 640, y: 880, w: 20, h: 20 },
     { x: 740, y: 880, w: 80, h: 20 },
-    { x: 1300, y: 880, w: 360, h: 40 },
     { x: 560, y: 900, w: 260, h: 60 },
-    { x: 1320, y: 920, w: 340, h: 20 },
-    { x: 1380, y: 940, w: 280, h: 20 },
     { x: 580, y: 960, w: 60, h: 20 },
     { x: 700, y: 960, w: 80, h: 60 },
     { x: 1400, y: 960, w: 260, h: 20 },
@@ -313,37 +315,43 @@ export default {
     // `pack` tag makes them fight as ONE group: striking any of them starts a
     // battle with every alive pack member, and winning removes them all
     // (main.js's pendingAggro handler). They guard the stolen-goods chest.
+    // Positioned on the WEST/centre side of the clearing (x<=1035), and aggro
+    // trimmed 340 -> 220 (2026-08-02, Danny): so walking the main clearing
+    // approach triggers a fight, but the chest can be reached/opened from the
+    // EAST sneak corridor (the player opens it from ~256px east of the guards —
+    // outside 220 aggro), stealing the loot without waking the pack. All spawn/
+    // patrol points engine-verified clear+reachable, and >=168px from the chest.
     {
       id: 'bramblekin_c4_1', name: 'Bramblekin', role: '',
       creature: true, enemyId: 'bramblekin', pack: 'clearing_bramblekin',
       sprite: 'assets/images/Bramblekin_Overhead.png',
       portrait: 'assets/images/Bramblekin.png',
-      x: 980, y: 970, speed: 40, chaseSpeed: 150, aggroRange: 340, giveUpRange: 560, startsHome: false,
-      patrol: [ { x: 980, y: 970 }, { x: 1030, y: 1010 } ],
+      x: 975, y: 915, speed: 40, chaseSpeed: 150, aggroRange: 220, giveUpRange: 560, startsHome: false,
+      patrol: [ { x: 975, y: 915 }, { x: 1025, y: 955 } ],
     },
     {
       id: 'bramblekin_c4_2', name: 'Bramblekin', role: '',
       creature: true, enemyId: 'bramblekin', pack: 'clearing_bramblekin',
       sprite: 'assets/images/Bramblekin_Overhead.png',
       portrait: 'assets/images/Bramblekin.png',
-      x: 1120, y: 1015, speed: 40, chaseSpeed: 150, aggroRange: 340, giveUpRange: 560, startsHome: false,
-      patrol: [ { x: 1120, y: 1015 }, { x: 1075, y: 975 } ],
+      x: 985, y: 1015, speed: 40, chaseSpeed: 150, aggroRange: 220, giveUpRange: 560, startsHome: false,
+      patrol: [ { x: 985, y: 1015 }, { x: 940, y: 1055 } ],
     },
     {
       id: 'bramblekin_c4_3', name: 'Bramblekin', role: '',
       creature: true, enemyId: 'bramblekin', pack: 'clearing_bramblekin',
       sprite: 'assets/images/Bramblekin_Overhead.png',
       portrait: 'assets/images/Bramblekin.png',
-      x: 1045, y: 1085, speed: 40, chaseSpeed: 150, aggroRange: 340, giveUpRange: 560, startsHome: false,
-      patrol: [ { x: 1045, y: 1085 }, { x: 995, y: 1045 } ],
+      x: 1035, y: 895, speed: 40, chaseSpeed: 150, aggroRange: 220, giveUpRange: 560, startsHome: false,
+      patrol: [ { x: 1035, y: 895 }, { x: 985, y: 935 } ],
     },
     {
       id: 'bramblekin_c4_4', name: 'Bramblekin', role: '',
       creature: true, enemyId: 'bramblekin', pack: 'clearing_bramblekin',
       sprite: 'assets/images/Bramblekin_Overhead.png',
       portrait: 'assets/images/Bramblekin.png',
-      x: 1105, y: 945, speed: 40, chaseSpeed: 150, aggroRange: 340, giveUpRange: 560, startsHome: false,
-      patrol: [ { x: 1105, y: 945 }, { x: 1145, y: 980 } ],
+      x: 1005, y: 1075, speed: 40, chaseSpeed: 150, aggroRange: 220, giveUpRange: 560, startsHome: false,
+      patrol: [ { x: 1005, y: 1075 }, { x: 955, y: 1035 } ],
     },
 
     // ---- Mara Vellorne + Vozhik (2026-08-02) ----
