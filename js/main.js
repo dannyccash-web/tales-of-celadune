@@ -100,6 +100,7 @@ function equipItem(id) {
   if (!def?.slot) return;
   equipment[def.slot] = id;
   refreshItemsUi();
+  refreshStatsPanel(); // gear changed -> Stats tab reflects the new bonuses
   audio.sfx(audio.SFX.item);
   requestAutosave();
 }
@@ -108,6 +109,7 @@ function unequipItem(slot) {
   if (!equipment[slot]) return;
   equipment[slot] = null;
   refreshItemsUi();
+  refreshStatsPanel(); // gear changed -> Stats tab reflects the removed bonuses
   audio.sfx(audio.SFX.item);
   requestAutosave();
 }
@@ -139,6 +141,19 @@ function luckChance() { return stats.luck * 0.10; }
 // (the movement/initiative curves top out there). Drives BOTH overworld
 // movement (moveMultForSpeed) and battle initiative (playerInitiativeChance).
 function effectiveSpeed() { return Math.min(3, stats.speed + equipmentBonus('speedBonus')); }
+
+// Push GEAR-INCLUSIVE stats to the Menu > Stats panel (2026-08-02, Danny): the
+// panel used to show the raw base stats, so a player wearing +1 armor still saw
+// "Defense 1". Combat already uses the effective values (effectiveAttack/Defense
+// /Speed) — this just makes the display agree. Shows the effective total plus a
+// "(+N)" gear contribution. Luck is unchanged (no gear affects it yet).
+function refreshStatsPanel() {
+  const eA = effectiveAttack(), eD = effectiveDefense(), eS = effectiveSpeed();
+  ui.updateStatsPanel({
+    attack: eA, defense: eD, speed: eS, luck: stats.luck,
+    attackBonus: eA - stats.attack, defenseBonus: eD - stats.defense, speedBonus: eS - stats.speed,
+  });
+}
 
 // Speed drives two things (Danny, 2026-07-20):
 //  1) Overworld movement — a multiplier on PLAYER_SPEED: 1 -> ×1.0, 2 -> ×1.25,
@@ -598,7 +613,7 @@ async function boot() {
 
   function refreshAllUi() {
     ui.updateHud(stats);
-    ui.updateStatsPanel(stats);
+    refreshStatsPanel();
     refreshItemsUi();
     ui.updateQuestsPanel(quests, QUESTS);
   }
@@ -668,7 +683,7 @@ async function boot() {
   ui.initStage();
   ui.initPanels(audio);
   ui.updateHud(stats);
-  ui.updateStatsPanel(stats);
+  refreshStatsPanel();
   ui.initItemsPanel({ onAction: onItemAction });
   ui.initVendorGrid();
   refreshItemsUi();
@@ -1993,7 +2008,7 @@ async function boot() {
     const enemies = battle.turnOrder(
       aliveEnemies().map((e) => ({ kind: 'enemy', enemy: e, speed: e.speed })),
     );
-    const player = { kind: 'player', speed: stats.speed };
+    const player = { kind: 'player', speed: effectiveSpeed() };
     return battleState.playerFirst ? [player, ...enemies] : [...enemies, player];
   }
 
@@ -2569,7 +2584,7 @@ async function boot() {
         wellCoinThrown = true;
         stats.luck += 1;
         spendGold(WELL_COIN_COST); // deducts 1 gold + plays the coin clink (+ autosave)
-        ui.updateStatsPanel(stats);
+        refreshStatsPanel();
         ({ responses, acts } = buildActs());
         ui.updateDialogContent({
           line: 'You flip a coin into the dark. A faint plink echoes up — and a strange sense of fortune settles over you. (Luck +1.)',

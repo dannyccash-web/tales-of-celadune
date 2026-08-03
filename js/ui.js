@@ -876,38 +876,21 @@ export function panelKey(key) {
       return;
     }
 
-    // Items has no equip-slots zone — its grid is always focused, same as
-    // Magic's (Magic's 6 spell slots aren't wired to real state yet, so
-    // there's nothing to zone-switch to there either; extend this once real
-    // magic items/slots exist, matching the equipment/weapons branch below).
-    if (tab === 'items' || tab === 'magic') {
-      if (key === 'ArrowLeft') { moveGridFocus(-1); return; }
-      if (key === 'ArrowRight') { moveGridFocus(1); return; }
+    // Item grids (Items, Magic, Equipment, Weapons) all use one 2D navigator
+    // (2026-08-02): Left/Right within a row, Up/Down between rows preserving the
+    // column, crossing subcategory sections (Equipment/Weapons) at the grid
+    // edges and clamping at the ends — no infinite subcategory scroll. Space
+    // opens the focused tile's action popout.
+    if (tab === 'items' || tab === 'magic' || tab === 'equipment' || tab === 'weapons') {
+      if (key === 'ArrowLeft') { navGrid(-1, 0); return; }
+      if (key === 'ArrowRight') { navGrid(1, 0); return; }
+      if (key === 'ArrowUp') { navGrid(0, -1); return; }
+      if (key === 'ArrowDown') { navGrid(0, 1); return; }
       if (key === ' ' || key === 'Enter') {
         const els = currentGridEls(tab);
         if (!els.length) return;
         const t = els[gridFocusIndex];
-        openItemPopout(t.dataset.itemId, t);
-      }
-      return;
-    }
-
-    // Equipment/Weapons (2026-07-09 rework): a stack of subcategory sections
-    // (Head/Clothing/Feet/Hands, or Main Hand/Off Hand), each its own item
-    // grid. Up/Down switch which section has focus; Left/Right walk that
-    // section's grid; Space opens the action popout for the focused tile
-    // (Equip/Unequip is its primary action for gear — see primaryActionFor).
-    if (tab === 'equipment' || tab === 'weapons') {
-      const sectionCount = Math.max(document.querySelectorAll(`#${tab}-sections .item-grid`).length, 1);
-      if (key === 'ArrowUp') { sectionIndex = (sectionIndex - 1 + sectionCount) % sectionCount; gridFocusIndex = 0; refreshGridFocus(); return; }
-      if (key === 'ArrowDown') { sectionIndex = (sectionIndex + 1) % sectionCount; gridFocusIndex = 0; refreshGridFocus(); return; }
-      if (key === 'ArrowLeft') { moveGridFocus(-1); return; }
-      if (key === 'ArrowRight') { moveGridFocus(1); return; }
-      if (key === ' ' || key === 'Enter') {
-        const els = currentGridEls(tab);
-        if (!els.length) return;
-        const t = els[gridFocusIndex];
-        openItemPopout(t.dataset.itemId, t);
+        if (t) openItemPopout(t.dataset.itemId, t);
       }
       return;
     }
@@ -926,7 +909,14 @@ export function panelKey(key) {
   if (key === 'Escape') { closeAllPanels(); return; }
   if (key === 'ArrowUp') { cycleTab(root, -1); return; }
   if (key === 'ArrowDown') { cycleTab(root, 1); return; }
-  if (key === ' ' || key === 'Enter') { setNavLevel(root, 'content'); return; }
+  if (key === ' ' || key === 'Enter') {
+    // Enter the tab's content on the first NON-EMPTY subcategory (Equipment/
+    // Weapons often have empty sections), focused on its first tile.
+    gridFocusIndex = 0;
+    sectionIndex = firstNonEmptySection(sectionGridEls(tab));
+    setNavLevel(root, 'content');
+    return;
+  }
 }
 
 // ---- Inventory tabs (Equipment / Weapons / Magic / Items, 2026-07-09) ----
@@ -964,12 +954,93 @@ function currentGridEls(tab) {
   return grid ? Array.from(grid.querySelectorAll('.item-tile')) : [];
 }
 
-function moveGridFocus(dir) {
+// All the grids in the current tab, in display order. Magic/Items have exactly
+// one; Equipment/Weapons have one per subcategory section (Head/Clothing/… or
+// Main Hand/Off Hand).
+function sectionGridEls(tab) {
+  if (tab === 'equipment' || tab === 'weapons') {
+    return Array.from(document.querySelectorAll(`#${tab}-sections .item-grid`));
+  }
+  const g = $(CATEGORY_GRID_ID[tab]);
+  return g ? [g] : [];
+}
+function tilesOf(gridEl) {
+  return gridEl ? Array.from(gridEl.querySelectorAll('.item-tile')) : [];
+}
+// Column count of a grid, read from the live layout (tiles sharing the first
+// tile's offsetTop = the top row). The item grid is a fixed 5-col CSS grid, but
+// deriving it keeps this correct if that ever changes. Only valid while the
+// panel is visible (offsetTop is 0 for a hidden pane) — nav only runs when open.
+function gridColsOf(gridEl) {
+  const tiles = tilesOf(gridEl);
+  if (tiles.length <= 1) return Math.max(1, tiles.length);
+  const top0 = tiles[0].offsetTop;
+  let c = 0;
+  for (const t of tiles) { if (t.offsetTop === top0) c++; else break; }
+  return Math.max(1, c);
+}
+function firstNonEmptySection(grids) {
+  for (let i = 0; i < grids.length; i++) if (tilesOf(grids[i]).length) return i;
+  return 0;
+}
+
+// True 2D grid navigation (2026-08-02, Danny): Left/Right move within the
+// focused row (clamped at its ends); Up/Down move by whole rows, PRESERVING the
+// column (row 1 item 4 + Down -> row 2 item 4). At a grid's top/bottom edge,
+// Up/Down cross into the adjacent subcategory section (skipping empty ones),
+// landing in the same column — and CLAMP (no wrap) at the very first/last
+// section, so you can't scroll subcategories forever. (dx OR dy, never both.)
+function navGrid(dx, dy) {
   const tab = currentTabName($(activePanelName()));
-  const els = currentGridEls(tab);
-  if (!els.length) return;
-  gridFocusIndex = (gridFocusIndex + dir + els.length) % els.length;
-  refreshGridFocus();
+  const grids = sectionGridEls(tab);
+  if (!grids.length) return;
+  let sec = Math.min(sectionIndex, grids.length - 1);
+  if (!tilesOf(grids[sec]).length) { sec = firstNonEmptySection(grids); sectionIndex = sec; }
+  const tiles = tilesOf(grids[sec]);
+  if (!tiles.length) return;
+  const cols = gridColsOf(grids[sec]);
+  const i = Math.min(gridFocusIndex, tiles.length - 1);
+  const row = Math.floor(i / cols), col = i % cols;
+
+  if (dx) {
+    const rowStart = row * cols;
+    const rowEnd = Math.min(rowStart + cols, tiles.length) - 1; // last item in this (possibly partial) row
+    gridFocusIndex = Math.max(rowStart, Math.min(rowEnd, i + dx));
+    refreshGridFocus();
+    return;
+  }
+  if (dy < 0) { // Up
+    if (row > 0) {
+      gridFocusIndex = (row - 1) * cols + col;
+    } else {
+      let ps = -1;
+      for (let s = sec - 1; s >= 0; s--) if (tilesOf(grids[s]).length) { ps = s; break; }
+      if (ps >= 0) {
+        sectionIndex = ps;
+        const t2 = tilesOf(grids[ps]), c2 = gridColsOf(grids[ps]);
+        const lastRow = Math.floor((t2.length - 1) / c2);
+        gridFocusIndex = Math.min(lastRow * c2 + col, t2.length - 1);
+      } // else: top of the first section — clamp (stay put)
+    }
+    refreshGridFocus();
+    return;
+  }
+  if (dy > 0) { // Down
+    const lastRow = Math.floor((tiles.length - 1) / cols);
+    if (row < lastRow) {
+      gridFocusIndex = Math.min((row + 1) * cols + col, tiles.length - 1);
+    } else {
+      let ns = -1;
+      for (let s = sec + 1; s < grids.length; s++) if (tilesOf(grids[s]).length) { ns = s; break; }
+      if (ns >= 0) {
+        sectionIndex = ns;
+        const t2 = tilesOf(grids[ns]);
+        gridFocusIndex = Math.min(col, t2.length - 1);
+      } // else: bottom of the last section — clamp (stay put)
+    }
+    refreshGridFocus();
+    return;
+  }
 }
 
 // Clears focus across every tile in the tab (all sections, for Equipment/
@@ -1326,9 +1397,13 @@ function initSlider(id, initial, onChange) {
 
 export function updateStatsPanel(stats) {
   // Level/XP removed 2026-07-22 — progression is gear-driven.
-  $('stat-attack').textContent = stats.attack;
-  $('stat-defense').textContent = stats.defense;
-  $('stat-speed').textContent = stats.speed;
+  // 2026-08-02: main.js now passes GEAR-INCLUSIVE values (effective total) plus
+  // a per-stat `*Bonus` = how much of that total came from equipped gear, so the
+  // panel shows e.g. "Defense 3 (+2)" while wearing +1 armor and +1 hood.
+  const fmt = (val, bonus) => (bonus > 0 ? `${val} (+${bonus})` : `${val}`);
+  $('stat-attack').textContent = fmt(stats.attack, stats.attackBonus || 0);
+  $('stat-defense').textContent = fmt(stats.defense, stats.defenseBonus || 0);
+  $('stat-speed').textContent = fmt(stats.speed, stats.speedBonus || 0);
   $('stat-luck').textContent = stats.luck;
 }
 

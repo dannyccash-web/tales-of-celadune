@@ -272,6 +272,13 @@ export default {
 
   interactables: [],
 
+  // A fishing spot on the west river bank (2026-08-02, Danny). Sits on the
+  // water; the player fishes from the reachable bank ~20px east (within the
+  // 180px FISH_SPOT_RANGE). Needs a rod + bait like any other spot.
+  fishingSpots: [
+    { x: 359, y: 1087 },
+  ],
+
   // The bramblekin's stash in the clearing — turned 90° (see world.js's chest
   // rotation). Holds coin, a couple of spoils, and the stolen Royal Summons
   // (a quest item) the player recovers for Mara.
