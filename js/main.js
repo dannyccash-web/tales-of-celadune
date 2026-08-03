@@ -591,7 +591,7 @@ async function boot() {
         inventory: inventory.map((e) => ({ ...e })),
         equipment: { ...equipment },
         quests: quests.map((q) => ({ ...q })),
-        flags: { campQuestDone, campHostile, gafferHappy, wellCoinThrown, wellDrinks, vegetableDeliveredToTavern, calderToldStory, calderToldDangers },
+        flags: { campQuestDone, campHostile, gafferHappy, wellCoinThrown, wellDrinks, vegetableDeliveredToTavern, calderToldStory, calderToldDangers, maraMet },
         caveReturn, // where to exit to if saved inside a cave/dungeon
         worlds: snapshotWorlds(),
       };
@@ -628,7 +628,7 @@ async function boot() {
     campTollPaid = false; campEntered = false; campQuestDone = false;
     campHostile = false; campEntryGate = null;
     gafferHappy = false; wellCoinThrown = false; wellDrinks = 0; vegetableDeliveredToTavern = false;
-    calderToldStory = false; calderToldDangers = false;
+    calderToldStory = false; calderToldDangers = false; maraMet = false;
     caveReturn = null;
     for (const k of Object.keys(worlds)) delete worlds[k];
     pendingWorldFlags = null;
@@ -652,6 +652,7 @@ async function boot() {
     gafferHappy = !!f.gafferHappy; wellCoinThrown = !!f.wellCoinThrown;
     wellDrinks = f.wellDrinks || 0;
     calderToldStory = !!f.calderToldStory; calderToldDangers = !!f.calderToldDangers;
+    maraMet = !!f.maraMet;
     caveReturn = data.caveReturn || null;
     vegetableDeliveredToTavern = !!f.vegetableDeliveredToTavern;
     // Per-visit camp state always starts fresh on a load (toll re-armed, not
@@ -795,6 +796,10 @@ async function boot() {
   // a save. See buildCalderDialog().
   let calderToldStory = false;
   let calderToldDangers = false;
+  // Mara has introduced herself (2026-08-03): once true, her pre-quest line
+  // drops the full self-introduction for a shorter "back again?" line, so going
+  // back from her lore aside (or re-approaching) doesn't re-introduce her.
+  let maraMet = false;
   // One-time (session) tutorial nudge the first time a roaming creature charges
   // the player, teaching Flee + the give-up-when-far mechanic (2026-07-26).
   let creatureFleeHintShown = false;
@@ -910,6 +915,20 @@ async function boot() {
       return true;
     }
     // ---- Mara Vellorne's stolen-belongings quest (C4, 2026-08-02) ----
+    // "Why send so far?" — her lore aside. Marks her as met (drops the self-
+    // intro thereafter) and offers a Go-back that REBUILDS her menu (so it comes
+    // back to the shorter returning line, not the full introduction).
+    if (effect.maraLore) {
+      maraMet = true;
+      requestAutosave();
+      ui.updateDialogContent({
+        line: 'When a king reaches past his own borders, it means he doesn’t trust the trouble to anyone within them. Vaelanor’s a long ride, but the coin was good and Vozhik gets restless. And now look at us — waylaid by shrubbery.',
+        responses: ['Go back.', 'Leave.'],
+        responseEffects: [{ maraMenu: true }, null],
+      });
+      return true;
+    }
+    if (effect.maraMenu) { ui.updateDialogContent(buildMaraDialog()); return true; }
     if (effect.maraAccept) {
       startQuest('mara_belongings');
       ui.updateDialogContent({
@@ -1388,6 +1407,15 @@ async function boot() {
         }
         if (chest.gold <= 0 && chest.items.length === 0) {
           chest.emptied = true; // world.js removes it from here on
+          // If the last thing taken was an ITEM, its received-item reveal just
+          // fired — keep the window OPEN so the animation plays out instead of
+          // being cut off by an immediate close (2026-08-03, Danny). The chest's
+          // empty now, so Leave. is the only option. (Gold / Take-everything
+          // have no per-item reveal, so they just close.)
+          if (act.itemId) {
+            ui.updateDialogContent({ line: 'You take the last of it. The chest is empty now.', responses: ['Leave.'] });
+            return true;
+          }
           ui.toast('The chest is empty.');
           return; // falsy -> close the window (state persists on next scene-entry save)
         }
@@ -1844,21 +1872,22 @@ async function boot() {
     if (hasSummons()) {
       return {
         line: 'You found them — and the summons, thank the tides for that! So… how did it go out there? Did you get it all back?',
-        responses: ['Here — it’s all yours.', 'I couldn’t find a thing. Sorry.', 'Give me a moment.'],
+        responses: ['Here — it’s all yours.', '(Lie) I couldn’t find a thing.', 'Give me a moment.'],
         responseEffects: [{ maraHandOver: true }, { maraLie: true }, { followUp: 'Don’t keep me waiting long. Nightfall’s no friend to us out here.', noBack: true }],
       };
     }
     if (status === 'active') {
       return { line: 'Any luck at the clearing? It’s the summons I need above all — I can’t face King Aldric without it, and I’ll not ride home to Vaelanor a failure.', responses: ['Leave.'] };
     }
+    // Pre-quest: full self-introduction the first time; a shorter line on return
+    // (or when going "back" from her lore aside), so she doesn't re-introduce.
+    const line = maraMet
+      ? 'Back again? Good — my belongings are still out there with those Bramblekin, if you’ve a mind to help. What do you say?'
+      : 'You there — you’ve the look of someone who can handle a scrap. Mara Vellorne, at your service, and this is Vozhik. We rode all the way from Vaelanor at King Aldric’s summons — some grave trouble in Aldermoor he’d trust only to outside hands. Then the Bramblekin jumped us in the clearing and made off with everything we carried. Even the king’s own summons.';
     return {
-      line: 'You there — you’ve the look of someone who can handle a scrap. Mara Vellorne, at your service. The quiet one’s Vozhik. We rode all the way from Vaelanor at King Aldric’s summons — some grave trouble in Aldermoor he’d trust only to outside hands. Then those thorn-things jumped us in the clearing and made off with everything we carried. Even the king’s own summons.',
+      line,
       responses: ['I’ll get your things back.', 'Why send so far for help?', 'Leave.'],
-      responseEffects: [
-        { maraAccept: true },
-        { followUp: 'When a king reaches past his own borders, it means he doesn’t trust the trouble to anyone within them. Vaelanor’s a long ride, but the coin was good and Vozhik gets restless. And now look at us — waylaid by shrubbery.' },
-        null,
-      ],
+      responseEffects: [{ maraAccept: true }, { maraLore: true }, null],
     };
   }
 

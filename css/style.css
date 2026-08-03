@@ -1156,10 +1156,13 @@ html, body {
    gold trapezoid filling behind the panel-bg (which read as opaque brown). */
 .top-banner {
   position: absolute;
-  top: 0;                 /* flush at the very top of the stage (2026-07-31) */
+  top: -2px;              /* nudged 2px above the stage top so it visually TOUCHES
+                            the top edge with no seam (2026-08-03, Danny) — the
+                            flat top has no gold rim, so a hair of scene could
+                            show through at exactly top:0. */
   left: 205px;
   right: 205px;
-  min-height: 72px;       /* ~72px visible below the top edge */
+  min-height: 74px;       /* 72px visible below the top edge (+2 for the overhang) */
   display: flex;
   align-items: center;
   justify-content: center;
