@@ -749,6 +749,10 @@ export default {
     {
       id: 'sorcha', name: 'Sorcha Emberfell', role: 'BLACKSMITH',
       vendor: true, stock: [{ id: 'short_sword', qty: 1 }, { id: 'leather_armor', qty: 1 }, { id: 'leather_gloves', qty: 1 }], gold: 44,
+      // The longsword unlocks in her Buy stock only once her ore quest is done
+      // (2026-08-03) — see openVendorGrid's questStock handling. Limited to the
+      // one she forges from the player's ore.
+      questStock: [{ questId: 'sorcha_ore', id: 'longsword', qty: 1 }],
       awayLine: 'If it’s steel you’re after, catch me at the forge. I don’t lug the anvil about with me.',
       sprite: 'assets/images/Sorcha Emberfell_overhead.png',
       portrait: 'assets/images/Sorcha Emberfell.png',
@@ -763,7 +767,6 @@ export default {
       ],
       dialog: { line: 'Mind the sparks. I’ve horseshoes to hammer and a plough-blade three farmers are waiting on. Steel doesn’t shape itself, more’s the pity.', responses: ['Leave.'] },
       chatter: [
-        { q: 'Can you make weapons?', a: 'Anything with an edge, given time and good iron. Trouble is good iron is dear these days — the ore carts come light and late. Bring me something worth forging and we will talk.' },
         { q: 'Any advice for the road?', a: 'Aye — a blade is only as good as the arm behind it, so keep the arm fed and the blade dry. Rust has killed more steel than any battle ever did.' },
       ],
     },

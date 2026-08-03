@@ -318,6 +318,15 @@ export default {
       caveExit: true,
       label: 'Cave Exit',
     },
+    // Metallic ore (2026-08-03, Danny) — a "shiny object"-style pickup that
+    // announces itself with the fishing CATCH reveal + sound (reward.catch).
+    {
+      id: 'd4b_ore',
+      x: 1425, y: 895,
+      label: 'Metallic ore',
+      reward: { item: 'metallic_ore', qty: 1, catch: true },
+      message: 'You pried a chunk of metallic ore loose from the rock.',
+    },
   ],
 
   // Cave Spiders (2026-07-31, Danny) — three roaming `creature` enemies (mill

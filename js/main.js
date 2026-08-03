@@ -310,6 +310,7 @@ async function boot() {
     'assets/images/beach_background.jpg', // cragclaw/mireman battle backdrop (2026-07-25)
     'assets/images/cave_background.jpg', // cave battle backdrop (2026-07-26)
     'assets/images/marisol_rusk_painting.png', // shown large in the shipwreck catch-reveal
+    'assets/images/metallic_ore.png', // shown large in the cave-ore catch-reveal
     // Treasure chests (2026-07-24): the overhead world sprite + the picture
     // shown in the open-chest window. Preloaded so neither pops in.
     'assets/images/treasure_chest_overhead.png',
@@ -910,6 +911,35 @@ async function boot() {
       // the hidden cave (2026-07-26). The gold is the chest in D1B.
       ui.updateDialogContent({
         line: 'Marisol… there you are, my love. I thought the sea had her too. I— I owe you more than I can say, and not a copper to pay it with. But listen: when the ship went down I stashed what gold I saved in a cave, and the cragclaws and miremen have kept me from it ever since. You’ve steel enough for them — so take it, all of it, it’s yours. The cave’s to the south, along the cliff face, between the beach and the muddy pond. Find it, and you’ll find my fortune.',
+        responses: ['Leave.'],
+      });
+      return true;
+    }
+    // ---- Sorcha's smithing quest (D2, 2026-08-03) ----
+    if (effect.sorchaOffer) {
+      ui.updateDialogContent({
+        line: 'Weapons? Give me good iron and I’ll forge you a blade a king would envy. Trouble is I’m near out — the ore carts come light and late these days. Bring me a chunk of metallic ore and I’ll turn it into something worth carrying.',
+        responses: ['I’ll bring you some ore.', 'Go back.'],
+        responseEffects: [{ sorchaAccept: true }, { sorchaMenu: true }],
+      });
+      return true;
+    }
+    if (effect.sorchaMenu) { ui.updateDialogContent(buildVendorDialog(npc)); return true; }
+    if (effect.sorchaAccept) {
+      startQuest('sorcha_ore');
+      ui.updateDialogContent({
+        line: 'Good. Metallic ore — you’ll know it by the weight and the shine. The deep places have it, if you’ve the stomach for what guards it. Bring it back and we’ll talk steel.',
+        responses: ['Leave.'],
+      });
+      return true;
+    }
+    if (effect.sorchaTurnIn) {
+      removeItem('metallic_ore', 1, true);
+      ui.showGaveItem(ITEMS.metallic_ore);
+      completeQuest('sorcha_ore');
+      requestAutosave(); // persist the completion (the longsword unlocks off it)
+      ui.updateDialogContent({
+        line: 'Now THAT’S proper iron. Come back in the morning… there. A longsword, keen as a winter wind — and it’s on the rack, yours for a fair price. What, you didn’t think I was going to give it away, did you? Steel like that pays for the coal, and then some.',
         responses: ['Leave.'],
       });
       return true;
@@ -1662,6 +1692,23 @@ async function boot() {
       responses.unshift('Deliver Mirelle’s crate of vegetables.');
       responseEffects.unshift({ deliverVegetables: true });
     }
+    // Sorcha's smithing quest (2026-08-03): "Can you make weapons?" now offers a
+    // fetch quest for ore; once active and holding ore, a turn-in; once done the
+    // longsword just shows in her Buy stock (questStock, above).
+    if (npc.id === 'sorcha') {
+      const st = questStatus('sorcha_ore');
+      const hasOre = inventory.some((it) => it.id === 'metallic_ore');
+      if (st === 'none') {
+        responses.unshift('Can you make weapons?');
+        responseEffects.unshift({ sorchaOffer: true });
+      } else if (st === 'active' && hasOre) {
+        responses.unshift('Here’s some metallic ore for you.');
+        responseEffects.unshift({ sorchaTurnIn: true });
+      } else if (st === 'active') {
+        responses.unshift('About that ore…');
+        responseEffects.unshift({ followUp: 'Still empty-handed? A longsword won’t forge itself out of good intentions. Bring me some metallic ore — you’ll find it in the deep places, if you’ve the nerve.' });
+      }
+    }
     // Small talk topics (npc.chatter) go just before "Leave."
     return withChatter({ line: npc.dialog.line, responses, responseEffects }, npc);
   }
@@ -1727,6 +1774,13 @@ async function boot() {
     // npc (npc.stockLeft) so they deplete as the player buys and persist for
     // the session.
     const stockList = (npc.stock || []).map((s) => (typeof s === 'string' ? { id: s, qty: Infinity } : s));
+    // Quest-gated stock (2026-08-03): items that only appear in Buy once a quest
+    // is completed — e.g. Sorcha's longsword after her ore quest. Gated on the
+    // persisted quest status, so it survives a reload; the remaining count still
+    // lives in stockLeft (so buying the forged longsword empties it for good).
+    for (const q of (npc.questStock || [])) {
+      if (questStatus(q.questId) === 'completed') stockList.push({ id: q.id, qty: q.qty ?? Infinity });
+    }
     npc.stockLeft = npc.stockLeft || {};
     for (const s of stockList) {
       if (s.qty !== Infinity && npc.stockLeft[s.id] === undefined) npc.stockLeft[s.id] = s.qty;
@@ -1958,10 +2012,12 @@ async function boot() {
       ui.openDialog(buildPlaceView(npc), onClose, (npcView, index) => applyPlaceResponse(npc, npcView, index));
       return;
     }
-    if (npc.id === 'edras_holloweye') { openEdrasDialog(npc); return; }
-    if (npc.id === 'vozhik') { openVozhikDialog(npc); return; }
+    // Voice clip first, so the ones that branch to their own dialog builders
+    // (Edras, Vozhik) still get their flourish (Edras has no clip; Vozhik cackles).
     const voice = audio.DIALOGUE_SFX[npc.id];
     if (voice) audio.sfx(voice, 1.0);
+    if (npc.id === 'edras_holloweye') { openEdrasDialog(npc); return; }
+    if (npc.id === 'vozhik') { openVozhikDialog(npc); return; }
     let dialog;
     if (npc.id === 'gaffer') dialog = buildGafferDialog(npc);
     else if (npc.id === 'cinder') dialog = buildCinderDialog();
@@ -2666,8 +2722,17 @@ async function boot() {
         addGold(item.reward.gold);
         ui.toast(item.message || `You found ${item.reward.gold} gold!`);
       } else if (item.reward?.item) {
-        addItem(item.reward.item, item.reward.qty ?? 1);
-        ui.toast(item.message || `You got: ${ITEMS[item.reward.item]?.name || item.reward.item}.`);
+        // `catch: true` (2026-08-03, e.g. the cave ore) announces the pickup with
+        // the fishing CATCH reveal + sound instead of a plain toast — the item is
+        // added silently since the big drop-in banner announces it.
+        if (item.reward.catch) {
+          addItem(item.reward.item, item.reward.qty ?? 1, true);
+          audio.sfx(audio.SFX.catch);
+          ui.showCatch(ITEMS[item.reward.item], item.message);
+        } else {
+          addItem(item.reward.item, item.reward.qty ?? 1);
+          ui.toast(item.message || `You got: ${ITEMS[item.reward.item]?.name || item.reward.item}.`);
+        }
       } else {
         ui.toast(item.message || 'You found something!');
       }

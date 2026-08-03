@@ -315,6 +315,33 @@ export default {
     questItem: false,
     price: 10,
   },
+  // Metallic Ore (2026-08-03, Danny) — a raw crafting material found lying in
+  // the caves (D4B, D1B). Picked up like the "shiny object" collectible but with
+  // the fishing CATCH reveal + sound. NOT a quest item (there are several in the
+  // game), so it's an ordinary tradeable item; Sorcha the blacksmith wants some
+  // to forge a longsword (see her quest in main.js).
+  metallic_ore: {
+    id: 'metallic_ore',
+    name: 'Metallic Ore',
+    image: 'assets/images/metallic_ore.png',
+    description: 'A dense chunk of raw ore, veined with something that catches the light. A smith could make good use of this.',
+    questItem: false,
+    price: 8,
+  },
+  // Longsword (2026-08-03) — the tier above the short sword: a heavier, longer
+  // blade with more bite. Sold by Sorcha the blacksmith only AFTER the player
+  // brings her ore for it (her `sorcha_ore` quest). Dagger 2 / Short Sword 2-4 /
+  // Longsword 4-7; priced above both (dagger 12, short sword 22, longsword 40).
+  longsword: {
+    id: 'longsword',
+    name: 'Longsword',
+    image: 'assets/images/long_sword.png',
+    description: 'A long, well-forged blade — real reach and real weight behind every swing. The finest steel in the village.',
+    questItem: false,
+    slot: 'mainhand',
+    damage: { min: 4, max: 7 },
+    price: 40,
+  },
   // Royal Summons (C4, 2026-08-02) — the king's sealed proclamation, stolen
   // from Mara Vellorne by the clearing's bramblekin and stashed in their chest.
   // A quest item (can't be sold). The player ends up KEEPING it whichever way

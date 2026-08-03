@@ -177,6 +177,15 @@ export default {
       caveExit: true,
       label: 'Leave the cave',
     },
+    // Metallic ore (2026-08-03, Danny) — a "shiny object"-style pickup that
+    // announces itself with the fishing CATCH reveal + sound (reward.catch).
+    {
+      id: 'd1b_ore',
+      x: 334, y: 1027,
+      label: 'Metallic ore',
+      reward: { item: 'metallic_ore', qty: 1, catch: true },
+      message: 'You pried a chunk of metallic ore loose from the rock.',
+    },
   ],
 
   // Cave dwellers (2026-07-26) — all roaming `creature` AI (mill via patrol,

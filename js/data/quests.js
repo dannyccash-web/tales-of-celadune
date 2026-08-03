@@ -35,6 +35,11 @@ export default {
     name: 'One Man’s Treasure',
     description: 'Osric the hermit wants an old boot — the kind you fish out of a pond. He swears it’s worth a fortune to him.',
   },
+  sorcha_ore: {
+    id: 'sorcha_ore',
+    name: 'Iron for the Forge',
+    description: 'Sorcha the blacksmith is short on iron. Bring her a chunk of metallic ore and she’ll forge a longsword worth buying.',
+  },
   mara_belongings: {
     id: 'mara_belongings',
     name: 'Waylaid on the Road',

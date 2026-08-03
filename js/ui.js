@@ -1397,13 +1397,12 @@ function initSlider(id, initial, onChange) {
 
 export function updateStatsPanel(stats) {
   // Level/XP removed 2026-07-22 — progression is gear-driven.
-  // 2026-08-02: main.js now passes GEAR-INCLUSIVE values (effective total) plus
-  // a per-stat `*Bonus` = how much of that total came from equipped gear, so the
-  // panel shows e.g. "Defense 3 (+2)" while wearing +1 armor and +1 hood.
-  const fmt = (val, bonus) => (bonus > 0 ? `${val} (+${bonus})` : `${val}`);
-  $('stat-attack').textContent = fmt(stats.attack, stats.attackBonus || 0);
-  $('stat-defense').textContent = fmt(stats.defense, stats.defenseBonus || 0);
-  $('stat-speed').textContent = fmt(stats.speed, stats.speedBonus || 0);
+  // main.js passes GEAR-INCLUSIVE values (the effective total). Show just the
+  // number — no "(+N)" annotation (2026-08-03, Danny): the displayed value
+  // already reflects equipped gear, so e.g. +1 armor + +1 hood just reads "3".
+  $('stat-attack').textContent = stats.attack;
+  $('stat-defense').textContent = stats.defense;
+  $('stat-speed').textContent = stats.speed;
   $('stat-luck').textContent = stats.luck;
 }
 

@@ -69,6 +69,11 @@ export const DIALOGUE_SFX = {
   amara: 'assets/audio/freesound_community-girl-chucklewav-14669.mp3',
   petra: 'assets/audio/freesound_community-girl-chucklewav-14669.mp3',
   priya: 'assets/audio/freesound_community-girl-chucklewav-14669.mp3',
+
+  // C4 travellers' camp (2026-08-03, Danny's picks).
+  mara_vellorne: 'assets/audio/phatphrogstudio-rpg-female-attack-grunt-no-ai-481720.mp3',
+  vozhik: 'assets/audio/freesound_community-goblin-cackle-87566.mp3',
+  cinder: 'assets/audio/dragon-studio-horse-snort-364469.mp3', // a horse's snort
 };
 
 // ---- Volume controls (wired to the Menu > Audio sliders) ----
