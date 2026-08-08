@@ -8,7 +8,7 @@ const VIEW_H = 1080;
 const PLAYER_SPEED = 130; // px/sec
 const WALK_FLIP_INTERVAL = 0.25; // s — icon mirrors while walking to suggest steps
 const COLLIDER = 36; // character collider diameter — a CIRCLE (radius 18) centred on the body; see circleRectOverlap
-const INTERACT_RANGE = 90;
+const INTERACT_RANGE = 113; // 90 ×1.25 — scaled for the 2400×2400 world (2026-08-08)
 // Treasure chests (2026-07-24) share one overhead sprite, drawn with the same
 // drop shadow as characters. A chest blocks movement (footprint = sprite size)
 // until it's emptied, then it's removed from the world entirely.
@@ -16,7 +16,7 @@ const CHEST_SPRITE = 'assets/images/treasure_chest_overhead.png';
 // How close (px) the player/NPC must be to a home's door point to interact with
 // it — and, now, the exact range at which that building's label appears, so the
 // label shows iff the door is interactable (2026-07-19, Danny). Bumped 40 -> 50.
-const DOOR_RANGE = 50;
+const DOOR_RANGE = 63; // 50 ×1.25 — scaled for the 2400×2400 world (2026-08-08)
 const SHADOW_OFFSET = 3; // px, always to the bottom-right regardless of rotation
 const SHADOW_ALPHA = 0.46; // multiply blend (see drawSprite) — bumped ~15% up from 0.4
 const FADE_S = 0.7; // NPC door fade duration
@@ -133,6 +133,7 @@ export class World {
     this.fishing = null;
 
     this.cameraY = 0;
+    this.cameraX = 0;
     this.interior = null; // interior image while a home dialog is open
     // Set when the player pushes on a scene exit (2026-07-10, replaces the
     // old edgeMessage placeholder): {edge, to, ...} — main.js consumes it
@@ -303,7 +304,7 @@ export class World {
   // FISH_SPOT_RANGE), or null. The returned spot's { x, y } is where the label
   // shows, where ripples animate, and where the line is cast.
   fishingSpotNearby() {
-    const FISH_SPOT_RANGE = 180;
+    const FISH_SPOT_RANGE = 225; // 180 ×1.25 — scaled for the 2400×2400 world (2026-08-08)
     let best = null, bestDist = FISH_SPOT_RANGE;
     for (const s of this.fishingSpots) {
       const d = Math.hypot(s.x - this.player.x, s.y - this.player.y);
@@ -425,9 +426,12 @@ export class World {
       this.checkApproachTalk();
     }
 
-    // Camera: horizontal fixed (world width == viewport width); vertical follows
-    // player, clamped so Layer 1 never scrolls past its edges.
-    this.cameraY = Math.min(Math.max(p.y - VIEW_H / 2, 0), this.scene.height - VIEW_H);
+    // Camera: follows the player on BOTH axes now that scenes (2400×2400) are
+    // wider than the viewport (2026-08-08). Each axis is clamped so Layer 1 never
+    // scrolls past its edges. When a scene is exactly viewport-sized on an axis
+    // (width==VIEW_W), the clamp pins that axis to 0, i.e. the old fixed behavior.
+    this.cameraX = Math.min(Math.max(p.x - VIEW_W / 2, 0), Math.max(0, this.scene.width - VIEW_W));
+    this.cameraY = Math.min(Math.max(p.y - VIEW_H / 2, 0), Math.max(0, this.scene.height - VIEW_H));
   }
 
   // Left/right exits match on a y band (yMin/yMax); top/bottom exits on an
@@ -518,7 +522,7 @@ export class World {
   checkCampAggro() {
     if (!this.campHostile || this.pendingAggro) return;
     const p = this.player;
-    const RANGE = 200;
+    const RANGE = 250; // 200 ×1.25 — scaled for the 2400×2400 world (2026-08-08)
     for (const npc of this.npcs) {
       if (npc.defeated || npc.atHome || !this.isCampMember(npc)) continue;
       const d = Math.hypot(npc.x - p.x, npc.y - p.y);
@@ -826,6 +830,7 @@ export class World {
   drawSprite(img, x, y, rotation, flip = false, alpha = 1) {
     if (alpha <= 0) return;
     const ctx = this.ctx;
+    const screenX = x - this.cameraX;
     const screenY = y - this.cameraY;
     const fx = flip ? -1 : 1;
 
@@ -834,7 +839,7 @@ export class World {
     ctx.save();
     ctx.globalCompositeOperation = 'multiply';
     ctx.globalAlpha = SHADOW_ALPHA * alpha;
-    ctx.translate(x + SHADOW_OFFSET, screenY + SHADOW_OFFSET);
+    ctx.translate(screenX + SHADOW_OFFSET, screenY + SHADOW_OFFSET);
     ctx.rotate(rotation || 0);
     ctx.scale(fx, 1);
     ctx.drawImage(this.silhouetteOf(img), -img.width / 2, -img.height / 2);
@@ -842,7 +847,7 @@ export class World {
 
     ctx.save();
     ctx.globalAlpha = alpha;
-    ctx.translate(x, screenY);
+    ctx.translate(screenX, screenY);
     ctx.rotate(rotation || 0);
     ctx.scale(fx, 1);
     ctx.drawImage(img, -img.width / 2, -img.height / 2);
@@ -859,7 +864,7 @@ export class World {
     ctx.shadowBlur = 6;
     ctx.shadowOffsetY = 2;
     ctx.fillStyle = '#fff';
-    ctx.fillText(text, x, y - this.cameraY);
+    ctx.fillText(text, x - this.cameraX, y - this.cameraY);
     ctx.restore();
   }
 
@@ -876,7 +881,7 @@ export class World {
   // vertically for the top-down water perspective.
   drawRipples() {
     const ctx = this.ctx;
-    const sx = this.fishing.x;
+    const sx = this.fishing.x - this.cameraX;
     const sy = this.fishing.y - this.cameraY;
     if (sy < -60 || sy > VIEW_H + 60) return;
     ctx.save();
@@ -916,7 +921,7 @@ export class World {
       const a = Math.sin(f * Math.PI) * s.maxAlpha; // fade in, then out
       if (a <= 0.01) continue;
 
-      const px = s.x
+      const px = s.x - this.cameraX
         + Math.sin(f * 3.1 + i * 1.7) * s.drift * f // widening sway
         + f * s.drift * 0.5;                        // gentle lean as it rises
       const gy = (s.y - f * s.rise) - this.cameraY;
@@ -940,6 +945,7 @@ export class World {
   // ('lighter') so it reads as light rather than paint. World-space (scrolls).
   drawFire(f) {
     const ctx = this.ctx;
+    const baseX = f.x - this.cameraX;
     const baseY = f.y - this.cameraY;
     if (baseY < -60 || baseY - f.rise * f.scale > VIEW_H + 60) return;
 
@@ -948,12 +954,12 @@ export class World {
 
     // Base glow pool
     const glowR = 15 * f.scale;
-    const glow = ctx.createRadialGradient(f.x, baseY, 0, f.x, baseY, glowR);
+    const glow = ctx.createRadialGradient(baseX, baseY, 0, baseX, baseY, glowR);
     glow.addColorStop(0, 'rgba(255,170,70,0.45)');
     glow.addColorStop(1, 'rgba(255,120,40,0)');
     ctx.fillStyle = glow;
     ctx.beginPath();
-    ctx.arc(f.x, baseY, glowR, 0, Math.PI * 2);
+    ctx.arc(baseX, baseY, glowR, 0, Math.PI * 2);
     ctx.fill();
 
     for (let i = 0; i < f.count; i++) {
@@ -965,7 +971,7 @@ export class World {
       if (a <= 0.02) continue;
 
       const flick = Math.sin(this.time * 9 + i * 2.3) * 2 * f.scale;
-      const px = f.x + Math.sin(fr * 3 + i * 1.3) * f.width * (1 - fr) * f.scale + flick * 0.4;
+      const px = baseX + Math.sin(fr * 3 + i * 1.3) * f.width * (1 - fr) * f.scale + flick * 0.4;
       const py = baseY - fr * f.rise * f.scale;
       const r = (5 * (1 - fr) + 1.5) * f.scale; // fat at the base, tapering up
 
@@ -1011,7 +1017,7 @@ export class World {
   // ground being lit rather than an additive glowing blob (2026-07-28, Danny).
   drawPlayerGlow() {
     const ctx = this.ctx;
-    const x = this.player.x;
+    const x = this.player.x - this.cameraX;
     const y = this.player.y - this.cameraY;
     const R = 150; // smaller torch pool (was 270)
     ctx.save();
@@ -1043,7 +1049,7 @@ export class World {
     const bg = this.images[this.scene.background];
 
     // Layer 1: background slice for current camera position
-    ctx.drawImage(bg, 0, this.cameraY, VIEW_W, VIEW_H, 0, 0, VIEW_W, VIEW_H);
+    ctx.drawImage(bg, this.cameraX, this.cameraY, VIEW_W, VIEW_H, 0, 0, VIEW_W, VIEW_H);
 
     // Torch glow (dark cave + torch equipped): cast on the floor here, BEFORE the
     // characters, so it lights the ground behind/around the player rather than
