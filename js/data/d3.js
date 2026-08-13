@@ -1,5 +1,5 @@
 // Scene D3 — FARM (overworld row D, column 3)
-// World coordinates: 1920x1920. Origin top-left.
+// World coordinates: 2400x2400. Origin top-left.
 // Obstacles are AABB rects {x, y, w, h} the player cannot pass through.
 
 export default {
@@ -10,54 +10,54 @@ export default {
   height: 2400,
 
   // Where the player appears when the scene loads fresh (near the path junction)
-  spawn: { x: 1194, y: 1325 },
+  spawn: { x: 1194, y: 1399 },
 
   // Traced from a 25px grid overlay on D3_Background.jpg, conservative rule:
   // any cell containing part of an object is fully blocked. All edges are
   // multiples of 25.
   obstacles: [
     // --- Trees (gaps left/right at the main horizontal path, y ~900-985) ---
-    { x: 0, y: 0, w: 2400, h: 219, note: 'tree line, top' },
-    { x: 188, y: 219, w: 250, h: 63, note: 'canopy bump, top-left' },
-    { x: 688, y: 219, w: 281, h: 94, note: 'canopy bump, top-mid' },
-    { x: 1719, y: 219, w: 231, h: 31, note: 'tree cluster, top-right' },
-    { x: 1950, y: 219, w: 206, h: 94, note: 'canopy bump, top-right corner' },
-    { x: 0, y: 219, w: 188, h: 656, note: 'tree line, left (to y700)' },
-    { x: 0, y: 875, w: 125, h: 219, note: 'tree line, left thin (y700-875)' },
-    { x: 0, y: 1238, w: 63, h: 906, note: 'tree edge, left below path' },
-    { x: 2156, y: 219, w: 244, h: 219, note: 'tree line, right upper' },
-    { x: 2094, y: 438, w: 306, h: 250, note: 'canopy bulge, right (y350-550)' },
-    { x: 2219, y: 688, w: 181, h: 406, note: 'tree line, right (y550-875)' },
-    { x: 2250, y: 1238, w: 150, h: 406, note: 'tree line, right below path' },
-    { x: 2156, y: 1625, w: 244, h: 281, note: 'canopy bulge, right lower' },
-    { x: 2000, y: 1875, w: 400, h: 525, note: 'forest, bottom-right corner' },
-    { x: 1563, y: 2063, w: 438, h: 338, note: 'trees, bottom (right of barn)' },
-    { x: 969, y: 2094, w: 294, h: 306, note: 'trees, bottom (left of barn)' },
-    { x: 0, y: 2156, w: 2400, h: 244, note: 'tree line, bottom' },
-    { x: 0, y: 2094, w: 250, h: 63, note: 'tree edge, bottom-left' },
-    { x: 188, y: 2031, w: 313, h: 188, note: 'tree, lower-left' },
+    { x: 0, y: 0, w: 2400, h: 293, note: 'tree line, top (extended to y0 after 74px downward art shift, 2026-08-13)' },
+    { x: 188, y: 293, w: 250, h: 63, note: 'canopy bump, top-left' },
+    { x: 688, y: 293, w: 281, h: 94, note: 'canopy bump, top-mid' },
+    { x: 1719, y: 293, w: 231, h: 31, note: 'tree cluster, top-right' },
+    { x: 1950, y: 293, w: 206, h: 94, note: 'canopy bump, top-right corner' },
+    { x: 0, y: 293, w: 188, h: 656, note: 'tree line, left (to y700)' },
+    { x: 0, y: 949, w: 125, h: 219, note: 'tree line, left thin (y700-875)' },
+    { x: 0, y: 1312, w: 63, h: 906, note: 'tree edge, left below path' },
+    { x: 2156, y: 293, w: 244, h: 219, note: 'tree line, right upper' },
+    { x: 2094, y: 512, w: 306, h: 250, note: 'canopy bulge, right (y350-550)' },
+    { x: 2219, y: 762, w: 181, h: 406, note: 'tree line, right (y550-875)' },
+    { x: 2250, y: 1312, w: 150, h: 406, note: 'tree line, right below path' },
+    { x: 2156, y: 1699, w: 244, h: 281, note: 'canopy bulge, right lower' },
+    { x: 2000, y: 1949, w: 400, h: 525, note: 'forest, bottom-right corner' },
+    { x: 1563, y: 2137, w: 438, h: 338, note: 'trees, bottom (right of barn)' },
+    { x: 969, y: 2168, w: 294, h: 306, note: 'trees, bottom (left of barn)' },
+    { x: 0, y: 2156, w: 2400, h: 244, note: 'tree line, bottom (kept at 2156 so it still covers to canvas edge after 74px shift, 2026-08-13)' },
+    { x: 0, y: 2168, w: 250, h: 63, note: 'tree edge, bottom-left' },
+    { x: 188, y: 2105, w: 313, h: 188, note: 'tree, lower-left' },
 
     // --- Crop fields (planted rows — walk the paths and grass instead).
     // Each field is split around one walkable dirt lane (a worker path
     // between rows, ~50px — the narrower row-to-row furrows are too tight
     // for the 36px collider even where they're technically clear dirt).
-    { x: 188, y: 250, w: 156, h: 594, note: 'crop field, upper-left, west of the lane' },
-    { x: 406, y: 250, w: 531, h: 594, note: 'crop field, upper-left, east of the lane (lane: x275-325)' },
-    { x: 1438, y: 250, w: 344, h: 844, note: 'crop field, upper-right, west of the lane' },
-    { x: 1844, y: 250, w: 313, h: 844, note: 'crop field, upper-right, east of the lane (lane: x1425-1475)' },
-    { x: 2156, y: 688, w: 94, h: 406, note: 'crop field, upper-right east strip' },
-    { x: 938, y: 938, w: 219, h: 188, note: 'hedge crops, left of barn lane' },
-    { x: 1250, y: 938, w: 219, h: 188, note: 'hedge crops, right of barn lane' },
-    { x: 63, y: 1281, w: 250, h: 813, note: 'crop field, lower-left, west of the lane' },
-    { x: 375, y: 1281, w: 719, h: 813, note: 'crop field, lower-left, east of the lane (lane: x250-300)' },
-    { x: 1688, y: 1250, w: 563, h: 844, note: 'crop field, lower-right (west edge pulled in to x1350 — lane: x1300-1350, joins the corridor by the pen/silo)' },
+    { x: 188, y: 324, w: 156, h: 594, note: 'crop field, upper-left, west of the lane' },
+    { x: 406, y: 324, w: 531, h: 594, note: 'crop field, upper-left, east of the lane (lane: x275-325)' },
+    { x: 1438, y: 324, w: 344, h: 844, note: 'crop field, upper-right, west of the lane' },
+    { x: 1844, y: 324, w: 313, h: 844, note: 'crop field, upper-right, east of the lane (lane: x1425-1475)' },
+    { x: 2156, y: 762, w: 94, h: 406, note: 'crop field, upper-right east strip' },
+    { x: 938, y: 1012, w: 219, h: 188, note: 'hedge crops, left of barn lane' },
+    { x: 1250, y: 1012, w: 219, h: 188, note: 'hedge crops, right of barn lane' },
+    { x: 63, y: 1355, w: 250, h: 813, note: 'crop field, lower-left, west of the lane' },
+    { x: 375, y: 1355, w: 719, h: 813, note: 'crop field, lower-left, east of the lane (lane: x250-300)' },
+    { x: 1688, y: 1324, w: 563, h: 844, note: 'crop field, lower-right (west edge pulled in to x1350 — lane: x1300-1350, joins the corridor by the pen/silo)' },
 
     // --- Buildings & structures ---
-    { x: 1000, y: 469, w: 375, h: 375, note: 'farmhouse + pergola (Mirelle’s home)' },
-    { x: 563, y: 906, w: 219, h: 219, note: 'small barn 1 + barrels' },
-    { x: 781, y: 906, w: 188, h: 219, note: 'small barn 2 + barrels' },
-    { x: 1438, y: 906, w: 219, h: 219, note: 'small barn 3 + barrels' },
-    { x: 406, y: 969, w: 94, h: 156, note: 'well + frame' },
+    { x: 1000, y: 543, w: 375, h: 375, note: 'farmhouse + pergola (Mirelle’s home)' },
+    { x: 563, y: 980, w: 219, h: 219, note: 'small barn 1 + barrels' },
+    { x: 781, y: 980, w: 188, h: 219, note: 'small barn 2 + barrels' },
+    { x: 1438, y: 980, w: 219, h: 219, note: 'small barn 3 + barrels' },
+    { x: 406, y: 1043, w: 94, h: 156, note: 'well + frame' },
     // Fenced pen — hollow (fence perimeter only) so Gaffer has room to
     // move inside; interior is x1075-1225, y1025-1200, clear. Re-traced
     // 2026-07-07: the original trace (south rail at y1275-1300) had the
@@ -65,10 +65,10 @@ export default {
     // south of the real fence line before ever tripping a collision — the
     // real fence rectangle (posts + rails, confirmed via pixel-grid crop of
     // D3_Background.jpg) sits at roughly x1075-1250, y1000-1200.
-    { x: 1313, y: 1250, w: 250, h: 31, note: 'fenced pen, north rail' },
-    { x: 1313, y: 1500, w: 250, h: 31, note: 'fenced pen, south rail' },
-    { x: 1313, y: 1250, w: 31, h: 281, note: 'fenced pen, west rail' },
-    { x: 1531, y: 1250, w: 31, h: 281, note: 'fenced pen, east rail' },
+    { x: 1313, y: 1324, w: 250, h: 31, note: 'fenced pen, north rail' },
+    { x: 1313, y: 1574, w: 250, h: 31, note: 'fenced pen, south rail' },
+    { x: 1313, y: 1324, w: 31, h: 281, note: 'fenced pen, west rail' },
+    { x: 1531, y: 1324, w: 31, h: 281, note: 'fenced pen, east rail' },
     // Player-only ground: the grass between the (now-correctly-sized) pen and
     // the silo is open so the player can walk it. NPCs are kept out via the
     // npcOnly rect below — this exact pocket (bounded by the pen, silo, and
@@ -78,12 +78,12 @@ export default {
     // sharper than steer()'s ~126° limit). Confirmed via headless sim: with
     // this rect removed, Tuckwell's routine throughput dropped from ~70
     // loops/10,000s to 8. Doesn't touch Mirelle's x925-1000 barn-lane route.
-    { x: 1313, y: 1531, w: 156, h: 125, npcOnly: true, note: 'NPC-only guard: keeps NPCs out of the pen/silo/barn pocket' },
-    { x: 1469, y: 1563, w: 156, h: 188, note: 'silo' },
-    { x: 1156, y: 1656, w: 375, h: 344, note: 'bottom barn (roof extent)' },
-    { x: 1344, y: 2000, w: 125, h: 94, note: 'bottom barn, south porch' },
-    { x: 1531, y: 1750, w: 94, h: 344, note: 'barrels, right of bottom barn' },
-    { x: 1125, y: 1813, w: 63, h: 156, note: 'barrels, left of bottom barn' },
+    { x: 1313, y: 1605, w: 156, h: 125, npcOnly: true, note: 'NPC-only guard: keeps NPCs out of the pen/silo/barn pocket' },
+    { x: 1469, y: 1637, w: 156, h: 188, note: 'silo' },
+    { x: 1156, y: 1730, w: 375, h: 344, note: 'bottom barn (roof extent)' },
+    { x: 1344, y: 2074, w: 125, h: 94, note: 'bottom barn, south porch' },
+    { x: 1531, y: 1824, w: 94, h: 344, note: 'barrels, right of bottom barn' },
+    { x: 1125, y: 1887, w: 63, h: 156, note: 'barrels, left of bottom barn' },
   ],
 
   // Building labels: drawn on the canvas when the player is within `r` of (x, y).
@@ -100,10 +100,10 @@ export default {
   // Well/Silo/Old Barn are structures/interactables, not home doors, so they
   // keep the plain proximity-radius reveal.
   buildings: [
-    { label: 'Mirelle’s Farmhouse', x: 1190, y: 850, r: 213, door: { x: 1190, y: 875 } },
-    { label: 'Tuckwell’s House', x: 671, y: 1069, r: 163, door: { x: 671, y: 1156 } },
-    { label: 'Brenna’s House', x: 875, y: 1069, r: 163, door: { x: 875, y: 1156 } },
-    { label: 'Your House', x: 1546, y: 1069, r: 163, door: { x: 1546, y: 1156 } },
+    { label: 'Mirelle’s Farmhouse', x: 1190, y: 924, r: 213, door: { x: 1190, y: 949 } },
+    { label: 'Tuckwell’s House', x: 671, y: 1143, r: 163, door: { x: 671, y: 1230 } },
+    { label: 'Brenna’s House', x: 875, y: 1143, r: 163, door: { x: 875, y: 1230 } },
+    { label: 'Your House', x: 1546, y: 1143, r: 163, door: { x: 1546, y: 1230 } },
     // No standalone 'Well' label here (2026-07-21): the well is interactable
     // (drink / toss a coin — see the interactable below), so its label rides on
     // that object, same as the silo — label shows exactly when you can press
@@ -112,13 +112,13 @@ export default {
     // interactable below), so its label rides on that object instead — same
     // anchor + range, so the label appears exactly when you can press space
     // (2026-07-20, Danny: a visible label must always mean "interactable").
-    { label: 'Old Barn', x: 1288, y: 1731, r: 213 },
+    { label: 'Old Barn', x: 1288, y: 1805, r: 213 },
   ],
 
   // Building entrances (interiors come later) — where building meets path
   entrances: [
-    { x: 1188, y: 844, w: 75, h: 30, to: 'mirelle_home', note: 'farmhouse door, meets vertical path' },
-    { x: 1250, y: 1631, w: 75, h: 25, to: 'bottom_barn', note: 'bottom barn door, meets lower vertical path' },
+    { x: 1188, y: 918, w: 75, h: 30, to: 'mirelle_home', note: 'farmhouse door, meets vertical path' },
+    { x: 1250, y: 1705, w: 75, h: 25, to: 'bottom_barn', note: 'bottom barn door, meets lower vertical path' },
   ],
 
   // Hidden collectibles: invisible trigger areas with no sprite — only a
@@ -128,7 +128,7 @@ export default {
   interactables: [
     {
       id: 'shiny-field-north',
-      x: 1188, y: 400, w: 100, h: 100,
+      x: 1188, y: 474, w: 100, h: 100,
       label: 'A shiny object',
       reward: { gold: 3 },
     },
@@ -140,7 +140,7 @@ export default {
     // gap to its east — validated walkable with the 36px collider.
     {
       id: 'well',
-      x: 453, y: 1044,
+      x: 453, y: 1118,
       range: 163,
       label: 'Well',
       well: true,
@@ -158,7 +158,7 @@ export default {
     // pocket west of the silo (range 130 covers all three approaches).
     {
       id: 'silo-corn',
-      x: 1588, y: 1550,
+      x: 1588, y: 1624,
       range: 163,
       label: 'Silo',
       reward: { item: 'corn' },
@@ -176,7 +176,7 @@ export default {
   battles: [
     {
       id: 'old_barn_rats',
-      door: { x: 1288, y: 1631 },
+      door: { x: 1288, y: 1705 },
       enemies: ['blight_rat'],
       background: 'assets/images/barn_interior.jpg', // battle backdrop (2026-07-22)
       emptyMessage: 'The barn is empty.', // shown if you return after clearing it (2026-07-28)
@@ -186,8 +186,8 @@ export default {
   // Scene exits: crossing these edges moves the player to the adjacent scene.
   // Adjacent scenes per overworld map (page 6): D2 village west, D4 woods east, C3 woods north.
   exits: [
-    { edge: 'left', yMin: 1113, yMax: 1238, to: 'D2', note: 'main path west to Village' },
-    { edge: 'right', yMin: 1113, yMax: 1238, to: 'D4', note: 'main path east to Woods' },
+    { edge: 'left', yMin: 1187, yMax: 1312, to: 'D2', note: 'main path west to Village' },
+    { edge: 'right', yMin: 1187, yMax: 1312, to: 'D4', note: 'main path east to Woods' },
   ],
 
   npcs: [
@@ -197,11 +197,11 @@ export default {
       role: 'FARM OWNER',
       sprite: 'assets/images/Mirelle_Overhead.png',
       portrait: 'assets/images/Mirelle_Portrait.png',
-      x: 1190, y: 863,
+      x: 1190, y: 937,
       speed: 40,
       startsHome: true,
       home: {
-        door: { x: 1190, y: 875 }, // just outside the farmhouse's south face
+        door: { x: 1190, y: 949 }, // just outside the farmhouse's south face
         interior: 'assets/images/home_interior.jpg',
       },
       // Daily loop: rest at home, head out to check the Old Barn, draw water
@@ -212,11 +212,11 @@ export default {
       routine: [
         { do: 'wait', s: 10 },
         { do: 'leaveHome' },
-        { do: 'goto', x: 1190, y: 1175 },
-        { do: 'goto', x: 1250, y: 1613 }, // Old Barn entrance
-        { do: 'goto', x: 1190, y: 1175 },
-        { do: 'goto', x: 453, y: 1175 },   // the well
-        { do: 'goto', x: 1190, y: 1175 },
+        { do: 'goto', x: 1190, y: 1249 },
+        { do: 'goto', x: 1250, y: 1687 }, // Old Barn entrance
+        { do: 'goto', x: 1190, y: 1249 },
+        { do: 'goto', x: 453, y: 1249 },   // the well
+        { do: 'goto', x: 1190, y: 1249 },
         { do: 'goHome' },
       ],
       // Quest test case for the item + quest systems: agreeing hands over a
@@ -284,11 +284,11 @@ export default {
       role: 'FARMHAND',
       sprite: 'assets/images/Tuckwell_Overhead.png',
       portrait: 'assets/images/Tuckwell_Portrait.png',
-      x: 563, y: 875, // spawns beside the upper-left field
+      x: 563, y: 949, // spawns beside the upper-left field
       speed: 45,
       startsHome: false,
       home: {
-        door: { x: 671, y: 1156 }, // south face of the Hay Barn (his house)
+        door: { x: 671, y: 1230 }, // south face of the Hay Barn (his house)
         interior: 'assets/images/home_interior.jpg',
       },
       // Tours all four crop fields, pausing at each, then home for a longer
@@ -300,20 +300,20 @@ export default {
       // to pass. The open path has no such pinch point.
       routine: [
         { do: 'wait', s: 10 },            // upper-left field (spawn)
-        { do: 'goto', x: 531, y: 875 },
-        { do: 'goto', x: 531, y: 1175 },
-        { do: 'goto', x: 1813, y: 1175 },   // upper-right field
+        { do: 'goto', x: 531, y: 949 },
+        { do: 'goto', x: 531, y: 1249 },
+        { do: 'goto', x: 1813, y: 1249 },   // upper-right field
         { do: 'wait', s: 10 },
-        { do: 'goto', x: 1938, y: 1200 },   // lower-right field
+        { do: 'goto', x: 1938, y: 1274 },   // lower-right field
         { do: 'wait', s: 10 },
-        { do: 'goto', x: 563, y: 1225 },    // lower-left field
+        { do: 'goto', x: 563, y: 1299 },    // lower-left field
         { do: 'wait', s: 10 },
         { do: 'goHome' },
         { do: 'wait', s: 15 },
         { do: 'leaveHome' },
-        { do: 'goto', x: 531, y: 1156 },
-        { do: 'goto', x: 531, y: 875 },
-        { do: 'goto', x: 563, y: 875 },    // back to the upper-left field
+        { do: 'goto', x: 531, y: 1230 },
+        { do: 'goto', x: 531, y: 949 },
+        { do: 'goto', x: 563, y: 949 },    // back to the upper-left field
       ],
       dialog: {
         line: 'Fields don’t tend themselves, friend. Four to walk every day, and the rats still get more than their share.',
@@ -337,11 +337,11 @@ export default {
       role: 'ANIMAL KEEPER',
       sprite: 'assets/images/Brenna_Overhead.png',
       portrait: 'assets/images/Brenna_Portrait.png',
-      x: 2313, y: 1175, // spawns out to the east, near the path
+      x: 2313, y: 1249, // spawns out to the east, near the path
       speed: 45,
       startsHome: false,
       home: {
-        door: { x: 875, y: 1156 }, // south face of the Tool Shed (her house)
+        door: { x: 875, y: 1230 }, // south face of the Tool Shed (her house)
         interior: 'assets/images/home_interior.jpg',
       },
       // Checks the animal pen, then the silo, then home for the night.
@@ -349,13 +349,13 @@ export default {
       // dipping south, then rides the main path (y900-990) the rest of
       // the way — both clear full width, so nothing here clips a building.
       routine: [
-        { do: 'goto', x: 1613, y: 1175 },
-        { do: 'goto', x: 1588, y: 1438 }, // animal pen
+        { do: 'goto', x: 1613, y: 1249 },
+        { do: 'goto', x: 1588, y: 1512 }, // animal pen
         { do: 'wait', s: 10 },
-        { do: 'goto', x: 1588, y: 1519 }, // silo
+        { do: 'goto', x: 1588, y: 1593 }, // silo
         { do: 'wait', s: 10 },
-        { do: 'goto', x: 1588, y: 1175 },
-        { do: 'goto', x: 875, y: 1175 },
+        { do: 'goto', x: 1588, y: 1249 },
+        { do: 'goto', x: 875, y: 1249 },
         { do: 'goHome' },
         { do: 'wait', s: 15 },
         { do: 'leaveHome' },
@@ -423,16 +423,16 @@ export default {
       role: 'GOAT',
       sprite: 'assets/images/Gaffer_Overhead.png',
       portrait: 'assets/images/Gaffer_Portrait.png',
-      x: 1438, y: 1325,
+      x: 1438, y: 1399,
       speed: 30,
       // No home — Gaffer lives in the pen and just wanders its interior
       // (x1075-1225, y1025-1200, clear — see the hollow pen rects above).
       // Patrol points sit >=25px inside that clear box so the 36px collider
       // never touches the fence rails.
       patrol: [
-        { x: 1388, y: 1325 },
-        { x: 1488, y: 1325 },
-        { x: 1438, y: 1450 },
+        { x: 1388, y: 1399 },
+        { x: 1488, y: 1399 },
+        { x: 1438, y: 1524 },
       ],
       dialog: {
         line: 'Gaffer fixes you with a flat yellow stare, lets out a low bleat, and goes back to chewing on a fence post.',
@@ -466,10 +466,10 @@ export default {
       id: 'your_house',
       isPlace: true,
       name: 'Your House',
-      x: 1546, y: 1156,
+      x: 1546, y: 1230,
       startsHome: true,
       home: {
-        door: { x: 1546, y: 1156 },
+        door: { x: 1546, y: 1230 },
         interior: 'assets/images/home_interior.jpg',
       },
       description: 'Your modest one-room home on the farm — a cot, a hearth, and whatever you’ve managed to set aside.',
