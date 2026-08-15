@@ -8,7 +8,7 @@ const VIEW_H = 1080;
 const PLAYER_SPEED = 130; // px/sec
 const WALK_FLIP_INTERVAL = 0.25; // s — icon mirrors while walking to suggest steps
 const COLLIDER = 36; // character collider diameter — a CIRCLE (radius 18) centred on the body; see circleRectOverlap
-const INTERACT_RANGE = 113; // 90 ×1.25 — scaled for the 2400×2400 world (2026-08-08)
+const INTERACT_RANGE = 141; // 90 ×1.5625 — scaled for the 3000×3000 world (2026-08-15)
 // Treasure chests (2026-07-24) share one overhead sprite, drawn with the same
 // drop shadow as characters. A chest blocks movement (footprint = sprite size)
 // until it's emptied, then it's removed from the world entirely.
@@ -16,7 +16,7 @@ const CHEST_SPRITE = 'assets/images/treasure_chest_overhead.png';
 // How close (px) the player/NPC must be to a home's door point to interact with
 // it — and, now, the exact range at which that building's label appears, so the
 // label shows iff the door is interactable (2026-07-19, Danny). Bumped 40 -> 50.
-const DOOR_RANGE = 63; // 50 ×1.25 — scaled for the 2400×2400 world (2026-08-08)
+const DOOR_RANGE = 79; // 50 ×1.5625 — scaled for the 3000×3000 world (2026-08-15)
 const SHADOW_OFFSET = 3; // px, always to the bottom-right regardless of rotation
 const SHADOW_ALPHA = 0.46; // multiply blend (see drawSprite) — bumped ~15% up from 0.4
 const FADE_S = 0.7; // NPC door fade duration
@@ -304,7 +304,7 @@ export class World {
   // FISH_SPOT_RANGE), or null. The returned spot's { x, y } is where the label
   // shows, where ripples animate, and where the line is cast.
   fishingSpotNearby() {
-    const FISH_SPOT_RANGE = 225; // 180 ×1.25 — scaled for the 2400×2400 world (2026-08-08)
+    const FISH_SPOT_RANGE = 281; // 180 ×1.5625 — scaled for the 3000×3000 world (2026-08-15)
     let best = null, bestDist = FISH_SPOT_RANGE;
     for (const s of this.fishingSpots) {
       const d = Math.hypot(s.x - this.player.x, s.y - this.player.y);
@@ -426,7 +426,7 @@ export class World {
       this.checkApproachTalk();
     }
 
-    // Camera: follows the player on BOTH axes now that scenes (2400×2400) are
+    // Camera: follows the player on BOTH axes now that scenes (3000×3000) are
     // wider than the viewport (2026-08-08). Each axis is clamped so Layer 1 never
     // scrolls past its edges. When a scene is exactly viewport-sized on an axis
     // (width==VIEW_W), the clamp pins that axis to 0, i.e. the old fixed behavior.
@@ -522,7 +522,7 @@ export class World {
   checkCampAggro() {
     if (!this.campHostile || this.pendingAggro) return;
     const p = this.player;
-    const RANGE = 250; // 200 ×1.25 — scaled for the 2400×2400 world (2026-08-08)
+    const RANGE = 313; // 200 ×1.5625 — scaled for the 3000×3000 world (2026-08-15)
     for (const npc of this.npcs) {
       if (npc.defeated || npc.atHome || !this.isCampMember(npc)) continue;
       const d = Math.hypot(npc.x - p.x, npc.y - p.y);

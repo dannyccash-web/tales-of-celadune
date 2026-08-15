@@ -8,3 +8,4 @@
 # Scratch/headless test files (this session's sandbox mount can't unlink them,
 # so keep them out of the repo). Safe to delete locally on a real machine.
 _test_*.mjs
+_verify_*.mjs
