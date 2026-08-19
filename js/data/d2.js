@@ -1125,7 +1125,7 @@ export default {
         { do: 'goto', x: 1523, y: 2025 },
         { do: 'wait', s: 5 },
         { do: 'goHome' },
-        { do: 'wait', s: 80 }, // time in the tavern doubled (2026-07-23)
+        { do: 'wait', s: 160 }, // time in the tavern doubled 2026-07-23, doubled again 2026-08-19 (Danny)
         { do: 'leaveHome' },
       ],
       dialog: { line: 'Welcome, welcome! Pull up a stool — though I’ll warn you, the ale’s still fermenting and the stew’s mostly turnip. Come back when the hearth’s lit proper.', responses: ['Leave.'] },
@@ -1150,7 +1150,7 @@ export default {
       speed: 45, startsHome: true,
       home: { door: { x: 1374, y: 2235 }, approach: { x: 1348, y: 2383 }, interior: 'assets/images/blacksmith_interior.jpg' },
       routine: [
-        { do: 'wait', s: 12 }, // time at the forge doubled (2026-07-23)
+        { do: 'wait', s: 24 }, // time at the forge doubled 2026-07-23, doubled again 2026-08-19 (Danny)
         { do: 'leaveHome' },
         { do: 'goto', x: 1751, y: 2438 },
         { do: 'wait', s: 4 },
@@ -1174,7 +1174,7 @@ export default {
         { do: 'goto', x: 1494, y: 1416 },
         { do: 'wait', s: 3 },
         { do: 'goHome' },
-        { do: 'wait', s: 48 }, // time in the apothecary doubled (2026-07-23)
+        { do: 'wait', s: 96 }, // time in the apothecary doubled 2026-07-23, doubled again 2026-08-19 (Danny)
         { do: 'leaveHome' },
       ],
       dialog: { line: 'Careful what you touch — half these jars will cure you and the other half most certainly won’t. Come by when you’ve an ache I can put a price to.', responses: ['Leave.'] },
@@ -1192,7 +1192,7 @@ export default {
       speed: 45, startsHome: true,
       home: { door: { x: 1220, y: 1050 }, approach: { x: 1310, y: 999 }, interior: 'assets/images/general_goods_interior.jpg' },
       routine: [
-        { do: 'wait', s: 60 }, // time in the shop doubled (2026-07-23)
+        { do: 'wait', s: 120 }, // time in the shop doubled 2026-07-23, doubled again 2026-08-19 (Danny)
         { do: 'leaveHome' },
         { do: 'goto', x: 1223, y: 1324 },
         { do: 'wait', s: 5 },
@@ -1216,7 +1216,7 @@ export default {
         { do: 'goto', x: 1349, y: 199 },
         { do: 'wait', s: 4 },
         { do: 'goHome' },
-        { do: 'wait', s: 96 }, // time in the bakery doubled (2026-07-23)
+        { do: 'wait', s: 192 }, // time in the bakery doubled 2026-07-23, doubled again 2026-08-19 (Danny)
         { do: 'leaveHome' },
       ],
       dialog: { line: 'Smell that? Second batch of the day. The crusty loaves go fast, so if you want one, don’t dawdle.', responses: ['Leave.'] },
@@ -1288,6 +1288,12 @@ export default {
       home: { door: { x: 1489, y: 633 }, approach: { x: 1504, y: 716 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
         { do: 'wait', s: 3 },
+        // Leaving home, head WEST to the x~1380 road first, THEN north to the
+        // timber spot — without this waypoint the greedy steer cut NE and got
+        // wedged forever in the pocket around (1620,543) (fixed 2026-08-19,
+        // Danny reported Alden stuck in the same place; engine-verified: 40px
+        // clearance here, ~8 clean loops over 600s, zero stall).
+        { do: 'goto', x: 1380, y: 480 },
         { do: 'goto', x: 1486, y: 156 },
         { do: 'wait', s: 5 },
         { do: 'goHome' },

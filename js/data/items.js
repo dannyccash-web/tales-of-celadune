@@ -152,7 +152,7 @@ export default {
     questItem: false,
     slot: 'mainhand',
     damage: { min: 2, max: 4 },
-    price: 22,
+    price: 20,
   },
   leather_armor: {
     id: 'leather_armor',
@@ -162,7 +162,7 @@ export default {
     questItem: false,
     slot: 'clothing',
     defenseBonus: 1,
-    price: 19,
+    price: 17,
   },
   leather_gloves: {
     id: 'leather_gloves',
@@ -172,7 +172,7 @@ export default {
     questItem: false,
     slot: 'hands', // Equipment tab (see SLOT_CATEGORY)
     attackBonus: 1,
-    price: 17,
+    price: 15,
   },
   // +1 Speed (2026-07-26) — raises the player's effective Speed, which speeds
   // overworld movement AND improves battle initiative (main.js's effectiveSpeed).
@@ -340,7 +340,7 @@ export default {
     questItem: false,
     slot: 'mainhand',
     damage: { min: 4, max: 7 },
-    price: 40,
+    price: 38,
   },
   // Royal Summons (C4, 2026-08-02) — the king's sealed proclamation, stolen
   // from Mara Vellorne by the clearing's bramblekin and stashed in their chest.
