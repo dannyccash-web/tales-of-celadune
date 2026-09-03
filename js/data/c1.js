@@ -6,9 +6,10 @@
 // the WEST edge; the derelict merchant ship *Maiden's Grace* (crewed by
 // knights' supply-runners, boarded and slaughtered by miremen at a river
 // mouth before drifting in dead) sits moored at a pier/warehouse complex on
-// the shore. The village proper — nine huts + the dockmaster's warehouse —
-// spreads east across open grass and dirt paths, with a rocky headland NE and
-// a tide pool SE (the Tidefolk's corner). Half the village's 12 NPCs are
+// the shore. The village proper — eleven huts (incl. the Tidefolk's, added
+// 2026-09-03) + the dockmaster's warehouse — spreads east across open grass
+// and dirt paths, with a rocky headland NE and a tide pool SE (the Tidefolk's
+// corner). Half the village's 12 NPCs are
 // Calder Rusk's former mutinous crew (see D1) — this IS "the fishing
 // village" his crew rowed north to. See CLAUDE.md's "Row C design notes" +
 // "C1 — Tidewrack Harbor" sections for the full brief and confirmed NPC
@@ -28,17 +29,30 @@
 // original no-guide build) -> forced-walkable aprons carved for all three
 // edge exits (guide's natural bands were narrower/offset from the previous
 // build's bands, so aprons were widened to guarantee safe arrival) -> merged
-// into rects (364 total). Engine-verified via a 36px-collider EDT/connected-
+// into rects. Engine-verified via a 36px-collider EDT/connected-
 // component check (equivalent to the project's usual BFS): spawn, every
 // building door, every NPC goto/patrol point, the fishing bank, and both
 // mireman patrol points on the ship's deck all fall in the single dominant
 // safe region (1.72M of ~1.9M safe px; a couple of small sub-2800px pockets
 // are isolated on purpose — nothing is placed there). Regenerate the same
 // way (from a walkable guide, red=blocked) if this art changes again.
+// UPDATED 2026-09-03: a targeted collision delta from an annotated overlay
+// (yellow=make walkable, blue=make blocked — see CLAUDE.md's "C1 collision
+// delta from an annotated overlay" section) took the obstacle count from
+// 364 to 344 rects; no full regen.
 //
 // D1 <-> C1 connection UNCHANGED from the original build: D1's `top` exit
 // (x1375-1625) needed no edits — this file's `bottom` exit apron
 // (x1360-1640 forced walkable) still covers it exactly.
+//
+// Building doors relocated 2026-09-03 (Danny sent corrected per-building
+// coordinates against the current art + collision). Five of the ten
+// requested points (Senna, Aldous, Nils, Isolde, Cade) landed 73-87px inside
+// blocked terrain and were snapped to the nearest walkable+reachable point
+// (same technique as the round-2 Isolde-patrol fix above); the other five
+// landed clean. NPC spawn points, routine `goto`s, and Isolde/Cade's patrol
+// loops were all re-derived from each building's door move (same relative
+// offset as before the move) and re-verified reachable + livelock-free.
 
 export default {
   id: 'C1',
@@ -405,18 +419,46 @@ export default {
   // watchtower is gone from this render (there's a well at the north
   // crossroads instead), so that label was dropped.
   buildings: [
-    { label: 'Dockmaster’s Warehouse', x: 1160, y: 1120, r: 260, door: { x: 1150, y: 1400 } },
-    { label: 'Perrin’s Cookhouse', x: 1680, y: 1350, r: 190, door: { x: 1557, y: 1353 } },
+    // Doors relocated 2026-09-03 (Danny sent corrected per-building door
+    // coordinates against the current art). Each label's x,y was shifted by
+    // the same offset as its door move, preserving the original label-to-door
+    // relationship ("drawn just above the door" — see world.js's building-
+    // label comment) rather than the label sitting wherever it used to.
+    { label: 'Dockmaster’s Warehouse', x: 1233, y: 1069, r: 260, door: { x: 1223, y: 1349 } },
+    { label: 'Perrin’s Cookhouse', x: 2147, y: 1457, r: 190, door: { x: 2024, y: 1460 } },
     { label: 'The Farrows’ House', x: 1880, y: 1370, r: 180, door: { x: 1781, y: 1569 } },
-    { label: 'Wynne’s House', x: 1845, y: 1075, r: 180, door: { x: 1831, y: 1182 } },
-    { label: 'Garrick’s House', x: 1685, y: 730, r: 180, door: { x: 1658, y: 917 } },
-    { label: 'Senna’s House', x: 1980, y: 610, r: 170, door: { x: 1956, y: 747 } },
-    { label: 'Aldous’s House', x: 2280, y: 610, r: 170, door: { x: 2288, y: 742 } },
-    { label: 'Nils’s House', x: 2215, y: 930, r: 170, door: { x: 2190, y: 807 } },
-    { label: 'Skitter’s Shed', x: 1745, y: 1880, r: 190, door: { x: 1632, y: 1873 } },
+    { label: 'Wynne’s House', x: 1940, y: 826, r: 180, door: { x: 1926, y: 933 } },
+    { label: 'Garrick’s House', x: 1649, y: 566, r: 180, door: { x: 1622, y: 753 } },
+    { label: 'Senna’s House', x: 2014, y: 613, r: 170, door: { x: 1990, y: 750 } },
+    { label: 'Aldous’s House', x: 2272, y: 618, r: 170, door: { x: 2280, y: 750 } },
+    { label: 'Nils’s House', x: 2245, y: 1193, r: 170, door: { x: 2220, y: 1070 } },
+    { label: 'Skitter’s Shed', x: 1312, y: 1743, r: 190, door: { x: 1199, y: 1736 } },
+    // Isolde and Cade are still wandering Tidefolk (patrol, never actually
+    // go home — see their npc entries below), but the tide-pool cove has
+    // real houses for them now (2026-09-03); doors added so the buildings
+    // are enterable-when-home like any other, even though they're always
+    // out (door reads "locked" — same as any home NPC who's away).
+    { label: 'Isolde’s House', x: 2130, y: 1730, r: 180, door: { x: 2130, y: 1880 } },
+    { label: 'Cade Fathom’s House', x: 2330, y: 1950, r: 180, door: { x: 2330, y: 2100 } },
     { label: 'The Old Well', x: 1300, y: 300, r: 180 },
     { label: 'Maiden’s Grace', x: 500, y: 1400, r: 480 },
     { label: 'Tidepool Cove', x: 2200, y: 1900, r: 300 },
+  ],
+
+  // Chimney smoke on half the village's homes (2026-09-03, Danny) — thin
+  // plumes, same tuning as D2's chimney smoke (count 11, rise 150, drift 13,
+  // baseR 5, growR 15, speed 0.12, alpha 0.34), sourced ~190px above each
+  // building's door (roughly roof height). Spread across the map rather than
+  // clustered: the warehouse, the Farrows', Garrick's, Nils's, Skitter's, and
+  // Cade's — leaving Perrin's Cookhouse (already has its own cook-fire feel),
+  // Wynne's, Senna's, Aldous's, and Isolde's bare.
+  smoke: [
+    { x: 1223, y: 1159, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.0 },
+    { x: 1781, y: 1379, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.2 },
+    { x: 1622, y: 563, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.4 },
+    { x: 2225, y: 800, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.6 },
+    { x: 1199, y: 1546, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.8 },
+    { x: 2330, y: 1910, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 1.0 },
   ],
 
   entrances: [],
@@ -436,9 +478,9 @@ export default {
     },
   ],
 
-  fishingSpots: [
-    { x: 2200, y: 1900 },
-  ],
+  // Fishing spot removed 2026-09-03 (Danny) — it sat right where Cade and
+  // Isolde's new houses were placed, in the tide-pool cove.
+  fishingSpots: [],
 
   chests: [],
   battles: [],
@@ -471,11 +513,11 @@ export default {
       sprite: 'assets/images/perrin_alders_overhead.png',
       portrait: 'assets/images/perrin_alders.png',
       speed: 40, startsHome: true,
-      home: { door: { x: 1557, y: 1353 }, interior: 'assets/images/beach_hut_interior.jpg' },
+      home: { door: { x: 2024, y: 1460 }, interior: 'assets/images/beach_hut_interior.jpg' },
       routine: [
         { do: 'wait', s: 70 },
         { do: 'leaveHome' },
-        { do: 'goto', x: 1500, y: 1650 },
+        { do: 'goto', x: 1967, y: 1757 },
         { do: 'wait', s: 6 },
         { do: 'goHome' },
       ],
@@ -485,11 +527,11 @@ export default {
       sprite: 'assets/images/roderick_vane_overhead.png',
       portrait: 'assets/images/roderick_vane.png',
       speed: 40, startsHome: true,
-      home: { door: { x: 1150, y: 1400 }, interior: 'assets/images/beach_hut_interior.jpg' },
+      home: { door: { x: 1223, y: 1349 }, interior: 'assets/images/beach_hut_interior.jpg' },
       routine: [
         { do: 'wait', s: 55 },
         { do: 'leaveHome' },
-        { do: 'goto', x: 1350, y: 1400 },
+        { do: 'goto', x: 1423, y: 1349 },
         { do: 'wait', s: 6 },
         { do: 'goHome' },
       ],
@@ -498,11 +540,11 @@ export default {
       id: 'wynne_ashcombe', name: 'Wynne Ashcombe', role: 'SHRINE-KEEPER',
       sprite: 'assets/images/wynne_ashcombe_overhead.png',
       portrait: 'assets/images/wynne_ashcombe.png',
-      x: 1700, y: 1250, speed: 38, startsHome: false,
-      home: { door: { x: 1831, y: 1182 }, interior: 'assets/images/beach_hut_interior.jpg' },
+      x: 1795, y: 1001, speed: 38, startsHome: false,
+      home: { door: { x: 1926, y: 933 }, interior: 'assets/images/beach_hut_interior.jpg' },
       routine: [
         { do: 'wait', s: 5 },
-        { do: 'goto', x: 1688, y: 1181 },
+        { do: 'goto', x: 1783, y: 932 },
         { do: 'wait', s: 8 },
         { do: 'goHome' },
         { do: 'wait', s: 65 },
@@ -545,11 +587,11 @@ export default {
       id: 'garrick_hollowmast', name: 'Garrick Hollowmast', role: '',
       sprite: 'assets/images/garrick_hollowmast_overhead.png',
       portrait: 'assets/images/garrick_hollowmast.png',
-      x: 1450, y: 800, speed: 38, startsHome: false,
-      home: { door: { x: 1658, y: 917 }, interior: 'assets/images/beach_hut_interior.jpg' },
+      x: 1414, y: 636, speed: 38, startsHome: false,
+      home: { door: { x: 1622, y: 753 }, interior: 'assets/images/beach_hut_interior.jpg' },
       routine: [
         { do: 'wait', s: 7 },
-        { do: 'goto', x: 1500, y: 750 },
+        { do: 'goto', x: 1464, y: 586 },
         { do: 'wait', s: 9 },
         { do: 'goHome' },
         { do: 'wait', s: 55 },
@@ -569,11 +611,11 @@ export default {
       sprite: 'assets/images/senna_brineholt_overhead.png',
       portrait: 'assets/images/senna_brineholt.png',
       speed: 40, startsHome: true,
-      home: { door: { x: 1956, y: 747 }, interior: 'assets/images/beach_hut_interior.jpg' },
+      home: { door: { x: 1990, y: 750 }, interior: 'assets/images/beach_hut_interior.jpg' },
       routine: [
         { do: 'wait', s: 60 },
         { do: 'leaveHome' },
-        { do: 'goto', x: 2050, y: 850 },
+        { do: 'goto', x: 2084, y: 853 },
         { do: 'wait', s: 6 },
         { do: 'goHome' },
       ],
@@ -586,11 +628,11 @@ export default {
       id: 'nils_cutwater', name: 'Nils Cutwater', role: '',
       sprite: 'assets/images/nils_cutwater_overhead.png',
       portrait: 'assets/images/nils_cutwater.png',
-      x: 2050, y: 1000, speed: 38, startsHome: false,
-      home: { door: { x: 2190, y: 807 }, interior: 'assets/images/beach_hut_interior.jpg' },
+      x: 2080, y: 1263, speed: 38, startsHome: false,
+      home: { door: { x: 2220, y: 1070 }, interior: 'assets/images/beach_hut_interior.jpg' },
       routine: [
         { do: 'wait', s: 8 },
-        { do: 'goto', x: 2050, y: 950 },
+        { do: 'goto', x: 2080, y: 1213 },
         { do: 'wait', s: 10 },
         { do: 'goHome' },
         { do: 'wait', s: 50 },
@@ -605,11 +647,11 @@ export default {
       id: 'aldous_marrow', name: 'Aldous Marrow', role: '',
       sprite: 'assets/images/aldous_marrow_overhead.png',
       portrait: 'assets/images/aldous_marrow.png',
-      x: 2400, y: 800, speed: 34, startsHome: false,
-      home: { door: { x: 2288, y: 742 }, interior: 'assets/images/beach_hut_interior.jpg' },
+      x: 2392, y: 808, speed: 34, startsHome: false,
+      home: { door: { x: 2280, y: 750 }, interior: 'assets/images/beach_hut_interior.jpg' },
       routine: [
         { do: 'wait', s: 9 },
-        { do: 'goto', x: 2350, y: 850 },
+        { do: 'goto', x: 2342, y: 858 },
         { do: 'wait', s: 8 },
         { do: 'goHome' },
         { do: 'wait', s: 45 },
@@ -625,11 +667,11 @@ export default {
       id: 'skitter_nabbins', name: 'Skitter Nabbins', role: 'RATCATCHER',
       sprite: 'assets/images/skitter_nabbins_overhead.png',
       portrait: 'assets/images/skitter_nabbins.png',
-      x: 1850, y: 1750, speed: 44, startsHome: false,
-      home: { door: { x: 1632, y: 1873 }, interior: 'assets/images/beach_hut_interior.jpg' },
+      x: 1417, y: 1613, speed: 44, startsHome: false,
+      home: { door: { x: 1199, y: 1736 }, interior: 'assets/images/beach_hut_interior.jpg' },
       routine: [
         { do: 'wait', s: 6 },
-        { do: 'goto', x: 1900, y: 1750 },
+        { do: 'goto', x: 1467, y: 1613 },
         { do: 'wait', s: 8 },
         { do: 'goHome' },
         { do: 'wait', s: 40 },
@@ -647,8 +689,12 @@ export default {
       id: 'isolde_pearlwake', name: 'Isolde Pearlwake', role: 'HERBALIST',
       sprite: 'assets/images/isolde_pearlwake_overhead.png',
       portrait: 'assets/images/isolde_pearlwake.png',
-      x: 2050, y: 1920, speed: 34, startsHome: false,
-      patrol: [ { x: 2050, y: 1920 }, { x: 2000, y: 2050 } ],
+      x: 2130, y: 1920, speed: 34, startsHome: false,
+      // Has a house now (door added 2026-09-03, see `buildings` above), but
+      // still just wanders — the door stays "locked" (she's always out),
+      // same as before. Patrol re-centered on the new door.
+      home: { door: { x: 2130, y: 1880 }, interior: 'assets/images/beach_hut_interior.jpg' },
+      patrol: [ { x: 2130, y: 1920 }, { x: 2080, y: 2050 } ],
       dialog: { line: 'The tide pools hold more than crabs, if you know where to look. What brings you to my corner of the shore?', responses: ['Leave.'] },
       chatter: [
         { q: 'What is Tidefolk?', a: 'An old blood, older than this village. We keep to the water more than most — old habit, older than memory, if I’m honest with you.' },
@@ -658,8 +704,11 @@ export default {
       id: 'cade_fathom', name: 'Cade Fathom', role: 'DIVER',
       sprite: 'assets/images/cade_fathom_overhead.png',
       portrait: 'assets/images/cade_fathom.png',
-      x: 2295, y: 1970, speed: 40, startsHome: false,
-      patrol: [ { x: 2295, y: 1970 }, { x: 2163, y: 2142 } ],
+      x: 2330, y: 2150, speed: 40, startsHome: false,
+      // Has a house now too (door added 2026-09-03, see `buildings` above) —
+      // same "always wandering, door stays locked" treatment as Isolde.
+      home: { door: { x: 2330, y: 2100 }, interior: 'assets/images/beach_hut_interior.jpg' },
+      patrol: [ { x: 2330, y: 2150 }, { x: 2198, y: 2322 } ],
       dialog: { line: 'You’ve got dry-land legs under you, but I’d wager you could learn to hold your breath if it came to it. Most can, with reason enough.', responses: ['Leave.'] },
       chatter: [
         { q: 'Could you dive the wreck?', a: 'Faster than any of Roderick’s rope-and-lantern crews, I’d wager — if he’d ever let me near it. Someday, maybe. When there’s a reason worth the risk.' },
