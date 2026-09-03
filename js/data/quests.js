@@ -50,4 +50,24 @@ export default {
     name: 'More Precious Than Gold',
     description: 'Calder Rusk asked you to recover something from the wreck of the Gull’s Regret — he wouldn’t say what, only that it’s worth more to him than all his hidden gold.',
   },
+  perrin_feast: {
+    id: 'perrin_feast',
+    name: 'A Feast for Tidewrack',
+    description: 'Perrin the cook is nearly out of stores. Bring him Cragclaw eggs and a couple of bluegill so he can feed the village.',
+  },
+  c1_memorial: {
+    id: 'c1_memorial',
+    name: 'A Place to Grieve',
+    description: 'Help Wynne Ashcombe raise a small memorial for the crew of the Gull’s Regret, lost when it wrecked off the cove.',
+  },
+  c1_salvage: {
+    id: 'c1_salvage',
+    name: 'Salvage Rights',
+    description: 'Help Roderick Vane catalogue what little cargo has already washed ashore from the Maiden’s Grace.',
+  },
+  toby_net: {
+    id: 'toby_net',
+    name: 'Something in the Water',
+    description: 'Toby Farrow lost his fishing net to something in the water. Bring him a couple of trout to tide his family over.',
+  },
 };

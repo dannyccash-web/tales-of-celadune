@@ -8,6 +8,7 @@ import sceneD3 from './data/d3.js';
 import sceneD4 from './data/d4.js';
 import sceneD4B from './data/d4b.js';
 import sceneC4 from './data/c4.js';
+import sceneC1 from './data/c1.js';
 import { World } from './world.js';
 import * as ui from './ui.js';
 import * as audio from './audio.js';
@@ -291,7 +292,7 @@ function loadImages(sources) {
 // Every scene in the game, keyed by the ids that exits point at. Adding a
 // scene = write its data file, import it, and register it here — the
 // transition system below handles everything else.
-const SCENES = { D1: sceneD1, D1B: sceneD1B, D2: sceneD2, D3: sceneD3, D4: sceneD4, D4B: sceneD4B, C4: sceneC4 };
+const SCENES = { D1: sceneD1, D1B: sceneD1B, D2: sceneD2, D3: sceneD3, D4: sceneD4, D4B: sceneD4B, C4: sceneC4, C1: sceneC1 };
 
 async function boot() {
   // Preload assets for EVERY registered scene up front — scene switches are
@@ -987,6 +988,53 @@ async function boot() {
         line: 'Nothing at all? Ah… a shame, that. Well — thank you for looking, truly. We’ll manage. We always do.',
         responses: ['Leave.'],
       });
+      return true;
+    }
+    // ---- Tidewrack Harbor, C1 (2026-09-02) ----
+    if (effect.perrinAccept) {
+      startQuest('perrin_feast');
+      ui.updateDialogContent({ line: 'Bless you. Bring them when you have them — I’ll be right here, stretching what’s left of the larder.', responses: ['Leave.'] });
+      return true;
+    }
+    if (effect.perrinTurnIn) {
+      removeItem('queen_cragclaw_eggs', 1, true);
+      removeItem('bluegill', 2, true);
+      ui.showGaveItem(ITEMS.queen_cragclaw_eggs);
+      addGold(15);
+      completeQuest('perrin_feast');
+      ui.updateDialogContent({ line: 'Now THAT’S a stew worth ladling. Thank you, truly — this village hasn’t eaten this well since before the wreck.', responses: ['Leave.'] });
+      return true;
+    }
+    if (effect.wynneAccept) {
+      if (stats.gold < 3) {
+        audio.sfx(audio.SFX.denied);
+        ui.updateDialogContent({ line: 'No shame in an empty purse, traveler. Come back when fortune allows — the shrine isn’t going anywhere.', responses: ['Leave.'] });
+        return true;
+      }
+      spendGold(3);
+      startQuest('c1_memorial');
+      completeQuest('c1_memorial');
+      ui.updateDialogContent({ line: 'Thank you. I’ll see it done properly — driftwood, stone, and a name for each of them, if I can recall enough to carve.', responses: ['Leave.'] });
+      return true;
+    }
+    if (effect.roderickAccept) {
+      startQuest('c1_salvage');
+      addGold(8);
+      completeQuest('c1_salvage');
+      ui.updateDialogContent({ line: 'Good. Here — your cut, up front, on trust. I like a partner who doesn’t need convincing twice.', responses: ['Leave.'] });
+      return true;
+    }
+    if (effect.tobyAccept) {
+      startQuest('toby_net');
+      ui.updateDialogContent({ line: 'Much obliged. The lines are still out, at least — I’m not entirely useless without a net.', responses: ['Leave.'] });
+      return true;
+    }
+    if (effect.tobyTurnIn) {
+      removeItem('trout', 2, true);
+      ui.showGaveItem(ITEMS.trout);
+      addGold(6);
+      completeQuest('toby_net');
+      ui.updateDialogContent({ line: 'There — that’ll do us. Whatever’s out there, I mean to find out eventually. Not tonight, though.', responses: ['Leave.'] });
       return true;
     }
     // Vendor Buy/Sell: swap the response box into the item grid, in place —
@@ -2001,6 +2049,111 @@ async function boot() {
     };
   }
 
+  // ---- Tidewrack Harbor, C1 (2026-09-02) ----
+  // Perrin's main quest: bring him 1 Cragclaw Eggs + 2 Bluegill and he'll feed
+  // the village. State-built like Calder/Mara — offer, active nudge, a
+  // turn-in that only appears once both ingredients are actually in hand.
+  function perrinHasIngredients() {
+    const eggs = inventory.find((it) => it.id === 'queen_cragclaw_eggs')?.qty || 0;
+    const fish = inventory.find((it) => it.id === 'bluegill')?.qty || 0;
+    return eggs >= 1 && fish >= 2;
+  }
+  function buildPerrinDialog() {
+    const status = questStatus('perrin_feast');
+    if (status === 'completed') {
+      return { line: 'The whole village ate well that night, thanks to you. Best evening we’ve had since the wreck. Come by any time — there’s always a bowl for the one who saved the feast.', responses: ['Leave.'] };
+    }
+    if (status === 'active' && perrinHasIngredients()) {
+      return {
+        line: 'Is that… Cragclaw eggs? And bluegill besides? Bless you, that’s exactly what I need. Hand them over and I’ll have this village fed by nightfall.',
+        responses: ['Here — take them.', 'Not yet.'],
+        responseEffects: [{ perrinTurnIn: true }, { followUp: 'No rush. Just don’t let them spoil.', noBack: true }],
+      };
+    }
+    if (status === 'active') {
+      return { line: 'Cragclaw eggs, and a couple of bluegill besides — bring me both and I’ll turn this thin larder into a proper feast. The eggs won’t be easy; the fish, less so if the lines aren’t biting.', responses: ['Leave.'] };
+    }
+    return {
+      line: 'Six months since the wreck and the stores are down to salt and prayers. If I had a clutch of Cragclaw eggs — rich enough to stretch a stew — and a couple of good bluegill, I could feed this whole village a proper meal. Would you help an old cook out?',
+      responses: ['I’ll see what I can find.', 'Leave.'],
+      responseEffects: [{ perrinAccept: true }, null],
+    };
+  }
+
+  // Wynne (shrine memorial) and Roderick (cargo salvage) offer a
+  // mutually-exclusive minor quest (2026-09-02) — the first real use of
+  // Danny's "help one or the other, not both" mechanic. No separate flag
+  // needed: each side just checks whether the OTHER quest completed.
+  function buildWynneDialog() {
+    if (questStatus('c1_memorial') === 'completed') {
+      return { line: 'The memorial stands, plain and honest, where the old pines meet the shore. Thank you, truly — the dead rest easier for it, and so do I.', responses: ['Leave.'] };
+    }
+    if (questStatus('c1_salvage') === 'completed') {
+      return { line: 'Roderick’s coin will spend faster than my stones will weather, I expect. No matter — the shrine keeps its own accounts. Walk gently, traveler.', responses: ['Leave.'] };
+    }
+    return {
+      line: 'The Gull’s Regret took six good souls to the bottom, and not one of them has a stone to their name. I mean to raise a small memorial where the pines meet the shore — driftwood, and stones, and a carved plank if I can manage it. It wants only a little coin for the carving. Will you help me see it done?',
+      responses: ['Here’s a little toward it. (3 gold)', 'Not right now.'],
+      responseEffects: [{ wynneAccept: true }, null],
+    };
+  }
+  function buildRoderickDialog() {
+    if (questStatus('c1_salvage') === 'completed') {
+      return { line: 'Every crate we’ve cleared says the same thing — that ship still owes this village a fortune. When we finally break her open properly, you’ll have first pick, mark me.', responses: ['Leave.'] };
+    }
+    if (questStatus('c1_memorial') === 'completed') {
+      return { line: 'Gone and helped the shrine-keeper bury coin in stone, have you? Fine sentiment. Doesn’t put bread on a table, but fine sentiment.', responses: ['Leave.'] };
+    }
+    return {
+      line: 'That hulk out there isn’t just a grave, friend — she’s cargo, and cargo’s coin, once we work up the nerve to clear her properly. Help me catalogue what little’s already washed up along the strand and I’ll cut you a fair share.',
+      responses: ['I’ll help you catalogue it.', 'Not my business.'],
+      responseEffects: [{ roderickAccept: true }, null],
+    };
+  }
+
+  // Toby's net quest: bring him 2 Trout to tide his family over (his net's
+  // torn, the culprit unnamed — seeds a future encounter, per CLAUDE.md).
+  function buildTobyDialog() {
+    const status = questStatus('toby_net');
+    const trout = inventory.find((it) => it.id === 'trout')?.qty || 0;
+    if (status === 'completed') {
+      return { line: 'Line’s set. Might be weeks before I can afford a proper net again, but you kept my family fed in the meantime. Won’t forget it.', responses: ['Leave.'] };
+    }
+    if (status === 'active' && trout >= 2) {
+      return {
+        line: 'Trout, is it? That’ll more than cover what the net would’ve brought in. Bless you, truly.',
+        responses: ['Here, take them.', 'Not yet.'],
+        responseEffects: [{ tobyTurnIn: true }, { followUp: 'Whenever you’re ready.', noBack: true }],
+      };
+    }
+    if (status === 'active') {
+      return { line: 'Still no net, and the lines only catch so much on their own. A couple of trout would tide us over, if you’ve had any luck.', responses: ['Leave.'] };
+    }
+    return {
+      line: 'Something took my net clean off its stakes three nights back — snapped the stakes right out of the sand. I didn’t stay to see what. Can’t afford a new one, not with the ship still sitting there empty-handed. If you land a couple of trout, I’d take it as a kindness — we’re stretched thin till I can mend this.',
+      responses: ['I’ll bring you some trout.', 'Leave.'],
+      responseEffects: [{ tobyAccept: true }, null],
+    };
+  }
+
+  // Lily's lost gull isn't a formal quest — just a hidden collectible
+  // (scene interactable c1_lily_gull) whose `collected` flag her dialogue
+  // checks directly off the live world, the same way other one-off state
+  // checks (e.g. emptiedBattleNearDoor) read world data straight through.
+  function lilyGullFound() {
+    return !!world.interactables.find((i) => i.id === 'c1_lily_gull')?.collected;
+  }
+  function buildLilyDialog() {
+    if (lilyGullFound()) {
+      return { line: 'You saw her? By the old tower? I knew she wouldn’t just fly off forever! Thank you, thank you!', responses: ['Leave.'] };
+    }
+    return {
+      line: 'Have you seen a gull anywhere? Grey and white, missing a feather on her left wing. She’s been gone TWO WHOLE DAYS and Papa says gulls don’t just leave, so something must’ve happened, right? Right?',
+      responses: ['I’ll keep an eye out.', 'Leave.'],
+      responseEffects: [{ followUp: 'Promise?', noBack: true }, null],
+    };
+  }
+
   // Every NPC dialog opens through here so the per-character voice clip
   // (audio.DIALOGUE_SFX, keyed by npc.id) and response-effect handling are
   // consistent whether the NPC was approached directly or met at their door.
@@ -2023,6 +2176,11 @@ async function boot() {
     else if (npc.id === 'cinder') dialog = buildCinderDialog();
     else if (npc.id === 'mara_vellorne') dialog = buildMaraDialog();
     else if (npc.id === 'calder_rusk') dialog = buildCalderDialog(npc);
+    else if (npc.id === 'perrin_alders') dialog = buildPerrinDialog();
+    else if (npc.id === 'wynne_ashcombe') dialog = buildWynneDialog();
+    else if (npc.id === 'roderick_vane') dialog = buildRoderickDialog();
+    else if (npc.id === 'toby_farrow') dialog = buildTobyDialog();
+    else if (npc.id === 'lily_farrow') dialog = buildLilyDialog();
     else if (npc.id === 'bramblekin_chief') dialog = buildChiefDialog();
     else if (npc.bramblekin) dialog = buildBramblekinDialog(npc);
     else if (npc.vendor) dialog = buildVendorDialog(npc); // adds its own chatter
@@ -2976,9 +3134,12 @@ async function boot() {
       // just fights solo.
       const foes = foe.pack ? world.npcs.filter((n) => n.pack === foe.pack && !n.defeated) : [foe];
       const enemyIds = foes.map((m) => m.enemyId || enemyId);
-      // A pack fight happens out in the woods, not the camp — use the forest
-      // backdrop rather than the bramblekin enemy's default camp one.
-      const bg = foe.pack ? 'assets/images/forest_background.jpg' : undefined;
+      // C4's clearing bramblekin pack fights out in the woods, not the camp —
+      // force the forest backdrop rather than the bramblekin enemy's default
+      // camp one. Any OTHER pack (e.g. C1's ship miremen) falls through to
+      // undefined, so startBattle's normal priority chain picks up that
+      // enemy's own catalog background instead (miremen -> beach_background).
+      const bg = foe.pack === 'clearing_bramblekin' ? 'assets/images/forest_background.jpg' : undefined;
       startBattle(enemyIds, (result) => {
         if (result === 'victory') { foes.forEach((m) => { m.defeated = true; }); }
         // Fleeing a charging creature/guard: it stands down for 2s (world.js's

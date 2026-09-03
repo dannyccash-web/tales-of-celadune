@@ -586,5 +586,13 @@ export default {
   // height). West is open sea, north/south are cliffs — no exits there.
   exits: [
     { edge: 'right', yMin: 1000, yMax: 1125, to: 'D2', note: 'road east to the Village' },
+    // North to C1 Tidewrack Harbor (2026-09-02) — Calder's crew rowed north
+    // to "the fishing village" (see his backstory line), and C1 is directly
+    // above D1 on the overworld grid. The open clearing around Calder's hut
+    // already has a wide (300px) unblocked gap in the collision here
+    // (x1350-1650, confirmed reachable from spawn with the real collider
+    // BEFORE this exit was added) — so this required zero collision edits.
+    // Band matches C1's `bottom` exit exactly.
+    { edge: 'top', xMin: 1375, xMax: 1625, to: 'C1', note: 'a rough coastal trail climbing north out of the cove' },
   ],
 };
