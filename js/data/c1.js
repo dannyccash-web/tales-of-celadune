@@ -424,25 +424,31 @@ export default {
     // the same offset as its door move, preserving the original label-to-door
     // relationship ("drawn just above the door" — see world.js's building-
     // label comment) rather than the label sitting wherever it used to.
+    // Doors use Danny's EXACT coordinates even where that lands inside
+    // collision (round 2, same day — he confirmed that's fine: the door only
+    // needs SOME walkable ground within interaction range, not to itself be
+    // walkable; see world.js's DOOR_RANGE=79 and homeNpcNearDoor()). Two are
+    // a little past that range — Senna ~87px, Nils ~80px to the nearest
+    // walkable ground — flagged in CLAUDE.md; the rest are within range.
     { label: 'Dockmaster’s Warehouse', x: 1233, y: 1069, r: 260, door: { x: 1223, y: 1349 } },
     { label: 'Perrin’s Cookhouse', x: 2147, y: 1457, r: 190, door: { x: 2024, y: 1460 } },
     { label: 'The Farrows’ House', x: 1880, y: 1370, r: 180, door: { x: 1781, y: 1569 } },
     { label: 'Wynne’s House', x: 1940, y: 826, r: 180, door: { x: 1926, y: 933 } },
     { label: 'Garrick’s House', x: 1649, y: 566, r: 180, door: { x: 1622, y: 753 } },
-    { label: 'Senna’s House', x: 2014, y: 613, r: 170, door: { x: 1990, y: 750 } },
-    { label: 'Aldous’s House', x: 2272, y: 618, r: 170, door: { x: 2280, y: 750 } },
-    { label: 'Nils’s House', x: 2245, y: 1193, r: 170, door: { x: 2220, y: 1070 } },
+    { label: 'Senna’s House', x: 2015, y: 526, r: 170, door: { x: 1991, y: 663 } },
+    { label: 'Aldous’s House', x: 2277, y: 545, r: 170, door: { x: 2285, y: 677 } },
+    { label: 'Nils’s House', x: 2250, y: 1113, r: 170, door: { x: 2225, y: 990 } },
     { label: 'Skitter’s Shed', x: 1312, y: 1743, r: 190, door: { x: 1199, y: 1736 } },
-    // Isolde and Cade are still wandering Tidefolk (patrol, never actually
-    // go home — see their npc entries below), but the tide-pool cove has
-    // real houses for them now (2026-09-03); doors added so the buildings
-    // are enterable-when-home like any other, even though they're always
-    // out (door reads "locked" — same as any home NPC who's away).
-    { label: 'Isolde’s House', x: 2130, y: 1730, r: 180, door: { x: 2130, y: 1880 } },
-    { label: 'Cade Fathom’s House', x: 2330, y: 1950, r: 180, door: { x: 2330, y: 2100 } },
+    // Isolde and Cade have real houses now (2026-09-03) and go home
+    // occasionally like any other villager (see their npc entries below —
+    // they were patrol-only wanderers before this pass).
+    { label: 'Isolde’s House', x: 2206, y: 1728, r: 180, door: { x: 2206, y: 1878 } },
+    { label: 'Cade Fathom’s House', x: 2377, y: 1894, r: 180, door: { x: 2377, y: 2044 } },
     { label: 'The Old Well', x: 1300, y: 300, r: 180 },
     { label: 'Maiden’s Grace', x: 500, y: 1400, r: 480 },
-    { label: 'Tidepool Cove', x: 2200, y: 1900, r: 300 },
+    // Moved 2026-09-03 (Danny) — north, near the crossroads well, not the
+    // south tide-pool where Isolde/Cade actually live (per his exact coords).
+    { label: 'Tidepool Cove', x: 2241, y: 349, r: 300 },
   ],
 
   // Chimney smoke on half the village's homes (2026-09-03, Danny) — thin
@@ -458,7 +464,7 @@ export default {
     { x: 1622, y: 563, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.4 },
     { x: 2225, y: 800, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.6 },
     { x: 1199, y: 1546, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.8 },
-    { x: 2330, y: 1910, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 1.0 },
+    { x: 2377, y: 1854, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 1.0 },
   ],
 
   entrances: [],
@@ -588,7 +594,12 @@ export default {
       sprite: 'assets/images/garrick_hollowmast_overhead.png',
       portrait: 'assets/images/garrick_hollowmast.png',
       x: 1414, y: 636, speed: 38, startsHome: false,
-      home: { door: { x: 1622, y: 753 }, interior: 'assets/images/beach_hut_interior.jpg' },
+      // door sits deep enough inside the building's collision that leaveHome/
+      // goHome couldn't path to/from it directly (found via a livelock sim,
+      // 2026-09-03 round 3) — `approach` gives them a real walkable step-out
+      // point nearby instead (world.js already prefers approach over door for
+      // all actual walking; door alone still governs interaction range).
+      home: { door: { x: 1622, y: 753 }, approach: { x: 1480, y: 720 }, interior: 'assets/images/beach_hut_interior.jpg' },
       routine: [
         { do: 'wait', s: 7 },
         { do: 'goto', x: 1464, y: 586 },
@@ -611,11 +622,11 @@ export default {
       sprite: 'assets/images/senna_brineholt_overhead.png',
       portrait: 'assets/images/senna_brineholt.png',
       speed: 40, startsHome: true,
-      home: { door: { x: 1990, y: 750 }, interior: 'assets/images/beach_hut_interior.jpg' },
+      home: { door: { x: 1991, y: 663 }, interior: 'assets/images/beach_hut_interior.jpg' },
       routine: [
         { do: 'wait', s: 60 },
         { do: 'leaveHome' },
-        { do: 'goto', x: 2084, y: 853 },
+        { do: 'goto', x: 2085, y: 766 },
         { do: 'wait', s: 6 },
         { do: 'goHome' },
       ],
@@ -628,11 +639,11 @@ export default {
       id: 'nils_cutwater', name: 'Nils Cutwater', role: '',
       sprite: 'assets/images/nils_cutwater_overhead.png',
       portrait: 'assets/images/nils_cutwater.png',
-      x: 2080, y: 1263, speed: 38, startsHome: false,
-      home: { door: { x: 2220, y: 1070 }, interior: 'assets/images/beach_hut_interior.jpg' },
+      x: 2085, y: 1183, speed: 38, startsHome: false,
+      home: { door: { x: 2225, y: 990 }, interior: 'assets/images/beach_hut_interior.jpg' },
       routine: [
         { do: 'wait', s: 8 },
-        { do: 'goto', x: 2080, y: 1213 },
+        { do: 'goto', x: 2085, y: 1133 },
         { do: 'wait', s: 10 },
         { do: 'goHome' },
         { do: 'wait', s: 50 },
@@ -647,11 +658,11 @@ export default {
       id: 'aldous_marrow', name: 'Aldous Marrow', role: '',
       sprite: 'assets/images/aldous_marrow_overhead.png',
       portrait: 'assets/images/aldous_marrow.png',
-      x: 2392, y: 808, speed: 34, startsHome: false,
-      home: { door: { x: 2280, y: 750 }, interior: 'assets/images/beach_hut_interior.jpg' },
+      x: 2397, y: 735, speed: 34, startsHome: false,
+      home: { door: { x: 2285, y: 677 }, interior: 'assets/images/beach_hut_interior.jpg' },
       routine: [
         { do: 'wait', s: 9 },
-        { do: 'goto', x: 2342, y: 858 },
+        { do: 'goto', x: 2347, y: 785 },
         { do: 'wait', s: 8 },
         { do: 'goHome' },
         { do: 'wait', s: 45 },
@@ -682,19 +693,29 @@ export default {
         { q: 'How’d you end up here?', a: 'Wandered in chasing a rat that chased a chicken that chased — well, it’s a long story, and the short of it is Tidewrack decided to keep me. Fair trade, I think. Rats for a roof.' },
       ],
     },
-    // Tidefolk — no home (they live apart, in the tide-pool cove); a plain
-    // short wander loop, same pattern as C4's Mara/Vozhik. Repositioned
-    // 2026-09-02 to the new art's tide pool (SE corner, near x2100-2300).
+    // Tidefolk — have real houses now (2026-09-03 round 2) and go home
+    // occasionally like any other villager (a plain leaveHome/goto/goHome
+    // routine, same pattern as everyone else in this file — were a
+    // patrol-only wander loop, same as C4's Mara/Vozhik, before this pass).
+    // Repositioned 2026-09-02 to the new art's tide pool (SE corner, near
+    // x2100-2300).
     {
       id: 'isolde_pearlwake', name: 'Isolde Pearlwake', role: 'HERBALIST',
       sprite: 'assets/images/isolde_pearlwake_overhead.png',
       portrait: 'assets/images/isolde_pearlwake.png',
-      x: 2130, y: 1920, speed: 34, startsHome: false,
-      // Has a house now (door added 2026-09-03, see `buildings` above), but
-      // still just wanders — the door stays "locked" (she's always out),
-      // same as before. Patrol re-centered on the new door.
-      home: { door: { x: 2130, y: 1880 }, interior: 'assets/images/beach_hut_interior.jpg' },
-      patrol: [ { x: 2130, y: 1920 }, { x: 2080, y: 2050 } ],
+      x: 2206, y: 1918, speed: 34, startsHome: false,
+      // Has a house now (door added 2026-09-03) and goes home occasionally
+      // like any other villager (round 2, same day — was patrol-only before,
+      // door always locked; now a real leaveHome/goHome routine).
+      home: { door: { x: 2206, y: 1878 }, interior: 'assets/images/beach_hut_interior.jpg' },
+      routine: [
+        { do: 'wait', s: 6 },
+        { do: 'goto', x: 2156, y: 2048 },
+        { do: 'wait', s: 10 },
+        { do: 'goHome' },
+        { do: 'wait', s: 40 },
+        { do: 'leaveHome' },
+      ],
       dialog: { line: 'The tide pools hold more than crabs, if you know where to look. What brings you to my corner of the shore?', responses: ['Leave.'] },
       chatter: [
         { q: 'What is Tidefolk?', a: 'An old blood, older than this village. We keep to the water more than most — old habit, older than memory, if I’m honest with you.' },
@@ -704,11 +725,20 @@ export default {
       id: 'cade_fathom', name: 'Cade Fathom', role: 'DIVER',
       sprite: 'assets/images/cade_fathom_overhead.png',
       portrait: 'assets/images/cade_fathom.png',
-      x: 2330, y: 2150, speed: 40, startsHome: false,
-      // Has a house now too (door added 2026-09-03, see `buildings` above) —
-      // same "always wandering, door stays locked" treatment as Isolde.
-      home: { door: { x: 2330, y: 2100 }, interior: 'assets/images/beach_hut_interior.jpg' },
-      patrol: [ { x: 2330, y: 2150 }, { x: 2198, y: 2322 } ],
+      x: 2290, y: 2030, speed: 40, startsHome: false,
+      // Has a house now too (door added 2026-09-03) — same "goes home
+      // occasionally" treatment as Isolde, round 2. Same approach fix as
+      // Garrick above: his door is buried deep enough in the building that
+      // leaveHome/goHome need a real walkable step-out point instead.
+      home: { door: { x: 2377, y: 2044 }, approach: { x: 2290, y: 2030 }, interior: 'assets/images/beach_hut_interior.jpg' },
+      routine: [
+        { do: 'wait', s: 6 },
+        { do: 'goto', x: 2230, y: 2240 },
+        { do: 'wait', s: 10 },
+        { do: 'goHome' },
+        { do: 'wait', s: 45 },
+        { do: 'leaveHome' },
+      ],
       dialog: { line: 'You’ve got dry-land legs under you, but I’d wager you could learn to hold your breath if it came to it. Most can, with reason enough.', responses: ['Leave.'] },
       chatter: [
         { q: 'Could you dive the wreck?', a: 'Faster than any of Roderick’s rope-and-lantern crews, I’d wager — if he’d ever let me near it. Someday, maybe. When there’s a reason worth the risk.' },
