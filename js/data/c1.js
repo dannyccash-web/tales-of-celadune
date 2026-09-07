@@ -435,8 +435,8 @@ export default {
     { label: 'The Farrows’ House', x: 1880, y: 1370, r: 180, door: { x: 1781, y: 1569 } },
     { label: 'Wynne’s House', x: 1940, y: 826, r: 180, door: { x: 1926, y: 933 } },
     { label: 'Garrick’s House', x: 1649, y: 566, r: 180, door: { x: 1622, y: 753 } },
-    { label: 'Senna’s House', x: 2015, y: 526, r: 170, door: { x: 1991, y: 663 } },
-    { label: 'Aldous’s House', x: 2277, y: 545, r: 170, door: { x: 2285, y: 677 } },
+    { label: 'Senna’s House', x: 2015, y: 588, r: 170, door: { x: 1991, y: 725 } },
+    { label: 'Aldous’s House', x: 2277, y: 593, r: 170, door: { x: 2285, y: 725 } },
     { label: 'Nils’s House', x: 2250, y: 1113, r: 170, door: { x: 2225, y: 990 } },
     { label: 'Skitter’s Shed', x: 1312, y: 1743, r: 190, door: { x: 1199, y: 1736 } },
     // Isolde and Cade have real houses now (2026-09-03) and go home
@@ -622,7 +622,7 @@ export default {
       sprite: 'assets/images/senna_brineholt_overhead.png',
       portrait: 'assets/images/senna_brineholt.png',
       speed: 40, startsHome: true,
-      home: { door: { x: 1991, y: 663 }, interior: 'assets/images/beach_hut_interior.jpg' },
+      home: { door: { x: 1991, y: 725 }, interior: 'assets/images/beach_hut_interior.jpg' },
       routine: [
         { do: 'wait', s: 60 },
         { do: 'leaveHome' },
@@ -659,7 +659,7 @@ export default {
       sprite: 'assets/images/aldous_marrow_overhead.png',
       portrait: 'assets/images/aldous_marrow.png',
       x: 2397, y: 735, speed: 34, startsHome: false,
-      home: { door: { x: 2285, y: 677 }, interior: 'assets/images/beach_hut_interior.jpg' },
+      home: { door: { x: 2285, y: 725 }, interior: 'assets/images/beach_hut_interior.jpg' },
       routine: [
         { do: 'wait', s: 9 },
         { do: 'goto', x: 2347, y: 785 },
