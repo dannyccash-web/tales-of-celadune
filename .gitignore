@@ -9,3 +9,12 @@
 # so keep them out of the repo). Safe to delete locally on a real machine.
 _test_*.mjs
 _verify_*.mjs
+_debug_*.mjs
+_sim_*.mjs
+_tmp_*.mjs
+_nearest_*.mjs
+_fix_*.mjs
+_clearance_*.mjs
+_find_*.mjs
+_rigorous_*.mjs
+_*.mjs
