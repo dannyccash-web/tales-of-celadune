@@ -58,7 +58,7 @@ export const DIALOGUE_SFX = {
   malik: 'assets/audio/universfield-muffled-reaction-242214.mp3',
   alden: 'assets/audio/u_9kvcihzjc7-squashwo-gua-plants-vs-zombies-hmm-383643.mp3',
   osric: 'assets/audio/u_9kvcihzjc7-squashwo-gua-plants-vs-zombies-hmm-383643.mp3',
-  jory: 'assets/audio/u_9kvcihzjc7-squashwo-gua-plants-vs-zombies-hmm-383643.mp3',
+  jory: 'assets/audio/freesound_community-huh-102688.mp3', // dedicated clip (2026-09-09, Danny)
   // Women — F1 sigh (mature/hardworking) / F2 mmm-hmm / F3 girl chuckle (livelier):
   sorcha: 'assets/audio/freesound_community-woman-sigh-101931.mp3',
   nadira: 'assets/audio/freesound_community-woman-sigh-101931.mp3',
@@ -110,10 +110,10 @@ export const DIALOGUE_SFX = {
   garrick_hollowmast: 'assets/audio/universfield-muffled-reaction-242214.mp3',
   nils_cutwater: 'assets/audio/u_9kvcihzjc7-squashwo-gua-plants-vs-zombies-hmm-383643.mp3',
   aldous_marrow: 'assets/audio/u_9kvcihzjc7-squashwo-gua-plants-vs-zombies-hmm-383643.mp3',
-  skitter_nabbins: 'assets/audio/universfield-muffled-reaction-242214.mp3',
+  skitter_nabbins: 'assets/audio/pacomoya-eh-13143.mp3', // dedicated clip (2026-09-09, Danny)
   cade_fathom: 'assets/audio/u_9kvcihzjc7-squashwo-gua-plants-vs-zombies-hmm-383643.mp3',
   wynne_ashcombe: 'assets/audio/freesound_community-woman-sigh-101931.mp3',
-  lily_farrow: 'assets/audio/freesound_community-mmm-hmm-36292.mp3',
+  lily_farrow: 'assets/audio/freesound_community-hey-36263.mp3', // dedicated clip (2026-09-09, Danny)
   senna_brineholt: 'assets/audio/freesound_community-girl-chucklewav-14669.mp3',
   isolde_pearlwake: 'assets/audio/u_xg7ssi08yr-female-ah-ha-389835.mp3',
 };

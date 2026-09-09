@@ -353,6 +353,13 @@ Danny delivered a full re-render of C1's background (`C1_Background.jpg`, still 
 - **Verified exactly like round 1** (Node harness importing the real `World` class + `js/data/c1.js`): every door/goto/patrol/start point, the gull interactable, the fishing spot, and all three exits reachable from spawn; a 1-hour NPC-routine sim with zero exceptions and zero livelocks (every NPC's max continuous idle time matches only its scripted `wait` duration — e.g. Perrin 70.8s against a 70s wait). Confirmed the mireman pack is exactly 2 members post-edit. **Still not live-verified in-browser** — same caveat as round 1.
 - **`C1_Background.jpg` was refreshed once more, art-only, same day** — a lighting/texture re-render with an IDENTICAL layout (verified via a 3-region pixel-overlay comparison: tidepool, NE hut cluster, warehouse/cookhouse — all pixel-aligned to the previous version). No collision/door/NPC changes accompanied it; only the binary image was committed.
 
+## Dedicated voice clips — Skitter, Lily Farrow, Jory Whitlock (2026-09-09, round 2)
+
+Danny sent 3 new audio files (`pacomoya-eh-13143.mp3`, `freesound_community-hey-36263.mp3`, `freesound_community-huh-102688.mp3`) with specific per-NPC assignments, moving these 3 off the shared reaction-clip pool onto their own dedicated clips:
+- `skitter_nabbins` (C1) → `pacomoya-eh-13143.mp3` (was sharing `universfield-muffled-reaction-242214.mp3` with Toby/Garrick).
+- `lily_farrow` (C1) → `freesound_community-hey-36263.mp3` (was sharing `freesound_community-mmm-hmm-36292.mp3` with Elowen/Adaline/Marisol).
+- `jory` / Jory Whitlock (D2) → `freesound_community-huh-102688.mp3` (was sharing `u_9kvcihzjc7-squashwo...` with Alden/Osric/Tuckwell/Nils/Aldous).
+
 ## C1 spawn/label/audio fixes + ambient ripple + new fishing spot (2026-09-09)
 
 Danny caught several bugs live in C1 after the 2026-09-08 art/door-relocation pass, plus two new asks. All verified with the real engine (literal-point clearance check on every NPC coordinate — not just BFS reachability — and the rigorous 1800s continuous-non-movement sim) before pushing.
