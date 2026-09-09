@@ -703,11 +703,16 @@ async function boot() {
   window.addEventListener('pointerdown', retryTheme);
   window.addEventListener('keydown', retryTheme);
 
-  // The looped track for a scene: caves (scene `music: 'cave'`) play the cave
-  // theme, everything else the overworld theme (2026-07-26). Used on begin/
-  // continue and on cave enter/exit so the ambience always matches the scene.
+  // The looped track for a scene (2026-07-26; generalized 2026-09-09 from a
+  // cave-only special case): a scene can declare `music: '<TRACKS key>'` to
+  // play a track of its own (caves use 'cave', C1 uses 'c1' for its own
+  // theme) — looked up directly in audio.TRACKS. Anything without a
+  // recognized key falls back to the generic overworld theme. Used on
+  // begin/continue and on cave enter/exit so the ambience always matches
+  // the scene.
   function sceneMusicTrack(sceneId) {
-    return SCENES[sceneId]?.music === 'cave' ? audio.TRACKS.cave : audio.TRACKS.overworld;
+    const key = SCENES[sceneId]?.music;
+    return (key && audio.TRACKS[key]) || audio.TRACKS.overworld;
   }
 
   // Begin play: hide the start screen, cross-fade to the scene's track (cave

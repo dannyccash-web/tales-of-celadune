@@ -353,6 +353,19 @@ Danny delivered a full re-render of C1's background (`C1_Background.jpg`, still 
 - **Verified exactly like round 1** (Node harness importing the real `World` class + `js/data/c1.js`): every door/goto/patrol/start point, the gull interactable, the fishing spot, and all three exits reachable from spawn; a 1-hour NPC-routine sim with zero exceptions and zero livelocks (every NPC's max continuous idle time matches only its scripted `wait` duration — e.g. Perrin 70.8s against a 70s wait). Confirmed the mireman pack is exactly 2 members post-edit. **Still not live-verified in-browser** — same caveat as round 1.
 - **`C1_Background.jpg` was refreshed once more, art-only, same day** — a lighting/texture re-render with an IDENTICAL layout (verified via a 3-region pixel-overlay comparison: tidepool, NE hut cluster, warehouse/cookhouse — all pixel-aligned to the previous version). No collision/door/NPC changes accompanied it; only the binary image was committed.
 
+## C1 per-NPC interiors + its own background track (2026-09-09, round 3)
+
+All 12 C1 villagers shared one placeholder `beach_hut_interior.jpg` for their home-dialog background since the scene was built; Danny sent real interiors and split them out by building type:
+- Aldous, Senna, Garrick, Wynne, Nils, and both Farrows (Toby + Lily) → `fishing_village_home_interior.jpg`.
+- Perrin's Cookhouse → `tavern_interior.jpg` (already in the repo).
+- Cade and Isolde (the two tide-pool huts) → `fishing_village_hut_interior.jpg`.
+- Dockmaster's Warehouse (Roderick Vane) → `general_goods_interior.jpg` (already in the repo).
+- Skitter's Shed → `skitter_nablins_home_interior.jpg`.
+
+Also gave C1 its own background track instead of the shared generic overworld theme (`Salt Air Lullaby.mp3`). The old music system was a hardcoded cave-vs-overworld binary (`scene.music === 'cave'`); generalized `main.js`'s `sceneMusicTrack()` into a lookup against `audio.TRACKS[scene.music]` (falling back to the overworld theme when the key doesn't resolve) so any scene can now opt into its own track just by adding a `music: '<key>'` field + a matching `TRACKS` entry — `'cave'` still works unchanged for D1B/D4B. C1's scene data sets `music: 'c1'`; `audio.TRACKS.c1` points at the new file.
+
+Re-ran the 1800s rigorous sim after all of the above — no behavior change expected (interior art and music don't touch movement/collision), confirmed clean: all 12 villagers still complete 19-35 cycles, zero freezes.
+
 ## Dedicated voice clips — Skitter, Lily Farrow, Jory Whitlock (2026-09-09, round 2)
 
 Danny sent 3 new audio files (`pacomoya-eh-13143.mp3`, `freesound_community-hey-36263.mp3`, `freesound_community-huh-102688.mp3`) with specific per-NPC assignments, moving these 3 off the shared reaction-clip pool onto their own dedicated clips:

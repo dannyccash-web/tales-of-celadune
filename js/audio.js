@@ -7,6 +7,11 @@ export const TRACKS = {
   overworld: 'assets/audio/celadune_overworld.mp3',
   battle: 'assets/audio/celadune_battle.mp3',
   cave: 'assets/audio/celadune_cave.mp3',
+  // Per-scene custom tracks (2026-09-09) — a scene opts in via its own
+  // `music: '<TRACKS key>'` field (see main.js's sceneMusicTrack(), which
+  // looks the key up here instead of falling back to the generic overworld
+  // theme). C1 Tidewrack Harbor is the first scene to use one.
+  c1: 'assets/audio/Salt Air Lullaby.mp3',
 };
 
 export const SFX = {

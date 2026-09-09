@@ -126,6 +126,11 @@ export default {
   background: 'assets/images/C1_Background.jpg',
   width: 3000,
   height: 3000,
+  // Its own overworld track (2026-09-09, Danny) instead of the generic
+  // overworld theme — see audio.js's TRACKS.c1 and main.js's
+  // sceneMusicTrack() (generalized from a cave-only special-case to a
+  // TRACKS-key lookup so any scene can declare its own music this way).
+  music: 'c1',
 
   // Just inside the south (D1-facing) edge — only used on a direct boot;
   // normal arrival comes up through the scene-transition system.
@@ -628,7 +633,7 @@ export default {
       sprite: 'assets/images/perrin_alders_overhead.png',
       portrait: 'assets/images/perrin_alders.png',
       speed: 40, startsHome: true,
-      home: { door: { x: 2024, y: 1521 }, interior: 'assets/images/beach_hut_interior.jpg' },
+      home: { door: { x: 2024, y: 1521 }, interior: 'assets/images/tavern_interior.jpg' },
       routine: [
         { do: 'wait', s: 70 },
         { do: 'leaveHome' },
@@ -642,7 +647,7 @@ export default {
       sprite: 'assets/images/roderick_vane_overhead.png',
       portrait: 'assets/images/roderick_vane.png',
       speed: 40, startsHome: true,
-      home: { door: { x: 1388, y: 1392 }, interior: 'assets/images/beach_hut_interior.jpg' },
+      home: { door: { x: 1388, y: 1392 }, interior: 'assets/images/general_goods_interior.jpg' },
       routine: [
         { do: 'wait', s: 55 },
         { do: 'leaveHome' },
@@ -656,7 +661,7 @@ export default {
       sprite: 'assets/images/wynne_ashcombe_overhead.png',
       portrait: 'assets/images/wynne_ashcombe.png',
       x: 1899, y: 857, speed: 38, startsHome: false,
-      home: { door: { x: 1929, y: 909 }, interior: 'assets/images/beach_hut_interior.jpg' },
+      home: { door: { x: 1929, y: 909 }, interior: 'assets/images/fishing_village_home_interior.jpg' },
       routine: [
         { do: 'wait', s: 5 },
         { do: 'goto', x: 1964, y: 848 },
@@ -675,7 +680,7 @@ export default {
       // house's own collision rect. New spot is a verified 60px-clearance
       // patch of yard just west of the door, on the way to his goto.
       x: 1590, y: 1960, speed: 40, startsHome: false,
-      home: { door: { x: 1646, y: 1911 }, interior: 'assets/images/beach_hut_interior.jpg' },
+      home: { door: { x: 1646, y: 1911 }, interior: 'assets/images/fishing_village_home_interior.jpg' },
       routine: [
         { do: 'wait', s: 6 },
         { do: 'goto', x: 1465, y: 1992 },
@@ -693,7 +698,7 @@ export default {
       // inside the house. New spot: verified 60px-clearance yard patch
       // just west of the door, near her first goto waypoint.
       x: 1580, y: 1915, speed: 50, startsHome: false,
-      home: { door: { x: 1646, y: 1911 }, interior: 'assets/images/beach_hut_interior.jpg' },
+      home: { door: { x: 1646, y: 1911 }, interior: 'assets/images/fishing_village_home_interior.jpg' },
       routine: [
         { do: 'wait', s: 4 },
         { do: 'goto', x: 1607, y: 1921 },
@@ -715,7 +720,7 @@ export default {
       // 2026-09-03 round 3) — `approach` gives them a real walkable step-out
       // point nearby instead (world.js already prefers approach over door for
       // all actual walking; door alone still governs interaction range).
-      home: { door: { x: 1604, y: 755 }, approach: { x: 1462, y: 722 }, interior: 'assets/images/beach_hut_interior.jpg' },
+      home: { door: { x: 1604, y: 755 }, approach: { x: 1462, y: 722 }, interior: 'assets/images/fishing_village_home_interior.jpg' },
       routine: [
         { do: 'wait', s: 7 },
         { do: 'goto', x: 1446, y: 588 },
@@ -738,7 +743,7 @@ export default {
       sprite: 'assets/images/senna_brineholt_overhead.png',
       portrait: 'assets/images/senna_brineholt.png',
       speed: 40, startsHome: true,
-      home: { door: { x: 1964, y: 707 }, approach: { x: 1980, y: 765 }, interior: 'assets/images/beach_hut_interior.jpg' },
+      home: { door: { x: 1964, y: 707 }, approach: { x: 1980, y: 765 }, interior: 'assets/images/fishing_village_home_interior.jpg' },
       routine: [
         { do: 'wait', s: 60 },
         { do: 'leaveHome' },
@@ -758,7 +763,7 @@ export default {
       // Spawn fixed 2026-09-09 — old (2082,1249) was 1px clearance.
       // New spot: verified 45px-clearance ground near his goto waypoint.
       x: 2070, y: 1180, speed: 38, startsHome: false,
-      home: { door: { x: 2222, y: 1056 }, interior: 'assets/images/beach_hut_interior.jpg' },
+      home: { door: { x: 2222, y: 1056 }, interior: 'assets/images/fishing_village_home_interior.jpg' },
       routine: [
         { do: 'wait', s: 8 },
         { do: 'goto', x: 2082, y: 1199 },
@@ -780,7 +785,7 @@ export default {
       // under the 18px collider radius. New spot: verified 45px
       // clearance right next to his goto waypoint.
       x: 2340, y: 770, speed: 34, startsHome: false,
-      home: { door: { x: 2276, y: 715 }, interior: 'assets/images/beach_hut_interior.jpg' },
+      home: { door: { x: 2276, y: 715 }, interior: 'assets/images/fishing_village_home_interior.jpg' },
       routine: [
         { do: 'wait', s: 9 },
         { do: 'goto', x: 2338, y: 775 },
@@ -800,7 +805,7 @@ export default {
       sprite: 'assets/images/skitter_nabbins_overhead.png',
       portrait: 'assets/images/skitter_nabbins.png',
       x: 1453, y: 1670, speed: 44, startsHome: false,
-      home: { door: { x: 1235, y: 1793 }, interior: 'assets/images/beach_hut_interior.jpg' },
+      home: { door: { x: 1235, y: 1793 }, interior: 'assets/images/skitter_nablins_home_interior.jpg' },
       routine: [
         { do: 'wait', s: 6 },
         { do: 'goto', x: 1503, y: 1670 },
@@ -828,7 +833,7 @@ export default {
       // Has a house now (door added 2026-09-03) and goes home occasionally
       // like any other villager (round 2, same day — was patrol-only before,
       // door always locked; now a real leaveHome/goHome routine).
-      home: { door: { x: 2190, y: 1946 }, interior: 'assets/images/beach_hut_interior.jpg' },
+      home: { door: { x: 2190, y: 1946 }, interior: 'assets/images/fishing_village_hut_interior.jpg' },
       routine: [
         { do: 'wait', s: 6 },
         { do: 'goto', x: 2140, y: 2116 },
@@ -851,7 +856,7 @@ export default {
       // occasionally" treatment as Isolde, round 2. Same approach fix as
       // Garrick above: his door is buried deep enough in the building that
       // leaveHome/goHome need a real walkable step-out point instead.
-      home: { door: { x: 2339, y: 2089 }, approach: { x: 2252, y: 2075 }, interior: 'assets/images/beach_hut_interior.jpg' },
+      home: { door: { x: 2339, y: 2089 }, approach: { x: 2252, y: 2075 }, interior: 'assets/images/fishing_village_hut_interior.jpg' },
       routine: [
         { do: 'wait', s: 6 },
         { do: 'goto', x: 2261, y: 2134 },
