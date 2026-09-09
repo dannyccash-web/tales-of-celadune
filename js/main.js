@@ -504,6 +504,14 @@ async function boot() {
     if (exit.edge === 'bottom') { world.player.y = EDGE_INSET; world.player.x = px; }
     if (exit.edge === 'top') { world.player.y = s.height - EDGE_INSET; world.player.x = px; }
     world.player.rotation = rotation; // keep facing across the boundary
+    // Cross-fade to the new scene's own track (2026-09-09 fix, Danny: walking
+    // C1 -> D1 left C1's music playing). This was ALWAYS missing here — every
+    // overworld scene sharing one generic track just hid it until a scene
+    // (C1) got a track of its own. enterCave()/exitCave() already did this;
+    // switchScene() (the walk-off-edge path) never did. play() is a no-op
+    // when the target track is already playing, so this is safe on every
+    // overworld-to-overworld hop too.
+    audio.play(sceneMusicTrack(exit.to), 1200);
     saveGame(); // autosave on entering a new screen (2026-07-22)
   }
 

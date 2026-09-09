@@ -353,6 +353,12 @@ Danny delivered a full re-render of C1's background (`C1_Background.jpg`, still 
 - **Verified exactly like round 1** (Node harness importing the real `World` class + `js/data/c1.js`): every door/goto/patrol/start point, the gull interactable, the fishing spot, and all three exits reachable from spawn; a 1-hour NPC-routine sim with zero exceptions and zero livelocks (every NPC's max continuous idle time matches only its scripted `wait` duration — e.g. Perrin 70.8s against a 70s wait). Confirmed the mireman pack is exactly 2 members post-edit. **Still not live-verified in-browser** — same caveat as round 1.
 - **`C1_Background.jpg` was refreshed once more, art-only, same day** — a lighting/texture re-render with an IDENTICAL layout (verified via a 3-region pixel-overlay comparison: tidepool, NE hut cluster, warehouse/cookhouse — all pixel-aligned to the previous version). No collision/door/NPC changes accompanied it; only the binary image was committed.
 
+## Fixed: music never switched on a walked scene transition (2026-09-09, round 4)
+
+Danny: walking C1 -> D1 left C1's music (`Salt Air Lullaby.mp3`) playing instead of switching to the default overworld track. Root cause: `switchScene()` (the walk-off-edge scene-transition function in main.js) never called `sceneMusicTrack()`/`audio.play()` at all — only `enterCave()`/`exitCave()` and `beginPlay()` (new game / continue) did. This bug has existed since caves were added (2026-07-26); it was invisible until now because every overworld scene shared the one `overworld` track, so "not switching" looked identical to "switching to the same track." C1 getting its own track (round 3, above) is what finally surfaced it.
+
+Fix: `switchScene()` now calls `audio.play(sceneMusicTrack(exit.to), 1200)` right after moving the player, same pattern as the cave functions. `audio.play()` is already a no-op when the target track is already playing, so this is free on every ordinary overworld-to-overworld hop (e.g. D1 -> D2) and only actually does something entering/leaving a scene with its own track (currently just C1).
+
 ## C1 per-NPC interiors + its own background track (2026-09-09, round 3)
 
 All 12 C1 villagers shared one placeholder `beach_hut_interior.jpg` for their home-dialog background since the scene was built; Danny sent real interiors and split them out by building type:
