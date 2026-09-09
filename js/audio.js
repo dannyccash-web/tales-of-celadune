@@ -78,11 +78,18 @@ export const DIALOGUE_SFX = {
   // Full-roster audit (2026-09-03) — every talkable NPC in the game gets a
   // voice clip now. Found via openNpcDialog's `audio.DIALOGUE_SFX[npc.id]`
   // lookup: any npc.id missing here plays silence on dialog open. Reused the
-  // same D2 pool (a 4th male clip, male_hurt7, was sitting unused) rather
-  // than sourcing new audio — a species/faction shares one clip (all 6
-  // Bramblekin get the goblin-cackle, same idea as Vozhik), individuals get
-  // one of the 4 male / 4 female "reaction" clips, spread for variety.
-  calder_rusk: 'assets/audio/freesound_community-male_hurt7-48124.mp3', // D1, gruff old pirate
+  // same D2 pool rather than sourcing new audio — a species/faction shares
+  // one clip (all 6 Bramblekin get the goblin-cackle, same idea as Vozhik),
+  // individuals get one of the 4 male / 4 female "reaction" clips, spread
+  // for variety.
+  //
+  // 2026-09-09 fix (Danny): that "4th male clip" was male_hurt7 — the SAME
+  // file as SFX.hurt (the player-damage cue) — so talking to calder_rusk,
+  // skitter_nabbins, or cade_fathom played the player's own hurt sound.
+  // SFX.hurt must be exclusive to the player; all three were reassigned to
+  // one of the other 3 male clips instead. Only 3 male clips remain in
+  // active rotation now (M1/M2/M3 below), not 4.
+  calder_rusk: 'assets/audio/mrstokes302-hmmm-sound-male-sfx-mrstokes302-420028.mp3', // D1, gruff old pirate
   edras_holloweye: 'assets/audio/mrstokes302-hmmm-sound-male-sfx-mrstokes302-420028.mp3', // D4B hermit
 
   // D4 Bramblekin (guards + Chief) — goblin-cackle, same clip as Vozhik.
@@ -93,16 +100,18 @@ export const DIALOGUE_SFX = {
   bramblekin_5: 'assets/audio/freesound_community-goblin-cackle-87566.mp3',
   bramblekin_chief: 'assets/audio/freesound_community-goblin-cackle-87566.mp3',
 
-  // C1 Tidewrack Harbor (2026-09-03) — 8 men across the 4 male clips (2
-  // apiece), 4 women across the 4 distinct female clips.
+  // C1 Tidewrack Harbor (2026-09-03) — 8 men across the male clips, 4 women
+  // across the 4 distinct female clips. skitter_nabbins/cade_fathom moved
+  // off male_hurt7 on 2026-09-09 (see comment above); C1 now uses only 3
+  // of the male clips (M1/M2/M3), unevenly split (3/3/2), not 4.
   perrin_alders: 'assets/audio/mrstokes302-hmmm-sound-male-sfx-mrstokes302-420028.mp3',
   roderick_vane: 'assets/audio/mrstokes302-hmmm-sound-male-sfx-mrstokes302-420028.mp3',
   toby_farrow: 'assets/audio/universfield-muffled-reaction-242214.mp3',
   garrick_hollowmast: 'assets/audio/universfield-muffled-reaction-242214.mp3',
   nils_cutwater: 'assets/audio/u_9kvcihzjc7-squashwo-gua-plants-vs-zombies-hmm-383643.mp3',
   aldous_marrow: 'assets/audio/u_9kvcihzjc7-squashwo-gua-plants-vs-zombies-hmm-383643.mp3',
-  skitter_nabbins: 'assets/audio/freesound_community-male_hurt7-48124.mp3',
-  cade_fathom: 'assets/audio/freesound_community-male_hurt7-48124.mp3',
+  skitter_nabbins: 'assets/audio/universfield-muffled-reaction-242214.mp3',
+  cade_fathom: 'assets/audio/u_9kvcihzjc7-squashwo-gua-plants-vs-zombies-hmm-383643.mp3',
   wynne_ashcombe: 'assets/audio/freesound_community-woman-sigh-101931.mp3',
   lily_farrow: 'assets/audio/freesound_community-mmm-hmm-36292.mp3',
   senna_brineholt: 'assets/audio/freesound_community-girl-chucklewav-14669.mp3',

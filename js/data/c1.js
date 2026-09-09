@@ -508,30 +508,39 @@ export default {
   // crossroads instead), so that label was dropped.
   buildings: [
     // Doors relocated 2026-09-03 (Danny sent corrected per-building door
-    // coordinates against the current art). Each label's x,y was shifted by
-    // the same offset as its door move, preserving the original label-to-door
-    // relationship ("drawn just above the door" — see world.js's building-
-    // label comment) rather than the label sitting wherever it used to.
-    // Doors use Danny's EXACT coordinates even where that lands inside
-    // collision (round 2, same day — he confirmed that's fine: the door only
-    // needs SOME walkable ground within interaction range, not to itself be
-    // walkable; see world.js's DOOR_RANGE=79 and homeNpcNearDoor()). Two are
-    // a little past that range — Senna ~87px, Nils ~80px to the nearest
-    // walkable ground — flagged in CLAUDE.md; the rest are within range.
-    { label: 'Dockmaster’s Warehouse', x: 1398, y: 1112, r: 260, door: { x: 1388, y: 1392 } },
-    { label: 'Perrin’s Cookhouse', x: 2147, y: 1518, r: 190, door: { x: 2024, y: 1521 } },
-    { label: 'The Farrows’ House', x: 1745, y: 1712, r: 180, door: { x: 1646, y: 1911 } },
-    { label: 'Wynne’s House', x: 1943, y: 802, r: 180, door: { x: 1929, y: 909 } },
-    { label: 'Garrick’s House', x: 1631, y: 568, r: 180, door: { x: 1604, y: 755 } },
-    { label: 'Senna’s House', x: 1988, y: 570, r: 170, door: { x: 1964, y: 707 } },
-    { label: 'Aldous’s House', x: 2268, y: 583, r: 170, door: { x: 2276, y: 715 } },
-    { label: 'Nils’s House', x: 2247, y: 1179, r: 170, door: { x: 2222, y: 1056 } },
-    { label: 'Skitter’s Shed', x: 1348, y: 1800, r: 190, door: { x: 1235, y: 1793 } },
+    // coordinates against the current art). Doors use Danny's EXACT
+    // coordinates even where that lands inside collision (round 2, same
+    // day — he confirmed that's fine: the door only needs SOME walkable
+    // ground within interaction range, not to itself be walkable; see
+    // world.js's DOOR_RANGE=79 and homeNpcNearDoor()). Two are a little
+    // past that range — Senna ~87px, Nils ~80px to the nearest walkable
+    // ground — flagged in CLAUDE.md; the rest are within range.
+    //
+    // Label x,y RE-DERIVED 2026-09-09 (Danny: Farrows' label "way above" its
+    // door — turned out ALL 11 were, because the prior pass above kept each
+    // label at the same numeric offset from the OLD (pre-2026-09-03) door
+    // position, which doesn't mean anything once the door itself moved.
+    // Every other scene in the game (see D2/D3) keeps the label tight and
+    // consistent — x == door.x, y a small fixed amount above door.y (D2 uses
+    // exactly 31px; D3 varies ~31-109px per building's art). C1 never got
+    // that treatment because its doors were moved after the labels were
+    // authored. Now standardized to door.x, door.y-45 for all 11 — verified
+    // against the actual background art (js/data/c1.js's C1_Background.jpg)
+    // to confirm each still lands on open, readable ground near the door.
+    { label: 'Dockmaster’s Warehouse', x: 1388, y: 1347, r: 260, door: { x: 1388, y: 1392 } },
+    { label: 'Perrin’s Cookhouse', x: 2024, y: 1476, r: 190, door: { x: 2024, y: 1521 } },
+    { label: 'The Farrows’ House', x: 1646, y: 1866, r: 180, door: { x: 1646, y: 1911 } },
+    { label: 'Wynne’s House', x: 1929, y: 864, r: 180, door: { x: 1929, y: 909 } },
+    { label: 'Garrick’s House', x: 1604, y: 710, r: 180, door: { x: 1604, y: 755 } },
+    { label: 'Senna’s House', x: 1964, y: 662, r: 170, door: { x: 1964, y: 707 } },
+    { label: 'Aldous’s House', x: 2276, y: 670, r: 170, door: { x: 2276, y: 715 } },
+    { label: 'Nils’s House', x: 2222, y: 1011, r: 170, door: { x: 2222, y: 1056 } },
+    { label: 'Skitter’s Shed', x: 1235, y: 1748, r: 190, door: { x: 1235, y: 1793 } },
     // Isolde and Cade have real houses now (2026-09-03) and go home
     // occasionally like any other villager (see their npc entries below —
     // they were patrol-only wanderers before this pass).
-    { label: 'Isolde’s House', x: 2190, y: 1796, r: 180, door: { x: 2190, y: 1946 } },
-    { label: 'Cade Fathom’s House', x: 2339, y: 1939, r: 180, door: { x: 2339, y: 2089 } },
+    { label: 'Isolde’s House', x: 2190, y: 1901, r: 180, door: { x: 2190, y: 1946 } },
+    { label: 'Cade Fathom’s House', x: 2339, y: 2044, r: 180, door: { x: 2339, y: 2089 } },
     { label: 'The Old Well', x: 1300, y: 300, r: 180 },
     { label: 'Maiden’s Grace', x: 500, y: 1400, r: 480 },
     // Moved 2026-09-03 (Danny) — north, near the crossroads well, not the
@@ -553,6 +562,16 @@ export default {
     { x: 1934, y: 459, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.75 },
   ],
 
+  // Ambient water ripple (2026-09-09, Danny) — a persistent, larger ripple
+  // effect (bigger than the fishing-cast ripple's ~52px max radius) in the
+  // Tidefolk's tide pool, centered between Isolde's and Cade's huts. Drawn
+  // behind the player and NPCs (see world.js's drawWaterRipple() and its
+  // render() call site). Default maxR (95px) fits comfortably inside the
+  // pool without overlapping the surrounding rocks.
+  waterRipples: [
+    { x: 2165, y: 2045 },
+  ],
+
   entrances: [],
 
   interactables: [
@@ -572,7 +591,11 @@ export default {
 
   // Fishing spot removed 2026-09-03 (Danny) — it sat right where Cade and
   // Isolde's new houses were placed, in the tide-pool cove.
-  fishingSpots: [],
+  // New spot added 2026-09-09 (Danny) — the west shoreline below the
+  // Maiden's Grace, verified walkable sand right at the waterline.
+  fishingSpots: [
+    { x: 647, y: 2724 },
+  ],
 
   chests: [],
   battles: [],
@@ -647,7 +670,11 @@ export default {
       id: 'toby_farrow', name: 'Toby Farrow', role: 'FISHERMAN',
       sprite: 'assets/images/toby_farrow_overhead.png',
       portrait: 'assets/images/toby_farrow.png',
-      x: 1765, y: 1992, speed: 40, startsHome: false,
+      // Spawn fixed 2026-09-09 (Danny: Farrows spawned in an unwalkable
+      // area) — old (1765,1992) was 0px clearance, literally inside the
+      // house's own collision rect. New spot is a verified 60px-clearance
+      // patch of yard just west of the door, on the way to his goto.
+      x: 1590, y: 1960, speed: 40, startsHome: false,
       home: { door: { x: 1646, y: 1911 }, interior: 'assets/images/beach_hut_interior.jpg' },
       routine: [
         { do: 'wait', s: 6 },
@@ -662,7 +689,10 @@ export default {
       id: 'lily_farrow', name: 'Lily Farrow', role: '',
       sprite: 'assets/images/lily_farrow_overhead.png',
       portrait: 'assets/images/lily_farrow.png',
-      x: 1815, y: 1942, speed: 50, startsHome: false,
+      // Spawn fixed 2026-09-09 — old (1815,1942) was 0px clearance,
+      // inside the house. New spot: verified 60px-clearance yard patch
+      // just west of the door, near her first goto waypoint.
+      x: 1580, y: 1915, speed: 50, startsHome: false,
       home: { door: { x: 1646, y: 1911 }, interior: 'assets/images/beach_hut_interior.jpg' },
       routine: [
         { do: 'wait', s: 4 },
@@ -725,7 +755,9 @@ export default {
       id: 'nils_cutwater', name: 'Nils Cutwater', role: '',
       sprite: 'assets/images/nils_cutwater_overhead.png',
       portrait: 'assets/images/nils_cutwater.png',
-      x: 2082, y: 1249, speed: 38, startsHome: false,
+      // Spawn fixed 2026-09-09 — old (2082,1249) was 1px clearance.
+      // New spot: verified 45px-clearance ground near his goto waypoint.
+      x: 2070, y: 1180, speed: 38, startsHome: false,
       home: { door: { x: 2222, y: 1056 }, interior: 'assets/images/beach_hut_interior.jpg' },
       routine: [
         { do: 'wait', s: 8 },
@@ -744,7 +776,10 @@ export default {
       id: 'aldous_marrow', name: 'Aldous Marrow', role: '',
       sprite: 'assets/images/aldous_marrow_overhead.png',
       portrait: 'assets/images/aldous_marrow.png',
-      x: 2388, y: 725, speed: 34, startsHome: false,
+      // Spawn fixed 2026-09-09 — old (2388,725) was 13px clearance,
+      // under the 18px collider radius. New spot: verified 45px
+      // clearance right next to his goto waypoint.
+      x: 2340, y: 770, speed: 34, startsHome: false,
       home: { door: { x: 2276, y: 715 }, interior: 'assets/images/beach_hut_interior.jpg' },
       routine: [
         { do: 'wait', s: 9 },
@@ -855,7 +890,10 @@ export default {
       sprite: 'assets/images/mireman_overhead.png',
       portrait: 'assets/images/mireman.png',
       x: 390, y: 1650, speed: 35, chaseSpeed: 140, aggroRange: 300, giveUpRange: 700, startsHome: false,
-      patrol: [ { x: 390, y: 1650 }, { x: 350, y: 1700 } ],
+      // Patrol point fixed 2026-09-09 — old (350,1700) was 0px clearance
+      // (inside collision). New spot: verified 42.7px clearance, close by,
+      // keeping the same short local patrol.
+      patrol: [ { x: 390, y: 1650 }, { x: 365, y: 1660 } ],
     },
   ],
 };

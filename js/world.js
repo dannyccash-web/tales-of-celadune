@@ -132,6 +132,22 @@ export class World {
     this.fishingSpots = (scene.fishingSpots || []).map((s) => ({ ...s }));
     this.fishing = null;
 
+    // Ambient water ripples (2026-09-09) — a persistent, always-on version of
+    // the fishing-cast ripple animation for decorating open water (a
+    // whirlpool, a spring, something surfacing) rather than marking a
+    // fishing spot. Scene data is { x, y } plus optional tunables; drawn in
+    // drawWaterRipple() BEHIND the player/NPC sprites (Danny, 2026-09-09),
+    // unlike drawRipples() which draws above them — see render()'s draw order.
+    this.waterRipples = (scene.waterRipples || []).map((w) => ({
+      x: w.x,
+      y: w.y,
+      rings: w.rings ?? 3,      // concentric rings
+      period: w.period ?? 2.6,  // seconds per ring's full expand-fade cycle
+      maxR: w.maxR ?? 95,       // largest ring radius (px) — bigger than the ~52px fishing ripple
+      alpha: w.alpha ?? 0.5,    // peak stroke opacity
+      seed: w.seed ?? 0,        // phase offset so multiple ripples don't sync
+    }));
+
     this.cameraY = 0;
     this.cameraX = 0;
     this.interior = null; // interior image while a home dialog is open
@@ -906,6 +922,32 @@ export class World {
     ctx.restore();
   }
 
+  // Ambient water ripple (2026-09-09) — a always-on, larger sibling of
+  // drawRipples() for decorating a patch of open water rather than marking a
+  // cast. Same concentric-ring approach, scaled up and looping continuously
+  // (no bobber, since nothing's actually fishing here). Drawn BEHIND sprites
+  // — see render()'s draw order — so it reads as something under the water's
+  // surface rather than an object sitting on top of it.
+  drawWaterRipple(w) {
+    const ctx = this.ctx;
+    const sx = w.x - this.cameraX;
+    const sy = w.y - this.cameraY;
+    if (sy < -w.maxR - 40 || sy > VIEW_H + w.maxR + 40) return;
+    ctx.save();
+    for (let i = 0; i < w.rings; i++) {
+      let f = ((this.time / w.period) + w.seed + i / w.rings) % 1;
+      if (f < 0) f += 1;
+      const r = 8 + f * w.maxR;
+      const a = (1 - f) * w.alpha;
+      ctx.strokeStyle = `rgba(214,234,242,${a})`;
+      ctx.lineWidth = 3 * (1 - f * 0.5);
+      ctx.beginPath();
+      ctx.ellipse(sx, sy, r, r * 0.52, 0, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
   drawSmoke(s) {
     const ctx = this.ctx;
     const baseScreenY = s.y - this.cameraY;
@@ -1055,6 +1097,11 @@ export class World {
     // characters, so it lights the ground behind/around the player rather than
     // painting over them (2026-07-28).
     if (this.playerGlow) this.drawPlayerGlow();
+
+    // Ambient water ripples (2026-09-09): drawn here, BEFORE chests/NPCs/player,
+    // so they sit behind every character — unlike the fishing-cast ripples
+    // (drawRipples(), drawn near the end of render() above the sprites).
+    for (const w of this.waterRipples) this.drawWaterRipple(w);
 
     // Layer 2: treasure chests (on the ground, so under characters), then NPCs,
     // then the player on top. Emptied chests are gone. Drawn via drawSprite so
