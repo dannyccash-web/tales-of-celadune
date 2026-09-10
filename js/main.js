@@ -9,6 +9,7 @@ import sceneD4 from './data/d4.js';
 import sceneD4B from './data/d4b.js';
 import sceneC4 from './data/c4.js';
 import sceneC1 from './data/c1.js';
+import sceneC1B from './data/c1b.js';
 import { World } from './world.js';
 import * as ui from './ui.js';
 import * as audio from './audio.js';
@@ -246,6 +247,20 @@ function completeQuest(id) {
   requestAutosave();
 }
 
+// The other terminal state a quest can resolve to (2026-09-10, first real
+// user: Lily's gull, told to give up hope) — mirrors completeQuest exactly,
+// but with the `denied` sound instead of the triumphant quest-complete jingle
+// (no "won" fanfare for an outcome the player just chose to accept as a loss).
+function failQuest(id) {
+  const q = quests.find((entry) => entry.id === id);
+  if (!q || q.status !== 'active') return;
+  q.status = 'failed';
+  ui.updateQuestsPanel(quests, QUESTS);
+  ui.showQuestFailed(QUESTS[id]?.name || id);
+  audio.sfx(audio.SFX.denied);
+  requestAutosave();
+}
+
 function questStatus(id) {
   return quests.find((q) => q.id === id)?.status || 'none';
 }
@@ -292,7 +307,7 @@ function loadImages(sources) {
 // Every scene in the game, keyed by the ids that exits point at. Adding a
 // scene = write its data file, import it, and register it here — the
 // transition system below handles everything else.
-const SCENES = { D1: sceneD1, D1B: sceneD1B, D2: sceneD2, D3: sceneD3, D4: sceneD4, D4B: sceneD4B, C4: sceneC4, C1: sceneC1 };
+const SCENES = { D1: sceneD1, D1B: sceneD1B, D2: sceneD2, D3: sceneD3, D4: sceneD4, D4B: sceneD4B, C4: sceneC4, C1: sceneC1, C1B: sceneC1B };
 
 async function boot() {
   // Preload assets for EVERY registered scene up front — scene switches are
@@ -312,6 +327,7 @@ async function boot() {
     'assets/images/cave_background.jpg', // cave battle backdrop (2026-07-26)
     'assets/images/marisol_rusk_painting.png', // shown large in the shipwreck catch-reveal
     'assets/images/metallic_ore.png', // shown large in the cave-ore catch-reveal
+    'assets/images/gull.png', // Lily's gull (C1B) — shown large in its own catch-reveal
     // Treasure chests (2026-07-24): the overhead world sprite + the picture
     // shown in the open-chest window. Preloaded so neither pops in.
     'assets/images/treasure_chest_overhead.png',
@@ -331,6 +347,9 @@ async function boot() {
       // always atHome and never rendered as a walking body — so skip them.
       ...scene.npcs.filter((n) => n.sprite).map((n) => n.sprite),
       ...scene.npcs.filter((n) => n.home).map((n) => n.home.interior),
+      // Sprite-marked interactables (2026-09-10, e.g. C1B's gull) — drawn as
+      // a static ground image (world.js), so preload same as any other sprite.
+      ...(scene.interactables || []).filter((it) => it.sprite).map((it) => it.sprite),
       // Every enemy portrait a scene's battles could use — battle art
       // shouldn't pop in mid-fight.
       ...(scene.battles || []).flatMap((b) => b.enemies).map((id) => ENEMIES[id].portrait),
@@ -408,6 +427,10 @@ async function boot() {
     window.world = world; // debug handle follows the active scene
     elowenBlessedThisVisit = false; // per-visit blessing gate resets each scene entry (2026-07-31)
     if (fresh && pendingWorldFlags) applyWorldFlags(world, pendingWorldFlags[id]);
+    // Re-sync Lily's chase-then-talk state on every C1 (re)entry — covers a
+    // fresh World built from a save where her quest was already resolved
+    // last session (chaseTalk otherwise defaults to true off the scene data).
+    if (id === 'C1' && questStatus('c1_lily_gull') !== 'active' && questStatus('c1_lily_gull') !== 'none') stopLilyChase();
   }
   enterScene('D3');
   window.quests = quests; // debug handle
@@ -601,7 +624,7 @@ async function boot() {
         inventory: inventory.map((e) => ({ ...e })),
         equipment: { ...equipment },
         quests: quests.map((q) => ({ ...q })),
-        flags: { campQuestDone, campHostile, gafferHappy, wellCoinThrown, wellDrinks, vegetableDeliveredToTavern, calderToldStory, calderToldDangers, maraMet },
+        flags: { campQuestDone, campHostile, gafferHappy, wellCoinThrown, wellDrinks, vegetableDeliveredToTavern, calderToldStory, calderToldDangers, maraMet, lilyGullThanked },
         caveReturn, // where to exit to if saved inside a cave/dungeon
         worlds: snapshotWorlds(),
       };
@@ -639,6 +662,7 @@ async function boot() {
     campHostile = false; campEntryGate = null;
     gafferHappy = false; wellCoinThrown = false; wellDrinks = 0; vegetableDeliveredToTavern = false;
     calderToldStory = false; calderToldDangers = false; maraMet = false;
+    lilyGullThanked = false;
     caveReturn = null;
     for (const k of Object.keys(worlds)) delete worlds[k];
     pendingWorldFlags = null;
@@ -663,6 +687,7 @@ async function boot() {
     wellDrinks = f.wellDrinks || 0;
     calderToldStory = !!f.calderToldStory; calderToldDangers = !!f.calderToldDangers;
     maraMet = !!f.maraMet;
+    lilyGullThanked = !!f.lilyGullThanked;
     caveReturn = data.caveReturn || null;
     vegetableDeliveredToTavern = !!f.vegetableDeliveredToTavern;
     // Per-visit camp state always starts fresh on a load (toll re-armed, not
@@ -815,6 +840,10 @@ async function boot() {
   // drops the full self-introduction for a shorter "back again?" line, so going
   // back from her lore aside (or re-approaching) doesn't re-introduce her.
   let maraMet = false;
+  // Toby's one-time thank-you for Lily's gull (C1, 2026-09-10): once she's
+  // been reunited with it, the NEXT time the player talks to her father he
+  // thanks them + pays a few gold — but only once. See buildTobyDialog().
+  let lilyGullThanked = false;
   // One-time (session) tutorial nudge the first time a roaming creature charges
   // the player, teaching Flee + the give-up-when-far mechanic (2026-07-26).
   let creatureFleeHintShown = false;
@@ -1048,6 +1077,41 @@ async function boot() {
       addGold(6);
       completeQuest('toby_net');
       ui.updateDialogContent({ line: 'There — that’ll do us. Whatever’s out there, I mean to find out eventually. Not tonight, though.', responses: ['Leave.'] });
+      return true;
+    }
+    // ---- Lily Farrow's lost-gull quest (2026-09-10) ----
+    if (effect.lilyAccept) {
+      startQuest('c1_lily_gull');
+      ui.updateDialogContent({ line: 'Really?? Okay — okay. Start by the well, that’s where I saw her last. Please hurry?', responses: ['Leave.'] });
+      return true;
+    }
+    // The sad ending: tell her the bird’s probably dead. Fails the quest and
+    // stops her chasing the player from here on (she has her answer, however
+    // much she didn’t want it).
+    if (effect.lilyGiveUp) {
+      failQuest('c1_lily_gull');
+      stopLilyChase();
+      ui.updateDialogContent({ line: '…Oh. I— I see. Thank you for looking, at least. I just… I really thought…', responses: ['Leave.'] });
+      return true;
+    }
+    // The hopeful ending (for now): the quest stays open, feathers and all.
+    if (effect.lilyKeepLooking) {
+      ui.updateDialogContent({ line: 'You mean it? Okay. Okay! I knew you wouldn’t give up on her.', responses: ['Leave.'] });
+      return true;
+    }
+    // The real happy ending: the gull, alive, handed back. Lily has no money
+    // of her own to pay with — just a "mysterious" rock from the beach —
+    // which is what actually completes the quest.
+    if (effect.lilyTurnIn) {
+      removeItem('lily_gull', 1, true);
+      addItem('mysterious_rock', 1, true);
+      ui.showReceivedItem(ITEMS.mysterious_rock);
+      completeQuest('c1_lily_gull');
+      stopLilyChase();
+      ui.updateDialogContent({
+        line: 'You found her, you found her, YOU FOUND HER! Thank you thank you THANK YOU! Here — I want you to have this. I found it on the beach and I just KNOW it’s magic, even if Papa says it’s just a rock.',
+        responses: ['Leave.'],
+      });
       return true;
     }
     // Vendor Buy/Sell: swap the response box into the item grid, in place —
@@ -2127,6 +2191,19 @@ async function boot() {
   // Toby's net quest: bring him 2 Trout to tide his family over (his net's
   // torn, the culprit unnamed — seeds a future encounter, per CLAUDE.md).
   function buildTobyDialog() {
+    // One-time thank-you from Lily's father (2026-09-10): fires the FIRST
+    // time the player talks to him after she's got her gull back — he's
+    // heard what happened and pays a little gold for the trouble. Falls
+    // through to his own toby_net flow every other time (this visit's
+    // second dialogue onward, and every visit after).
+    if (questStatus('c1_lily_gull') === 'completed' && !lilyGullThanked) {
+      lilyGullThanked = true;
+      addGold(5);
+      return {
+        line: 'Lily told me what you did — went looking for that gull of hers when the rest of us had written it off. That means more to this family than you know. Here, take this for your trouble.',
+        responses: ['Leave.'],
+      };
+    }
     const status = questStatus('toby_net');
     const trout = inventory.find((it) => it.id === 'trout')?.qty || 0;
     if (status === 'completed') {
@@ -2149,22 +2226,51 @@ async function boot() {
     };
   }
 
-  // Lily's lost gull isn't a formal quest — just a hidden collectible
-  // (scene interactable c1_lily_gull) whose `collected` flag her dialogue
-  // checks directly off the live world, the same way other one-off state
-  // checks (e.g. emptiedBattleNearDoor) read world data straight through.
-  function lilyGullFound() {
-    return !!world.interactables.find((i) => i.id === 'c1_lily_gull')?.collected;
-  }
+  // Lily's lost gull (2026-09-10 rework) — a real quest now: a trail of
+  // feathers scattered across the village leads to a cave (C1B) where the
+  // gull itself waits. Branches on quest status + what's actually in the
+  // player's bag (feathers found, or the gull itself), same live-state-read
+  // pattern the old collectible check used. See applyResponseEffect's
+  // lilyAccept/lilyGiveUp/lilyKeepLooking/lilyTurnIn for what each choice does.
   function buildLilyDialog() {
-    if (lilyGullFound()) {
-      return { line: 'You saw her? By the old tower? I knew she wouldn’t just fly off forever! Thank you, thank you!', responses: ['Leave.'] };
+    const status = questStatus('c1_lily_gull');
+    if (status === 'completed') {
+      return { line: 'You’re my hero, you know that? Papa still can’t believe you found her.', responses: ['Leave.'] };
+    }
+    if (status === 'failed') {
+      return { line: '…I still look for her sometimes. Silly, I know. Thank you for trying, at least.', responses: ['Leave.'] };
+    }
+    if (status === 'active') {
+      if (inventory.some((it) => it.id === 'lily_gull')) {
+        return {
+          line: 'You found her?! You actually found her!! Give her here, give her here!',
+          responses: ['Here she is.', 'Not yet.'],
+          responseEffects: [{ lilyTurnIn: true }, null],
+        };
+      }
+      if (inventory.some((it) => it.id === 'feather')) {
+        return {
+          line: 'Feathers? Just… feathers, and no gull? Papa says that means — no. No, it doesn’t mean anything. Does it? What do YOU think happened to her?',
+          responses: ['I only found feathers. I think she’s gone.', 'I’m not giving up — I’ll keep looking.'],
+          responseEffects: [{ lilyGiveUp: true }, { lilyKeepLooking: true }],
+        };
+      }
+      return { line: 'Please, PLEASE keep looking? She’s got to be out there somewhere.', responses: ['Leave.'] };
     }
     return {
-      line: 'Have you seen a gull anywhere? Grey and white, missing a feather on her left wing. She’s been gone TWO WHOLE DAYS and Papa says gulls don’t just leave, so something must’ve happened, right? Right?',
-      responses: ['I’ll keep an eye out.', 'Leave.'],
-      responseEffects: [{ followUp: 'Promise?', noBack: true }, null],
+      line: 'Have you seen a gull anywhere? Grey and white, missing a feather on her left wing. She’s been gone TWO WHOLE DAYS and Papa says gulls don’t just leave, so something must’ve happened, right? Right? Will you help me look for her?',
+      responses: ['I’ll help you find her.', 'Leave.'],
+      responseEffects: [{ lilyAccept: true }, null],
     };
+  }
+  // Stops Lily's chase-on-sight behavior the moment her quest resolves
+  // (either ending) — mutates the LIVE world npc (a dialog only ever gets a
+  // shallow copy, per openNpcDialog's comment), same pattern as marking a
+  // defeated creature. Safe to call even if she's not the current scene's
+  // npc list (e.g. quest resolved from a save applied before C1 loads).
+  function stopLilyChase() {
+    const lily = world.npcs.find((n) => n.id === 'lily_farrow');
+    if (lily) { lily.chaseTalk = false; lily._chasing = false; }
   }
 
   // Every NPC dialog opens through here so the per-character voice clip
@@ -3181,6 +3287,15 @@ async function boot() {
     if (world.pendingApproach) {
       const npc = world.pendingApproach;
       world.pendingApproach = null;
+      openNpcDialog(npc);
+    }
+    // A `chaseTalk` NPC (Lily Farrow, until her lost-gull quest resolves)
+    // caught up to the player — open dialogue the same way any other NPC's
+    // does (world.js's updateNpcs sets this on contact, same shape as
+    // pendingApproach above).
+    if (world.pendingChaseTalk) {
+      const npc = world.pendingChaseTalk;
+      world.pendingChaseTalk = null;
       openNpcDialog(npc);
     }
 

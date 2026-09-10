@@ -460,6 +460,10 @@ export function showQuestCompleted(questName) {
   showQuestToast(`Quest Completed: ${questName}`);
 }
 
+export function showQuestFailed(questName) {
+  showQuestToast(`Quest Failed: ${questName}`);
+}
+
 // Big centred reveal of a fishing catch — a large picture of the item for a
 // few seconds, plus the usual top banner announcing it (2026-07-16).
 let catchTimer = null;

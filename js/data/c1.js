@@ -548,9 +548,6 @@ export default {
     { label: 'Cade Fathom’s House', x: 2339, y: 2044, r: 180, door: { x: 2339, y: 2089 } },
     { label: 'The Old Well', x: 1300, y: 300, r: 180 },
     { label: 'Maiden’s Grace', x: 500, y: 1400, r: 480 },
-    // Moved 2026-09-03 (Danny) — north, near the crossroads well, not the
-    // south tide-pool where Isolde/Cade actually live (per his exact coords).
-    { label: 'Tidepool Cove', x: 2241, y: 349, r: 300 },
   ],
 
   // Chimney smoke on half the village's homes (2026-09-03, Danny) — thin
@@ -580,17 +577,59 @@ export default {
   entrances: [],
 
   interactables: [
-    // Lily Farrow's lost gull (2026-09-02) — a plain gold-collectible, same
-    // pattern as D1's "shiny object": found once, +3 gold. main.js's
-    // buildLilyDialog checks this interactable's `collected` flag (by id) to
-    // change her dialogue once it's been spotted. Repositioned to the new
-    // art's well (the old watchtower is gone) — see the header comment.
+    // Lily Farrow's lost-gull quest (2026-09-10, replaces the old plain-gold
+    // "flash of grey and white" collectible) — a trail of feathers scattered
+    // across the village, leading east toward the cave entrance where the
+    // gull herself is waiting (js/data/c1b.js). Basic, low-value pickups
+    // (js/data/items.js's `feather`) — main.js's buildLilyDialog checks the
+    // player's inventory for them directly, not a `collected` flag here.
     {
-      id: 'c1_lily_gull',
-      x: 1250, y: 130, w: 100, h: 100,
-      label: 'A flash of grey and white',
-      message: 'Tucked in the grass by the old well, you spot Lily’s missing gull preening — and a few coins someone else once dropped chasing her.',
-      reward: { gold: 3 },
+      id: 'c1_feather_1',
+      x: 1415, y: 727,
+      label: 'A Feather',
+      message: 'A single grey-and-white feather, caught in the grass.',
+      reward: { item: 'feather', qty: 1 },
+    },
+    {
+      id: 'c1_feather_2',
+      x: 1417, y: 480,
+      label: 'A Feather',
+      message: 'Another feather, a little further along.',
+      reward: { item: 'feather', qty: 1 },
+    },
+    {
+      id: 'c1_feather_3',
+      x: 1552, y: 403,
+      label: 'A Feather',
+      message: 'A few more feathers here, like something struggled.',
+      reward: { item: 'feather', qty: 1 },
+    },
+    {
+      id: 'c1_feather_4',
+      x: 1783, y: 427,
+      label: 'A Feather',
+      message: 'More feathers, leading east along the rocky ground.',
+      reward: { item: 'feather', qty: 1 },
+    },
+    {
+      id: 'c1_feather_5',
+      x: 2048, y: 431,
+      label: 'A Feather',
+      message: 'One last feather, right at the mouth of a dark, narrow crack in the rock.',
+      reward: { item: 'feather', qty: 1 },
+    },
+    // Cave entrance (2026-09-10) — interact to enter the C1B cave, the same
+    // way D1's cave_d1b_entrance works. Sits right at the old "Tidepool Cove"
+    // landmark spot (now removed, see the buildings comment above); the
+    // point itself is only 7px clear of the cliff art (same as a building
+    // door — see the header comment on doors above), but open ground sits
+    // well within `range` a few steps away.
+    {
+      id: 'cave_c1b_entrance',
+      x: 2243, y: 388,
+      range: 141,
+      cave: 'C1B',
+      label: 'Hidden Cave',
     },
   ],
 
@@ -698,6 +737,16 @@ export default {
       // inside the house. New spot: verified 60px-clearance yard patch
       // just west of the door, near her first goto waypoint.
       x: 1580, y: 1915, speed: 50, startsHome: false,
+      // Chase-then-talk (2026-09-10, her lost-gull quest): mirrors a
+      // roaming creature's charge (world.js's updateNpcs — same aggroRange/
+      // chaseSpeed fields, same "race in" steering) but ends in dialogue
+      // (main.js's pendingChaseTalk -> openNpcDialog) instead of a fight.
+      // Only fires while she's out of the house (skipped when atHome) and
+      // `chaseTalk` is true — main.js flips that off on the live npc the
+      // moment her quest resolves (completed OR failed), so she goes back to
+      // being a normal routine-only NPC afterward. Range/speed match the
+      // mireman creatures elsewhere in this same scene for consistency.
+      chaseTalk: true, aggroRange: 300, chaseSpeed: 140,
       home: { door: { x: 1646, y: 1911 }, interior: 'assets/images/fishing_village_home_interior.jpg' },
       routine: [
         { do: 'wait', s: 4 },

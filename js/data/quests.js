@@ -70,4 +70,14 @@ export default {
     name: 'Something in the Water',
     description: 'Toby Farrow lost his fishing net to something in the water. Bring him a couple of trout to tide his family over.',
   },
+  // Lily Farrow's lost gull (2026-09-10) — replaces the old plain-gold
+  // "flash of grey and white" collectible with a real quest: a feather trail
+  // across the village leads to a small cave (C1B) where the gull itself
+  // waits. See main.js's buildLilyDialog/applyResponseEffect (lilyAccept/
+  // lilyGiveUp/lilyKeepLooking/lilyTurnIn) for the full branching dialogue.
+  c1_lily_gull: {
+    id: 'c1_lily_gull',
+    name: 'A Gull Gone Missing',
+    description: 'Lily Farrow’s pet gull has been missing for two days. Find her — dead or alive — and bring word back to Lily.',
+  },
 };

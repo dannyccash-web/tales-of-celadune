@@ -196,6 +196,14 @@ export class World {
     // fires once and re-arms only after the player backs off past 1.6× range.
     this.pendingApproach = null;
 
+    // Chase-then-talk NPCs (Lily Farrow's lost-gull quest, 2026-09-10): the
+    // same charge-in mechanic roaming creatures use (aggroRange/chaseSpeed),
+    // but the payoff is dialogue, not a fight. Fires `pendingChaseTalk` once
+    // the chaser reaches contact range; main.js opens their dialog and clears
+    // it, same shape as pendingApproach above. De-bounced per NPC via
+    // `_chaseArmed`.
+    this.pendingChaseTalk = null;
+
     // Animation clock for code-drawn effects (currently campfire smoke).
     this.time = 0;
     // Smoke sources from scene data ({x, y} in world coords), each expanded
@@ -393,6 +401,7 @@ export class World {
     this.pendingAmbush = null;
     this.pendingAggro = null;
     this.pendingApproach = null;
+    this.pendingChaseTalk = null;
     const p = this.player;
     const preX = p.x, preY = p.y; // pre-move position for the camp membrane clamp
     let dx = 0, dy = 0;
@@ -662,6 +671,41 @@ export class World {
           }
           npc._chasing = false; npc._strikeCd = 0; npc.patrolIndex = 0; // home — resume patrol
         }
+      }
+
+      // Chase-then-talk (Lily Farrow's lost-gull quest, 2026-09-10): same
+      // charge-in shape as the roaming-creature block above (aggroRange/
+      // chaseSpeed, race in via walkToward at chaseSpeed), but contact fires
+      // `pendingChaseTalk` (main.js opens dialogue) instead of `pendingAggro`
+      // (a fight) — and there's no giveUpRange/spawn-return, since losing the
+      // player just means she resumes her ordinary routine below rather than
+      // trotting back to a guard post. Skipped while atHome (she's safe
+      // inside) and whenever `chaseTalk` is false — main.js clears that flag
+      // on the live npc the moment her quest resolves. De-bounced with the
+      // same 1.4x-range hysteresis pattern as checkCampAggro/checkApproachTalk
+      // so the dialogue doesn't reopen instantly while still in contact range.
+      if (npc.chaseTalk && !npc.atHome) {
+        const p = this.player;
+        const d = Math.hypot(p.x - npc.x, p.y - npc.y);
+        const range = npc.aggroRange ?? 300;
+        if (d < range) {
+          npc._chasing = true;
+          const strike = npc.strikeRange ?? 60;
+          if (d < strike) {
+            if (npc._chaseArmed !== false && !this.pendingChaseTalk) {
+              this.pendingChaseTalk = npc;
+              npc._chaseArmed = false;
+            }
+          } else {
+            const sp = npc.speed;
+            npc.speed = npc.chaseSpeed ?? 140;
+            this.walkToward(npc, { x: p.x, y: p.y }, dt, 8);
+            npc.speed = sp;
+          }
+          continue;
+        }
+        npc._chasing = false;
+        if (d > range * 1.4) npc._chaseArmed = true;
       }
 
       if (npc.routine) { this.updateRoutine(npc, dt); continue; }
@@ -1111,6 +1155,15 @@ export class World {
       // `rotation` (radians) lets a chest sit at an angle; scene data gives it in
       // degrees (2026-07-31) — convert here. Defaults to upright.
       this.drawSprite(this.images[CHEST_SPRITE], c.x, c.y, ((c.rotation || 0) * Math.PI) / 180);
+    }
+    // Sprite-marked interactables (2026-09-10, e.g. the cave gull): most
+    // collectibles are invisible until the proximity label appears, but one
+    // carrying a `sprite` field draws as a static ground image instead, same
+    // drawSprite path (and drop shadow) as chests/NPCs — for a pickup the
+    // player should actually SEE from a distance rather than stumble onto.
+    for (const it of this.interactables) {
+      if (!it.sprite || (it.collected && !it.emptyMessage)) continue;
+      this.drawSprite(this.images[it.sprite], it.x, it.y);
     }
     for (const npc of this.npcs) {
       if (npc.atHome || npc.defeated) continue;

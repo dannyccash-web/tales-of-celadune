@@ -367,4 +367,36 @@ export default {
     defenseBonus: 1,
     price: 15,
   },
+  // Lily Farrow's lost-gull quest (C1, 2026-09-10). Feathers are scattered
+  // across the village as a trail of clues toward the cave the gull's holed
+  // up in — a basic, low-value curio, not a quest item (nothing stops the
+  // player selling one, same as the old boot).
+  feather: {
+    id: 'feather',
+    name: 'Feather',
+    image: 'assets/images/feather.png',
+    description: 'A downy grey-and-white feather. Could be nothing. Could be a clue.',
+    questItem: false,
+    price: 1,
+  },
+  // The gull itself, found in the cave (C1B) at the end of the feather
+  // trail. A quest item (Danny's spec: can't be sold, dropped, etc.) —
+  // turning it in to Lily completes c1_lily_gull.
+  lily_gull: {
+    id: 'lily_gull',
+    name: 'Lily’s Gull',
+    image: 'assets/images/gull.png',
+    description: 'A grey-and-white gull, missing a feather on her left wing, cradled carefully in your arms. Lily will want to see her.',
+    questItem: true,
+  },
+  // Lily's reward for the gull's safe return (2026-09-10) — a child's idea of
+  // treasure, not literal payment. No price (like the fishing rod): it's a
+  // keepsake, not merchandise.
+  mysterious_rock: {
+    id: 'mysterious_rock',
+    name: 'Mysterious Rock',
+    image: 'assets/images/mysterious_rock.png',
+    description: 'An ordinary-looking rock Lily swears is magic. She found it on the beach herself.',
+    questItem: false,
+  },
 };
