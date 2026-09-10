@@ -806,8 +806,15 @@ export default {
         { do: 'goHome' },
       ],
       dialog: { line: 'Tidewrack’s not much to look at, I’ll grant you — but coin spends the same here as anywhere. Mind you don’t let the salt take your boots; good leather’s dear this far from a proper market.', responses: ['Leave.'] },
+      // The second entry (2026-09-10) is a passing, uneasy mention of the
+      // Drownweft that shuts down hard the moment the player presses for
+      // more — a deliberate contrast with Aldous's willing, detailed warning
+      // below. Custom `effect` (not a plain followUp string) since it needs
+      // its own second-level refusal; see main.js's withChatter/
+      // sennaDrownweftMention/sennaDrownweftRefuse.
       chatter: [
         { q: 'Where did your coin come from?', a: 'Enterprise, traveler. Just enterprise. …Ask Garrick if you want a longer story. Mine’s shorter, and I intend to keep it that way.' },
+        { q: 'Anything I should be careful of around here at night?', effect: { sennaDrownweftMention: true } },
       ],
     },
     {
@@ -852,6 +859,11 @@ export default {
       chatter: [
         { q: 'Any word from the castle?', a: 'Rumor has it King Aldric’s sent his own knights out searching these past months — searching for what, nobody in Tidewrack rightly knows. Riders passing through don’t stop long enough to say, and the ones who might know more don’t come this far south at all.' },
         { q: 'Tell me a sea story.', a: 'I’ve buried more sea stories than years I’ve got left to tell them. Ask me again when the tide’s out and I’ve had my pipe — you’ll get a better one.' },
+        // The Drownweft warning (2026-09-10) — Aldous, unlike Senna, answers
+        // plainly and names her by her full local title. Covers all three of
+        // what she's "known for" per Danny's spec in one breath: night-
+        // roaming, thieving from locals, and dark sea-magic rituals.
+        { q: 'Is there something dangerous out past the cliffs?', a: 'Aye — mind that cave mouth up past the point. Locals call her the Drownweft of the Hollow Tide: a sea hag who prowls by night and steals from anyone careless enough to leave a door unlatched, and they say she works dark rituals down there to draw power straight up out of the sea. I’d leave well enough alone, if I were you.' },
       ],
     },
     {

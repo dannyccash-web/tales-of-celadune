@@ -19,6 +19,11 @@
 // clearance — 2431 of 2752 raw-walkable cells survive the erosion as one
 // single connected region, zero isolated pockets. Regenerate from the art
 // the same way if it ever changes.
+//
+// Also home to Ysra Nine-Shells (2026-09-10) — the "Drownweft of the Hollow
+// Tide" C1's villagers whisper about (see js/data/c1.js's Aldous/Senna
+// chatter) — and her guarded treasure chest. See her npc entry and the
+// ysra_chest entry below for the full writeup.
 export default {
   id: 'C1B',
   name: 'Sea Cave',
@@ -171,9 +176,62 @@ export default {
   ],
 
   fishingSpots: [],
-  chests: [],
+
+  // Ysra's hoard (2026-09-10) — turned 90°, tucked in the western pocket away
+  // from both the gull and the entrance. `guardedBy` (main.js's interact() +
+  // ysraCatchesThief) means trying to open it while she's alive starts a
+  // fight instead — only defeating her actually unlocks it for looting.
+  // Contents per Danny's spec: some gold, a vitality potion, a few common
+  // odds and ends (fittingly, things a woman who "steals from the locals"
+  // might have picked up along the way).
+  chests: [
+    {
+      id: 'ysra_chest',
+      x: 1067, y: 1674, rotation: 90,
+      locked: false,
+      guardedBy: 'ysra_nineshells',
+      gold: { min: 15, max: 25 },
+      items: [
+        { id: 'vitality_potion', qty: 1 },
+        { id: 'health_potion', qty: 2 },
+        { id: 'bread', qty: 1 },
+        { id: 'lockpicks', qty: 1 },
+      ],
+    },
+  ],
+
   battles: [],
   ambushes: [],
   exits: [],
-  npcs: [],
+
+  npcs: [
+    // Ysra Nine-Shells — the "Drownweft of the Hollow Tide" (2026-09-10).
+    // Wanders the main chamber on a slow patrol loop (world.js's generic
+    // patrol block — same mechanic roaming creatures use when calm) until the
+    // player strays within aggroRange, then charges and confronts them
+    // (chaseTalk -> main.js's buildYsraDialog) instead of a friendly chat —
+    // the same engine mechanic as Lily's lost-gull quest in C1, just hostile.
+    // No giveUpRange set (defaults sky-high below via an explicit huge value)
+    // — it's HER cave, so unlike Lily she doesn't get shaken off once she's
+    // spotted you; she keeps closing until she's caught you or you leave the
+    // cave outright. `appeased` flips true if the player buys the gull off
+    // her peacefully (see main.js's ysraOfferGold) — main.js turns chaseTalk
+    // off at that point so she stops confronting the player on sight, though
+    // she'll still fight for her chest either way. Points checked reachable
+    // headlessly (world.blockersAt/walkToward) before placement.
+    {
+      id: 'ysra_nineshells', name: 'Ysra Nine-Shells', role: '',
+      sprite: 'assets/images/ysra_overhead.png',
+      portrait: 'assets/images/ysra_nineshells.png',
+      x: 1700, y: 1400, speed: 36, startsHome: false,
+      patrol: [
+        { x: 1700, y: 1400 },
+        { x: 1500, y: 1600 },
+        { x: 1950, y: 1550 },
+        { x: 1800, y: 1200 },
+      ],
+      chaseTalk: true, aggroRange: 400, chaseSpeed: 160, strikeRange: 70, giveUpRange: 5000,
+      appeased: false,
+    },
+  ],
 };

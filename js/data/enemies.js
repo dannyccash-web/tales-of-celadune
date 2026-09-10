@@ -189,4 +189,34 @@ export default {
     drops: { gold: { min: 18, max: 30 }, loot: [{ id: 'rootweaver_heart', chance: 1 }] },
     ensnare: true,
   },
+
+  // Ysra Nine-Shells (C1B sea cave, 2026-09-10) — the "Drownweft of the
+  // Hollow Tide" locals whisper about (see her Drownweft warning/refusal in
+  // c1.js's Aldous/Senna chatter). A real boss fight, comparable in weight to
+  // the Rootweaver/Cragclaw Queen but with her own profile: less raw HP than
+  // the Rootweaver, hits a little harder, and considerably faster (a "quick,
+  // vicious hag" rather than a "slow, crushing wall"). Not poisonable — she's
+  // no flesh-and-blood beast for a fang to envenom.
+  //
+  // `summon` (2026-09-10, new mechanic): every 3rd attack turn she spends her
+  // turn calling up a Cave Bat or Blight Rat to fight alongside her instead of
+  // striking — see main.js's takeEnemyTurn/MAX_BATTLE_ENEMIES. If the battle's
+  // already full (that cap), she just attacks normally that turn instead.
+  //
+  // Loot: a fat purse (bigger than either existing boss's, befitting a proper
+  // late-game fight) and Ysra's Staff — guaranteed, since it's the whole point
+  // of the fight (see items.js — it's a valuable, CURSED off-hand weapon).
+  ysra_nineshells: {
+    id: 'ysra_nineshells',
+    name: 'Ysra Nine-Shells',
+    portrait: 'assets/images/ysra_nineshells.png',
+    health: 15,
+    attack: 4,
+    defense: 3,
+    speed: 10,
+    damage: { min: 2, max: 5 },
+    summon: { every: 3, pool: ['cave_bat', 'blight_rat'] },
+    background: 'assets/images/cave_background.jpg',
+    drops: { gold: { min: 22, max: 34 }, loot: [{ id: 'staff', chance: 1 }] },
+  },
 };

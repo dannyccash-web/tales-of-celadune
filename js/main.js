@@ -26,7 +26,7 @@ import * as battle from './battle.js';
 // Level/XP removed 2026-07-22 (Danny) — the game has no experience/leveling
 // loop; progression is gear-driven (weapons/armor + vitality potions).
 const stats = {
-  health: 5, healthMax: 5, magic: 5, magicMax: 10, gold: 0,
+  health: 5, healthMax: 5, magic: 0, magicMax: 5, gold: 0,
   attack: 1, defense: 1, speed: 1, luck: 0,
 };
 // The canonical fresh-start stats, used to reset on New Game (2026-07-22).
@@ -69,6 +69,15 @@ function addItem(id, qty = 1, silent = false) {
   if (existing) existing.qty += qty; else inventory.push({ id, qty });
   refreshItemsUi();
   if (!silent) audio.sfx(audio.SFX.item);
+  // First-ever magical item (2026-09-10, Ysra's Staff): the HUD's magic bar
+  // starts hidden — no magicCost item existed until now — and reveals for
+  // good the moment the player owns one, persisted via magicRevealed so it
+  // doesn't hide again on a later save/load. See main.js's boot/saveGame/
+  // loadGame/resetToNewGame and ui.setMagicBarVisible.
+  if (!magicRevealed && ITEMS[id]?.magicCost > 0) {
+    magicRevealed = true;
+    ui.setMagicBarVisible(true);
+  }
   requestAutosave();
 }
 
@@ -341,6 +350,7 @@ async function boot() {
     'assets/images/cave_bat.png', // D4B cave bat — an ambush enemy, not in a `battles` list
     'assets/images/cave_spider.png', // D4B cave spider — a roaming creature enemy (aggro, not in `battles`)
     'assets/images/Edras Holloweye.png', // D4B hermit — dialog auto-opens on approach, so preload the portrait
+    'assets/images/ysra_nineshells.png', // C1B's Drownweft — fought via dialogue/theft-trigger, not a `battles` list
     ...Object.values(SCENES).flatMap((scene) => [
       scene.background,
       // Places (isPlace: true, e.g. "Your House") have no sprite — they're
@@ -624,7 +634,7 @@ async function boot() {
         inventory: inventory.map((e) => ({ ...e })),
         equipment: { ...equipment },
         quests: quests.map((q) => ({ ...q })),
-        flags: { campQuestDone, campHostile, gafferHappy, wellCoinThrown, wellDrinks, vegetableDeliveredToTavern, calderToldStory, calderToldDangers, maraMet, lilyGullThanked },
+        flags: { campQuestDone, campHostile, gafferHappy, wellCoinThrown, wellDrinks, vegetableDeliveredToTavern, calderToldStory, calderToldDangers, maraMet, lilyGullThanked, magicRevealed },
         caveReturn, // where to exit to if saved inside a cave/dungeon
         worlds: snapshotWorlds(),
       };
@@ -646,6 +656,7 @@ async function boot() {
 
   function refreshAllUi() {
     ui.updateHud(stats);
+    ui.setMagicBarVisible(magicRevealed);
     refreshStatsPanel();
     refreshItemsUi();
     ui.updateQuestsPanel(quests, QUESTS);
@@ -663,6 +674,7 @@ async function boot() {
     gafferHappy = false; wellCoinThrown = false; wellDrinks = 0; vegetableDeliveredToTavern = false;
     calderToldStory = false; calderToldDangers = false; maraMet = false;
     lilyGullThanked = false;
+    magicRevealed = false;
     caveReturn = null;
     for (const k of Object.keys(worlds)) delete worlds[k];
     pendingWorldFlags = null;
@@ -688,6 +700,7 @@ async function boot() {
     calderToldStory = !!f.calderToldStory; calderToldDangers = !!f.calderToldDangers;
     maraMet = !!f.maraMet;
     lilyGullThanked = !!f.lilyGullThanked;
+    magicRevealed = !!f.magicRevealed;
     caveReturn = data.caveReturn || null;
     vegetableDeliveredToTavern = !!f.vegetableDeliveredToTavern;
     // Per-visit camp state always starts fresh on a load (toll re-armed, not
@@ -844,6 +857,10 @@ async function boot() {
   // been reunited with it, the NEXT time the player talks to her father he
   // thanks them + pays a few gold — but only once. See buildTobyDialog().
   let lilyGullThanked = false;
+  // The magic bar's one-time reveal (2026-09-10, Ysra's Staff — see addItem).
+  // Starts false; flips true forever the moment the player owns their first
+  // magic-cost item, and stays persisted across saves from then on.
+  let magicRevealed = false;
   // One-time (session) tutorial nudge the first time a roaming creature charges
   // the player, teaching Flee + the give-up-when-far mechanic (2026-07-26).
   let creatureFleeHintShown = false;
@@ -1112,6 +1129,65 @@ async function boot() {
         line: 'You found her, you found her, YOU FOUND HER! Thank you thank you THANK YOU! Here — I want you to have this. I found it on the beach and I just KNOW it’s magic, even if Papa says it’s just a rock.',
         responses: ['Leave.'],
       });
+      return true;
+    }
+    // ---- Ysra Nine-Shells's confrontation (2026-09-10) ----
+    // Refusing to answer draws steel — no dialog update needed, fightYsra
+    // closes this window itself (mirrors fightCampMember's shape).
+    if (effect.ysraAttack) {
+      fightYsra();
+      return;
+    }
+    if (effect.ysraRefuseGull) {
+      ui.updateDialogContent({
+        line: 'The gull? That’s mine now — I need her for the ritual. Find your own offering to the tide.',
+        responses: ['Leave.'],
+      });
+      return true;
+    }
+    // The peaceful (and only non-combat) way to get the gull: pay her off.
+    // No fight means no staff/gold drop — a real trade-off against fighting.
+    if (effect.ysraOfferGold) {
+      if (stats.gold < YSRA_PRICE) {
+        audio.sfx(audio.SFX.denied);
+        ui.updateDialogContent({
+          line: `${YSRA_PRICE} gold, I said — and that’s not it. Come back when your purse is worth my time.`,
+          responses: ['Leave.'],
+        });
+        return true;
+      }
+      spendGold(YSRA_PRICE);
+      const live = world.npcs.find((n) => n.id === 'ysra_nineshells');
+      if (live) { live.appeased = true; live.chaseTalk = false; live._chasing = false; }
+      // The physical gull sprite in the cave is hers to trade, not the
+      // player's to pick up separately — mark it collected so it stops
+      // offering itself once she's handed the real item over here.
+      const gullSpot = world.interactables.find((it) => it.id === 'c1b_gull');
+      if (gullSpot) gullSpot.collected = true;
+      addItem('lily_gull', 1, true);
+      ui.showReceivedItem(ITEMS.lily_gull);
+      ui.updateDialogContent({
+        line: '...Fine. FINE. Take the wretched thing — now GET OUT of my cave!',
+        responses: ['Leave.'],
+      });
+      return true;
+    }
+    // ---- Senna's uneasy Drownweft mention (2026-09-10) ----
+    // A passing, half-finished mention that shuts down hard if pressed —
+    // deliberate contrast with Aldous's willing, detailed warning (his own
+    // chatter entry, c1.js). `prev` captures the chatter-topics menu she was
+    // just on so "Go back." returns to it, same pattern as Elowen's blessing.
+    if (effect.sennaDrownweftMention) {
+      const prev = { line: npc.dialog.line, responses: npc.dialog.responses, responseEffects: npc.dialog.responseEffects };
+      ui.updateDialogContent({
+        line: 'Just… don’t go wandering near the sea caves after dark. There’s something out there. Something old.',
+        responses: ['What is it, exactly?', 'Go back.', 'Leave.'],
+        responseEffects: [{ sennaDrownweftRefuse: true }, { goBack: prev }, null],
+      });
+      return true;
+    }
+    if (effect.sennaDrownweftRefuse) {
+      ui.updateDialogContent({ line: 'No. I’ve said my piece — don’t ask me about her again.', responses: ['Leave.'] });
       return true;
     }
     // Vendor Buy/Sell: swap the response box into the item grid, in place —
@@ -1838,11 +1914,15 @@ async function boot() {
     return withChatter({ line: npc.dialog.line, responses, responseEffects }, npc);
   }
 
-  // Append an NPC's chatter topics (npc.chatter: [{ q, a }]) to a dialog just
-  // before its trailing close response. Each topic is a player line (q) whose
-  // effect is a followUp reply (a) — reusing the existing followUp/Go-back
-  // machinery so a conversation branches into a topic and returns. No-op for
-  // NPCs without chatter, so it's safe to run on every dialog.
+  // Append an NPC's chatter topics (npc.chatter: [{ q, a }] or [{ q, effect }])
+  // to a dialog just before its trailing close response. Each topic is a
+  // player line (q) whose effect is either a plain followUp reply (a) —
+  // reusing the existing followUp/Go-back machinery so a conversation
+  // branches into a topic and returns — or, for a topic that needs its own
+  // custom branching (2026-09-10, e.g. Senna's Drownweft mention, which
+  // shuts down hard if pressed further rather than just showing one line), a
+  // hand-rolled `effect` object handled in applyResponseEffect instead.
+  // No-op for NPCs without chatter, so it's safe to run on every dialog.
   function withChatter(dialog, npc) {
     if (!npc.chatter?.length) return dialog;
     // Only fold chatter into an ordinary "…, Leave." dialog — never into a
@@ -1853,7 +1933,7 @@ async function boot() {
     const effects = dialog.responseEffects ? [...dialog.responseEffects] : responses.map(() => null);
     const at = Math.max(0, responses.length - 1); // before the trailing "Leave."
     responses.splice(at, 0, ...npc.chatter.map((c) => c.q));
-    effects.splice(at, 0, ...npc.chatter.map((c) => ({ followUp: c.a })));
+    effects.splice(at, 0, ...npc.chatter.map((c) => c.effect || { followUp: c.a }));
     return { ...dialog, responses, responseEffects: effects };
   }
 
@@ -2273,6 +2353,58 @@ async function boot() {
     if (lily) { lily.chaseTalk = false; lily._chasing = false; }
   }
 
+  // ---- Ysra Nine-Shells, the C1B cave's Drownweft (2026-09-10) ----
+  // "A pretty large amount, but achievable at this point" (Danny's spec) for
+  // buying the gull off her peacefully instead of fighting for it.
+  const YSRA_PRICE = 25;
+
+  // Her confrontation — fires from world.js's chaseTalk contact (catching the
+  // player) or a direct approach once she's not actively chasing. `appeased`
+  // (set by ysraOfferGold below) short-circuits to a dismissive brush-off —
+  // she's been paid for the gull, but it's still her cave.
+  function buildYsraDialog() {
+    const live = world.npcs.find((n) => n.id === 'ysra_nineshells');
+    if (live?.appeased) {
+      return { line: 'I told you — get. This is still my cave.', responses: ['Leave.'] };
+    }
+    return {
+      line: 'A ragged woman rounds on you out of the dark, a knot of green sea-glass crackling at the head of her staff — "WHO GOES THERE?! Answer me, quick — why have you come into MY cave?!"',
+      responses: ['(Say nothing.)', 'I’m looking for a lost gull.', `Here — take ${YSRA_PRICE} gold.`],
+      responseEffects: [{ ysraAttack: true }, { ysraRefuseGull: true }, { ysraOfferGold: true }],
+    };
+  }
+
+  // Draws steel on Ysra (mirrors fightCampMember's shape: resolve the LIVE
+  // world npc, fight her alone, mark her defeated on victory — a fled fight
+  // just cools her down for 2s, same as a fled Bramblekin). Deferred a tick
+  // so the dialog that triggered it closes first.
+  function fightYsra() {
+    const live = world.npcs.find((n) => n.id === 'ysra_nineshells');
+    setTimeout(() => startBattle(['ysra_nineshells'], (result) => {
+      if (result === 'victory' && live) live.defeated = true;
+      else if (result === 'fled' && live) { live.pause = 2; live._chasing = false; }
+    }), 0);
+  }
+
+  // Reaching for the gull, or her chest, while she's alive and not yet
+  // defeated (2026-09-10, Danny's spec) skips the "why are you here"
+  // conversation entirely — she's caught the player red-handed, so straight
+  // to a fight. Returns false (letting the caller fall through to the normal
+  // pickup/chest-open) once she's actually dead. No dialog to defer through,
+  // so this starts the battle immediately rather than on a timeout.
+  function ysraCatchesThief() {
+    const live = world.npcs.find((n) => n.id === 'ysra_nineshells');
+    if (!live || live.defeated) return false;
+    ui.toast('“THIEF!” Ysra shrieks, lunging at you out of the dark!');
+    audio.sfx(audio.SFX.denied);
+    live._chasing = false;
+    startBattle(['ysra_nineshells'], (result) => {
+      if (result === 'victory') live.defeated = true;
+      else if (result === 'fled') { live.pause = 2; live._chasing = false; }
+    });
+    return true;
+  }
+
   // Every NPC dialog opens through here so the per-character voice clip
   // (audio.DIALOGUE_SFX, keyed by npc.id) and response-effect handling are
   // consistent whether the NPC was approached directly or met at their door.
@@ -2300,6 +2432,7 @@ async function boot() {
     else if (npc.id === 'roderick_vane') dialog = buildRoderickDialog();
     else if (npc.id === 'toby_farrow') dialog = buildTobyDialog();
     else if (npc.id === 'lily_farrow') dialog = buildLilyDialog();
+    else if (npc.id === 'ysra_nineshells') dialog = buildYsraDialog();
     else if (npc.id === 'bramblekin_chief') dialog = buildChiefDialog();
     else if (npc.bramblekin) dialog = buildBramblekinDialog(npc);
     else if (npc.vendor) dialog = buildVendorDialog(npc); // adds its own chatter
@@ -2319,6 +2452,12 @@ async function boot() {
   const ENEMY_TURN_DELAY_MS = 900; // pause between enemy turns so messages are readable
   const DEATH_ANIM_MS = 800; // hold after a killing blow so the death dissolve plays before the turn advances / victory screen
   const MIN_BATTLE_GOLD = 2; // every win drops at least a few coins (Danny, 2026-07-21)
+  // Battle roster cap (2026-09-10, Ysra's summon mechanic) — matches the
+  // toughest existing ambush already in the game (D4B's 3-cave-bat swarm), so
+  // a summon-capable boss can never overfill the row past what the UI/turn
+  // order already handles. takeEnemyTurn() checks this before letting Ysra
+  // (or any future summoner) call up reinforcements.
+  const MAX_BATTLE_ENEMIES = 3;
 
   const battleState = {
     active: false,
@@ -2443,6 +2582,16 @@ async function boot() {
   // is a blank, skipped placeholder until a spell system exists.)
   function handleBattleAction(action) {
     if (action === 'mainhand' || action === 'offhand') {
+      // Defensive guard (2026-09-10, magic-cost weapons) — showPlayerActions
+      // already grays this slot out (and the UI skips disabled slots for both
+      // keyboard and mouse), so this only matters if something stale slips
+      // through; same "no-op, re-show the menu" shape as the Use guard below.
+      const weapon = equipment[action] && ITEMS[equipment[action]];
+      if (weapon?.magicCost > 0 && stats.magic < weapon.magicCost) {
+        ui.setBattleMessage('Not enough magic for that.');
+        showPlayerActions();
+        return;
+      }
       pendingAttackSlot = action;
       if (!ui.startTargeting()) showPlayerActions(); // no alive target — hand control back
       return;
@@ -2533,17 +2682,17 @@ async function boot() {
         // Survived the venom — pause so the poison line reads, then it attacks.
         setTimeout(() => {
           if (!battleState.active) return;
-          resolveEnemyTurn(enemy);
+          const outcome = takeEnemyTurn(enemy);
           ui.renderBattleEnemies(battleState.enemies);
-          ui.enemyAttackAnim(enemy);
+          if (outcome === 'attack') ui.enemyAttackAnim(enemy); // lunge (skipped on a summon turn)
           battleState.turnPos += 1;
           runQueue();
         }, ENEMY_TURN_DELAY_MS);
         return;
       }
-      resolveEnemyTurn(enemy);
+      const outcome = takeEnemyTurn(enemy);
       ui.renderBattleEnemies(battleState.enemies);
-      ui.enemyAttackAnim(enemy); // lunge the attacker (on the fresh element)
+      if (outcome === 'attack') ui.enemyAttackAnim(enemy); // lunge (skipped on a summon turn)
       battleState.turnPos += 1;
       runQueue();
     }, ENEMY_TURN_DELAY_MS);
@@ -2584,6 +2733,9 @@ async function boot() {
     if (def.defenseBonus) stats.push({ label: 'Def', value: fmtBonus(def.defenseBonus), tone: def.defenseBonus > 0 ? 'pos' : 'neg' });
     if (def.speedBonus) stats.push({ label: 'Spd', value: fmtBonus(def.speedBonus), tone: def.speedBonus > 0 ? 'pos' : 'neg' });
     if (def.burn) stats.push({ label: 'Burn', value: `${def.burn}`, tone: 'pos' });
+    // Magic cost (2026-09-10, Ysra's Staff) is shown plainly like any other
+    // stat — only the curse itself stays hidden (see items.js's schema note).
+    if (def.magicCost) stats.push({ label: 'Magic Cost', value: `${def.magicCost}`, tone: 'neg' });
     return { name: def.name, desc: def.description || '', stats };
   }
   // Detail card for the equipped consumable in the Item slot.
@@ -2600,9 +2752,15 @@ async function boot() {
     const offhand = equipment.offhand && ITEMS[equipment.offhand];
     const useItem = equipment.item && ITEMS[equipment.item];
     const useCount = equippedItemCount();
+    // A weapon with a magicCost (2026-09-10, Ysra's Staff) grays out like an
+    // empty Use slot once the player can't pay it — checked generically so
+    // any future magic-cost weapon (mainhand included) gets the same
+    // treatment for free.
+    const mainhandNoMagic = mainhand?.magicCost > 0 && stats.magic < mainhand.magicCost;
+    const offhandNoMagic = offhand?.magicCost > 0 && stats.magic < offhand.magicCost;
     ui.showBattleActions({
-      mainhand: { image: mainhand?.image || 'assets/images/icon_fist.svg', detail: weaponDetailCard(mainhand) },
-      offhand: { image: offhand?.image || 'assets/images/icon_fist.svg', detail: weaponDetailCard(offhand) },
+      mainhand: { image: mainhand?.image || 'assets/images/icon_fist.svg', disabled: mainhandNoMagic, detail: weaponDetailCard(mainhand) },
+      offhand: { image: offhand?.image || 'assets/images/icon_fist.svg', disabled: offhandNoMagic, detail: weaponDetailCard(offhand) },
       // No magic system yet: a blank circle that's skipped when toggling
       // (2026-07-28 — re-added to the row per Danny's mockup as a placeholder).
       magic: { disabled: true },
@@ -2611,6 +2769,33 @@ async function boot() {
         : { disabled: true },
       flee: { image: 'assets/images/icon_run.svg' },
     });
+  }
+
+  // An enemy's turn, generalized (2026-09-10) to let a `summon`-capable enemy
+  // (Ysra) spend the turn calling up help instead of attacking. Every `every`
+  // -th turn IT PERSONALLY takes (enemy.turnsTaken, counted on the live battle
+  // instance so it resets clean between fights), it summons a random pick
+  // from its `pool` — but only if the roster has a free slot under
+  // MAX_BATTLE_ENEMIES; full roster, or no `summon` at all, falls through to
+  // a normal attack. Returns 'summon' or 'attack' so the caller only plays
+  // the lunge animation (enemyAttackAnim) for an actual attack.
+  function takeEnemyTurn(enemy) {
+    const def = ENEMIES[enemy.id];
+    enemy.turnsTaken = (enemy.turnsTaken || 0) + 1;
+    if (def?.summon && enemy.turnsTaken % def.summon.every === 0 && battleState.enemies.length < MAX_BATTLE_ENEMIES) {
+      const summonId = def.summon.pool[Math.floor(Math.random() * def.summon.pool.length)];
+      const sDef = ENEMIES[summonId];
+      battleState.enemies.push({
+        key: `${summonId}_${battleState.enemies.length}`, id: summonId, name: sDef.name, portrait: sDef.portrait,
+        health: sDef.health, maxHealth: sDef.health,
+        attack: sDef.attack, defense: sDef.defense, speed: sDef.speed, damage: sDef.damage,
+      });
+      ui.setBattleMessage(`The ${enemy.name} chants darkly — a ${sDef.name} answers the call!`);
+      audio.sfx(audio.SFX.magic);
+      return 'summon';
+    }
+    resolveEnemyTurn(enemy);
+    return 'attack';
   }
 
   function resolveEnemyTurn(enemy) {
@@ -2636,6 +2821,24 @@ async function boot() {
     if (pendingUseItem) { pendingUseItem = false; playerUseOffensiveItem(target); return; }
     const slot = pendingAttackSlot || 'mainhand';
     pendingAttackSlot = null;
+    const weapon = equipment[slot] && ITEMS[equipment[slot]];
+    // Magic-cost weapons (2026-09-10, Ysra's Staff) spend their cost on every
+    // swing, hit or miss — showPlayerActions/handleBattleAction already made
+    // sure the player could afford it before we got here.
+    if (weapon?.magicCost > 0) {
+      stats.magic = Math.max(0, stats.magic - weapon.magicCost);
+      ui.updateHud(stats);
+    }
+    // The staff's curse (2026-09-10) — never surfaced anywhere in the UI, so
+    // this is the ONLY place it shows up: instead of the normal attack roll,
+    // the "attack" always backfires and costs the player 1 HP. See items.js's
+    // schema note for why this stays undisclosed.
+    if (weapon?.cursed) {
+      damagePlayer(1);
+      ui.setBattleMessage(`You channel the ${weapon.name} — pain lances up your arm instead!`);
+      advanceTurnAfter(0);
+      return;
+    }
     const hit = battle.resolveAttack(effectiveAttack(), target.defense);
     let landed = false;
     if (hit) {
@@ -2643,8 +2846,8 @@ async function boot() {
       target.health = Math.max(0, target.health - dmg);
       // Fire weapon (the torch, `burn`): a flammable (`wood`) foe — rootweaver,
       // bramblekin — catches alight and burns for `burn` at the start of every
-      // player turn (tickBurns) until it dies (2026-07-26).
-      const weapon = equipment[slot] && ITEMS[equipment[slot]];
+      // player turn (tickBurns) until it dies (2026-07-26). (`weapon` is the
+      // same equipped-item lookup hoisted above for the magic-cost/curse check.)
       const ignites = weapon?.burn != null && !!ENEMIES[target.id]?.wood && !target.burning && target.health > 0;
       if (ignites) { target.burning = true; target.burnDamage = weapon.burn; }
       ui.setBattleMessage(target.health <= 0
@@ -2973,7 +3176,14 @@ async function boot() {
     if (npc) { openNpcDialog(npc); return; }
 
     const chest = world.nearestChestInRange();
-    if (chest) { openChest(chest); return; }
+    if (chest) {
+      // Ysra's guarded hoard (C1B, 2026-09-10) — trying it while she's alive
+      // is a fight, not a lockpick check. Once she's dead, falls through to
+      // the normal open below.
+      if (chest.guardedBy && ysraCatchesThief()) return;
+      openChest(chest);
+      return;
+    }
 
     const item = world.nearestInteractableInRange();
     if (item) {
@@ -2990,6 +3200,9 @@ async function boot() {
         ui.toast(item.emptyMessage || 'Nothing left.');
         return;
       }
+      // Lily's gull (C1B, 2026-09-10) is Ysra's to guard until she's beaten —
+      // reaching for it while she's alive triggers her instead of the pickup.
+      if (item.id === 'c1b_gull' && ysraCatchesThief()) return;
       // Searching the wreck (2026-07-25): a one-time multi-reward haul (gold +
       // a health potion + Marisol's portrait) rather than the single-reward
       // pattern below. Collected boats fall through to the emptyMessage above.

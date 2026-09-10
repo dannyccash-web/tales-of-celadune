@@ -31,6 +31,15 @@ export function updateHud(stats) {
   $('gold-value').textContent = stats.gold.toLocaleString();
 }
 
+// The magic bar starts hidden in the HTML (index.html's #magic-stat carries
+// the "hidden" class by default) — no magic-cost item exists until Ysra's
+// Staff (2026-09-10). main.js's addItem reveals it for good the first time
+// the player owns one, and reapplies the saved reveal state on New Game/
+// Continue (via refreshAllUi) since the DOM itself always starts hidden.
+export function setMagicBarVisible(visible) {
+  $('magic-stat').classList.toggle('hidden', !visible);
+}
+
 // Flash + glow the health fill (remove/reflow/add pattern so it replays on
 // every hit, same trick as the dialog portrait's entrance animation). Call
 // this alongside updateHud() whenever the player takes damage.

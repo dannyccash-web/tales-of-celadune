@@ -20,6 +20,18 @@
 //   they buy back from the player at half (sellValue() = floor(price/2), in
 //   main.js). Quest items have no price and can't be sold. Items without a
 //   price can't be bought or sold anywhere.
+// - magicCost (2026-09-10, Ysra's Staff): magic points spent from the player's
+//   pool per attack with this weapon. main.js's showPlayerActions grays the
+//   slot out (like an empty Use) whenever stats.magic is below this. Owning
+//   the first item with a magicCost reveals the HUD's magic bar for good (see
+//   main.js's addItem/magicRevealed) — it starts hidden, since no magic-cost
+//   item exists until Ysra's Staff drops.
+// - cursed (2026-09-10, Ysra's Staff): NOT surfaced anywhere in the UI — the
+//   item's own description reads like an ordinary (if unusually strong) off-
+//   hand weapon. Mechanically, though, every attack with it backfires: see
+//   main.js's playerAttack, which skips the normal hit roll entirely and
+//   costs the player 1 HP instead of damaging the enemy. Intentionally never
+//   disclosed in-game.
 //
 // Inventory categories (2026-07-09, per Danny's spec): every item belongs to
 // exactly one of four top-level categories — Equipment, Weapons, Magic, or
@@ -392,6 +404,23 @@ export default {
   // Lily's reward for the gull's safe return (2026-09-10) — a child's idea of
   // treasure, not literal payment. No price (like the fishing rod): it's a
   // keepsake, not merchandise.
+  // Ysra Nine-Shells' drop (C1B, 2026-09-10) — LOOKS like a simply excellent
+  // off-hand weapon (a strong damage range, a real gold price) and nothing in
+  // its own text says otherwise. It secretly does nothing but hurt the
+  // player who wields it — see main.js's playerAttack for the cursed-weapon
+  // override, and the magicCost/cursed schema note above.
+  staff: {
+    id: 'staff',
+    name: 'Ysra’s Staff',
+    image: 'assets/images/ysras_staff.png',
+    description: 'A length of black driftwood capped with a whorl of sea-glass, still humming faintly with whatever the Drownweft bound into it.',
+    questItem: false,
+    slot: 'offhand',
+    damage: { min: 4, max: 8 },
+    magicCost: 2,
+    cursed: true,
+    price: 60,
+  },
   mysterious_rock: {
     id: 'mysterious_rock',
     name: 'Mysterious Rock',

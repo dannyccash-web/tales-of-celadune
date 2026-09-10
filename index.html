@@ -53,12 +53,13 @@
           <div class="bar" id="health-bar"><div class="bar-bg"><div class="bar-fill health" id="health-fill"></div></div></div>
           <span class="stat-value" id="health-value">5/5</span>
         </div>
-        <!-- Magic bar hidden for now — player hasn't learned magic yet. Markup
-             kept in place (just hidden) so it's a one-line change to bring back. -->
-        <div class="stat hidden">
+        <!-- Magic bar (2026-09-10): hidden until the player owns their first
+             magic-cost item (Ysra's Staff) — see ui.js's setMagicBarVisible,
+             called from main.js's addItem/refreshAllUi. -->
+        <div class="stat hidden" id="magic-stat">
           <span class="stat-label">Magic</span>
           <div class="bar"><div class="bar-bg"><div class="bar-fill magic" id="magic-fill"></div></div></div>
-          <span class="stat-value" id="magic-value">5/10</span>
+          <span class="stat-value" id="magic-value">0/5</span>
         </div>
         <div class="gold">
           <span id="gold-value">0</span>
