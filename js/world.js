@@ -673,56 +673,59 @@ export class World {
         }
       }
 
-      // Chase-then-talk (Lily Farrow's lost-gull quest, 2026-09-10): same
-      // charge-in shape as the roaming-creature block above (aggroRange/
-      // chaseSpeed, race in via walkToward at chaseSpeed), but contact fires
+      // Chase-then-talk (Lily Farrow's lost-gull quest, 2026-09-10;
+      // generalized for any hostile chase-then-talk NPC, e.g. Ysra
+      // Nine-Shells): same charge-in shape as the roaming-creature block
+      // above (aggroRange/chaseSpeed, race in via walkToward at chaseSpeed,
+      // and the SAME spawn-anchored give-up formula), but contact fires
       // `pendingChaseTalk` (main.js opens dialogue) instead of `pendingAggro`
       // (a fight). Skipped while atHome (she's safe inside) and whenever
-      // `chaseTalk` is false — main.js clears that flag on the live npc the
-      // moment her quest resolves.
+      // `chaseTalk` is false — main.js clears that flag on the live npc once
+      // her quest resolves (or, for Ysra, once she's paid off).
       //
-      // Give-up range (2026-09-10, Danny: "stop following after a certain
-      // distance away, similar to enemies"): mirrors a creature's
-      // giveUpRange-from-spawn, but re-anchored PER CHASE (`_chaseAnchorX/Y`,
-      // captured the instant she starts chasing) rather than a single
-      // lifetime spawn point, since she cycles home/out via her routine
-      // rather than guarding a fixed lair. Checking the player's distance
-      // from that fixed anchor — not the live distance to Lily herself — is
-      // the part that actually matters: she's FASTER than the player
-      // (chaseSpeed > PLAYER_SPEED), so a same-speed "stop once d>aggroRange"
-      // check would (almost) never fire once a straight-line chase is under
-      // way, since she'd just keep closing the gap. Anchoring to a fixed
-      // point lets the player actually shake her by leading her away from
-      // where the chase started and then breaking line of sight/doubling
-      // back, the same way outrunning a creature works.
+      // Give-up (2026-09-10; REWORKED 2026-09-10 round 3 — Danny: "no NPC
+      // should chase indefinitely, same as enemies"). This now mirrors a
+      // roaming creature's giveUpRange-from-spawn EXACTLY: `_territoryX/Y` is
+      // captured ONCE, ever, the first time this npc is updated (lazy-init,
+      // same pattern as a creature's `_spawnX/_spawnY`) — NOT re-anchored
+      // every time a chase starts. An earlier version DID re-anchor per
+      // chase episode, which had a real bug: since chaseSpeed exceeds the
+      // player's speed, she's typically standing right next to the player
+      // the instant a per-episode give-up threshold was crossed — so the
+      // very next frame's "is the player close enough to start chasing?"
+      // check would immediately re-trigger a brand new chase with a fresh
+      // anchor, an effectively infinite loop that LOOKED like she never gave
+      // up even though the give-up code was technically firing every time.
+      // A single stable lifetime anchor (her starting spot — home turf for a
+      // routine NPC, her spawn point for a patrolling one) fixes this the
+      // same way it already works for creatures: `chase` below is one
+      // combined condition (close enough to her AND not too far from her
+      // territory), so closing the gap again can't undo a real give-up —
+      // only actually returning near her territory can.
       if (npc.chaseTalk && !npc.atHome) {
+        if (npc._territoryX == null) { npc._territoryX = npc.x; npc._territoryY = npc.y; }
         const p = this.player;
         const d = Math.hypot(p.x - npc.x, p.y - npc.y);
         const range = npc.aggroRange ?? 300;
-        if (!npc._chasing && d < range) {
+        const playerFromTerritory = Math.hypot(p.x - npc._territoryX, p.y - npc._territoryY);
+        const chase = d < range && playerFromTerritory < (npc.giveUpRange ?? 500);
+        if (chase) {
           npc._chasing = true;
-          npc._chaseAnchorX = npc.x;
-          npc._chaseAnchorY = npc.y;
-        }
-        if (npc._chasing) {
-          const fromAnchor = Math.hypot(p.x - npc._chaseAnchorX, p.y - npc._chaseAnchorY);
-          if (fromAnchor < (npc.giveUpRange ?? 500)) {
-            const strike = npc.strikeRange ?? 60;
-            if (d < strike) {
-              if (npc._chaseArmed !== false && !this.pendingChaseTalk) {
-                this.pendingChaseTalk = npc;
-                npc._chaseArmed = false;
-              }
-            } else {
-              const sp = npc.speed;
-              npc.speed = npc.chaseSpeed ?? 140;
-              this.walkToward(npc, { x: p.x, y: p.y }, dt, 8);
-              npc.speed = sp;
+          const strike = npc.strikeRange ?? 60;
+          if (d < strike) {
+            if (npc._chaseArmed !== false && !this.pendingChaseTalk) {
+              this.pendingChaseTalk = npc;
+              npc._chaseArmed = false;
             }
-            continue;
+          } else {
+            const sp = npc.speed;
+            npc.speed = npc.chaseSpeed ?? 140;
+            this.walkToward(npc, { x: p.x, y: p.y }, dt, 8);
+            npc.speed = sp;
           }
-          npc._chasing = false; // shaken — gave up, resumes her routine below
+          continue;
         }
+        npc._chasing = false; // out of range, or too far from her territory — resumes routine/patrol below
         if (d > range * 1.4) npc._chaseArmed = true;
       }
 
