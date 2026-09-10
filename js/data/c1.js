@@ -739,14 +739,19 @@ export default {
       x: 1580, y: 1915, speed: 50, startsHome: false,
       // Chase-then-talk (2026-09-10, her lost-gull quest): mirrors a
       // roaming creature's charge (world.js's updateNpcs — same aggroRange/
-      // chaseSpeed fields, same "race in" steering) but ends in dialogue
-      // (main.js's pendingChaseTalk -> openNpcDialog) instead of a fight.
-      // Only fires while she's out of the house (skipped when atHome) and
-      // `chaseTalk` is true — main.js flips that off on the live npc the
+      // chaseSpeed/giveUpRange fields, same "race in" steering) but ends in
+      // dialogue (main.js's pendingChaseTalk -> openNpcDialog) instead of a
+      // fight. Only fires while she's out of the house (skipped when atHome)
+      // and `chaseTalk` is true — main.js flips that off on the live npc the
       // moment her quest resolves (completed OR failed), so she goes back to
-      // being a normal routine-only NPC afterward. Range/speed match the
-      // mireman creatures elsewhere in this same scene for consistency.
-      chaseTalk: true, aggroRange: 300, chaseSpeed: 140,
+      // being a normal routine-only NPC afterward. `giveUpRange` (added
+      // 2026-09-10, Danny) lets the player shake her off by getting far
+      // enough from where the chase started, same as an enemy giving up —
+      // see the giveUpRange comment on the chaseTalk block in world.js for
+      // why that has to be anchor-based rather than a live distance check.
+      // Range/speed/give-up match the mireman creatures elsewhere in this
+      // same scene for consistency.
+      chaseTalk: true, aggroRange: 300, chaseSpeed: 140, giveUpRange: 500,
       home: { door: { x: 1646, y: 1911 }, interior: 'assets/images/fishing_village_home_interior.jpg' },
       routine: [
         { do: 'wait', s: 4 },
