@@ -211,14 +211,18 @@ export default {
     // player strays within aggroRange, then charges and confronts them
     // (chaseTalk -> main.js's buildYsraDialog) instead of a friendly chat —
     // the same engine mechanic as Lily's lost-gull quest in C1, just hostile.
-    // No giveUpRange set (defaults sky-high below via an explicit huge value)
-    // — it's HER cave, so unlike Lily she doesn't get shaken off once she's
-    // spotted you; she keeps closing until she's caught you or you leave the
-    // cave outright. `appeased` flips true if the player buys the gull off
-    // her peacefully (see main.js's ysraOfferGold) — main.js turns chaseTalk
-    // off at that point so she stops confronting the player on sight, though
-    // she'll still fight for her chest either way. Points checked reachable
-    // headlessly (world.blockersAt/walkToward) before placement.
+    // `giveUpRange: 650` (2026-09-10, Danny: "shouldn't chase indefinitely,
+    // just like enemies/Lily") — same anchor-based give-up world.js's
+    // chaseTalk block already does for Lily: once the PLAYER puts 650px
+    // between themselves and wherever the chase started, she breaks off and
+    // resumes her patrol, same as any chased creature. Set a bit past her
+    // 400px aggroRange (mirrors the mireman creatures' own ratio) so she
+    // still feels persistent, just not unshakeable. `appeased` flips true if
+    // the player buys the gull off her peacefully (see main.js's
+    // ysraOfferGold) — main.js turns chaseTalk off at that point so she stops
+    // confronting the player on sight, though she'll still fight for her
+    // chest either way. Points checked reachable headlessly (world.
+    // blockersAt/walkToward) before placement.
     {
       id: 'ysra_nineshells', name: 'Ysra Nine-Shells', role: '',
       sprite: 'assets/images/ysra_overhead.png',
@@ -230,7 +234,7 @@ export default {
         { x: 1950, y: 1550 },
         { x: 1800, y: 1200 },
       ],
-      chaseTalk: true, aggroRange: 400, chaseSpeed: 160, strikeRange: 70, giveUpRange: 5000,
+      chaseTalk: true, aggroRange: 400, chaseSpeed: 160, strikeRange: 70, giveUpRange: 650,
       appeased: false,
     },
   ],

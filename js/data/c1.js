@@ -859,11 +859,15 @@ export default {
       chatter: [
         { q: 'Any word from the castle?', a: 'Rumor has it King Aldric’s sent his own knights out searching these past months — searching for what, nobody in Tidewrack rightly knows. Riders passing through don’t stop long enough to say, and the ones who might know more don’t come this far south at all.' },
         { q: 'Tell me a sea story.', a: 'I’ve buried more sea stories than years I’ve got left to tell them. Ask me again when the tide’s out and I’ve had my pipe — you’ll get a better one.' },
-        // The Drownweft warning (2026-09-10) — Aldous, unlike Senna, answers
-        // plainly and names her by her full local title. Covers all three of
-        // what she's "known for" per Danny's spec in one breath: night-
-        // roaming, thieving from locals, and dark sea-magic rituals.
-        { q: 'Is there something dangerous out past the cliffs?', a: 'Aye — mind that cave mouth up past the point. Locals call her the Drownweft of the Hollow Tide: a sea hag who prowls by night and steals from anyone careless enough to leave a door unlatched, and they say she works dark rituals down there to draw power straight up out of the sea. I’d leave well enough alone, if I were you.' },
+        // The Drownweft warning (2026-09-10, reworded 2026-09-10 round 2 —
+        // Danny: the player's own question read too specific, naming the cave
+        // outright; a vaguer prompt reads more natural). Aldous, unlike
+        // Senna, answers plainly once asked and names her by her full local
+        // title — the SPECIFICITY lives in his answer, not the player's
+        // question. Covers all three of what she's "known for" per Danny's
+        // spec in one breath: night-roaming, thieving from locals, and dark
+        // sea-magic rituals.
+        { q: 'Anything I should keep an eye out for around here?', a: 'Aye — mind that cave mouth up past the point. Locals call her the Drownweft of the Hollow Tide: a sea hag who prowls by night and steals from anyone careless enough to leave a door unlatched, and they say she works dark rituals down there to draw power straight up out of the sea. I’d leave well enough alone, if I were you.' },
       ],
     },
     {
