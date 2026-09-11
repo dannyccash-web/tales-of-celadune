@@ -363,10 +363,12 @@ const KEYMAP = {
   ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right',
 };
 
-function loadImages(sources) {
+function loadImages(sources, onProgress) {
+  let loaded = 0;
+  const total = sources.length;
   return Promise.all(sources.map((src) => new Promise((resolve, reject) => {
     const img = new Image();
-    img.onload = () => resolve([src, img]);
+    img.onload = () => { loaded += 1; onProgress?.(loaded, total); resolve([src, img]); };
     img.onerror = () => reject(new Error(`Failed to load ${src}`));
     img.src = src;
   }))).then(Object.fromEntries);
@@ -424,10 +426,26 @@ async function boot() {
       ...(scene.battles || []).flatMap((b) => b.enemies).map((id) => ENEMIES[id].portrait),
     ]),
   ];
-  const images = await loadImages([...new Set(sources)]);
+  // ---- Loading screen (2026-09-11) ----
+  // Drives the fixed overlay in index.html (a sibling of #stage, so it's
+  // laid out correctly from first paint — see #stage's CSS comment) while
+  // every scene's assets preload below. Elements are looked up defensively
+  // so a missing DOM node never blocks boot() from finishing.
+  const loadingScreen = document.getElementById('loading-screen');
+  const loadingFill = document.getElementById('loading-bar-fill');
+  const loadingStatus = document.getElementById('loading-status');
+  const uniqueSources = [...new Set(sources)];
+  const setLoadingProgress = (loaded, total) => {
+    const pct = total ? Math.round((loaded / total) * 100) : 100;
+    if (loadingFill) loadingFill.style.width = `${pct}%`;
+    if (loadingStatus) loadingStatus.textContent = `Loading assets… ${loaded} / ${total}`;
+  };
+  setLoadingProgress(0, uniqueSources.length);
+  const images = await loadImages(uniqueSources, setLoadingProgress);
 
   // Canvas text (NPC name labels) needs the webfont ready before first draw
   try { await document.fonts.load('22px MedievalSharp'); } catch { /* fallback font */ }
+  if (loadingStatus) loadingStatus.textContent = 'Ready';
 
   const canvas = document.getElementById('game');
   const caveDarkEl = document.getElementById('cave-dark'); // darkening overlay for torchless dark scenes
@@ -913,6 +931,15 @@ async function boot() {
   startSel = hasSave() ? 1 : 0;
   renderStartSelection();
 
+  // Loading screen has done its job — the start screen underneath is now
+  // fully interactive (buttons wired, keyboard nav ready). Fade it out, then
+  // drop it from layout after the transition so it can never intercept a
+  // click (2026-09-11).
+  if (loadingScreen) {
+    loadingScreen.classList.add('fade-out');
+    setTimeout(() => loadingScreen.classList.add('hidden'), 650);
+  }
+
   // Continue from the death screen (2026-07-22): reload the last save (the start
   // of the screen the player last walked into). Discards the dead fight's onEnd
   // callback since loadGame rebuilds the scene from scratch. Falls back to the
@@ -1022,8 +1049,16 @@ async function boot() {
     if (effect.tellDangers) {
       calderToldDangers = true;
       requestAutosave();
-      // Dangers roll straight into his request — accept or decline right here,
-      // so the player can't leave the conversation without seeing the offer.
+      // This IS the conversation that reveals the quest (reverted
+      // 2026-09-11, Danny: "you still have to engage him in conversation
+      // before getting the quest... it shouldn't be an option to say I'll
+      // bring it back to you as soon as you speak with him" — the earlier
+      // one-click version put the offer in the very first greeting, before
+      // the player had been told anything). Accept/decline shows right
+      // here, same as the original design — the shortening that's left is
+      // just a clearer, more general label ("Why are you out here by
+      // yourself?" instead of the old ambiguous "Anything I should watch
+      // out for?") and no forced "Who are you?" detour first.
       ui.updateDialogContent({
         line: CALDER_DANGERS,
         responses: ['I’ll bring it back to you.', 'Not just now.'],
@@ -2163,16 +2198,26 @@ async function boot() {
   }
 
   // ---- Calder Rusk (D1, 2026-07-25) ----
-  // State-built dialogue. Pre-quest, the player can ask his backstory and about
-  // the dangers; ONLY once both are heard does his keepsake quest offer appear.
+  // State-built dialogue. Pre-quest, the player can ask his backstory (pure
+  // lore) or why he's out here alone — the latter is what actually reveals
+  // and offers the keepsake quest.
   // Accepting starts `calder_keepsake` (recover Marisol's portrait from the
   // wreck). While it's active he asks after it — and if the player is carrying
   // the portrait, offers to turn it in (completes the quest + a gold thanks).
-  const CALDER_STORY = 'Calder Rusk — captain of the Gull’s Regret. She’s that broken-backed hull rotting out on the sand now. We ran her aground in a storm, a black night with waves like moving hills. My crew lived through it… and then they turned on their captain. Split the hold, took their shares of the loot, and rowed north to that little fishing village to play at being honest men. Left me to the gulls. So I stayed. Salvaged what timber the sea hadn’t swallowed, raised this hut plank by plank, and hid away the gold they never got their claws on.';
-  // Simplified 2026-07-28 (Danny): asking about the dangers describes the
-  // creatures AND rolls straight into his request, so the quest is offered on
-  // the spot — the player can't wander off without ever seeing it.
-  const CALDER_DANGERS = 'Aye, and it’s the very reason I’m marooned up here like a barnacle. The beach crawls with cragclaws — snapping, scuttling brutes that lower their heads and charge the moment they catch your scent. And there are miremen about too, things that heave up out of the muck without so much as a ripple of warning. Don’t go tangling with them half-armed — if one comes at you and you’re not ready, put your back to it and run. But listen — that’s where I could use you. Out in the wreck, in what’s left of the aft cabin, there’s something of mine. Worth more to me than every coin I ever buried, and I’ll say no more than that. I can’t get past those creatures to reach it — but you might. Bring it back to me, and you’ll have my deepest thanks. Will you do it?';
+  const CALDER_STORY = 'Calder Rusk — captain of the Gull’s Regret, once, before she was a captain’s shame. That broken-backed hull rotting out on the sand is all that’s left of her. We ran aground in a storm, a black night with waves like moving hills, timbers screaming as she struck the shoal. My crew lived through it — every last one of them — and then, once the storm had passed and there was no captain’s authority left to fear, they turned on me. Split the hold between them, weighed out their shares of the loot we’d been carrying, and rowed north for that little fishing village, to play at being honest men with another man’s gold in their pockets. Left me here to the gulls, with nothing but what I could drag out of the surf. So I stayed. Salvaged what timber the sea hadn’t swallowed, raised this hut plank by plank with my own two hands, and hid away what little gold they never got their claws on — buried deep enough even the tide won’t find it.';
+  // Shortened 2026-09-11 (Danny: "his dialogue path to get to his quest is
+  // way too long... shorten it"), then partly reverted the same day (Danny:
+  // the offer must come through an actual conversation, not be visible
+  // before he's told the player anything), then relabeled again the same
+  // day (Danny: make the question more general -- "why are you out here
+  // by yourself?" instead of the narrower "what do you need help with?").
+  // Net change from the original: the top-level option that leads here is
+  // now "Why are you out here by yourself?" instead of the old "Anything I
+  // should watch out for?" (which didn't obviously sound like the path to
+  // a quest), and there's no more forced "Who are you?" + "Go back."
+  // detour in the way — still one real exchange before the offer, same as
+  // Mara's, just without the wasted round trip.
+  const CALDER_DANGERS = 'Why am I out here alone? Because this beach is no place for soft company. It crawls with cragclaws — snapping, scuttling brutes that lower their heads and charge the moment they catch your scent. And there are miremen about too, things that heave up out of the muck without so much as a ripple of warning. Don’t go tangling with either half-armed — if one comes at you and you’re not ready, put your back to it and run. That’s the whole of why I keep to this hut and don’t go wandering. But listen — since you’re able-bodied, and I’m not fool enough to turn away a friendly face: out in the wreck, in what’s left of the aft cabin, there’s something of mine. Worth more to me than every coin I ever buried, and I’ll say no more than that. I can’t get past those creatures to reach it — but you might. Bring it back to me, and you’ll have my deepest thanks. Will you do it?';
 
   function calderHasPainting() { return inventory.some((it) => it.id === 'marisol_rusk_painting'); }
 
@@ -2194,14 +2239,25 @@ async function boot() {
     if (status === 'active') {
       return { line: 'Any luck out in the wreck? It’ll be in what’s left of the aft cabin. Watch yourself out there — those creatures don’t give ground.', responses: ['Leave.'] };
     }
-    // Pre-quest (status 'none', no painting yet): ask his story, or ask about
-    // the dangers — which leads straight into his request (accept/decline there).
-    const line = (calderToldStory || calderToldDangers)
+    // Pre-quest (status 'none', no painting yet). First-ever approach does
+    // NOT offer the quest here (2026-09-11, Danny) — the player has to ask
+    // what's wrong first, same as any other quest-giver; the offer only
+    // shows up in a menu once that conversation has actually happened.
+    if (calderToldDangers) {
+      // He's already explained himself at least once this game — re-approaching
+      // offers straight away rather than forcing the same explanation again.
+      return {
+        line: 'Back again? Good — the company does me good. So — will you help me?',
+        responses: ['I’ll bring it back to you.', 'Who are you?', 'Leave.'],
+        responseEffects: [{ acceptKeepsake: true }, { tellStory: true }, null],
+      };
+    }
+    const line = calderToldStory
       ? 'Back again? Good — the company does me good. What else is on your mind?'
       : 'Company! Now there’s a tide I didn’t expect. Come in off the sand, friend — mind the driftwood. It’s been a long stretch since a face washed up here that wasn’t a crab’s. Ask what you like.';
     return {
       line,
-      responses: ['Who are you?', 'Anything I should watch out for?', 'Leave.'],
+      responses: ['Who are you?', 'Why are you out here by yourself?', 'Leave.'],
       responseEffects: [{ tellStory: true }, { tellDangers: true }, null],
     };
   }
@@ -3265,6 +3321,12 @@ async function boot() {
   function searchBoat(item) {
     item.collected = true;
     addItem('marisol_rusk_painting', 1, true); // silent — the reveal announces it
+    // The catch SOUND was missing here (2026-09-11 fix, Danny) — every other
+    // big-picture "catch reveal" pickup (fishing, the cave ore, etc.) plays
+    // audio.SFX.catch right before ui.showCatch; this one only showed the
+    // reveal silently. Same sound now, for a consistent pickup pattern
+    // throughout the game.
+    audio.sfx(audio.SFX.catch);
     ui.showCatch(ITEMS.marisol_rusk_painting, 'You found a portrait, wrapped in oilcloth.');
   }
 

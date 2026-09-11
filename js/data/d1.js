@@ -452,13 +452,28 @@ export default {
 
   entrances: [],
 
-  // One hidden collectible: a glint in the sand beside the wreck (on the
-  // reachable beach just SE of the hull, per the walkable guide).
+  // Three hidden coin-glint collectibles scattered around the wreck (on the
+  // reachable beach, per the walkable guide) — originally one spot, moved up
+  // ~70px and joined by two more, spaced out around the hull (2026-09-11,
+  // Danny). All three engine-verified reachable (10px-step 8-directional BFS
+  // within the default 141px interact range).
   interactables: [
     {
       id: 'shiny-wreck-sand',
-      x: 851, y: 1320, w: 125, h: 125,
+      x: 851, y: 1250, w: 125, h: 125,
       label: 'Something glints in the sand',
+      reward: { gold: 5 },
+    },
+    {
+      id: 'shiny-wreck-sand-2',
+      x: 620, y: 1680, w: 125, h: 125,
+      label: 'A few coins, half-buried in the sand',
+      reward: { gold: 5 },
+    },
+    {
+      id: 'shiny-wreck-sand-3',
+      x: 900, y: 1650, w: 125, h: 125,
+      label: 'Coins glint near the hull',
       reward: { gold: 5 },
     },
     // Searching the wreck of the Gull's Regret (2026-07-25). Interactable from a

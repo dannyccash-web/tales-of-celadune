@@ -125,5 +125,31 @@ export default {
   battles: [],
   ambushes: [],
   exits: [],
-  npcs: [],
+  // Two roaming `creature` miremen guarding the hold itself (2026-09-11,
+  // Danny) — same pattern as the pair topside on C1's deck (see c1.js), but
+  // their own `pack` (striking either drags both into one fight, independent
+  // of the topside pair). One posted toward the bow (top) end of the hold,
+  // one toward the stern (bottom) end, on opposite sides of the player's
+  // spawn/ladder. Points + short patrol legs engine-verified (circle-vs-rect
+  // clearance >=30px, matching this project's usual waypoint safety margin;
+  // the hold's corridor pinches to <30px right at the bow/stern crate nooks,
+  // so these sit just short of those dead ends).
+  npcs: [
+    {
+      id: 'mireman_c1c_1', name: 'Mireman', role: '',
+      creature: true, enemyId: 'mireman', pack: 'hold_miremen',
+      sprite: 'assets/images/mireman_overhead.png',
+      portrait: 'assets/images/mireman.png',
+      x: 735, y: 515, speed: 35, chaseSpeed: 140, aggroRange: 300, giveUpRange: 700, startsHome: false,
+      patrol: [ { x: 735, y: 515 }, { x: 750, y: 565 } ],
+    },
+    {
+      id: 'mireman_c1c_2', name: 'Mireman', role: '',
+      creature: true, enemyId: 'mireman', pack: 'hold_miremen',
+      sprite: 'assets/images/mireman_overhead.png',
+      portrait: 'assets/images/mireman.png',
+      x: 715, y: 865, speed: 35, chaseSpeed: 140, aggroRange: 300, giveUpRange: 700, startsHome: false,
+      patrol: [ { x: 715, y: 865 }, { x: 750, y: 820 } ],
+    },
+  ],
 };

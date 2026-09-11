@@ -1188,7 +1188,7 @@ export default {
     },
     {
       id: 'emeric', name: 'Emeric Vale', role: 'SHOPKEEPER',
-      vendor: true, stock: [{ id: 'fishing_bait', qty: 3 }, { id: 'lockpicks', qty: 1 }, { id: 'torch', qty: 1 }], gold: 39,
+      vendor: true, stock: [{ id: 'fishing_bait', qty: 5 }, { id: 'lockpicks', qty: 1 }, { id: 'torch', qty: 1 }], gold: 39, // fishing_bait 3->5 (2026-09-11, Danny)
       awayLine: 'Come by the shop if you’re buying — I don’t carry the whole inventory in my pockets.',
       sprite: 'assets/images/Emeric Vale_overhead.png',
       portrait: 'assets/images/Emeric Vale.png',

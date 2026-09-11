@@ -490,16 +490,26 @@ let catchTimer = null;
 // for other "found a notable item" moments (e.g. the shipwreck portrait), where
 // `caption` overrides the default "You caught: …" toast (2026-07-26).
 export function showCatch(itemDef, caption) {
-  $('catch-image').src = itemDef.image;
-  $('catch-image').alt = itemDef.name;
-  $('catch-name').textContent = itemDef.name;
+  const img = $('catch-image');
   const el = $('catch-reveal');
+  // Clear out whatever image was showing last time BEFORE drawing the new
+  // one in (2026-09-11 fix, Danny: "I'll briefly see an image of the
+  // previously caught fish"). Belt-and-suspenders against any stale frame:
+  // blank the <img> first so there's nothing old left to flash, then set the
+  // real new src.
+  img.src = '';
+  img.src = itemDef.image;
+  img.alt = itemDef.name;
+  $('catch-name').textContent = itemDef.name;
   el.classList.remove('hidden');
   el.classList.remove('catch-enter');
   void el.offsetWidth; // reflow so the drop-in replays
   el.classList.add('catch-enter');
   clearTimeout(catchTimer);
-  catchTimer = setTimeout(() => el.classList.add('hidden'), 3800);
+  catchTimer = setTimeout(() => {
+    el.classList.add('hidden');
+    img.src = ''; // and blank it again once hidden, so nothing lingers for next time's first frame
+  }, 3800);
   toast(caption || `You caught: ${itemDef.name}!`);
 }
 

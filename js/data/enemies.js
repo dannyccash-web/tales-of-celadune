@@ -159,10 +159,10 @@ export default {
     name: 'Mireman',
     portrait: 'assets/images/mireman.png',
     health: 5,
-    attack: 2,
+    attack: 1, // was 2 — softened 2026-09-11 (Danny: "a little too tough... make their attacks 1 point weaker" -- this LOWERS THE MIREMAN'S OWN hit chance against the player, not the player's chance to hit it)
     defense: 2,
     speed: 7,
-    damage: { min: 1, max: 3 },
+    damage: { min: 1, max: 2 }, // was {1,3} then {0,2} -- Danny asked for 1-2 specifically (a landed hit still stings a little, never a true 0)
     background: 'assets/images/beach_background.jpg', // battle backdrop (2026-07-25)
     poisonable: true,
     drops: { gold: { min: 4, max: 9 }, loot: [{ id: 'health_potion', chance: 0.25 }] },

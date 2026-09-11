@@ -10,6 +10,20 @@
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+  <div id="loading-screen">
+    <div class="loading-bg"></div>
+    <div class="loading-content">
+      <h1 class="loading-title">Tales of Celadune</h1>
+      <div class="loading-bar-wrap">
+        <div class="bar loading-bar">
+          <div class="bar-bg">
+            <div class="bar-fill loading" id="loading-bar-fill"></div>
+          </div>
+        </div>
+        <div class="loading-status" id="loading-status">Loading…</div>
+      </div>
+    </div>
+  </div>
   <div id="stage">
     <!-- Layer 1 + 2: world background, player, NPCs (canvas) -->
     <canvas id="game" width="1920" height="1080"></canvas>
