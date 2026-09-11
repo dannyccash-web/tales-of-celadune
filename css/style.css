@@ -717,6 +717,56 @@ html, body {
 
 .stat-row .stat-label { width: 220px; }
 
+/* Damage subsection (Menu > Stats, 2026-09-11) — what's equipped in each
+   hand (or Unarmed) + its damage, plus a Magic row (no spell system yet).
+   A fixed-width slot label beside a stacked name/value/effects block, in
+   the same spirit as .quest-row's label+description layout below. */
+.damage-list {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-top: 6px;
+}
+
+.damage-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 28px;
+}
+
+.damage-slot {
+  width: 150px;
+  flex-shrink: 0;
+  font-family: var(--font-lato);
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--role-gold);
+  padding-top: 4px;
+}
+
+.damage-name {
+  font-family: var(--font-medieval);
+  font-size: 23px;
+  color: var(--text);
+}
+
+.damage-value {
+  font-family: var(--font-meta);
+  font-size: 19px;
+  color: var(--text-dim);
+  margin-top: 3px;
+}
+
+.damage-effects {
+  font-family: var(--font-meta);
+  font-size: 17px;
+  line-height: 1.4;
+  color: var(--gold-bright);
+  margin-top: 5px;
+}
+
 /* Quests tab (Menu) — active quests first, then a "Completed" subhead with
    completed (green check) or failed (red X) quests below it. */
 .quest-list {

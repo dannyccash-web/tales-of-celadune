@@ -179,12 +179,20 @@
             </section>
             <section class="tab-pane hidden" data-pane="stats">
               <!-- Level/XP removed 2026-07-22 (Danny) — progression is
-                   gear-driven, not level-driven. Luck is SHOWN (2026-07-20):
-                   it adds +1 per point to the player's attack/defense rolls. -->
+                   gear-driven, not level-driven. Luck is SHOWN (2026-07-20)
+                   but is a NON-COMBAT probability bonus as of 2026-07-31 (see
+                   main.js's luckChance()) — +10%/point to fishing's rare-catch
+                   odds and battle loot, not attack/defense rolls. -->
               <div class="stat-row"><span class="stat-label">Attack</span><span class="stat-value" id="stat-attack">1</span></div>
               <div class="stat-row"><span class="stat-label">Defense</span><span class="stat-value" id="stat-defense">1</span></div>
               <div class="stat-row"><span class="stat-label">Speed</span><span class="stat-value" id="stat-speed">1</span></div>
-              <div class="stat-row"><span class="stat-label">Luck</span><span class="stat-value" id="stat-luck">0</span></div>
+              <div class="stat-row"><span class="stat-label">Luck</span><span class="stat-value" id="stat-luck">1</span></div>
+              <!-- Damage subsection (2026-09-11, Danny): what's equipped in
+                   each hand (or Unarmed) + its damage, plus Magic (no spell
+                   system yet) — populated by ui.js's updateDamagePanel(),
+                   called from main.js's refreshStatsPanel()/refreshDamagePanel(). -->
+              <div class="section-subhead">Damage</div>
+              <div class="damage-list" id="damage-list"></div>
             </section>
             <section class="tab-pane hidden" data-pane="quests">
               <div class="quest-list" id="quest-list">

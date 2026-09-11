@@ -19,16 +19,19 @@ import QUESTS from './data/quests.js';
 import ENEMIES from './data/enemies.js';
 import * as battle from './battle.js';
 
-// Attack/Defense/Speed/Luck all start at 1/1/1/0 (Danny's spec) — real combat
-// stats. Speed drives battle.js's turn order + the player's initiative chance
-// (Speed 1 -> 50% to act first, 2 -> 75%, 3 -> 100%). Luck adds +1 per point
-// to the player's attack AND defense rolls (see effectiveAttack/Defense);
-// starts at 0, raised later by gear/effects.
+// Attack/Defense/Speed start at 1/1/1 (Danny's spec) — real combat stats.
+// Speed drives battle.js's turn order + the player's initiative chance
+// (Speed 1 -> 50% to act first, 2 -> 75%, 3 -> 100%). Luck is a NON-COMBAT
+// probability bonus (2026-07-31 rework — see luckChance() below): +10% per
+// point to fishing's rare-catch odds and to battle loot (gold haul + item
+// drop chance). Luck starts at 1 (2026-09-11, Danny — was 0), raised further
+// only by the D3 well's one-time coin-toss (+1 Luck, to 2) — still the only
+// way to raise it as of this date.
 // Level/XP removed 2026-07-22 (Danny) — the game has no experience/leveling
 // loop; progression is gear-driven (weapons/armor + vitality potions).
 const stats = {
   health: 5, healthMax: 5, magic: 0, magicMax: 5, gold: 0,
-  attack: 1, defense: 1, speed: 1, luck: 0,
+  attack: 1, defense: 1, speed: 1, luck: 1,
 };
 // The canonical fresh-start stats, used to reset on New Game (2026-07-22).
 const NEW_GAME_STATS = { ...stats };
@@ -179,6 +182,7 @@ function refreshStatsPanel() {
     attack: eA, defense: eD, speed: eS, luck: stats.luck,
     attackBonus: eA - stats.attack, defenseBonus: eD - stats.defense, speedBonus: eS - stats.speed,
   });
+  refreshDamagePanel(); // 2026-09-11: keep the new Damage subsection in sync too
 }
 
 // Speed drives two things (Danny, 2026-07-20):
@@ -201,6 +205,46 @@ function playerInitiativeChance(speed = effectiveSpeed()) {
 function weaponDamage(slot = 'mainhand') {
   const item = equipment[slot] && ITEMS[equipment[slot]];
   return item?.damage ?? 1;
+}
+
+// ---- Stats tab > Damage subsection (2026-09-11, Danny) ----
+// "list what the player has equipped in each hand and how much damage it
+// does in combat... any additional effects should be listed and factored in
+// as well." Builds plain-text {name, damage, effects} summaries per slot;
+// ui.updateDamagePanel() just renders them. Deliberately mirrors (inside
+// boot()) weaponDetailCard's battle-detail-card logic — same fields, same
+// omission of Ysra's Staff's hidden `cursed` flag (see items.js's schema
+// note: it must NEVER be surfaced in any UI, so this list only ever shows
+// attackBonus/defenseBonus/speedBonus/burn/magicCost, exactly like the
+// battle action's floating detail card).
+function fmtSignedBonus(n) { return n > 0 ? `+${n}` : `${n}`; }
+function weaponEffectSummary(def) {
+  if (!def) return [];
+  const fx = [];
+  if (def.attackBonus) fx.push(`${fmtSignedBonus(def.attackBonus)} Attack`);
+  if (def.defenseBonus) fx.push(`${fmtSignedBonus(def.defenseBonus)} Defense`);
+  if (def.speedBonus) fx.push(`${fmtSignedBonus(def.speedBonus)} Speed`);
+  if (def.burn) fx.push(`Ignites flammable foes — ${def.burn} burn damage/turn until defeated`);
+  if (def.magicCost) fx.push(`Costs ${def.magicCost} magic per swing`);
+  return fx;
+}
+function damageSlotSummary(slot) {
+  const id = equipment[slot];
+  const def = id && ITEMS[id];
+  if (!def) return { name: 'Unarmed', damage: '1', effects: [] };
+  const damage = typeof def.damage === 'object' ? `${def.damage.min}-${def.damage.max}` : `${def.damage ?? 1}`;
+  return { name: def.name, damage, effects: weaponEffectSummary(def) };
+}
+function refreshDamagePanel() {
+  ui.updateDamagePanel({
+    mainhand: damageSlotSummary('mainhand'),
+    offhand: damageSlotSummary('offhand'),
+    // No spellcasting system exists yet (the battle Magic slot is a disabled
+    // placeholder — see showPlayerActions) — reported honestly rather than
+    // inventing a number, same spirit as the Magic inventory tab's "Nothing
+    // here yet." Revisit once real spells exist.
+    magic: { name: 'No Spells Learned', damage: '0', effects: [] },
+  });
 }
 
 // Centralized gold/health mutators (mirroring addItem/removeItem) so every

@@ -1429,6 +1429,52 @@ export function updateStatsPanel(stats) {
   $('stat-luck').textContent = stats.luck;
 }
 
+// ---- Stats tab > Damage subsection (2026-09-11, Danny) ----
+// Pure rendering — main.js's refreshDamagePanel()/damageSlotSummary() build
+// the {name, damage, effects} data for Main Hand / Off Hand / Magic; this
+// just draws it, same read-only-list treatment as the Quests tab above.
+function renderDamageRow(list, slotLabel, entry) {
+  const row = document.createElement('div');
+  row.className = 'damage-row';
+
+  const slot = document.createElement('div');
+  slot.className = 'damage-slot';
+  slot.textContent = slotLabel;
+  row.appendChild(slot);
+
+  const info = document.createElement('div');
+  info.className = 'damage-info';
+
+  const name = document.createElement('div');
+  name.className = 'damage-name';
+  name.textContent = entry.name;
+  info.appendChild(name);
+
+  const value = document.createElement('div');
+  value.className = 'damage-value';
+  value.textContent = `${entry.damage} damage`;
+  info.appendChild(value);
+
+  if (entry.effects && entry.effects.length) {
+    const fx = document.createElement('div');
+    fx.className = 'damage-effects';
+    fx.textContent = entry.effects.join(' \u00b7 ');
+    info.appendChild(fx);
+  }
+
+  row.appendChild(info);
+  list.appendChild(row);
+}
+
+export function updateDamagePanel(data) {
+  const list = $('damage-list');
+  if (!list) return; // defensive — panel not in the DOM for some reason
+  list.innerHTML = '';
+  renderDamageRow(list, 'Main Hand', data.mainhand);
+  renderDamageRow(list, 'Off Hand', data.offhand);
+  renderDamageRow(list, 'Magic', data.magic);
+}
+
 // ---- Quests tab (Menu) ----
 // Read-only list — no Level 1 interactive content, so panelKey()'s "no
 // interactive rows yet" fallthrough already covers keyboard nav here.
