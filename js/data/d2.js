@@ -1,4 +1,4 @@
-// Scene D2 — VILLAGE (overworld row D, column 2)
+// Scene D2 — MILLMERE (overworld row D, column 2)
 // World coordinates: 1920x1920. Origin top-left.
 //
 // A small village: a ring road around a central plaza (a little well/shrub
@@ -21,10 +21,13 @@
 
 export default {
   id: 'D2',
-  name: 'Village',
+  name: 'Millmere',
   background: 'assets/images/D2_Background.jpg',
   width: 3000,
   height: 3000,
+  // Its own daytime theme (2026-09-11, Danny) instead of the generic
+  // overworld track — see audio.js's TRACKS.d2.
+  music: 'd2',
 
   // Only used on a direct boot into D2 — normal arrival comes through the
   // scene-transition system (the east edge, from D3).
@@ -1103,7 +1106,7 @@ export default {
     { edge: 'left', yMin: 1000, yMax: 1125, to: 'D1', note: 'road west toward the grassland' },
   ],
 
-  // ---- Village NPCs (2026-07-12, reworked) ----
+  // ---- Millmere NPCs (2026-07-12, reworked) ----
   // 6 vendors/temple in the central gray buildings + the south temple by the
   // graveyard; 12 villagers in the log houses around the ring. Homes’ doors
   // sit on the adjacent path. When out, each walks to a relevant/nearby spot,
@@ -1130,7 +1133,7 @@ export default {
       ],
       dialog: { line: 'Welcome, welcome! Pull up a stool — though I’ll warn you, the ale’s still fermenting and the stew’s mostly turnip. Come back when the hearth’s lit proper.', responses: ['Leave.'] },
       chatter: [
-        { q: 'Heard any news?', a: 'Travelers bring more news than coin through that door. Word is the woods east of the village have gone unfriendly — folk paying tolls just to pass. I would steer clear till it settles.' },
+        { q: 'Heard any news?', a: 'Travelers bring more news than coin through that door. Word is the woods east of Millmere have gone unfriendly — folk paying tolls just to pass. I would steer clear till it settles.' },
         // First northward story seed (2026-07-26) — creates a pull toward C/B
         // (the King's castle is B2) without revealing the princess/wizard plot.
         { q: 'Anything stirring up north?', a: 'Funny you should ask. The King’s road north has been thick with riders these past weeks — royal colors, riding hard, saying nothing to anyone. Something’s got the castle up in the hills in a stir, mark me. A quiet sort like yourself would do well to steer clear of whatever it is… though in my experience the road north has a way of finding the folk who’d rather it didn’t.' },
@@ -1342,7 +1345,7 @@ export default {
       dialog: { line: 'Lovely day, isn’t it? Well — lovely if you’re not the one weeding the whole garden by yourself.', responses: ['Leave.'] },
       chatter: [
         { q: 'Beautiful garden.', a: 'Is it not? And every weed of it pulled by these two hands. I do not mind, truly — a body needs something growing to look after. Keeps the sad thoughts from setting root.' },
-        { q: 'Any village gossip?', a: 'Oh, always. Adaline fancies the baker, Jory fancies himself an adventurer, and old Osric fancies his naps. That is the whole village in a sentence, really.' },
+        { q: 'Any Millmere gossip?', a: 'Oh, always. Adaline fancies the baker, Jory fancies himself an adventurer, and old Osric fancies his naps. That is the whole of Millmere in a sentence, really.' },
       ],
     },
     {
@@ -1381,7 +1384,7 @@ export default {
       dialog: { line: 'You’re not from around here, are you? Don’t fret, we don’t bite. Much.', responses: ['Leave.'] },
       chatter: [
         { q: 'You forage?', a: 'When the woods let me. There are good mushrooms and better herbs out there — and lately, things that would rather I stayed home. So I keep to the meadow edge and count my fingers after.' },
-        { q: 'Is this a friendly village?', a: 'Friendly enough. We size up strangers, sure, but we feed them after. Stay honest and you will find no kinder folk between here and the mountains.' },
+        { q: 'Is Millmere a friendly village?', a: 'Friendly enough. We size up strangers, sure, but we feed them after. Stay honest and you will find no kinder folk between here and the mountains.' },
       ],
     },
     {

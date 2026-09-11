@@ -97,7 +97,11 @@ export default {
     damage: { min: 2, max: 5 }, // 1d4+1
     background: 'assets/images/bramblekin_camp.jpg', // battle backdrop (2026-07-22)
     wood: true, // thorn/bramble body — flammable
-    drops: { gold: { min: 10, max: 18 }, loot: [{ id: 'health_potion', chance: 0.5 }, { id: 'magic_potion', chance: 0.2 }] },
+    // Vitality potion added to the Chief's drop table (2026-09-11, Danny: he
+    // guards the toll-camp and is the closest thing this camp has to a
+    // 'king') — a guaranteed drop, on top of the existing gold/health/magic-
+    // potion chances.
+    drops: { gold: { min: 10, max: 18 }, loot: [{ id: 'health_potion', chance: 0.5 }, { id: 'magic_potion', chance: 0.2 }, { id: 'vitality_potion', chance: 1 }] },
   },
 
   // Cragclaw (D1 beach, 2026-07-25) — a snapping crab-thing that mills about

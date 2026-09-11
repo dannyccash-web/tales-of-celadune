@@ -166,6 +166,41 @@ html, body {
   cursor: pointer;
 }
 
+/* Vertical "Level" indicator, left edge of the screen (2026-09-11) — a
+   dungeon's own HUD element (C1C's ship hold is the first to use it), a
+   white "Level" label above a gold-outlined square with a dark transparent
+   fill holding the current level number ("L1"). Hidden by default; toggled
+   by ui.js's setLevelIndicator(). */
+#level-indicator {
+  position: absolute;
+  left: 50px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+#level-indicator .level-label {
+  font-family: var(--font-medieval);
+  font-size: 24px;
+  color: var(--text);
+}
+
+#level-indicator .level-box {
+  width: 60px;
+  height: 60px;
+  border: 3px solid var(--gold-bright);
+  background: var(--panel-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-meta);
+  font-size: 22px;
+  color: var(--text);
+}
+
 /* Bottom HUD (50px in from edges) */
 #hud {
   position: absolute;

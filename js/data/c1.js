@@ -631,6 +631,22 @@ export default {
       cave: 'C1B',
       label: 'Hidden Cave',
     },
+    // Below Deck (2026-09-11, Danny) — the derelict Maiden's Grace's cargo
+    // hold (see js/data/c1c.js), the game's first multi-level dungeon.
+    // Sits right on the ship's own hull art (10px from open deck, same
+    // "point's on the art itself" convention as the cave entrance above),
+    // reachable from the walkable deck a step away via `range`. Same
+    // enterCave() mechanic as the other caves, but this one's exit is a
+    // FIXED return point (X437 Y1229) rather than the captured entry spot —
+    // see c1c.js's `c1c_topdeck_exit` interactable and main.js's
+    // exitCave(overridePos).
+    {
+      id: 'cave_c1c_entrance',
+      x: 437, y: 1266,
+      range: 90,
+      cave: 'C1C',
+      label: 'Below Deck',
+    },
   ],
 
   // Fishing spot removed 2026-09-03 (Danny) — it sat right where Cade and

@@ -10,6 +10,7 @@ import sceneD4B from './data/d4b.js';
 import sceneC4 from './data/c4.js';
 import sceneC1 from './data/c1.js';
 import sceneC1B from './data/c1b.js';
+import sceneC1C from './data/c1c.js';
 import { World } from './world.js';
 import * as ui from './ui.js';
 import * as audio from './audio.js';
@@ -316,7 +317,7 @@ function loadImages(sources) {
 // Every scene in the game, keyed by the ids that exits point at. Adding a
 // scene = write its data file, import it, and register it here — the
 // transition system below handles everything else.
-const SCENES = { D1: sceneD1, D1B: sceneD1B, D2: sceneD2, D3: sceneD3, D4: sceneD4, D4B: sceneD4B, C4: sceneC4, C1: sceneC1, C1B: sceneC1B };
+const SCENES = { D1: sceneD1, D1B: sceneD1B, D2: sceneD2, D3: sceneD3, D4: sceneD4, D4B: sceneD4B, C4: sceneC4, C1: sceneC1, C1B: sceneC1B, C1C: sceneC1C };
 
 async function boot() {
   // Preload assets for EVERY registered scene up front — scene switches are
@@ -441,6 +442,10 @@ async function boot() {
     // fresh World built from a save where her quest was already resolved
     // last session (chaseTalk otherwise defaults to true off the scene data).
     if (id === 'C1' && questStatus('c1_lily_gull') !== 'active' && questStatus('c1_lily_gull') !== 'none') stopLilyChase();
+    // Vertical "Level" HUD indicator (2026-09-11) — shown only inside a
+    // scene that declares its own `level` (so far just C1C, the ship
+    // dungeon's Level 1); hidden everywhere else.
+    ui.setLevelIndicator(SCENES[id]?.level ?? null);
   }
   enterScene('D3');
   window.quests = quests; // debug handle
@@ -470,7 +475,19 @@ async function boot() {
   let campQuestDone = false;
   let campHostile = false;
   let campEntryGate = null;
-  const CAMP_FEE = 10; // pay-to-pass toll (raised 5 -> 10, Danny 2026-07-25)
+  // Highway robbery, literally (2026-09-11, Danny: "every time the player
+  // visits, the Bramblekin should try to get them to pay more and more").
+  // `campTollTier` counts how many times the toll's been PAID (not merely
+  // visited) and never resets on a fresh D4 arrival — unlike campTollPaid,
+  // which re-arms every visit so the toll has to be paid again, the tier
+  // persists so the price keeps climbing each time the player caves and
+  // pays. campToll() reads it; the favor quest and drawing steel don't touch
+  // it (a permanent-passage favor or a dead Chief means no more haggling).
+  let campTollTier = 0;
+  const CAMP_FEE_BASE = 10; // first-visit price (raised 5 -> 10, Danny 2026-07-25)
+  const CAMP_FEE_STEP = 8; // the squeeze, per subsequent payment
+  const CAMP_FEE_CAP = 40; // still "achievable" this early — extortion, not a wall
+  function campToll() { return Math.min(CAMP_FEE_BASE + campTollTier * CAMP_FEE_STEP, CAMP_FEE_CAP); }
   const CAMP_QUEST_REWARD = 10; // gold the Chief pays on top of safe passage
   const BRAMBLEKIN_BG = 'assets/images/bramblekin_camp.jpg'; // backdrop for any Bramblekin parley (2026-07-22)
   const randInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
@@ -566,10 +583,19 @@ async function boot() {
     audio.play(sceneMusicTrack(caveId), 1200); // cross-fade to the cave theme
     saveGame(); // entering a new screen
   }
-  function exitCave() {
+  // `overridePos` (2026-09-11, added for C1C's ship dungeon): a cave/dungeon
+  // exit interactable can carry `exitTo: {x,y}` to drop the player at a
+  // FIXED point on the overworld scene instead of the generic captured-entry
+  // caveReturn every other cave uses (Danny's spec for the Maiden's Grace's
+  // Top Deck ladder — a specific spot, not wherever "Below Deck" was
+  // triggered from). Falls back to the normal caveReturn/`returns` chain
+  // when no override is given, so every existing cave is unaffected.
+  function exitCave(overridePos) {
     // Fall back to the cave's declared overworld (`returns`) spawn if the
     // captured entry position is somehow missing.
-    const back = caveReturn || { scene: world.scene.returns || 'D1' };
+    const back = overridePos
+      ? { scene: world.scene.returns, x: overridePos.x, y: overridePos.y }
+      : (caveReturn || { scene: world.scene.returns || 'D1' });
     audio.sfx(audio.SFX.door);
     enterScene(back.scene && SCENES[back.scene] ? back.scene : 'D1');
     world.player.x = back.x ?? world.scene.spawn.x;
@@ -634,7 +660,7 @@ async function boot() {
         inventory: inventory.map((e) => ({ ...e })),
         equipment: { ...equipment },
         quests: quests.map((q) => ({ ...q })),
-        flags: { campQuestDone, campHostile, gafferHappy, wellCoinThrown, wellDrinks, vegetableDeliveredToTavern, calderToldStory, calderToldDangers, maraMet, lilyGullThanked, magicRevealed },
+        flags: { campQuestDone, campHostile, campTollTier, gafferHappy, wellCoinThrown, wellDrinks, vegetableDeliveredToTavern, calderToldStory, calderToldDangers, maraMet, lilyGullThanked, magicRevealed },
         caveReturn, // where to exit to if saved inside a cave/dungeon
         worlds: snapshotWorlds(),
       };
@@ -670,7 +696,7 @@ async function boot() {
     for (const k of Object.keys(equipment)) equipment[k] = null;
     quests.length = 0;
     campTollPaid = false; campEntered = false; campQuestDone = false;
-    campHostile = false; campEntryGate = null;
+    campHostile = false; campEntryGate = null; campTollTier = 0;
     gafferHappy = false; wellCoinThrown = false; wellDrinks = 0; vegetableDeliveredToTavern = false;
     calderToldStory = false; calderToldDangers = false; maraMet = false;
     lilyGullThanked = false;
@@ -695,6 +721,7 @@ async function boot() {
     quests.length = 0; (data.quests || []).forEach((q) => quests.push({ ...q }));
     const f = data.flags || {};
     campQuestDone = !!f.campQuestDone; campHostile = !!f.campHostile;
+    campTollTier = f.campTollTier || 0;
     gafferHappy = !!f.gafferHappy; wellCoinThrown = !!f.wellCoinThrown;
     wellDrinks = f.wellDrinks || 0;
     calderToldStory = !!f.calderToldStory; calderToldDangers = !!f.calderToldDangers;
@@ -1200,8 +1227,9 @@ async function boot() {
     // Bramblekin Chief toll: pay it (deduct the fee, mark paid this visit, step
     // the sentries aside, swap in a parting line).
     if (effect.payToll) {
-      spendGold(CAMP_FEE);
+      spendGold(campToll());
       campTollPaid = true;
+      campTollTier++; // next visit costs more
       stepSentriesAside();
       ui.updateDialogContent({
         line: 'Pleasure doing business. The camp’s yours to cross — this once. Wander back through and we’ll dance again.',
@@ -1694,6 +1722,7 @@ async function boot() {
         responses: ['Leave.'],
       };
     }
+    const fee = campToll();
     const hasHeart = inventory.some((it) => it.id === 'rootweaver_heart');
     const q = questStatus('rootweaver_favor');
     if (q === 'active') {
@@ -1706,7 +1735,7 @@ async function boot() {
       }
       const responses = [];
       const effects = [];
-      if (stats.gold >= CAMP_FEE) { responses.push(`Pay ${CAMP_FEE} gold.`); effects.push({ payToll: true }); }
+      if (stats.gold >= fee) { responses.push(`Pay ${fee} gold.`); effects.push({ payToll: true }); }
       responses.push('I’ll be back with the heart.'); effects.push({ leaveCamp: true });
       responses.push('Draw steel.'); effects.push({ drawSteel: true });
       return {
@@ -1715,10 +1744,18 @@ async function boot() {
         responseEffects: effects,
       };
     }
-    if (stats.gold >= CAMP_FEE) {
+    // Flavor scales with how many times this purse has already been picked
+    // (2026-09-11) — the Chief openly gloats about raising the price on a
+    // repeat visitor instead of just quoting a bigger number.
+    const greeting = campTollTier === 0
+      ? `${fee} gold to cross my camp — that’s the toll.`
+      : campTollTier === 1
+        ? `Back again, are you? Price of doing business just went up — ${fee} gold this time.`
+        : `You keep coming back with a full purse, so I keep charging more. ${fee} gold. Don’t look so wounded about it.`;
+    if (stats.gold >= fee) {
       return {
-        line: `${CAMP_FEE} gold to cross my camp — that’s the toll. Pay it and go, or do me a service instead: the rootweavers choke my woods, so bring me the heart of one and you’ll pass with a little gold besides. Or we settle it with steel. Your pick.`,
-        responses: [`Pay ${CAMP_FEE} gold.`, 'Do you a favor. (Rootweaver heart)', 'Draw steel.'],
+        line: `${greeting} Pay it and go, or do me a service instead: the rootweavers choke my woods, so bring me the heart of one and you’ll pass with a little gold besides. Or we settle it with steel. Your pick.`,
+        responses: [`Pay ${fee} gold.`, 'Do you a favor. (Rootweaver heart)', 'Draw steel.'],
         responseEffects: [{ payToll: true }, { acceptFavor: true }, { drawSteel: true }],
       };
     }
@@ -3191,7 +3228,7 @@ async function boot() {
       // toss a coin), so intercept it before any reward/collect handling.
       if (item.well) { openWellDialog(); return; }
       if (item.cave) { enterCave(item.cave); return; }   // overworld -> cave
-      if (item.caveExit) { exitCave(); return; }         // cave -> overworld
+      if (item.caveExit) { exitCave(item.exitTo); return; } // cave -> overworld (or a fixed exitTo)
       // Already-collected interactables with an emptyMessage (e.g. the silo
       // after its one ear of corn) stay interactive but just report empty —
       // world.js's nearestInteractableInRange only returns collected ones

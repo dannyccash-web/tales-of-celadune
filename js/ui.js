@@ -40,6 +40,16 @@ export function setMagicBarVisible(visible) {
   $('magic-stat').classList.toggle('hidden', !visible);
 }
 
+// Vertical "Level" indicator on the left edge of the HUD (2026-09-11) — for
+// the ship dungeon (C1C) and any further dungeon levels later. Shown only
+// while the active scene declares its own `level`; pass null/undefined to
+// hide it. main.js's enterScene() calls this once per scene change.
+export function setLevelIndicator(level) {
+  const el = $('level-indicator');
+  el.classList.toggle('hidden', level == null);
+  if (level != null) $('level-value').textContent = `L${level}`;
+}
+
 // Flash + glow the health fill (remove/reflow/add pattern so it replays on
 // every hit, same trick as the dialog portrait's entrance animation). Call
 // this alongside updateHud() whenever the player takes damage.

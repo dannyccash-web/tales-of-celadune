@@ -12,6 +12,9 @@ export const TRACKS = {
   // looks the key up here instead of falling back to the generic overworld
   // theme). C1 Tidewrack Harbor is the first scene to use one.
   c1: 'assets/audio/Salt Air Lullaby.mp3',
+  // D2 Millmere (2026-09-11, Danny) — its own daytime village theme instead
+  // of the generic overworld track.
+  d2: 'assets/audio/Pastoral Morning.mp3',
 };
 
 export const SFX = {
