@@ -39,6 +39,20 @@ const state = { started: false };
 // rather than in world/ui, which stay presentation-only.
 const inventory = [];
 
+// The magic bar's one-time reveal (2026-09-10, Ysra's Staff — see addItem()
+// below). Starts false; flips true forever the moment the player owns their
+// first magic-cost item, persisted across saves from then on. MUST live at
+// module scope (not inside boot()) since addItem() — a module-level function
+// — reads it; a `let` inside boot() would be out of scope here (2026-09-11
+// fix: it was accidentally declared inside boot() alongside the other
+// per-run flags, which threw "magicRevealed is not defined" on EVERY single
+// addItem() call, game-wide — not just in "Your House," where Danny first
+// noticed it as an infinite-item duplication bug: addItem's inventory
+// mutation ran fine, but the ReferenceError right after it aborted
+// everything downstream, including the caller code that refreshes a
+// dialog's response list — so a "Take X" option never actually went away).
+let magicRevealed = false;
+
 // Equip *state* (2026-07-08) — one item id per slot, or null. Equipping
 // never removes the item from `inventory`; it's just a separate pointer, so
 // the item still shows up (with an "Equipped" marker) in its own category
@@ -884,10 +898,6 @@ async function boot() {
   // been reunited with it, the NEXT time the player talks to her father he
   // thanks them + pays a few gold — but only once. See buildTobyDialog().
   let lilyGullThanked = false;
-  // The magic bar's one-time reveal (2026-09-10, Ysra's Staff — see addItem).
-  // Starts false; flips true forever the moment the player owns their first
-  // magic-cost item, and stays persisted across saves from then on.
-  let magicRevealed = false;
   // One-time (session) tutorial nudge the first time a roaming creature charges
   // the player, teaching Flee + the give-up-when-far mechanic (2026-07-26).
   let creatureFleeHintShown = false;
@@ -1499,6 +1509,12 @@ async function boot() {
   function applyPlaceResponse(place, npcView, index) {
     const effect = npcView.dialog.responseEffects?.[index];
     if (!effect?.takeItem) return; // Leave. (or nothing) — close normally
+    // Belt-and-suspenders (2026-09-11): only grant if the item's still here.
+    // Guards against a stale response list (e.g. the response UI failing to
+    // refresh for any reason) letting the same "Take X" be clicked twice —
+    // this is exactly the shape of bug that let addItem()'s now-fixed
+    // magicRevealed ReferenceError turn into unlimited duplication here.
+    if (!place.items.includes(effect.takeItem)) return true;
     place.items = place.items.filter((id) => id !== effect.takeItem);
     addItem(effect.takeItem, 1);
     ui.showReceivedItem(ITEMS[effect.takeItem]);
