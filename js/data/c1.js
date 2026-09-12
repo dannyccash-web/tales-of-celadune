@@ -536,7 +536,7 @@ export default {
     { label: 'Perrin’s Cookhouse', x: 2024, y: 1476, r: 190, door: { x: 2024, y: 1521 } },
     { label: 'The Farrows’ House', x: 1646, y: 1866, r: 180, door: { x: 1646, y: 1911 } },
     { label: 'Wynne’s House', x: 1929, y: 864, r: 180, door: { x: 1929, y: 909 } },
-    { label: 'Garrick’s House', x: 1604, y: 710, r: 180, door: { x: 1604, y: 755 } },
+    { label: 'Hollowmast House', x: 1604, y: 710, r: 180, door: { x: 1604, y: 755 } },
     { label: 'Senna’s House', x: 1964, y: 662, r: 170, door: { x: 1964, y: 707 } },
     { label: 'Aldous’s House', x: 2276, y: 670, r: 170, door: { x: 2276, y: 715 } },
     { label: 'Nils’s House', x: 2222, y: 1011, r: 170, door: { x: 2222, y: 1056 } },
@@ -546,7 +546,7 @@ export default {
     // they were patrol-only wanderers before this pass).
     { label: 'Isolde’s House', x: 2190, y: 1901, r: 180, door: { x: 2190, y: 1946 } },
     { label: 'Cade Fathom’s House', x: 2339, y: 2044, r: 180, door: { x: 2339, y: 2089 } },
-    { label: 'The Old Well', x: 1300, y: 300, r: 180 },
+    { label: 'The Old Lighthouse', x: 1300, y: 300, r: 180 },
     { label: 'Maiden’s Grace', x: 500, y: 1400, r: 480 },
   ],
 
@@ -669,7 +669,7 @@ export default {
   // for a safe margin).
   exits: [
     { edge: 'bottom', xMin: 1375, xMax: 1625, to: 'D1', note: 'the coastal trail back down to the cove' },
-    { edge: 'top', xMin: 1350, xMax: 1550, to: 'B1', note: 'the trail climbs north past the crossroads well' },
+    { edge: 'top', xMin: 1350, xMax: 1550, to: 'B1', note: 'the trail climbs north past the old lighthouse' },
     { edge: 'right', yMin: 1130, yMax: 1290, to: 'C2', note: 'the road east toward the grassland' },
   ],
 
@@ -836,6 +836,8 @@ export default {
         { do: 'wait', s: 40 },
         { do: 'leaveHome' },
         { do: 'goto', x: 1430, y: 600 },
+        { do: 'wait', s: 10 },
+        { do: 'goto', x: 1840, y: 880 },
         { do: 'wait', s: 10 },
         { do: 'goHome' },
       ],

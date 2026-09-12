@@ -1293,7 +1293,7 @@ async function boot() {
     // ---- Lily Farrow's lost-gull quest (2026-09-10) ----
     if (effect.lilyAccept) {
       startQuest('c1_lily_gull');
-      ui.updateDialogContent({ line: 'Really?? Okay — okay. Start by the well, that’s where I saw her last. Please hurry?', responses: ['Leave.'] });
+      ui.updateDialogContent({ line: 'Really?? Okay — okay. Start by the old lighthouse, that’s where I saw her last. Please hurry?', responses: ['Leave.'] });
       return true;
     }
     // The sad ending: tell her the bird’s probably dead. Fails the quest and
