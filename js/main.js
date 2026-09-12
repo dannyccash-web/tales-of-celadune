@@ -759,7 +759,7 @@ async function boot() {
         inventory: inventory.map((e) => ({ ...e })),
         equipment: { ...equipment },
         quests: quests.map((q) => ({ ...q })),
-        flags: { campQuestDone, campHostile, campTollTier, gafferHappy, wellCoinThrown, wellDrinks, vegetableDeliveredToTavern, calderToldStory, calderToldDangers, maraMet, lilyGullThanked, magicRevealed, maraHollowmastRescued },
+        flags: { campQuestDone, campHostile, campTollTier, gafferHappy, wellCoinThrown, wellDrinks, vegetableDeliveredToTavern, calderToldStory, calderToldDangers, maraMet, lilyGullThanked, magicRevealed, maraHollowmastRescued, lockboxAcceptedFrom, lockboxGivenTo },
         caveReturn, // where to exit to if saved inside a cave/dungeon
         worlds: snapshotWorlds(),
       };
@@ -811,6 +811,7 @@ async function boot() {
     lilyGullThanked = false;
     magicRevealed = false;
     maraHollowmastRescued = false;
+    lockboxAcceptedFrom = null; lockboxGivenTo = null;
     caveReturn = null;
     for (const k of Object.keys(worlds)) delete worlds[k];
     pendingWorldFlags = null;
@@ -839,6 +840,8 @@ async function boot() {
     lilyGullThanked = !!f.lilyGullThanked;
     magicRevealed = !!f.magicRevealed;
     maraHollowmastRescued = !!f.maraHollowmastRescued;
+    lockboxAcceptedFrom = f.lockboxAcceptedFrom || null;
+    lockboxGivenTo = f.lockboxGivenTo || null;
     caveReturn = data.caveReturn || null;
     vegetableDeliveredToTavern = !!f.vegetableDeliveredToTavern;
     // Per-visit camp state always starts fresh on a load (toll re-armed, not
@@ -1010,6 +1013,12 @@ async function boot() {
   // (enterScene un-hides `mara_hollowmast_town`, which otherwise starts
   // hidden). See buildMaraHollowmastDialog().
   let maraHollowmastRescued = false;
+  // The Maiden's Grace lockbox quest (2026-09-13) — 'roderick'/'wynne'/null.
+  // See buildRoderickDialog/buildWynneDialog and applyResponseEffect's
+  // roderickLockboxAccept/wynneLockboxAccept/giveLockboxToRoderick/
+  // giveLockboxToWynne.
+  let lockboxAcceptedFrom = null;
+  let lockboxGivenTo = null;
   // One-time (session) tutorial nudge the first time a roaming creature charges
   // the player, teaching Flee + the give-up-when-far mechanic (2026-07-26).
   let creatureFleeHintShown = false;
@@ -1221,23 +1230,51 @@ async function boot() {
       ui.updateDialogContent({ line: 'Now THAT’S a stew worth ladling. Thank you, truly — this village hasn’t eaten this well since before the wreck.', responses: ['Leave.'] });
       return true;
     }
-    if (effect.wynneAccept) {
-      if (stats.gold < 3) {
-        audio.sfx(audio.SFX.denied);
-        ui.updateDialogContent({ line: 'No shame in an empty purse, traveler. Come back when fortune allows — the shrine isn’t going anywhere.', responses: ['Leave.'] });
-        return true;
-      }
-      spendGold(3);
-      startQuest('c1_memorial');
-      completeQuest('c1_memorial');
-      ui.updateDialogContent({ line: 'Thank you. I’ll see it done properly — driftwood, stone, and a name for each of them, if I can recall enough to carve.', responses: ['Leave.'] });
+    // ---- The Maiden's Grace lockbox (Roderick/Wynne, 2026-09-13) ----
+    // Accepting from either just starts the ONE shared quest and records
+    // who it was accepted from (lockboxAcceptedFrom) — see
+    // buildRoderickDialog/buildWynneDialog for how the other party reacts
+    // while it's active, and giveLockboxToRoderick/giveLockboxToWynne below
+    // for the (separate, later) choice of who actually gets it.
+    if (effect.roderickLockboxAccept) {
+      startQuest('c1_lockbox');
+      lockboxAcceptedFrom = 'roderick';
+      requestAutosave();
+      ui.updateDialogContent({ line: 'Good. Mind the miremen down there — they don’t much care whose service you’re in.', responses: ['Leave.'] });
       return true;
     }
-    if (effect.roderickAccept) {
-      startQuest('c1_salvage');
-      addGold(8);
-      completeQuest('c1_salvage');
-      ui.updateDialogContent({ line: 'Good. Here — your cut, up front, on trust. I like a partner who doesn’t need convincing twice.', responses: ['Leave.'] });
+    if (effect.wynneLockboxAccept) {
+      startQuest('c1_lockbox');
+      lockboxAcceptedFrom = 'wynne';
+      requestAutosave();
+      ui.updateDialogContent({ line: 'Tides keep you steady down there. Go carefully.', responses: ['Leave.'] });
+      return true;
+    }
+    if (effect.giveLockboxToRoderick) {
+      removeItem('lockbox', 1, true);
+      lockboxGivenTo = 'roderick';
+      completeQuest('c1_lockbox');
+      addGold(50);
+      requestAutosave();
+      ui.showGaveItem(ITEMS.lockbox);
+      ui.updateDialogContent({
+        line: 'Now THAT’S a fine piece of work. You’ve done the Crown a real service, friend — and yourself no disservice either, by the weight of it. (Gained 50 gold.) Walk down to the counting house when you get the chance — they’ll want to know a debt’s been settled.',
+        responses: ['Leave.'],
+      });
+      return true;
+    }
+    if (effect.giveLockboxToWynne) {
+      removeItem('lockbox', 1, true);
+      lockboxGivenTo = 'wynne';
+      completeQuest('c1_lockbox');
+      stats.defense += 1;
+      refreshStatsPanel();
+      requestAutosave();
+      ui.showGaveItem(ITEMS.lockbox);
+      ui.updateDialogContent({
+        line: 'She turns the lockbox over once in her hands, then presses her palm flat against it and murmurs something too quiet to catch. “May Maren, Warden of the Tide, watch over you in every water you cross.” Something settles into you, steady and lasting. (Defense permanently +1.)',
+        responses: ['Leave.'],
+      });
       return true;
     }
     if (effect.tobyAccept) {
@@ -1518,7 +1555,7 @@ async function boot() {
     if (effect.maraHollowmastAccept) {
       addItem('cutlass', 1);
       requestAutosave();
-      ui.showGaveItem(ITEMS.cutlass);
+      ui.showReceivedItem(ITEMS.cutlass); // she's GIVING it to the player — Received, not Gave (2026-09-13 fix)
       finalizeMaraHollowmastRescue();
       ui.updateDialogContent({
         line: 'She presses the cutlass into your hands and pushes herself up off the barrel. By the time you’re back in town, she’s already there, catching her breath by Garrick’s door.',
@@ -2527,34 +2564,75 @@ async function boot() {
     };
   }
 
-  // Wynne (shrine memorial) and Roderick (cargo salvage) offer a
-  // mutually-exclusive minor quest (2026-09-02) — the first real use of
-  // Danny's "help one or the other, not both" mechanic. No separate flag
-  // needed: each side just checks whether the OTHER quest completed.
+  // Wynne (memorial/compensation) and Roderick (the Crown's cargo) offer
+  // ONE shared quest over the Maiden's Grace's sealed lockbox (2026-09-13,
+  // replacing the earlier unrelated c1_salvage/c1_memorial pair) — Danny:
+  // "speaking to either one and accepting the quest triggers the same
+  // quest, but there are two different outcomes." Accepting from one is
+  // mutually exclusive with the other WHILE the quest is active
+  // (lockboxAcceptedFrom), but who the lockbox is finally GIVEN to
+  // (lockboxGivenTo, set only at hand-off) is a separate, later choice —
+  // the player can still hand it to whichever party they like regardless of
+  // who they originally accepted from. Both NPCs therefore always offer the
+  // "Here's the lockbox." turn-in once the player has it, and the party
+  // that doesn't end up with it reacts worse than the one merely passed
+  // over at accept time (Danny: "even more disappointed").
   function buildWynneDialog() {
-    if (questStatus('c1_memorial') === 'completed') {
-      return { line: 'The memorial stands, plain and honest, where the old pines meet the shore. Thank you, truly — the dead rest easier for it, and so do I.', responses: ['Leave.'] };
+    const hasLockbox = inventory.some((it) => it.id === 'lockbox');
+    if (questStatus('c1_lockbox') === 'completed') {
+      if (lockboxGivenTo === 'wynne') {
+        return { line: 'The families have what they’re owed, and the stone-carver has his coin for the memorial besides. You did right by them, traveler — Maren keep you for it.', responses: ['Leave.'] };
+      }
+      return { line: 'Roderick’s counting house has its lockbox, then, and the Crown its due. I hope it weighs less on your conscience than it does on mine, watching those families go without. Walk gently, traveler.', responses: ['Leave.'] };
     }
-    if (questStatus('c1_salvage') === 'completed') {
-      return { line: 'Roderick’s coin will spend faster than my stones will weather, I expect. No matter — the shrine keeps its own accounts. Walk gently, traveler.', responses: ['Leave.'] };
+    if (questStatus('c1_lockbox') === 'active') {
+      if (hasLockbox) {
+        return {
+          line: lockboxAcceptedFrom === 'wynne'
+            ? 'You found it! Let me see — yes, that’s her lockbox, wardwork and all. Will you let me use what’s inside for the families she left behind?'
+            : 'Is that the Maiden’s Grace’s lockbox? I’d thought Roderick had first claim on it — but I won’t pretend I’m not glad to see it in gentler hands. Will you let the families have what’s inside instead?',
+          responses: ['Here’s the lockbox.', 'Not yet.'],
+          responseEffects: [{ giveLockboxToWynne: true }, null],
+        };
+      }
+      if (lockboxAcceptedFrom === 'wynne') {
+        return { line: 'Any sign of the lockbox down there? Or — tides forgive me for asking first — any sign that anyone survived?', responses: ['Leave.'] };
+      }
+      return { line: 'So Roderick’s got you chasing his cargo instead of me. I understand it — coin talks louder than a shrine-keeper’s asking. If you do lay hands on that lockbox, though, remember there are families who’d rather have it than the Crown.', responses: ['Leave.'] };
     }
     return {
-      line: 'The Gull’s Regret took six good souls to the bottom, and not one of them has a stone to their name. I mean to raise a small memorial where the pines meet the shore — driftwood, and stones, and a carved plank if I can manage it. It wants only a little coin for the carving. Will you help me see it done?',
-      responses: ['Here’s a little toward it. (3 gold)', 'Not right now.'],
-      responseEffects: [{ wynneAccept: true }, null],
+      line: 'The Maiden’s Grace didn’t sink, but I doubt that’s much comfort to her crew — miremen took her before she ever reached dock, and I’d be surprised if any of them still draw breath down there. I’d have it confirmed, not just assumed. Clear the wreck of those creatures, and if anyone’s somehow still alive, get them out. There’s also a lockbox in her hold, sealed by ward-craft older than the ship herself — bring it to me, and I’ll see its contents go to the families that crew left behind, with enough left over for a stone so they’re not forgotten.',
+      responses: ['I’ll search the wreck.', 'Not right now.'],
+      responseEffects: [{ wynneLockboxAccept: true }, null],
     };
   }
   function buildRoderickDialog() {
-    if (questStatus('c1_salvage') === 'completed') {
-      return { line: 'Every crate we’ve cleared says the same thing — that ship still owes this village a fortune. When we finally break her open properly, you’ll have first pick, mark me.', responses: ['Leave.'] };
+    const hasLockbox = inventory.some((it) => it.id === 'lockbox');
+    if (questStatus('c1_lockbox') === 'completed') {
+      if (lockboxGivenTo === 'roderick') {
+        return { line: 'That lockbox is already halfway to the counting house, and my thanks along with it. The Crown remembers a debt like that, mark me.', responses: ['Leave.'] };
+      }
+      return { line: 'Gave it to the shrine-keeper, did you. Fine sentiment — buries a stone with the crew’s names on it and buries the Crown’s due right along with them. Don’t expect a second offer like mine.', responses: ['Leave.'] };
     }
-    if (questStatus('c1_memorial') === 'completed') {
-      return { line: 'Gone and helped the shrine-keeper bury coin in stone, have you? Fine sentiment. Doesn’t put bread on a table, but fine sentiment.', responses: ['Leave.'] };
+    if (questStatus('c1_lockbox') === 'active') {
+      if (hasLockbox) {
+        return {
+          line: lockboxAcceptedFrom === 'roderick'
+            ? 'You found her, did you! Let’s have it, then — that’s the Crown’s property you’re holding.'
+            : 'Wynne’s errand, was it — and yet here you stand with the lockbox anyway. I won’t turn away good sense when it walks up and offers itself. Hand it over, and I’ll see it reaches the counting house.',
+          responses: ['Here’s the lockbox.', 'Not yet.'],
+          responseEffects: [{ giveLockboxToRoderick: true }, null],
+        };
+      }
+      if (lockboxAcceptedFrom === 'roderick') {
+        return { line: 'Mind the miremen down there and keep your eyes open for that lockbox. The sooner it’s in the counting house, the sooner this village sees any benefit from that wreck at all.', responses: ['Leave.'] };
+      }
+      return { line: 'Gone and thrown in with the shrine-keeper on that wreck, have you? Fine sentiment. Doesn’t put a coin in the Crown’s coffers, but fine sentiment. If you do lay hands on that lockbox, mind you bring it to me instead — I’d still see it reach the counting house where it belongs.', responses: ['Leave.'] };
     }
     return {
-      line: 'That hulk out there isn’t just a grave, friend — she’s cargo, and cargo’s coin, once we work up the nerve to clear her properly. Help me catalogue what little’s already washed up along the strand and I’ll cut you a fair share.',
-      responses: ['I’ll help you catalogue it.', 'Not my business.'],
-      responseEffects: [{ roderickAccept: true }, null],
+      line: 'That hulk out there came in crawling with miremen, hull to hold, and I won’t send able-bodied townsfolk in to get themselves killed over it — I need every one of them upright to unload what’s already salvageable. But you look like you can handle yourself. Clear the wreck of those creatures, and while you’re down there, find her lockbox. Whatever’s sealed inside is worth more than the hull carrying it, and I serve the Crown, which means the Crown gets its due. Bring it to me, and I’ll see it reaches the king’s counting house where it belongs.',
+      responses: ['I’ll clear the wreck and find it.', 'Not my business.'],
+      responseEffects: [{ roderickLockboxAccept: true }, null],
     };
   }
 

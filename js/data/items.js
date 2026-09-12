@@ -99,6 +99,19 @@ export default {
     description: 'A crate of fresh vegetables, bound for the tavern in the village.',
     questItem: true,
   },
+  // The Maiden's Grace's lockbox (C1D, 2026-09-13) — found beside the
+  // treasure chest in the ship's bottom hold, for the Roderick/Wynne
+  // "c1_lockbox" quest (main.js's buildRoderickDialog/buildWynneDialog).
+  // questItem: true already blocks Remove (js/ui.js) and vendor sale
+  // (main.js's sell-list filter) — exactly Danny's "can't be dropped or
+  // traded" — no new restriction code needed.
+  lockbox: {
+    id: 'lockbox',
+    name: 'Sealed Lockbox',
+    image: 'assets/images/enchanted_lockbox.png',
+    description: 'A small iron lockbox, sealed by an enchantment older than the ship it was found on. Whatever’s inside, it isn’t opening for anyone but a warded counting house.',
+    questItem: true,
+  },
   dagger: {
     id: 'dagger',
     name: 'Dagger',

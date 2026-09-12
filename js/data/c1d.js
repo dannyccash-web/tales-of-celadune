@@ -162,6 +162,20 @@ export default {
       exitTo: { x: 1490, y: 1720 },
       label: 'Bottom Deck',
     },
+    // The Maiden's Grace's sealed lockbox (2026-09-13, Roderick/Wynne's
+    // "c1_lockbox" quest) — placed to the right of c1d_treasure_chest
+    // (1496,972), same y. Sprite-marked (world.js draws it as a static
+    // ground image, same as C1B's gull) so the player sees it from a
+    // distance rather than stumbling onto it. Engine-verified clear of
+    // collision and reachable from spawn (BFS, 10px step).
+    {
+      id: 'c1d_lockbox',
+      x: 1586, y: 972,
+      sprite: 'assets/images/enchanted_lockbox_overhead.png',
+      label: 'A Sealed Lockbox',
+      reward: { item: 'lockbox', qty: 1, catch: true },
+      message: 'Wedged behind a broken crate, a small iron lockbox — sealed shut by wardwork far older than the ship carrying it.',
+    },
   ],
 
   fishingSpots: [],

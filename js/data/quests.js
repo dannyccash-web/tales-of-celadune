@@ -10,6 +10,20 @@ export default {
     name: 'Vegetable Delivery',
     description: 'Carry a crate of vegetables from Mirelle to the tavern in the village.',
   },
+  // The Maiden's Grace's lockbox (C1, 2026-09-13) — replaces the earlier
+  // c1_salvage/c1_memorial pair (Roderick's cargo-cataloguing quest and
+  // Wynne's memorial for the unrelated "Gull's Regret" wreck) with one
+  // unified quest tied to the ship/miremen story already in C1C/C1D.
+  // Offered by EITHER Roderick Vane or Wynne Ashcombe —
+  // mutually exclusive at accept time (see main.js's lockboxAcceptedFrom) —
+  // but who the lockbox is ultimately GIVEN to (lockboxGivenTo) is a
+  // separate, later choice, independent of who it was accepted from. See
+  // main.js's buildRoderickDialog/buildWynneDialog for the full branching.
+  c1_lockbox: {
+    id: 'c1_lockbox',
+    name: 'The Maiden’s Grace Lockbox',
+    description: 'Clear the miremen from the Maiden’s Grace and recover the ship’s sealed lockbox — then decide who it goes to: Roderick Vane, for the Crown, or Wynne Ashcombe, for the crew’s families.',
+  },
   barn_rat: {
     id: 'barn_rat',
     name: 'Rat in the Barn',
@@ -54,16 +68,6 @@ export default {
     id: 'perrin_feast',
     name: 'A Feast for Tidewrack',
     description: 'Perrin the cook is nearly out of stores. Bring him Cragclaw eggs and a couple of bluegill so he can feed the village.',
-  },
-  c1_memorial: {
-    id: 'c1_memorial',
-    name: 'A Place to Grieve',
-    description: 'Help Wynne Ashcombe raise a small memorial for the crew of the Gull’s Regret, lost when it wrecked off the cove.',
-  },
-  c1_salvage: {
-    id: 'c1_salvage',
-    name: 'Salvage Rights',
-    description: 'Help Roderick Vane catalogue what little cargo has already washed ashore from the Maiden’s Grace.',
   },
   toby_net: {
     id: 'toby_net',
