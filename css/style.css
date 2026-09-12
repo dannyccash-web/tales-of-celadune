@@ -74,10 +74,22 @@ html, body {
 .loading-bg {
   position: absolute;
   inset: 0;
-  /* D3 is the game's actual starting scene — a fitting placeholder until
-     Danny supplies dedicated title/splash art. */
-  background: url('../assets/images/D3_Background.jpg') center / cover no-repeat;
-  filter: brightness(0.32) saturate(0.75);
+  /* Real title art now (2026-09-13, Danny) — was a re-purposed D3 gameplay
+     background needing an artificial darkening filter to read behind the
+     text; now matches the start screen's own background exactly (same
+     image + the same vignette-overlay treatment via ::after below), so the
+     loading screen reads as a continuation of the start screen rather than
+     a different placeholder look. */
+  background: url('../assets/images/tales_of_celadune_homescreen.png') center / cover no-repeat;
+}
+
+.loading-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url('../assets/images/Vignette.jpg') center / cover no-repeat;
+  mix-blend-mode: multiply;
+  opacity: 0.7;
 }
 
 .loading-content {
@@ -1221,12 +1233,32 @@ html, body {
 #start-screen {
   position: absolute;
   inset: 0;
-  background: #000 url('../assets/images/tales_of_celadune_homescreen.png') center / cover no-repeat;
+  overflow: hidden; /* clips #start-bg's zoom so it can't spill past the stage edge */
+  background: #000; /* fallback while the bg image loads */
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 70px;
+}
+
+/* Slow Ken-Burns zoom (2026-09-13, Danny — "a very slow zoom effect that
+   stops when the image is say 20% larger"). A real element (not
+   #start-screen's own CSS background) so `transform: scale()` can animate it
+   independently of the vignette/logo/buttons layered on top. One-shot, not
+   looping: `forwards` fill mode holds it at 1.2x once the 50s animation ends
+   rather than resetting or reversing. */
+#start-bg {
+  position: absolute;
+  inset: 0;
+  background: url('../assets/images/tales_of_celadune_homescreen.png') center / cover no-repeat;
+  animation: start-bg-zoom 50s ease-out forwards;
+  z-index: 0;
+}
+
+@keyframes start-bg-zoom {
+  from { transform: scale(1); }
+  to { transform: scale(1.2); }
 }
 
 #start-screen::before {
@@ -1237,15 +1269,20 @@ html, body {
   mix-blend-mode: multiply;
   opacity: 0.7;
   pointer-events: none;
-  z-index: 0;
+  z-index: 1;
 }
 
 #start-logo {
-  width: 640px;
+  /* 640px -> 960px (2026-09-13, Danny: "about 50% larger") */
+  width: 960px;
   height: auto;
-  filter: drop-shadow(0 4px 18px rgba(0, 0, 0, 0.9));
+  /* Stronger two-layer drop shadow (2026-09-13) — the old single soft shadow
+     read fine over the plain dark placeholder background, but needs more
+     punch to stay legible against the brighter/busier homescreen art: a
+     tight dark core plus a wider soft falloff. */
+  filter: drop-shadow(0 3px 10px rgba(0, 0, 0, 0.95)) drop-shadow(0 8px 34px rgba(0, 0, 0, 0.85));
   position: relative;
-  z-index: 1;
+  z-index: 2;
 }
 
 .start-buttons,
@@ -1254,7 +1291,7 @@ html, body {
   gap: 40px;
   align-items: center;
   position: relative;
-  z-index: 1;
+  z-index: 2;
 }
 
 .menu-btn {

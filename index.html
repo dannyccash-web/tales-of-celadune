@@ -429,6 +429,12 @@
       </div>
 
       <div id="start-screen">
+        <!-- Slow "Ken Burns" zoom layer (2026-09-13, Danny) — a separate div
+             (not the box's own CSS background) so a transform-based zoom
+             animation can run on it without touching the vignette overlay
+             or the logo/buttons layered on top. See #start-bg's keyframe
+             in style.css. -->
+        <div id="start-bg"></div>
         <img id="start-logo" src="assets/images/tales_of_celadune_logo.png" alt="Tales of Celadune">
         <div class="start-buttons">
           <button id="btn-new-game" class="menu-btn">New Game</button>

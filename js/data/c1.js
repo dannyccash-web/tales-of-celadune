@@ -699,6 +699,24 @@ export default {
     },
     {
       id: 'roderick_vane', name: 'Roderick Vane', role: 'DOCKMASTER',
+      // Vendor (2026-09-13, Danny) — his warehouse already used the general
+      // goods interior art, so he doubles as C1's general store. His own
+      // lockbox-quest dialogue is fully custom (js/main.js's
+      // buildRoderickDialog, dispatched ahead of the generic npc.vendor
+      // path) — Buy/Sell are folded into that dialog via withShop rather
+      // than routed through buildVendorDialog. awayLine is unused by his own
+      // dialogue (which has no atHome gate) but kept for consistency/in case
+      // that ever changes.
+      vendor: true,
+      stock: [
+        { id: 'lockpicks', qty: 2 },
+        { id: 'health_potion', qty: 2 },
+        { id: 'bread', qty: 3 },
+        { id: 'bluegill', qty: 2 },
+        { id: 'trout', qty: 2 },
+      ],
+      gold: 40,
+      awayLine: 'Catch me at the warehouse if you’re looking to trade.',
       sprite: 'assets/images/roderick_vane_overhead.png',
       portrait: 'assets/images/roderick_vane.png',
       speed: 40, startsHome: true,

@@ -2218,6 +2218,28 @@ async function boot() {
     return { line: d.line, responses, responseEffects };
   }
 
+  // A quest-driven NPC who ALSO sells goods (2026-09-13, first case: Roderick
+  // Vane) can't route through the generic `npc.vendor` dispatch in
+  // openNpcDialog — their own `npc.id` branch is checked first (so
+  // buildVendorDialog never runs for them). This folds Buy/Sell into
+  // whatever custom dialog they'd show anyway, spliced in right before the
+  // dialog's own trailing "walk away" response — same trick as
+  // withChatter/withBlessing, but not limited to a 'Leave.' closer, since a
+  // quest-branching NPC's closers vary by state ('Not my business.'/'Not
+  // yet.'/'Leave.', for Roderick). Buy/Sell only appear while the NPC is
+  // actually home behind the counter (mirrors every other vendor); their own
+  // quest/story dialogue has no such gate and is unaffected by this.
+  function withShop(dialog, npcId) {
+    const live = world.npcs.find((n) => n.id === npcId);
+    if (!live?.vendor || !live.atHome || !dialog.responses?.length) return dialog;
+    const responses = [...dialog.responses];
+    const effects = dialog.responseEffects ? [...dialog.responseEffects] : responses.map(() => null);
+    const at = Math.max(0, responses.length - 1);
+    responses.splice(at, 0, 'Buy', 'Sell');
+    effects.splice(at, 0, { shop: 'buy' }, { shop: 'sell' });
+    return { ...dialog, responses, responseEffects: effects };
+  }
+
   function openVendorGrid(npcArg, mode) {
     // openNpcDialog passes a shallow COPY of the npc (`{ ...npc, dialog }`), so
     // mutating its gold wouldn't stick. Resolve the live world instance by id
@@ -2606,7 +2628,14 @@ async function boot() {
       responseEffects: [{ wynneLockboxAccept: true }, null],
     };
   }
+  // Wrapper (2026-09-13): buildRoderickDialog itself is the pure quest-state
+  // logic below (renamed to buildRoderickQuestDialog); this just folds in
+  // Buy/Sell via withShop, so the quest logic doesn't need to know he's also
+  // a vendor now.
   function buildRoderickDialog() {
+    return withShop(buildRoderickQuestDialog(), 'roderick_vane');
+  }
+  function buildRoderickQuestDialog() {
     const hasLockbox = inventory.some((it) => it.id === 'lockbox');
     if (questStatus('c1_lockbox') === 'completed') {
       if (lockboxGivenTo === 'roderick') {
