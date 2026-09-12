@@ -363,7 +363,7 @@ export default {
     id: 'cutlass',
     name: 'Cutlass',
     image: 'assets/images/maras_cutlass.png',
-    description: 'A well-worn cutlass in a sea-stained sheath — Mara Hollowmast’s father’s blade. Balanced for close, ugly work, and it bites harder against the things that lurk in the wreck.',
+    description: 'A well-worn cutlass, taken up in the fight to survive the miremen that overran the Maiden’s Grace. Balanced for close, ugly work, and it bites harder against the things that lurk in the wreck.',
     questItem: false,
     slot: 'mainhand',
     damage: { min: 4, max: 7 },

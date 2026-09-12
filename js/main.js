@@ -1012,13 +1012,6 @@ async function boot() {
   // One-time (session) tutorial nudge the first time a roaming creature charges
   // the player, teaching Flee + the give-up-when-far mechanic (2026-07-26).
   let creatureFleeHintShown = false;
-  // Mara Hollowmast's departure cutscene (2026-09-12): true for the few
-  // seconds after she's thanked the player, while she scripts-walks to C1D's
-  // ladder and vanishes. NOT persisted (same class of thing as
-  // elowenBlessedThisVisit) - it's over in a couple of seconds and saves
-  // never happen mid-cutscene. Freezes just the player (see frame()'s
-  // `locked`), the same way `fishing` does, so her walk keeps animating.
-  let maraCutscene = false;
 
   // The D3 well's coin-for-luck offer is one-time per session (like gafferHappy,
   // not persisted). Tossing a coin for +1 Luck can only happen once. See
@@ -1501,10 +1494,13 @@ async function boot() {
       });
       return true;
     }
-    // ---- Mara Hollowmast's rescue (C1D, 2026-09-12) ----
+    // ---- Mara Hollowmast's rescue (C1D, 2026-09-12; corrected 2026-09-12 —
+    // miremen attack not mutiny, she can climb but is hurt, no sheath/father
+    // mention, an explicit accept/refuse choice over the cutlass, and no
+    // cutscene — see finalizeMaraHollowmastRescue() above) ----
     if (effect.maraHollowmastStory) {
       ui.updateDialogContent({
-        line: 'My name’s Mara Hollowmast. We were coasting into port — almost home — when the crew turned on the captain. Killed him first, then worked through the rest of us, one by one, and threw us over the side like ballast. I only lived because I went still and let them think I already had. I’ve been down here ever since, too hurt to climb back up, listening to them walk the deck above me.',
+        line: 'My name’s Mara Hollowmast. We were coasting into port — almost home — when the miremen came up over the sides, more of them than I’ve ever seen at once, crawling up out of the water like the wreck itself called them. They went through the crew before anyone could get below. I went still and let them think I was already gone, then got down here before they could finish the job.',
         responses: ['Let’s get you out of here.', 'Leave.'],
         responseEffects: [{ maraHollowmastThanks: true }, null],
       });
@@ -1512,33 +1508,31 @@ async function boot() {
     }
     if (effect.maraHollowmastThanks) {
       if (questStatus('mara_hollowmast') === 'none') startQuest('mara_hollowmast');
-      addItem('cutlass', 1);
-      requestAutosave();
       ui.updateDialogContent({
-        line: 'She takes your arm and pulls herself upright, wincing. “I can manage the climb myself, don’t you worry — you’ve done more than enough already.” She presses something into your hands: a cutlass in a worn leather sheath. “It was my father’s. Better in the hand of someone who knows sea-vermin from a friendly face than rusting down here with me.” She steadies herself against the hull and breathes out. “I’ll see you in town.”',
-        responses: ['(Let her go.)'],
-        responseEffects: [{ maraHollowmastFarewell: true }],
+        line: 'She takes your arm and pulls herself upright, wincing. “I’m hurt, but I’ll manage — I just needed a minute before I climbed back up into that.” She nods at the cutlass on her hip. “Take it. You’re in a far better spot to swing it than I am right now.”',
+        responses: ['Accept the cutlass.', 'Refuse it.'],
+        responseEffects: [{ maraHollowmastAccept: true }, { maraHollowmastRefuse: true }],
       });
       return true;
     }
-    if (effect.maraHollowmastFarewell) {
-      completeQuest('mara_hollowmast');
-      // Scripted walk-off (Danny: "a sort of cut scene where she walks toward
-      // the exit... player can't move or act"). Reuses the existing routine
-      // engine (updateRoutine/walkToward in world.js) rather than a bespoke
-      // tween: a one-step 'goto' aimed at the ladder does the walking, and
-      // maraCutscene (frame loop, below) freezes just the PLAYER — same as
-      // `fishing` — so the world (and her walk) keeps ticking. The frame
-      // loop's arrival check finishes the job: marks her defeated (gone from
-      // the hold for good) and reveals her in C1.
-      const live = world.npcs.find((n) => n.id === 'mara_hollowmast');
-      if (live) {
-        live.routine = [{ do: 'goto', x: MARA_EXIT.x, y: MARA_EXIT.y }];
-        live.routineIndex = 0;
-        live.timer = 0;
-        maraCutscene = true;
-      }
-      return false; // close the dialog like a normal "Leave." — she walks off on her own
+    if (effect.maraHollowmastAccept) {
+      addItem('cutlass', 1);
+      requestAutosave();
+      ui.showGaveItem(ITEMS.cutlass);
+      finalizeMaraHollowmastRescue();
+      ui.updateDialogContent({
+        line: 'She presses the cutlass into your hands and pushes herself up off the barrel. By the time you’re back in town, she’s already there, catching her breath by Garrick’s door.',
+        responses: ['Leave.'],
+      });
+      return true;
+    }
+    if (effect.maraHollowmastRefuse) {
+      finalizeMaraHollowmastRescue();
+      ui.updateDialogContent({
+        line: '“Suit yourself,” she says, and pushes herself up off the barrel. By the time you’re back in town, she’s already there, catching her breath by Garrick’s door.',
+        responses: ['Leave.'],
+      });
+      return true;
     }
     if (effect.message) ui.toast(effect.message);
     if (effect.followUp) {
@@ -2348,23 +2342,40 @@ async function boot() {
     };
   }
 
-  // ---- Mara Hollowmast (C1D, 2026-09-12) ----
+  // ---- Mara Hollowmast (C1D, 2026-09-12; dialogue corrected 2026-09-12) ----
   // The last survivor of the Maiden's Grace's crew, found injured in the
-  // flooded hold: the rest were murdered and thrown overboard as the ship
-  // coasted into port, and she's been hiding down there ever since. Much
-  // shorter than Calder's dialogue — no optional lore branches, just
-  // backstory -> thanks (the cutlass) -> a scripted farewell. Once the
-  // farewell plays out she's gone from C1D for good (marked defeated on the
-  // live npc, same as any other npc.defeated) and reappears in C1 living
-  // with her husband Garrick — see enterScene's `mara_hollowmast_town`
-  // reveal and maraHollowmastRescued.
-  const MARA_EXIT = { x: 1496, y: 1840 }; // C1D's ladder back up to C1C
+  // flooded hold: miremen swarmed the ship as it coasted into port (the same
+  // creatures roaming every level of the wreck) and killed the rest of the
+  // crew before she went still and hid — NOT a mutiny. Backstory -> thanks ->
+  // an explicit accept/refuse choice over her cutlass (see
+  // maraHollowmastThanks and the two effects below); she leaves under her
+  // own power either way, she was never too hurt to climb. No cutscene — an
+  // earlier scripted walk-off froze the game and was removed;
+  // finalizeMaraHollowmastRescue() below runs immediately once the player
+  // resolves the cutlass offer, marking her defeated on C1D (gone from the
+  // hold for good) and revealing her in C1 living with her husband Garrick —
+  // see enterScene's `mara_hollowmast_town` reveal and maraHollowmastRescued.
   function buildMaraHollowmastDialog() {
     return {
       line: 'A woman is slumped against a barrel, one hand pressed to a bandaged wound at her side. She flinches at your footsteps, then goes still with disbelief. “You’re… you’re not one of them. Oh, thank the tides.”',
       responses: ['What happened here?', 'Leave.'],
       responseEffects: [{ maraHollowmastStory: true }, null],
     };
+  }
+
+  // Runs the moment the player resolves Mara's cutlass offer (accept or
+  // refuse) — she's leaving the hold either way, so this isn't conditional
+  // on the item. Marks her gone from C1D for good and reveals her in C1,
+  // saving right away (same as any other kill/turn-in, 2026-09-12).
+  function finalizeMaraHollowmastRescue() {
+    completeQuest('mara_hollowmast');
+    const live = world.npcs.find((n) => n.id === 'mara_hollowmast');
+    if (live) live.defeated = true;
+    maraHollowmastRescued = true;
+    const townMara = worlds['C1']?.npcs.find((n) => n.id === 'mara_hollowmast_town');
+    if (townMara) townMara.defeated = false;
+    requestAutosave();
+    saveGame();
   }
 
   // ---- Mara Vellorne (C4, 2026-08-02) — state-built dialog, like Calder's ----
@@ -3661,7 +3672,7 @@ async function boot() {
     // world; fishing only locks the PLAYER — NPCs keep wandering during a cast
     // (2026-07-23). `locked` gates the player, `worldFrozen` gates the world.
     const modalLock = ui.isDialogOpen() || ui.isAnyPanelOpen() || ui.isBattleOpen() || ui.isVictoryOpen() || ui.isGameOverOpen() || deathFading || !state.started;
-    const locked = modalLock || fishing || maraCutscene; // Mara Hollowmast's departure cutscene (2026-09-12) freezes just the player
+    const locked = modalLock || fishing;
     // Camp membrane state (no-op in scenes without a camp): sealed until the
     // player has passage (paid this visit OR did the Chief's favor) — and never
     // sealed once the camp's hostile, since then the guards attack rather than
@@ -3687,25 +3698,6 @@ async function boot() {
     world.suppressLabels = modalLock;
     world.update(dt, input, locked, modalLock);
     world.render();
-
-    // Mara Hollowmast's departure cutscene, continued: poll her live position
-    // each frame and end the cutscene once she reaches the ladder, rather
-    // than a fixed timer — her walk speed/pathing already varies naturally
-    // like any other routine NPC (world.js's updateRoutine/walkToward).
-    if (maraCutscene && world.scene.id === 'C1D') {
-      const live = world.npcs.find((n) => n.id === 'mara_hollowmast');
-      const arrived = !live || Math.hypot(live.x - MARA_EXIT.x, live.y - MARA_EXIT.y) < 24;
-      if (arrived) {
-        if (live) live.defeated = true; // gone from the hold for good
-        maraCutscene = false;
-        maraHollowmastRescued = true;
-        const townMara = worlds['C1']?.npcs.find((n) => n.id === 'mara_hollowmast_town');
-        if (townMara) townMara.defeated = false; // reveal her in town immediately if C1's already loaded this session
-        requestAutosave();
-        saveGame(); // persist the rescue right away, same as any other kill/turn-in (2026-09-12)
-        ui.toast('Mara heads for the ladder. “I’ll see you in town,” she says.');
-      }
-    }
 
     audio.setWalking(!locked && world.player.moving);
 

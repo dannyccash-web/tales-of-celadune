@@ -61,14 +61,20 @@
         </div>
       </div>
 
-      <!-- Vertical "Level" indicator (2026-09-11): shown only inside a scene
-           that declares its own `level` (so far just C1C, the ship
-           dungeon's Level 1) — see ui.js's setLevelIndicator, called from
-           main.js's enterScene(). Starts hidden; the class is toggled at
-           runtime, not tied to any particular scene load. -->
+      <!-- Vertical "Level" indicator (2026-09-11; redesigned 2026-09-12):
+           shown only inside a scene that declares its own `level` (the ship
+           dungeon's two levels, C1C and C1D) — see ui.js's
+           setLevelIndicator, called from main.js's enterScene(). One box per
+           known level; the active level's box is normal, the rest are
+           dimmed via the .dim class, so it doubles as a "here's how many
+           levels there are" map. Starts hidden; toggled at runtime, not tied
+           to any particular scene load. -->
       <div id="level-indicator" class="hidden">
         <span class="level-label">Level</span>
-        <div class="level-box"><span id="level-value">L1</span></div>
+        <div class="level-boxes">
+          <div class="level-box" data-level="1"><span>L1</span></div>
+          <div class="level-box" data-level="2"><span>L2</span></div>
+        </div>
       </div>
 
       <div id="hud">
