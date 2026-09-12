@@ -80,4 +80,11 @@ export default {
     name: 'A Gull Gone Missing',
     description: 'Lily Farrow’s pet gull has been missing for two days. Find her — dead or alive — and bring word back to Lily.',
   },
+  // Mara Hollowmast, the Maiden's Grace's last survivor (C1D, 2026-09-12) —
+  // see main.js's buildMaraHollowmastDialog for the full flow.
+  mara_hollowmast: {
+    id: 'mara_hollowmast',
+    name: 'The Last of the Crew',
+    description: 'An injured woman survives alone in the flooded hold of the Maiden’s Grace, the last of her crew. See that she gets out safely.',
+  },
 };

@@ -11,6 +11,7 @@ import sceneC4 from './data/c4.js';
 import sceneC1 from './data/c1.js';
 import sceneC1B from './data/c1b.js';
 import sceneC1C from './data/c1c.js';
+import sceneC1D from './data/c1d.js';
 import { World } from './world.js';
 import * as ui from './ui.js';
 import * as audio from './audio.js';
@@ -202,9 +203,18 @@ function playerInitiativeChance(speed = effectiveSpeed()) {
   // always act last at Speed 1, which was punishing with only 5 HP).
   return Math.max(0, Math.min(1, 0.25 + 0.25 * speed));
 }
-function weaponDamage(slot = 'mainhand') {
+function weaponDamage(slot = 'mainhand', targetId = null) {
   const item = equipment[slot] && ITEMS[equipment[slot]];
-  return item?.damage ?? 1;
+  const dmg = item?.damage ?? 1;
+  // A flat bonus applied to both ends of the {min,max} range against specific
+  // enemies (2026-09-12, Mara's cutlass vs. the sea creatures that trapped
+  // her aboard the Maiden's Grace) - see items.js's bonusDamageVs and
+  // buildMaraHollowmastDialog. No-ops for the unarmed flat-number fallback
+  // (no `item`, so no bonusDamageVs to check).
+  if (item?.bonusDamageVs && targetId && item.bonusDamageVs.ids.includes(targetId)) {
+    return { min: dmg.min + item.bonusDamageVs.amount, max: dmg.max + item.bonusDamageVs.amount };
+  }
+  return dmg;
 }
 
 // ---- Stats tab > Damage subsection (2026-09-11, Danny) ----
@@ -226,6 +236,7 @@ function weaponEffectSummary(def) {
   if (def.speedBonus) fx.push(`${fmtSignedBonus(def.speedBonus)} Speed`);
   if (def.burn) fx.push(`Ignites flammable foes — ${def.burn} burn damage/turn until defeated`);
   if (def.magicCost) fx.push(`Costs ${def.magicCost} magic per swing`);
+  if (def.bonusDamageVs) fx.push(`+${def.bonusDamageVs.amount} damage vs ${def.bonusDamageVs.label || 'certain foes'}`);
   return fx;
 }
 function damageSlotSummary(slot) {
@@ -377,7 +388,7 @@ function loadImages(sources, onProgress) {
 // Every scene in the game, keyed by the ids that exits point at. Adding a
 // scene = write its data file, import it, and register it here — the
 // transition system below handles everything else.
-const SCENES = { D1: sceneD1, D1B: sceneD1B, D2: sceneD2, D3: sceneD3, D4: sceneD4, D4B: sceneD4B, C4: sceneC4, C1: sceneC1, C1B: sceneC1B, C1C: sceneC1C };
+const SCENES = { D1: sceneD1, D1B: sceneD1B, D2: sceneD2, D3: sceneD3, D4: sceneD4, D4B: sceneD4B, C4: sceneC4, C1: sceneC1, C1B: sceneC1B, C1C: sceneC1C, C1D: sceneC1D };
 
 async function boot() {
   // Preload assets for EVERY registered scene up front — scene switches are
@@ -518,6 +529,17 @@ async function boot() {
     // fresh World built from a save where her quest was already resolved
     // last session (chaseTalk otherwise defaults to true off the scene data).
     if (id === 'C1' && questStatus('c1_lily_gull') !== 'active' && questStatus('c1_lily_gull') !== 'none') stopLilyChase();
+    // Mara Hollowmast doesn't appear in town until rescued from C1D (2026-09-12)
+    // - reuses `.defeated` purely as a presence gate (world.js: a defeated npc
+    // "doesn't render, collide, aggro, or take interaction", exactly what
+    // "hasn't arrived yet" needs, with no new engine plumbing). Applied on
+    // every FRESH build of C1 - new game, a freshly loaded save, or just the
+    // first visit this session - so her presence always matches
+    // maraHollowmastRescued regardless of how C1 got (re)built.
+    if (fresh && id === 'C1') {
+      const maraTown = world.npcs.find((n) => n.id === 'mara_hollowmast_town');
+      if (maraTown) maraTown.defeated = !maraHollowmastRescued;
+    }
     // Vertical "Level" HUD indicator (2026-09-11) — shown only inside a
     // scene that declares its own `level` (so far just C1C, the ship
     // dungeon's Level 1); hidden everywhere else.
@@ -613,7 +635,7 @@ async function boot() {
     const live = world.npcs.find((n) => n.id === npcId);
     const enemyId = npcId === 'bramblekin_chief' ? 'bramblekin_chief' : 'bramblekin';
     setTimeout(() => startBattle([enemyId], (result) => {
-      if (result === 'victory' && live) live.defeated = true;
+      if (result === 'victory' && live) { live.defeated = true; saveGame(); } // persist the kill immediately (2026-09-12)
     }), 0);
   }
 
@@ -736,7 +758,7 @@ async function boot() {
         inventory: inventory.map((e) => ({ ...e })),
         equipment: { ...equipment },
         quests: quests.map((q) => ({ ...q })),
-        flags: { campQuestDone, campHostile, campTollTier, gafferHappy, wellCoinThrown, wellDrinks, vegetableDeliveredToTavern, calderToldStory, calderToldDangers, maraMet, lilyGullThanked, magicRevealed },
+        flags: { campQuestDone, campHostile, campTollTier, gafferHappy, wellCoinThrown, wellDrinks, vegetableDeliveredToTavern, calderToldStory, calderToldDangers, maraMet, lilyGullThanked, magicRevealed, maraHollowmastRescued },
         caveReturn, // where to exit to if saved inside a cave/dungeon
         worlds: snapshotWorlds(),
       };
@@ -754,6 +776,16 @@ async function boot() {
   // mutators still call requestAutosave(), but the hook is deliberately left
   // unset so those calls are harmless no-ops (keeps the mutators simple, and a
   // mid-scene/mid-battle write can never strand a half-resolved state).
+  // (2026-09-12, Danny: "make sure the game's save file is accounting for
+  // enemies that have been killed... once they're dead, they're gone for
+  // good.") One exception to the checkpoint model above: saveGame() is also
+  // called directly at each of the six places a battle victory sets an
+  // enemy/ambush/camp-member/roaming-creature `.defeated = true`, right after
+  // setting it - the reward sequence has already fully resolved by then, so
+  // nothing half-applied gets saved. Previously a kill only became permanent
+  // once the NEXT scene transition autosaved it, so dying again (or just
+  // reloading the page) before ever leaving the scene could bring an already-
+  // slain enemy back (the bug Danny hit with D1's cragclaws).
   autosaveHook = null;
 
   function refreshAllUi() {
@@ -777,6 +809,7 @@ async function boot() {
     calderToldStory = false; calderToldDangers = false; maraMet = false;
     lilyGullThanked = false;
     magicRevealed = false;
+    maraHollowmastRescued = false;
     caveReturn = null;
     for (const k of Object.keys(worlds)) delete worlds[k];
     pendingWorldFlags = null;
@@ -804,6 +837,7 @@ async function boot() {
     maraMet = !!f.maraMet;
     lilyGullThanked = !!f.lilyGullThanked;
     magicRevealed = !!f.magicRevealed;
+    maraHollowmastRescued = !!f.maraHollowmastRescued;
     caveReturn = data.caveReturn || null;
     vegetableDeliveredToTavern = !!f.vegetableDeliveredToTavern;
     // Per-visit camp state always starts fresh on a load (toll re-armed, not
@@ -969,9 +1003,22 @@ async function boot() {
   // been reunited with it, the NEXT time the player talks to her father he
   // thanks them + pays a few gold — but only once. See buildTobyDialog().
   let lilyGullThanked = false;
+  // Mara Hollowmast rescued from the Maiden's Grace's flooded hold (C1D,
+  // 2026-09-12): permanent, persisted flag - once true she's gone from C1D
+  // for good (marked defeated there) and present in C1 living with Garrick
+  // (enterScene un-hides `mara_hollowmast_town`, which otherwise starts
+  // hidden). See buildMaraHollowmastDialog().
+  let maraHollowmastRescued = false;
   // One-time (session) tutorial nudge the first time a roaming creature charges
   // the player, teaching Flee + the give-up-when-far mechanic (2026-07-26).
   let creatureFleeHintShown = false;
+  // Mara Hollowmast's departure cutscene (2026-09-12): true for the few
+  // seconds after she's thanked the player, while she scripts-walks to C1D's
+  // ladder and vanishes. NOT persisted (same class of thing as
+  // elowenBlessedThisVisit) - it's over in a couple of seconds and saves
+  // never happen mid-cutscene. Freezes just the player (see frame()'s
+  // `locked`), the same way `fishing` does, so her walk keeps animating.
+  let maraCutscene = false;
 
   // The D3 well's coin-for-luck offer is one-time per session (like gafferHappy,
   // not persisted). Tossing a coin for +1 Luck can only happen once. See
@@ -1453,6 +1500,45 @@ async function boot() {
         responseEffects: [{ followUp: GAFFER_HAPPY_PET_LINE }, null],
       });
       return true;
+    }
+    // ---- Mara Hollowmast's rescue (C1D, 2026-09-12) ----
+    if (effect.maraHollowmastStory) {
+      ui.updateDialogContent({
+        line: 'My name’s Mara Hollowmast. We were coasting into port — almost home — when the crew turned on the captain. Killed him first, then worked through the rest of us, one by one, and threw us over the side like ballast. I only lived because I went still and let them think I already had. I’ve been down here ever since, too hurt to climb back up, listening to them walk the deck above me.',
+        responses: ['Let’s get you out of here.', 'Leave.'],
+        responseEffects: [{ maraHollowmastThanks: true }, null],
+      });
+      return true;
+    }
+    if (effect.maraHollowmastThanks) {
+      if (questStatus('mara_hollowmast') === 'none') startQuest('mara_hollowmast');
+      addItem('cutlass', 1);
+      requestAutosave();
+      ui.updateDialogContent({
+        line: 'She takes your arm and pulls herself upright, wincing. “I can manage the climb myself, don’t you worry — you’ve done more than enough already.” She presses something into your hands: a cutlass in a worn leather sheath. “It was my father’s. Better in the hand of someone who knows sea-vermin from a friendly face than rusting down here with me.” She steadies herself against the hull and breathes out. “I’ll see you in town.”',
+        responses: ['(Let her go.)'],
+        responseEffects: [{ maraHollowmastFarewell: true }],
+      });
+      return true;
+    }
+    if (effect.maraHollowmastFarewell) {
+      completeQuest('mara_hollowmast');
+      // Scripted walk-off (Danny: "a sort of cut scene where she walks toward
+      // the exit... player can't move or act"). Reuses the existing routine
+      // engine (updateRoutine/walkToward in world.js) rather than a bespoke
+      // tween: a one-step 'goto' aimed at the ladder does the walking, and
+      // maraCutscene (frame loop, below) freezes just the PLAYER — same as
+      // `fishing` — so the world (and her walk) keeps ticking. The frame
+      // loop's arrival check finishes the job: marks her defeated (gone from
+      // the hold for good) and reveals her in C1.
+      const live = world.npcs.find((n) => n.id === 'mara_hollowmast');
+      if (live) {
+        live.routine = [{ do: 'goto', x: MARA_EXIT.x, y: MARA_EXIT.y }];
+        live.routineIndex = 0;
+        live.timer = 0;
+        maraCutscene = true;
+      }
+      return false; // close the dialog like a normal "Leave." — she walks off on her own
     }
     if (effect.message) ui.toast(effect.message);
     if (effect.followUp) {
@@ -1986,7 +2072,7 @@ async function boot() {
   // 2026-07-17).
   function startAmbush(ambush) {
     startBattle(ambush.enemies, (result) => {
-      if (result === 'victory') ambush.defeated = true;
+      if (result === 'victory') { ambush.defeated = true; saveGame(); } // persist the kill immediately (2026-09-12)
       else if (result === 'fled' && ambush.retreat) {
         world.player.x = ambush.retreat.x;
         world.player.y = ambush.retreat.y;
@@ -2262,6 +2348,25 @@ async function boot() {
     };
   }
 
+  // ---- Mara Hollowmast (C1D, 2026-09-12) ----
+  // The last survivor of the Maiden's Grace's crew, found injured in the
+  // flooded hold: the rest were murdered and thrown overboard as the ship
+  // coasted into port, and she's been hiding down there ever since. Much
+  // shorter than Calder's dialogue — no optional lore branches, just
+  // backstory -> thanks (the cutlass) -> a scripted farewell. Once the
+  // farewell plays out she's gone from C1D for good (marked defeated on the
+  // live npc, same as any other npc.defeated) and reappears in C1 living
+  // with her husband Garrick — see enterScene's `mara_hollowmast_town`
+  // reveal and maraHollowmastRescued.
+  const MARA_EXIT = { x: 1496, y: 1840 }; // C1D's ladder back up to C1C
+  function buildMaraHollowmastDialog() {
+    return {
+      line: 'A woman is slumped against a barrel, one hand pressed to a bandaged wound at her side. She flinches at your footsteps, then goes still with disbelief. “You’re… you’re not one of them. Oh, thank the tides.”',
+      responses: ['What happened here?', 'Leave.'],
+      responseEffects: [{ maraHollowmastStory: true }, null],
+    };
+  }
+
   // ---- Mara Vellorne (C4, 2026-08-02) — state-built dialog, like Calder's ----
   // An adventurer from distant Vaelanor, summoned to Aldermoor by King Aldric
   // over a grave matter and robbed by the clearing's bramblekin. She offers a
@@ -2534,7 +2639,7 @@ async function boot() {
   function fightYsra() {
     const live = world.npcs.find((n) => n.id === 'ysra_nineshells');
     setTimeout(() => startBattle(['ysra_nineshells'], (result) => {
-      if (result === 'victory' && live) live.defeated = true;
+      if (result === 'victory' && live) { live.defeated = true; saveGame(); } // persist the kill immediately (2026-09-12)
       else if (result === 'fled' && live) { live.pause = 2; live._chasing = false; }
     }), 0);
   }
@@ -2552,7 +2657,7 @@ async function boot() {
     audio.sfx(audio.SFX.denied);
     live._chasing = false;
     startBattle(['ysra_nineshells'], (result) => {
-      if (result === 'victory') live.defeated = true;
+      if (result === 'victory') { live.defeated = true; saveGame(); } // persist the kill immediately (2026-09-12)
       else if (result === 'fled') { live.pause = 2; live._chasing = false; }
     });
     return true;
@@ -2580,6 +2685,7 @@ async function boot() {
     else if (npc.id === 'cinder') dialog = buildCinderDialog();
     else if (npc.id === 'mara_vellorne') dialog = buildMaraDialog();
     else if (npc.id === 'calder_rusk') dialog = buildCalderDialog(npc);
+    else if (npc.id === 'mara_hollowmast') dialog = buildMaraHollowmastDialog();
     else if (npc.id === 'perrin_alders') dialog = buildPerrinDialog();
     else if (npc.id === 'wynne_ashcombe') dialog = buildWynneDialog();
     else if (npc.id === 'roderick_vane') dialog = buildRoderickDialog();
@@ -2995,7 +3101,7 @@ async function boot() {
     const hit = battle.resolveAttack(effectiveAttack(), target.defense);
     let landed = false;
     if (hit) {
-      const dmg = battle.rollDamage(weaponDamage(slot));
+      const dmg = battle.rollDamage(weaponDamage(slot, target.id));
       target.health = Math.max(0, target.health - dmg);
       // Fire weapon (the torch, `burn`): a flammable (`wood`) foe — rootweaver,
       // bramblekin — catches alight and burns for `burn` at the start of every
@@ -3417,7 +3523,7 @@ async function boot() {
     const trigger = world.battleNearDoor();
     if (trigger) {
       startBattle(trigger.enemies, (result) => {
-        if (result === 'victory') trigger.defeated = true;
+        if (result === 'victory') { trigger.defeated = true; saveGame(); } // persist the kill immediately (2026-09-12)
       }, trigger.background);
       return;
     }
@@ -3555,7 +3661,7 @@ async function boot() {
     // world; fishing only locks the PLAYER — NPCs keep wandering during a cast
     // (2026-07-23). `locked` gates the player, `worldFrozen` gates the world.
     const modalLock = ui.isDialogOpen() || ui.isAnyPanelOpen() || ui.isBattleOpen() || ui.isVictoryOpen() || ui.isGameOverOpen() || deathFading || !state.started;
-    const locked = modalLock || fishing;
+    const locked = modalLock || fishing || maraCutscene; // Mara Hollowmast's departure cutscene (2026-09-12) freezes just the player
     // Camp membrane state (no-op in scenes without a camp): sealed until the
     // player has passage (paid this visit OR did the Chief's favor) — and never
     // sealed once the camp's hostile, since then the guards attack rather than
@@ -3581,6 +3687,25 @@ async function boot() {
     world.suppressLabels = modalLock;
     world.update(dt, input, locked, modalLock);
     world.render();
+
+    // Mara Hollowmast's departure cutscene, continued: poll her live position
+    // each frame and end the cutscene once she reaches the ladder, rather
+    // than a fixed timer — her walk speed/pathing already varies naturally
+    // like any other routine NPC (world.js's updateRoutine/walkToward).
+    if (maraCutscene && world.scene.id === 'C1D') {
+      const live = world.npcs.find((n) => n.id === 'mara_hollowmast');
+      const arrived = !live || Math.hypot(live.x - MARA_EXIT.x, live.y - MARA_EXIT.y) < 24;
+      if (arrived) {
+        if (live) live.defeated = true; // gone from the hold for good
+        maraCutscene = false;
+        maraHollowmastRescued = true;
+        const townMara = worlds['C1']?.npcs.find((n) => n.id === 'mara_hollowmast_town');
+        if (townMara) townMara.defeated = false; // reveal her in town immediately if C1's already loaded this session
+        requestAutosave();
+        saveGame(); // persist the rescue right away, same as any other kill/turn-in (2026-09-12)
+        ui.toast('Mara heads for the ladder. “I’ll see you in town,” she says.');
+      }
+    }
 
     audio.setWalking(!locked && world.player.moving);
 
@@ -3632,7 +3757,7 @@ async function boot() {
       // enemy's own catalog background instead (miremen -> beach_background).
       const bg = foe.pack === 'clearing_bramblekin' ? 'assets/images/forest_background.jpg' : undefined;
       startBattle(enemyIds, (result) => {
-        if (result === 'victory') { foes.forEach((m) => { m.defeated = true; }); }
+        if (result === 'victory') { foes.forEach((m) => { m.defeated = true; }); saveGame(); } // persist the kill(s) immediately (2026-09-12)
         // Fleeing a charging creature/guard: it stands down for 2s (world.js's
         // updateNpcs skips the whole aggro/chase branch while `pause` > 0) so
         // the player gets a head start to run before it can re-charge

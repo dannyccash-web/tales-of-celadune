@@ -767,7 +767,7 @@ export default {
       // why that has to be anchor-based rather than a live distance check.
       // Range/speed/give-up match the mireman creatures elsewhere in this
       // same scene for consistency.
-      chaseTalk: true, aggroRange: 300, chaseSpeed: 140, giveUpRange: 500,
+      chaseTalk: true, aggroRange: 300, chaseSpeed: 140, giveUpRange: 250, // halved 2026-09-12 (Danny: chase half as far before giving up)
       home: { door: { x: 1646, y: 1911 }, interior: 'assets/images/fishing_village_home_interior.jpg' },
       routine: [
         { do: 'wait', s: 4 },
@@ -806,6 +806,30 @@ export default {
       dialog: { line: 'Another day, another tally I don’t keep. Best not linger near me too long, friend — guilt’s not catching, but the drink might be.', responses: ['Leave.'] },
       chatter: [
         { q: 'What’s troubling you?', a: 'Nothing worth a stranger’s ear. Just… this village runs kinder than we deserve, some of us. Leave it there.' },
+      ],
+    },
+    {
+      // Hidden until rescued from the Maiden's Grace's flooded hold (C1D,
+      // 2026-09-12) - reuses `.defeated` purely as a presence gate (world.js:
+      // a defeated npc doesn't render, collide, aggro, or take interaction),
+      // toggled by main.js's enterScene against maraHollowmastRescued. Lives
+      // with her husband Garrick (see garrick_hollowmast above) - shares his
+      // home door/interior rather than getting a separate house.
+      id: 'mara_hollowmast_town', name: 'Mara Hollowmast', role: '',
+      sprite: 'assets/images/mara_hollowmast_overhead.png',
+      portrait: 'assets/images/mara_hollowmast.png',
+      speed: 36, startsHome: true,
+      home: { door: { x: 1604, y: 755 }, approach: { x: 1462, y: 722 }, interior: 'assets/images/fishing_village_home_interior.jpg' },
+      routine: [
+        { do: 'wait', s: 40 },
+        { do: 'leaveHome' },
+        { do: 'goto', x: 1430, y: 600 },
+        { do: 'wait', s: 10 },
+        { do: 'goHome' },
+      ],
+      dialog: { line: 'Fresh air still doesn’t taste like anything but a gift, some days. Garrick keeps saying the same, though he’d never admit it plain. Thank you again — for the hold, I mean. I don’t forget a thing like that.', responses: ['Leave.'] },
+      chatter: [
+        { q: 'How are you settling in?', a: 'Better than I’ve any right to, honestly. Garrick fusses more than he used to — I let him. After what happened out there, I don’t mind being fussed over.' },
       ],
     },
     {

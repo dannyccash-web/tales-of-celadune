@@ -354,6 +354,22 @@ export default {
     damage: { min: 4, max: 7 },
     price: 38,
   },
+  // Mara's Cutlass (C1D, 2026-09-12) — Mara Hollowmast's reward for freeing
+  // her from the Maiden's Grace's flooded hold: same base damage as the
+  // longsword, but priced higher (a keepsake, not just steel) and it bites
+  // harder against the sea creatures that trapped her down there. See
+  // main.js's weaponDamage()/bonusDamageVs and buildMaraHollowmastDialog.
+  cutlass: {
+    id: 'cutlass',
+    name: 'Cutlass',
+    image: 'assets/images/maras_cutlass.png',
+    description: 'A well-worn cutlass in a sea-stained sheath — Mara Hollowmast’s father’s blade. Balanced for close, ugly work, and it bites harder against the things that lurk in the wreck.',
+    questItem: false,
+    slot: 'mainhand',
+    damage: { min: 4, max: 7 },
+    bonusDamageVs: { ids: ['cragclaw', 'mireman', 'cragclaw_queen'], amount: 2, label: 'sea creatures' },
+    price: 55,
+  },
   // Royal Summons (C4, 2026-08-02) — the king's sealed proclamation, stolen
   // from Mara Vellorne by the clearing's bramblekin and stashed in their chest.
   // A quest item (can't be sold). The player ends up KEEPING it whichever way
