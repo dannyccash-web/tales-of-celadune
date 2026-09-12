@@ -77,7 +77,12 @@ export const SLOT_LABEL = {
 export function statLineFor(item) {
   if (item.damage != null) {
     const dmg = typeof item.damage === 'object' ? `${item.damage.min}-${item.damage.max}` : item.damage;
-    return `${dmg} DMG`;
+    // Surface a weapon's bonusDamageVs (e.g. Mara's Cutlass vs sea creatures)
+    // right on its own damage stat line, not just in the separate Stats >
+    // Damage panel (2026-09-12, Danny: "make sure the bonus damage... is
+    // accounted for and noted in the item's damage description").
+    const bonus = item.bonusDamageVs ? ` (+${item.bonusDamageVs.amount} vs ${item.bonusDamageVs.label})` : '';
+    return `${dmg} DMG${bonus}`;
   }
   const parts = [];
   if (item.attackBonus) parts.push(`+${item.attackBonus} ATK`);
@@ -354,16 +359,19 @@ export default {
     damage: { min: 4, max: 7 },
     price: 38,
   },
-  // Mara's Cutlass (C1D, 2026-09-12) — Mara Hollowmast's reward for freeing
-  // her from the Maiden's Grace's flooded hold: same base damage as the
-  // longsword, but priced higher (a keepsake, not just steel) and it bites
-  // harder against the sea creatures that trapped her down there. See
-  // main.js's weaponDamage()/bonusDamageVs and buildMaraHollowmastDialog.
+  // Mara's Cutlass (C1D, 2026-09-12; renamed + bonus surfaced 2026-09-12
+  // round 4) — Mara Hollowmast's reward for driving the miremen off the
+  // Maiden's Grace and saving her: same base damage as the longsword, but
+  // priced higher (a keepsake, not just steel) and it bites harder against
+  // the sea creatures that trapped her down there — see statLineFor()
+  // above, which now prints that bonus on the item's own damage line, not
+  // just in the separate Stats > Damage panel (weaponDamage()/bonusDamageVs/
+  // weaponEffectSummary, buildMaraHollowmastDialog).
   cutlass: {
     id: 'cutlass',
-    name: 'Cutlass',
+    name: 'Mara’s Cutlass',
     image: 'assets/images/maras_cutlass.png',
-    description: 'A well-worn cutlass, taken up in the fight to survive the miremen that overran the Maiden’s Grace. Balanced for close, ugly work, and it bites harder against the things that lurk in the wreck.',
+    description: 'Mara Hollowmast’s own blade, given in thanks for driving the miremen off the Maiden’s Grace and back into the water. Balanced for close, ugly work, and it bites harder against the things that lurk in the wreck.',
     questItem: false,
     slot: 'mainhand',
     damage: { min: 4, max: 7 },

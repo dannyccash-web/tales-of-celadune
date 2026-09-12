@@ -799,14 +799,26 @@ export default {
         { do: 'wait', s: 55 },
         { do: 'leaveHome' },
       ],
-      // Garrick's payoff quest (carrying word back to Calder in D1) is
-      // deliberately NOT wired up yet — flavor only for now, per CLAUDE.md's
-      // "Row C design notes" (deferred to a future pass since it needs
-      // cross-scene changes to D1's Calder dialogue).
-      dialog: { line: 'Another day, another tally I don’t keep. Best not linger near me too long, friend — guilt’s not catching, but the drink might be.', responses: ['Leave.'] },
-      chatter: [
-        { q: 'What’s troubling you?', a: 'Nothing worth a stranger’s ear. Just… this village runs kinder than we deserve, some of us. Leave it there.' },
-      ],
+      // Mara Hollowmast's husband — a dockhand who does security work when
+      // ships come in (2026-09-12, round 4: replaces an earlier unrelated
+      // "guilt/drink" flavor line). Worried sick since the Maiden's Grace
+      // limped into port crawling with miremen and Mara never came ashore;
+      // ashamed he hasn't boarded to look for her himself, but Harbormaster
+      // Roderick Vane has forbidden any townsfolk from setting foot on the
+      // wreck. Purely a plea, flavor only — deliberately does NOT start a
+      // quest (an earlier "Last of the Crew" quest auto-completed itself the
+      // moment the player talked to Mara, which Danny never asked for and
+      // had removed). Once Mara's rescued, main.js's
+      // applyGarrickRescueState swaps this npc's portrait/dialog/chatter
+      // live for the relieved GARRICK_RESCUED_* versions.
+      dialog: {
+        line: 'His eyes keep drifting past you, out toward the harbor, like he’s watching for something that isn’t there. “Sorry — didn’t mean to stare off. Long day at the docks.”',
+        responses: ['You look like something’s eating at you.', 'Leave.'],
+        responseEffects: [
+          { followUp: '“It’s my wife — Mara. Sails with the Maiden’s Grace.” He rubs a hand over his face. “Ship limped into port a few days back crawling with miremen, hull to hold, and nobody’s heard a word from her or the rest of the crew since. I don’t know if she’s alive down there.” He’s quiet a moment, ashamed. “I should’ve gone in after her myself — I do security when the ships come in, it’s half my job. But Harbormaster Roderick Vane’s forbidden any of us from setting foot on that wreck, crew’s kin or not. Says he won’t lose more townsfolk to it. Doesn’t make it any easier to stand here and do nothing.” He looks at you, something desperate in it. “If you’re the sort who goes looking for trouble… please. Just see if she’s alive down there.”' },
+          null,
+        ],
+      },
     },
     {
       // Hidden until rescued from the Maiden's Grace's flooded hold (C1D,
@@ -817,7 +829,7 @@ export default {
       // home door/interior rather than getting a separate house.
       id: 'mara_hollowmast_town', name: 'Mara Hollowmast', role: '',
       sprite: 'assets/images/mara_hollowmast_overhead.png',
-      portrait: 'assets/images/mara_hollowmast.png',
+      portrait: 'assets/images/mara_hollowmast_2.png',
       speed: 36, startsHome: true,
       home: { door: { x: 1604, y: 755 }, approach: { x: 1462, y: 722 }, interior: 'assets/images/fishing_village_home_interior.jpg' },
       routine: [

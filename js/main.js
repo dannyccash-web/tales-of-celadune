@@ -539,6 +539,7 @@ async function boot() {
     if (fresh && id === 'C1') {
       const maraTown = world.npcs.find((n) => n.id === 'mara_hollowmast_town');
       if (maraTown) maraTown.defeated = !maraHollowmastRescued;
+      applyGarrickRescueState(world.npcs.find((n) => n.id === 'garrick_hollowmast'));
     }
     // Vertical "Level" HUD indicator (2026-09-11) — shown only inside a
     // scene that declares its own `level` (so far just C1C, the ship
@@ -1507,7 +1508,6 @@ async function boot() {
       return true;
     }
     if (effect.maraHollowmastThanks) {
-      if (questStatus('mara_hollowmast') === 'none') startQuest('mara_hollowmast');
       ui.updateDialogContent({
         line: 'She takes your arm and pulls herself upright, wincing. “I’m hurt, but I’ll manage — I just needed a minute before I climbed back up into that.” She nods at the cutlass on her hip. “Take it. You’re in a far better spot to swing it than I am right now.”',
         responses: ['Accept the cutlass.', 'Refuse it.'],
@@ -2368,14 +2368,35 @@ async function boot() {
   // on the item. Marks her gone from C1D for good and reveals her in C1,
   // saving right away (same as any other kill/turn-in, 2026-09-12).
   function finalizeMaraHollowmastRescue() {
-    completeQuest('mara_hollowmast');
     const live = world.npcs.find((n) => n.id === 'mara_hollowmast');
     if (live) live.defeated = true;
     maraHollowmastRescued = true;
     const townMara = worlds['C1']?.npcs.find((n) => n.id === 'mara_hollowmast_town');
     if (townMara) townMara.defeated = false;
+    applyGarrickRescueState(worlds['C1']?.npcs.find((n) => n.id === 'garrick_hollowmast'));
     requestAutosave();
     saveGame();
+  }
+
+  // Garrick Hollowmast's relief once his wife is safely home (2026-09-12) —
+  // portrait and dialogue swap from worried-dockhand to relieved-husband.
+  // Applied live the instant she's rescued (finalizeMaraHollowmastRescue,
+  // above) and re-applied on every FRESH build of C1 (enterScene) so a save
+  // made after the rescue starts him in the right state too — same pattern
+  // as mara_hollowmast_town's defeated-gated reveal. Never reverts, since
+  // maraHollowmastRescued itself never reverts.
+  const GARRICK_RESCUED_DIALOG = {
+    line: 'He can’t stop smiling these days, if you hadn’t noticed. “She’s home,” he says, nodding toward the house behind him, where you can just hear Mara humming through an open window. “Sleeping through the night again, first time in weeks. I don’t know how I’ll ever pay you back for that — but our door’s open to you any time, both of ours now.”',
+    responses: ['Leave.'],
+  };
+  const GARRICK_RESCUED_CHATTER = [
+    { q: 'How’s Mara settling in?', a: 'Better every day. Still jumps at loud noises down by the water — can’t blame her — but she’s laughing again, and that’s the only tally that matters to me.' },
+  ];
+  function applyGarrickRescueState(garrick) {
+    if (!garrick || !maraHollowmastRescued) return;
+    garrick.portrait = 'assets/images/garrick_hollowmast_2.png';
+    garrick.dialog = GARRICK_RESCUED_DIALOG;
+    garrick.chatter = GARRICK_RESCUED_CHATTER;
   }
 
   // ---- Mara Vellorne (C4, 2026-08-02) — state-built dialog, like Calder's ----
