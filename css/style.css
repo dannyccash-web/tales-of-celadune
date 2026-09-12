@@ -90,12 +90,10 @@ html, body {
   text-align: center;
 }
 
-.loading-title {
-  font-family: var(--font-medieval);
-  font-weight: 400;
-  font-size: clamp(48px, 8vw, 110px);
-  color: var(--text);
-  text-shadow: 0 4px 18px rgba(0, 0, 0, 0.9);
+.loading-logo {
+  width: clamp(340px, 30vw, 620px);
+  height: auto;
+  filter: drop-shadow(0 4px 18px rgba(0, 0, 0, 0.9));
 }
 
 .loading-bar-wrap {
@@ -1221,12 +1219,10 @@ html, body {
   gap: 70px;
 }
 
-#start-screen h1 {
-  font-family: var(--font-medieval);
-  font-weight: 400;
-  font-size: 110px;
-  color: var(--text);
-  text-shadow: 0 4px 18px rgba(0, 0, 0, 0.9);
+#start-logo {
+  width: 640px;
+  height: auto;
+  filter: drop-shadow(0 4px 18px rgba(0, 0, 0, 0.9));
 }
 
 .start-buttons,
@@ -1238,14 +1234,14 @@ html, body {
 
 .menu-btn {
   font-family: var(--font-meta);
-  font-size: 30px;
+  font-size: 26px;
   color: var(--text);
   background: var(--panel-bg);
   border: 2px solid;
   border-image: linear-gradient(180deg, var(--frame-light), var(--frame-dark)) 1;
   outline: 1px solid #4d3a1c;
   outline-offset: 6px;
-  padding: 18px 90px;
+  padding: 15px 72px;
   cursor: pointer;
 }
 
