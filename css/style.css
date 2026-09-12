@@ -1207,11 +1207,21 @@ html, body {
   pointer-events: auto;
 }
 
-/* ---- Start screen (placeholder) ---- */
+/* ---- Start screen (2026-09-13: real homescreen art + the game's own vignette) ---- */
+/* Danny's tales_of_celadune_homescreen.png (1920x1080, matches the design res
+   exactly) replaces the old radial-gradient placeholder. The game's actual
+   Vignette.jpg is layered on top via ::before (same multiply/opacity as the
+   live #vignette layer, so the start screen reads consistently with the rest
+   of the game) — kept LOCAL to #start-screen (its own pseudo-element) rather
+   than relying on the global #vignette layer, since #start-screen already
+   paints above that layer in the stage's stacking order. The homescreen art
+   sits as the box's own background (painted first, behind everything);
+   the vignette overlay and the logo/buttons are explicit flex-item z-indexes
+   so the layering can't be accidentally reordered by a future edit. */
 #start-screen {
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse at center, #1a130a 0%, #000 75%);
+  background: #000 url('../assets/images/tales_of_celadune_homescreen.png') center / cover no-repeat;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1219,10 +1229,23 @@ html, body {
   gap: 70px;
 }
 
+#start-screen::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url('../assets/images/Vignette.jpg') center / cover no-repeat;
+  mix-blend-mode: multiply;
+  opacity: 0.7;
+  pointer-events: none;
+  z-index: 0;
+}
+
 #start-logo {
   width: 640px;
   height: auto;
   filter: drop-shadow(0 4px 18px rgba(0, 0, 0, 0.9));
+  position: relative;
+  z-index: 1;
 }
 
 .start-buttons,
@@ -1230,6 +1253,8 @@ html, body {
   display: flex;
   gap: 40px;
   align-items: center;
+  position: relative;
+  z-index: 1;
 }
 
 .menu-btn {
