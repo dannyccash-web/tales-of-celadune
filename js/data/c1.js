@@ -670,7 +670,14 @@ export default {
   exits: [
     { edge: 'bottom', xMin: 1375, xMax: 1625, to: 'D1', note: 'the coastal trail back down to the cove' },
     { edge: 'top', xMin: 1350, xMax: 1550, to: 'B1', note: 'the trail climbs north past the old lighthouse' },
-    { edge: 'right', yMin: 1130, yMax: 1290, to: 'C2', note: 'the road east toward the grassland' },
+    // Band NARROWED 2026-09-14 (C2 built): the declared 1130-1290 was wider
+    // than C1's OWN walkable ground at this edge — an engine probe of the
+    // real collider found the open run is only y1168-1257, so a player
+    // crossing from C2 at y1130 arrived inside C1's border obstacle. Only
+    // showed up once C2 existed (before, the exit just toasted). C2's `left`
+    // band matches this exactly. Widen BOTH together if C1's road mouth is
+    // ever reopened wider in the art/collision.
+    { edge: 'right', yMin: 1170, yMax: 1255, to: 'C2', note: 'the road east toward the grassland' },
   ],
 
   // ---- Tidewrack NPCs (2026-09-02, repositioned for the new art) ----

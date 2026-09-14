@@ -1102,7 +1102,11 @@ export default {
   // built yet — the frame loop shows the "isn't ready yet" toast for those.
   exits: [
     { edge: 'right', yMin: 1391, yMax: 1548, to: 'D3', note: 'main road east to the Farm' },
-    { edge: 'top', xMin: 1281, xMax: 1406, to: 'C2', note: 'road north toward the grassland' },
+    // Band TIGHTENED 2026-09-14 (C2 built): x1281-1283 of the declared band
+    // sat inside D2's own top border rect, so a player crossing from C2 at
+    // those x values arrived inside an obstacle. D2's real open run here is
+    // x1284-1451. C2's `bottom` band matches this exactly.
+    { edge: 'top', xMin: 1286, xMax: 1403, to: 'C2', note: 'road north toward the grassland' },
     { edge: 'left', yMin: 1000, yMax: 1125, to: 'D1', note: 'road west toward the grassland' },
   ],
 
