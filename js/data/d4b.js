@@ -316,7 +316,33 @@ export default {
       x: 2861, y: 2980,
       range: 173,
       caveExit: true,
+      // `exitTo` made EXPLICIT 2026-09-15, when C3's cave mouth gave this cave a
+      // SECOND entrance. It used to rely on `caveReturn` (wherever the player
+      // came in), which was correct while D4 was the only way in — but a player
+      // entering from C3 and leaving by this mouth would have been teleported
+      // back to C3 instead of stepping out into the D4 woods. Both of D4B's
+      // mouths now name their own destination, so neither depends on the entry
+      // path. (438,344) is D4's cave-mouth interactable, engine-verified
+      // walkable.
+      exitTo: { scene: 'D4', x: 438, y: 344 },
       label: 'Cave Exit',
+    },
+    // ---- The C3 passage (2026-09-15, Danny's exact coordinates) ----
+    // The top-left entrance streak this file's header has always flagged as
+    // "a second upper-left entrance/exit will be wired up later" — now live. It
+    // surfaces in the far south-east of C3 (Hallowmere Forest) at 2561,2750,
+    // the trail end just west of that scene's cave arch. C3's matching
+    // interactable carries `enterAt: {x:146,y:63}` to land the player here
+    // rather than at this cave's own `spawn` by the D4 mouth. Point was probed
+    // against the real 36px collider before wiring: already open floor, and
+    // connected to the rest of the cave.
+    {
+      id: 'cave_exit_c3',
+      x: 146, y: 63,
+      range: 173,
+      caveExit: true,
+      exitTo: { scene: 'C3', x: 2561, y: 2750 },
+      label: 'Hollow Passage',
     },
     // Metallic ore (2026-08-03, Danny) — a "shiny object"-style pickup that
     // announces itself with the fishing CATCH reveal + sound (reward.catch).

@@ -13,6 +13,7 @@ import sceneC1B from './data/c1b.js';
 import sceneC1C from './data/c1c.js';
 import sceneC1D from './data/c1d.js';
 import sceneC2 from './data/c2.js';
+import sceneC3 from './data/c3.js';
 import { World } from './world.js';
 import * as ui from './ui.js';
 import * as audio from './audio.js';
@@ -389,7 +390,7 @@ function loadImages(sources, onProgress) {
 // Every scene in the game, keyed by the ids that exits point at. Adding a
 // scene = write its data file, import it, and register it here — the
 // transition system below handles everything else.
-const SCENES = { D1: sceneD1, D1B: sceneD1B, D2: sceneD2, D3: sceneD3, D4: sceneD4, D4B: sceneD4B, C4: sceneC4, C1: sceneC1, C1B: sceneC1B, C1C: sceneC1C, C1D: sceneC1D, C2: sceneC2 };
+const SCENES = { D1: sceneD1, D1B: sceneD1B, D2: sceneD2, D3: sceneD3, D4: sceneD4, D4B: sceneD4B, C4: sceneC4, C1: sceneC1, C1B: sceneC1B, C1C: sceneC1C, C1D: sceneC1D, C2: sceneC2, C3: sceneC3 };
 
 async function boot() {
   // Preload assets for EVERY registered scene up front — scene switches are
@@ -672,13 +673,20 @@ async function boot() {
   // session like every other. Reusable for any cave/dungeon: an overworld
   // interactable carries `cave: '<sceneId>'`, and the cave's exit interactable
   // carries `caveExit: true`.
-  function enterCave(caveId) {
+  // `at` (2026-09-15, added for C3's cave mouth): an entrance interactable can
+  // carry `enterAt: {x,y}` to drop the player at a SPECIFIC point in the target
+  // scene instead of that scene's own `spawn`. Needed as soon as a cave has more
+  // than one mouth — D4B's `spawn` is its bottom-right entrance beside D4, so
+  // arriving from C3's south-east bluff has to land at D4B's top-left streak
+  // instead. Falls back to `spawn` when omitted, so every existing cave is
+  // unaffected.
+  function enterCave(caveId, at) {
     if (!SCENES[caveId]) { ui.toast('The way in is blocked.'); return; }
     caveReturn = { scene: currentSceneId, x: world.player.x, y: world.player.y, rotation: world.player.rotation };
     audio.sfx(audio.SFX.door);
     enterScene(caveId);
-    world.player.x = world.scene.spawn.x;
-    world.player.y = world.scene.spawn.y;
+    world.player.x = at?.x ?? world.scene.spawn.x;
+    world.player.y = at?.y ?? world.scene.spawn.y;
     world.player.rotation = Math.PI;
     audio.play(sceneMusicTrack(caveId), 1200); // cross-fade to the cave theme
     saveGame(); // entering a new screen
@@ -693,8 +701,13 @@ async function boot() {
   function exitCave(overridePos) {
     // Fall back to the cave's declared overworld (`returns`) spawn if the
     // captured entry position is somehow missing.
+    // `exitTo.scene` (2026-09-15): a cave with more than one mouth can't rely on
+    // its single `returns` field — D4B now opens onto BOTH D4 and C3 — so an
+    // exit interactable may name its own destination scene. Defaults to
+    // `returns` when omitted, so C1C's ladders and every other cave are
+    // unaffected.
     const back = overridePos
-      ? { scene: world.scene.returns, x: overridePos.x, y: overridePos.y }
+      ? { scene: overridePos.scene || world.scene.returns, x: overridePos.x, y: overridePos.y }
       : (caveReturn || { scene: world.scene.returns || 'D1' });
     audio.sfx(audio.SFX.door);
     enterScene(back.scene && SCENES[back.scene] ? back.scene : 'D1');
@@ -3595,7 +3608,7 @@ async function boot() {
       // The well isn't a pickup — it opens its own dialogue window (drink /
       // toss a coin), so intercept it before any reward/collect handling.
       if (item.well) { openWellDialog(); return; }
-      if (item.cave) { enterCave(item.cave); return; }   // overworld -> cave
+      if (item.cave) { enterCave(item.cave, item.enterAt); return; }   // overworld -> cave (enterAt: a specific mouth)
       if (item.caveExit) { exitCave(item.exitTo); return; } // cave -> overworld (or a fixed exitTo)
       // Already-collected interactables with an emptyMessage (e.g. the silo
       // after its one ear of corn) stay interactive but just report empty —
