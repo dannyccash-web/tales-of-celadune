@@ -54,6 +54,17 @@ export const DIALOGUE_SFX = {
   mirelle: 'assets/audio/freesound_community-long-sigh-104609.mp3',
   gaffer: 'assets/audio/dragon-studio-goat-sound-effect-390305.mp3',
 
+  // C2 Windmarch Grassland (2026-09-16) — the Reedwalkers and their thrumhorn.
+  // The two humans are assigned from the existing clip pool rather than
+  // sourcing new audio, the same way the 2026-09-02 voice audit filled its 20
+  // gaps. The THRUMHORN has a purpose-made clip Danny supplied alongside the
+  // art (`thrumhorn_sound.mp3`) — the low hum the beast is named for; it was
+  // briefly pointed at Cinder's horse snort before that file turned up, so if
+  // it ever sounds equine, this line is the thing to check.
+  tovan: 'assets/audio/freesound_community-mmm-hmm-36292.mp3',
+  nera: 'assets/audio/u_xg7ssi08yr-female-ah-ha-389835.mp3',
+  thrumhorn: 'assets/audio/thrumhorn_sound.mp3',
+
   // D2 village (2026-07-16). Three male + three female "hmm/reaction" clips
   // (Danny's picks), spread ~3 apiece across the 9 men and 9 women so the
   // village doesn't feel like everyone shares one voice.

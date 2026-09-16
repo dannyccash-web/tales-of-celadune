@@ -10,6 +10,27 @@
 // player. speed drives this round's turn order (battle.turnOrder) alongside
 // the player's stats.speed.
 export default {
+  // Thornback Boar (C2 Windmarch Grassland, 2026-09-16) — the mid-tier beast
+  // the row-C brief always called for, finally real. A heavy grassland charger
+  // that killed the Reedwalkers' herd in the night. Sits between the cragclaw
+  // (6/2/2) and the rootweaver (10/4/3): tough enough that three of them is a
+  // genuine errand at this point in the game, not a chore. Fast for its bulk
+  // (speed 10 — it charges), so it usually acts first, and it hits harder than
+  // anything else in the D/C outdoors. `poisonable` (flesh and blood, so a
+  // spider-fang jab can envenom it); NOT `wood`, so torches don't burn it.
+  thornback_boar: {
+    id: 'thornback_boar',
+    name: 'Thornback Boar',
+    portrait: 'assets/images/thornback_boar.png',
+    health: 8,
+    attack: 3,
+    defense: 3,
+    speed: 10,
+    damage: { min: 2, max: 4 },
+    poisonable: true,
+    drops: { gold: { min: 8, max: 14 } },
+  },
+
   blight_rat: {
     id: 'blight_rat',
     name: 'Blight Rat',

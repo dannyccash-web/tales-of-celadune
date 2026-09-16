@@ -24,6 +24,15 @@ export default {
     name: 'The Maiden’s Grace Lockbox',
     description: 'Clear the miremen from the Maiden’s Grace and recover the ship’s sealed lockbox — then decide who it goes to: Roderick Vane, for the Crown, or Wynne Ashcombe, for the crew’s families.',
   },
+  // The Reedwalkers' thornback boars (C2, 2026-09-16). Completion is NOT an
+  // item turn-in like most quests here — it's a live headcount: Tovan's
+  // turn-in option only appears once every npc in C2 with
+  // enemyId 'thornback_boar' is `defeated` (see main.js's thornbacksLeft()).
+  c2_thornbacks: {
+    id: 'c2_thornbacks',
+    name: 'Beasts on the Windmarch',
+    description: 'Thornback boars came out of the open ground north of the road and killed all but one of Tovan and Nera Reedwalker\u2019s thrumhorns. Kill the three of them before they take the last one.',
+  },
   barn_rat: {
     id: 'barn_rat',
     name: 'Rat in the Barn',

@@ -423,6 +423,7 @@ async function boot() {
     'assets/images/rootweaver.png', // D4 rootweaver — an ambush enemy, not in a `battles` list
     'assets/images/cave_bat.png', // D4B cave bat — an ambush enemy, not in a `battles` list
     'assets/images/cave_spider.png', // D4B cave spider — a roaming creature enemy (aggro, not in `battles`)
+    'assets/images/thornback_boar.png', // C2 thornback boars — roaming creature enemies (aggro, not in `battles`)
     'assets/images/Edras Holloweye.png', // D4B hermit — dialog auto-opens on approach, so preload the portrait
     'assets/images/ysra_nineshells.png', // C1B's Drownweft — fought via dialogue/theft-trigger, not a `battles` list
     ...Object.values(SCENES).flatMap((scene) => [
@@ -773,7 +774,7 @@ async function boot() {
         inventory: inventory.map((e) => ({ ...e })),
         equipment: { ...equipment },
         quests: quests.map((q) => ({ ...q })),
-        flags: { campQuestDone, campHostile, campTollTier, gafferHappy, wellCoinThrown, wellDrinks, vegetableDeliveredToTavern, calderToldStory, calderToldDangers, maraMet, lilyGullThanked, magicRevealed, maraHollowmastRescued, lockboxAcceptedFrom, lockboxGivenTo },
+        flags: { campQuestDone, campHostile, campTollTier, gafferHappy, thrumhornFed, wellCoinThrown, wellDrinks, vegetableDeliveredToTavern, calderToldStory, calderToldDangers, maraMet, lilyGullThanked, magicRevealed, maraHollowmastRescued, lockboxAcceptedFrom, lockboxGivenTo },
         caveReturn, // where to exit to if saved inside a cave/dungeon
         worlds: snapshotWorlds(),
       };
@@ -820,7 +821,7 @@ async function boot() {
     quests.length = 0;
     campTollPaid = false; campEntered = false; campQuestDone = false;
     campHostile = false; campEntryGate = null; campTollTier = 0;
-    gafferHappy = false; wellCoinThrown = false; wellDrinks = 0; vegetableDeliveredToTavern = false;
+    gafferHappy = false; thrumhornFed = false; wellCoinThrown = false; wellDrinks = 0; vegetableDeliveredToTavern = false;
     calderToldStory = false; calderToldDangers = false; maraMet = false;
     lilyGullThanked = false;
     magicRevealed = false;
@@ -847,7 +848,7 @@ async function boot() {
     const f = data.flags || {};
     campQuestDone = !!f.campQuestDone; campHostile = !!f.campHostile;
     campTollTier = f.campTollTier || 0;
-    gafferHappy = !!f.gafferHappy; wellCoinThrown = !!f.wellCoinThrown;
+    gafferHappy = !!f.gafferHappy; thrumhornFed = !!f.thrumhornFed; wellCoinThrown = !!f.wellCoinThrown;
     wellDrinks = f.wellDrinks || 0;
     calderToldStory = !!f.calderToldStory; calderToldDangers = !!f.calderToldDangers;
     maraMet = !!f.maraMet;
@@ -1006,6 +1007,7 @@ async function boot() {
   // Gaffer only warms up once he's been fed (session state, not persisted —
   // matches how the world's `defeated`/`collected` flags reset per World).
   let gafferHappy = false;
+  let thrumhornFed = false; // C2's thrumhorn has been fed corn (2026-09-16) — persisted like gafferHappy
 
   // Calder Rusk's conversation progress (2026-07-25): he only offers his
   // keepsake quest once the player has heard BOTH his backstory and his warning
@@ -1534,6 +1536,36 @@ async function boot() {
       });
       return true;
     }
+    if (effect.feedThrumhorn) {
+      removeItem('corn', 1);
+      thrumhornFed = true;
+      requestAutosave(); // persist that the thrumhorn's been fed (corn already removed)
+      ui.showGaveItem(ITEMS.corn); // the GAVE reveal
+      ui.updateDialogContent({
+        line: 'It takes the corn off your palm with startling delicacy for something that size, works through it, and then hums — properly this time, a deep rolling note you can feel through the ground.',
+        responses: ['Pet the thrumhorn.', 'Leave.'],
+        responseEffects: [{ followUp: THRUMHORN_PET_LINE }, null],
+      });
+      return true;
+    }
+    if (effect.tovanAccept) {
+      startQuest('c2_thornbacks');
+      ui.updateDialogContent({
+        line: 'North of the road, past where the grass goes thin, under that rock face. That is where they came from and that is where they went back to. Go careful. They do not bluff and they do not tire.',
+        responses: ['Leave.'],
+      });
+      return true;
+    }
+    if (effect.tovanTurnIn) {
+      addGold(15);
+      addItem('health_potion', 1);
+      completeQuest('c2_thornbacks');
+      ui.updateDialogContent({
+        line: 'All three. I will take your word and I will take it gladly. Here — fifteen, which is most of what we have, and something of Nera\u2019s for the road. It is not what the herd was worth. It is what we have got.',
+        responses: ['Leave.'],
+      });
+      return true;
+    }
     if (effect.feedGaffer) {
       removeItem('corn', 1);
       gafferHappy = true;
@@ -1626,6 +1658,67 @@ async function boot() {
       };
     }
     return npc.dialog;
+  }
+
+  // ---- The Reedwalkers' thornback boars, C2 (2026-09-16) ----
+  // Unlike every other quest here, this one isn't completed by handing
+  // something over — it's a live headcount of the scene's own creatures. The
+  // three boars are `creature` npcs in c2.js carrying enemyId 'thornback_boar';
+  // killing one sets `defeated` on it (see the pendingAggro victory branch),
+  // which persists per-World and in the save. So "are they dead yet" is just a
+  // filter over the live world, with no counter to keep in sync and nothing
+  // extra to store. Reuse this shape for any future "clear out the X" quest.
+  function thornbacksLeft() {
+    return world.npcs.filter((n) => n.enemyId === 'thornback_boar' && !n.defeated).length;
+  }
+
+  const THRUMHORN_PET_LINE = 'The thrumhorn leans its great warm head into your hands and lets out a low, buzzing hum you feel in your teeth more than hear. Whatever happened out in the dark, it has decided you were not part of it.';
+
+  function buildTovanDialog() {
+    const status = questStatus('c2_thornbacks');
+    const left = thornbacksLeft();
+    if (status === 'completed') {
+      return {
+        line: 'Nera has been out to the ridge twice since, just to stand there and look at it. That is the first time in a week she has walked anywhere without checking behind her. We will move on in a few days, I think. North, maybe. Somewhere the grass is not so expensive.',
+        responses: ['Leave.'],
+      };
+    }
+    if (status === 'active' && left === 0) {
+      return {
+        line: 'You went up there. I watched you go and I did not expect you back, and here you are. All three of them?',
+        responses: ['All three. The road\u2019s clear.', 'Not yet.'],
+        responseEffects: [{ tovanTurnIn: true }, { followUp: 'Take your time. We are not going anywhere.', noBack: true }],
+      };
+    }
+    if (status === 'active') {
+      const tally = left === 1
+        ? 'One of them is still up there. One is enough — it only takes one to finish what the others started.'
+        : `There are still ${left} of them up in that grass, by my count. Do not go at them in the open if you can help it.`;
+      return { line: tally, responses: ['Leave.'] };
+    }
+    return {
+      line: 'We had eleven thrumhorns coming down this road. We have one. They came out of the open ground north of the road before dawn — thornbacks, three of them, big as carts and twice as stubborn. We heard the whole of it and could not do a thing in the dark but hold on to the one that ran the right way. They will be back for her. And anyone walking this road after dark is going the same way as my herd. I cannot pay you much. I can pay you what we have.',
+      responses: ['I\u2019ll deal with the boars.', 'Leave.'],
+      responseEffects: [{ tovanAccept: true }, null],
+    };
+  }
+
+  // The thrumhorn — pet it, and feed it corn if you're carrying any. Same shape
+  // as Cinder the horse; `thrumhornFed` persists in the save like gafferHappy,
+  // so a fed thrumhorn stays friendly across sessions.
+  function buildThrumhornDialog() {
+    const responses = ['Pet the thrumhorn.'];
+    const effects = [{ followUp: THRUMHORN_PET_LINE }];
+    if (inventory.some((it) => it.id === 'corn')) {
+      responses.push('Feed the thrumhorn some corn.');
+      effects.push({ feedThrumhorn: true });
+    }
+    responses.push('Leave.');
+    effects.push(null);
+    const line = thrumhornFed
+      ? 'The thrumhorn picks your scent up before you are anywhere near and swings that heavy head around to find you, humming already.'
+      : 'The last of the Reedwalkers\u2019 herd stands chest-deep in the grass, jaw working sideways, watching you come with enormous unbothered eyes. Somewhere under all that wool it is humming.';
+    return { line, responses, responseEffects: effects };
   }
 
   // Popout actions from the Items tab. Inspect/Remove are unchanged; the
@@ -2142,7 +2235,11 @@ async function boot() {
   function sellValue(def) { return Math.max(1, Math.floor((def?.price || 0) / 2)); }
 
   function buildVendorDialog(npc) {
-    if (!npc.atHome) {
+    // A vendor with a SHOP is only open behind their counter. A vendor with no
+    // `home` at all (2026-09-16, the Reedwalkers) is a travelling trader who
+    // has no counter to be behind — they trade wherever they stand. Reuse this
+    // for the tinker/enchanter caravan C2 is still owed.
+    if (npc.home && !npc.atHome) {
       return { line: npc.awayLine || 'Catch me at my shop if you’re looking to trade.', responses: ['Leave.'] };
     }
     const responses = ['Buy', 'Sell', 'Leave.'];
@@ -2245,7 +2342,7 @@ async function boot() {
   // quest/story dialogue has no such gate and is unaffected by this.
   function withShop(dialog, npcId) {
     const live = world.npcs.find((n) => n.id === npcId);
-    if (!live?.vendor || !live.atHome || !dialog.responses?.length) return dialog;
+    if (!live?.vendor || (live.home && !live.atHome) || !dialog.responses?.length) return dialog; // homeless vendors (the Reedwalkers) trade anywhere — see buildVendorDialog
     const responses = [...dialog.responses];
     const effects = dialog.responseEffects ? [...dialog.responseEffects] : responses.map(() => null);
     const at = Math.max(0, responses.length - 1);
@@ -2835,6 +2932,8 @@ async function boot() {
     if (npc.id === 'vozhik') { openVozhikDialog(npc); return; }
     let dialog;
     if (npc.id === 'gaffer') dialog = buildGafferDialog(npc);
+    else if (npc.id === 'tovan') dialog = buildTovanDialog();
+    else if (npc.id === 'thrumhorn') dialog = buildThrumhornDialog();
     else if (npc.id === 'cinder') dialog = buildCinderDialog();
     else if (npc.id === 'mara_vellorne') dialog = buildMaraDialog();
     else if (npc.id === 'calder_rusk') dialog = buildCalderDialog(npc);
