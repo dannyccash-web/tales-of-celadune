@@ -1538,11 +1538,14 @@ async function boot() {
     }
     if (effect.feedThrumhorn) {
       removeItem('corn', 1);
+      const firstTime = !thrumhornFed;
       thrumhornFed = true;
       requestAutosave(); // persist that the thrumhorn's been fed (corn already removed)
       ui.showGaveItem(ITEMS.corn); // the GAVE reveal
       ui.updateDialogContent({
-        line: 'It takes the corn off your palm with startling delicacy for something that size, works through it, and then hums — properly this time, a deep rolling note you can feel through the ground.',
+        line: firstTime
+          ? 'You offer the corn. The thrumhorn considers it. It considers you. Then, with the serene confidence of an animal that has never once in its life been told no, it takes the corn, most of your sleeve, and makes a determined attempt on the strap of your pack before you can get any of it back. It chews. It swallows. It hums — a deep, rolling, structural sort of hum, the kind you feel in your knees. From somewhere over by the tents, without looking up, a voice says: “She does that.”'
+          : 'The thrumhorn spots the corn from an implausible distance and arrives at a speed it has clearly been hiding from everyone. Your sleeve, what is left of it, is taken as a service charge.',
         responses: ['Pet the thrumhorn.', 'Leave.'],
         responseEffects: [{ followUp: THRUMHORN_PET_LINE }, null],
       });
@@ -1672,7 +1675,7 @@ async function boot() {
     return world.npcs.filter((n) => n.enemyId === 'thornback_boar' && !n.defeated).length;
   }
 
-  const THRUMHORN_PET_LINE = 'The thrumhorn leans its great warm head into your hands and lets out a low, buzzing hum you feel in your teeth more than hear. Whatever happened out in the dark, it has decided you were not part of it.';
+  const THRUMHORN_PET_LINE = 'The thrumhorn leans its great warm head into your hands, closes its eyes, and hums until your teeth buzz. It leans further. It keeps leaning. You are, you realise, now the only thing holding up a very large animal, and it has no intention of discussing the matter.';
 
   function buildTovanDialog() {
     const status = questStatus('c2_thornbacks');
@@ -1705,7 +1708,11 @@ async function boot() {
 
   // The thrumhorn — pet it, and feed it corn if you're carrying any. Same shape
   // as Cinder the horse; `thrumhornFed` persists in the save like gafferHappy,
-  // so a fed thrumhorn stays friendly across sessions.
+  // so a fed thrumhorn stays friendly across sessions. The feed option is
+  // HIDDEN without corn in the bag (the Gaffer/Cinder convention, not an
+  // oversight) — Nera is standing ten feet away selling corn, which is the
+  // intended way a player discovers it. The first feeding gets its own longer
+  // gag; every one after that gets the short version.
   function buildThrumhornDialog() {
     const responses = ['Pet the thrumhorn.'];
     const effects = [{ followUp: THRUMHORN_PET_LINE }];

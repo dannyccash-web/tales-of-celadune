@@ -61,7 +61,13 @@ export const DIALOGUE_SFX = {
   // art (`thrumhorn_sound.mp3`) — the low hum the beast is named for; it was
   // briefly pointed at Cinder's horse snort before that file turned up, so if
   // it ever sounds equine, this line is the thing to check.
-  tovan: 'assets/audio/freesound_community-mmm-hmm-36292.mp3',
+  // Tovan was briefly on mmm-hmm-36292, which this file shares with Elowen,
+  // Adaline and Marisol — a female-associated clip (Danny caught it). Moved to
+  // huh-102688, the least-used MALE clip in the pool (Jory was its only other
+  // owner), and a gruff "huh" suits a laconic herder. **When assigning a voice,
+  // check who else already has that clip — the pool is split male/female by
+  // usage, not by filename.**
+  tovan: 'assets/audio/freesound_community-huh-102688.mp3',
   nera: 'assets/audio/u_xg7ssi08yr-female-ah-ha-389835.mp3',
   thrumhorn: 'assets/audio/thrumhorn_sound.mp3',
 
