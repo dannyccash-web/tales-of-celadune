@@ -1503,7 +1503,7 @@ export default {
         { do: 'leaveHome' },
       ],
       dialog: {
-        line: 'Fish aren’t biting — for me. But there’s one in these waters worth more than my boat: a Moonscale Trout, silver as the moon it rises under. My old arms can’t land it anymore. You look spry, though. Fancy the challenge? I’ll lend you my rod and pay handsome for the catch.',
+        line: 'There’s one fish in these waters worth more than my boat: a Moonscale Trout, silver as the moon it rises under. I’ve been after her the better part of two seasons and had no luck worth the name — she’s cannier than I am, and I’ve stopped pretending otherwise. Maybe your luck runs better than mine. Land me a Moonscale and I’ll pay handsomely for it, rod included.',
         responses: [
           'I’ll land your trout.',
           'Not my sort of thing.',
@@ -1520,7 +1520,7 @@ export default {
       dialogByQuestStatus: {
         rare_fish: {
           active: {
-            line: 'Any luck with the Moonscale Trout? Slippery devil — rises only under a clear moon, they say. Get bait off Emeric if you haven’t already, and try any water you come across.',
+            line: 'Any luck with the Moonscale? Don’t take it hard if not — she’s had two seasons of practice at avoiding me. Get bait off Emeric if you haven’t already, and try any water you come across.',
             responses: ['Still after it.', 'Leave.'],
           },
           readyToComplete: {
@@ -1538,7 +1538,7 @@ export default {
         },
       },
       chatter: [
-        { q: 'Catch anything?', a: 'Not a fin. But the pond is quiet and the sun is warm, and a bad day fishing beats a good day at most anything else. You should try it — does wonders for a troubled head.' },
+        { q: 'Catch anything?', a: 'Bluegill, mostly. Nothing with a story in it. The one I want has slipped me two seasons running — but the pond is quiet and the sun is warm, and a day spent failing at that beats a good day at most anything else.' },
         { q: 'Anything worth knowing?', a: 'Only that the pond has dropped a hand-width since spring, and I do not like it. Water does not just leave. Something upstream has changed. But what do I know — I only watch it every day.' },
       ],
     },

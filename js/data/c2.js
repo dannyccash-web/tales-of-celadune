@@ -657,21 +657,31 @@ export default {
     { label: 'Caravan Rest', x: 2500, y: 990, r: 360 },
   ],
 
-  // Code-drawn campfires + their smoke (2026-09-16, Danny's exact
-  // coordinates — world.js's drawFire/drawSmoke, no art needed). Both sit on
-  // open ground with nothing painted under them: one out in the north-west
-  // grass, one just west of the watchtower ruin, which reads nicely as someone
-  // camped in the ruins ahead of the bandits the row-C brief puts there.
-  // NOTE: C4's campfire offsets its smoke 35px ABOVE the flame; these use
-  // Danny's exact coordinates for both, so say the word if the plume should
-  // start higher. Neither point is an obstacle — the fires are visual only.
+  // Code-drawn campfires + their smoke (world.js's drawFire/drawSmoke, no art
+  // needed), sitting in the TWO FIRE RINGS the background art already paints:
+  // the herder camp's ring and the caravan pull-off's ring.
+  //
+  // ⚠️ COORDINATE-SPACE GOTCHA, worth remembering. Danny first gave these as
+  // (584,1080) and (1504,646), which landed on bare ground with no fire pit in
+  // sight. He was measuring off an 1800x1800 render (the collision overlays I
+  // had been sending him were 1800px, not the scene's native 3000px), so every
+  // number needed x 3000/1800 = x1.667:
+  //     (584,1080)  x1.667 -> (973,1800)   = the camp fire ring
+  //     (1505,645)  x1.667 -> (2508,1075)  = the caravan fire ring
+  // Both then land dead-centre in a painted pit. **Render any overlay Danny
+  // might measure from at the scene's native 3000x3000**, or say the scale on
+  // it — and if a coordinate he gives lands on nothing, try the 1.667 scale
+  // before assuming he meant empty ground.
+  //
+  // Both rings are already stamped as obstacles, which is fine: the fire is
+  // purely visual and the player walks around the pit either way.
   fires: [
-    { x: 584, y: 1080 },
-    { x: 1504, y: 646 },
+    { x: 973, y: 1800 },
+    { x: 2508, y: 1075 },
   ],
   smoke: [
-    { x: 584, y: 1080 },
-    { x: 1504, y: 646 },
+    { x: 973, y: 1800 },
+    { x: 2508, y: 1075 },
   ],
 
   interactables: [],

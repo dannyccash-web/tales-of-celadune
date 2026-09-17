@@ -228,9 +228,14 @@ export default {
     id: 'fishing_rod',
     name: 'Fishing Rod',
     image: 'assets/images/fishing_rod.png',
-    description: 'A sturdy rod lent by Darius. Just the thing for landing a big one — you’ll need bait, too.',
+    description: 'A sturdy fishing rod. Just the thing for landing a big one — you’ll need bait, too.',
     questItem: false,
-    // no price -> can't be sold; it's a quest aid to hang onto
+    // Priced 2026-09-17 so Roderick Vane can stock it (C1). It used to have no
+    // price on purpose ("a quest aid to hang onto"), which also made it
+    // unsellable — the side effect of pricing it is that the player can now
+    // sell Darius's lent rod. That is recoverable rather than a trap: Roderick
+    // sells one, so a player who sells theirs mid-quest can buy another.
+    price: 24,
   },
   // ---- Catch items (2026-07-16) — what a fishing cast can land. Each has a
   // gold value (via price; vendors buy at half). The Moonscale Trout is both

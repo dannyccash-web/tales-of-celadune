@@ -1536,6 +1536,14 @@ async function boot() {
       });
       return true;
     }
+    if (effect.noCorn) {
+      audio.sfx(audio.SFX.denied);
+      ui.updateDialogContent({
+        line: 'You pat yourself down. No corn. Not so much as a kernel. The thrumhorn watches the entire search with its whole face, from the first hopeful pocket to the last empty one, and when you come up with nothing it keeps watching anyway, in case you were joking. You have never been looked at like this by anything. Nera sells corn, if it helps.',
+        responses: ['Leave.'],
+      });
+      return true;
+    }
     if (effect.feedThrumhorn) {
       removeItem('corn', 1);
       const firstTime = !thrumhornFed;
@@ -1714,12 +1722,15 @@ async function boot() {
   // intended way a player discovers it. The first feeding gets its own longer
   // gag; every one after that gets the short version.
   function buildThrumhornDialog() {
-    const responses = ['Pet the thrumhorn.'];
-    const effects = [{ followUp: THRUMHORN_PET_LINE }];
-    if (inventory.some((it) => it.id === 'corn')) {
-      responses.push('Feed the thrumhorn some corn.');
-      effects.push({ feedThrumhorn: true });
-    }
+    // The feed option is ALWAYS on the list, sitting right under Pet (Danny,
+    // 2026-09-17 — twice). It was previously hidden unless the player already
+    // had corn, which is the Gaffer/Cinder convention, and the result was that
+    // the feature looked like it had never been built: you can't discover a
+    // choice that only appears once you've guessed what it wants. Without corn
+    // it still fires — you just get the denied sound and a line about it.
+    const hasCorn = inventory.some((it) => it.id === 'corn');
+    const responses = ['Pet the thrumhorn.', 'Feed the thrumhorn some corn.'];
+    const effects = [{ followUp: THRUMHORN_PET_LINE }, hasCorn ? { feedThrumhorn: true } : { noCorn: true }];
     responses.push('Leave.');
     effects.push(null);
     const line = thrumhornFed

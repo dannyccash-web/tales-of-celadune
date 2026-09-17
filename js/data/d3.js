@@ -226,7 +226,9 @@ export default {
   npcs: [
     {
       id: 'mirelle',
-      name: 'Mirelle',
+      // Surname added 2026-09-17 (Danny). Harrowfield — a harrow is a field
+      // implement, so it suits the farm's owner, and it was unused.
+      name: 'Mirelle Harrowfield',
       role: 'FARM OWNER',
       sprite: 'assets/images/Mirelle_Overhead.png',
       portrait: 'assets/images/Mirelle_Portrait.png',
@@ -366,7 +368,10 @@ export default {
     },
     {
       id: 'brenna',
-      name: 'Brenna',
+      // Surname added 2026-09-17 (Danny's pick). NOTE: Sorcha Emberfell, D2's
+      // blacksmith, already carries this surname — the only shared surname in
+      // the game. Left as asked; if that wasn't intended, this is the line.
+      name: 'Brenna Emberfell',
       role: 'ANIMAL KEEPER',
       sprite: 'assets/images/Brenna_Overhead.png',
       portrait: 'assets/images/Brenna_Portrait.png',

@@ -61,13 +61,16 @@ export const DIALOGUE_SFX = {
   // art (`thrumhorn_sound.mp3`) — the low hum the beast is named for; it was
   // briefly pointed at Cinder's horse snort before that file turned up, so if
   // it ever sounds equine, this line is the thing to check.
-  // Tovan was briefly on mmm-hmm-36292, which this file shares with Elowen,
-  // Adaline and Marisol — a female-associated clip (Danny caught it). Moved to
-  // huh-102688, the least-used MALE clip in the pool (Jory was its only other
-  // owner), and a gruff "huh" suits a laconic herder. **When assigning a voice,
-  // check who else already has that clip — the pool is split male/female by
-  // usage, not by filename.**
-  tovan: 'assets/audio/freesound_community-huh-102688.mp3',
+  // Tovan's voice, third attempt. He was on mmm-hmm-36292 (shared with Elowen,
+  // Adaline and Marisol — female), then on huh-102688, which Danny said made
+  // him "sound like a little kid". He asked to swap it for Jory Whitlock's
+  // clip — but huh-102688 IS Jory's clip; they had ended up sharing it, which
+  // is exactly why it read wrong. So he's on mrstokes302 instead: the most
+  // unambiguously adult male clip in the pool (its own filename says "male
+  // sfx") and the voice of Bram, Emeric, Darius, Calder, Edras, Perrin and
+  // Roderick — every grown man in the game. **Check who already owns a clip
+  // before assigning it; the pool is split male/female by usage, not filename.**
+  tovan: 'assets/audio/mrstokes302-hmmm-sound-male-sfx-mrstokes302-420028.mp3',
   nera: 'assets/audio/u_xg7ssi08yr-female-ah-ha-389835.mp3',
   thrumhorn: 'assets/audio/thrumhorn_sound.mp3',
 

@@ -715,12 +715,18 @@ export default {
       // dialogue (which has no atHome gate) but kept for consistency/in case
       // that ever changes.
       vendor: true,
+      // Stock reworked 2026-09-17 (Danny): the fish are out — a dockmaster
+      // selling the same bluegill/trout the player can pull out of the water
+      // twenty feet away was never much of an offer — and a FISHING ROD is in.
+      // That makes C1 a place to buy a rod, so Darius's lent one (D2) is no
+      // longer the only way to fish. See items.js: fishing_rod had NO price
+      // (deliberately unsellable, "a quest aid to hang onto") and needed one
+      // to be stockable, so it is now sellable too.
       stock: [
         { id: 'lockpicks', qty: 2 },
         { id: 'health_potion', qty: 2 },
         { id: 'bread', qty: 3 },
-        { id: 'bluegill', qty: 2 },
-        { id: 'trout', qty: 2 },
+        { id: 'fishing_rod', qty: 1 },
       ],
       gold: 40,
       awayLine: 'Catch me at the warehouse if you’re looking to trade.',
