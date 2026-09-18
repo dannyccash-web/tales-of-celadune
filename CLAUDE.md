@@ -524,6 +524,29 @@ Engine-verified headlessly: 0 terrain mismatches vs `World.blockersAt` over ~800
 - **`fires` + `smoke` added at (584,1080) and (1504,646)** (Danny's exact coordinates, code-drawn, no art). Both on open ground; the second sits just west of the watchtower ruin and reads as someone camped in it, ahead of the bandits the row-C brief puts there. NOTE: C4's campfire offsets its smoke 35px above the flame — these use the exact coordinates for both. Neither point is an obstacle.
 - All six NPC/boar placements survived the corrected paint unchanged (checked, not assumed); closest boar patrol point is 467px from the travelled road vs aggroRange 420.
 
+## Orris Fenwick, the caravan ambush, and ENCHANTING (2026-09-18)
+
+C2's biggest content drop: the tinker-enchanter the row-C brief always owed this area, the bandits the brief put in the watchtower ruins, and a weapon-enchanting system — folded into one encounter.
+
+### The ambush (`js/data/c2.js`, `js/main.js`, `js/world.js`)
+
+Orris sits on the road at the caravan rest (2460,1180) **`hidden`** — a NEW npc flag: present and able to fire `proximityTalk`, but **not drawn, not talkable, no collision, and not moving**. The player crosses his `talkRange` (300), his dialog opens mid-robbery, and **5.2s later the fight starts on a timer whether or not the player touches the dialogue**. The single response only skips the wait. Danny's spec was a total ambush with no way to decline, so there is no refuse branch.
+
+- **`hidden` is worth reusing for any scripted reveal.** Four one-line guards in world.js (draw, `nearestNpcInRange`, `blockersAt`, `updateNpcs`). **The movement guard is the one that matters and the one I missed first time** — without it an invisible Orris walked his patrol and the ambush would have sprung from wherever he had drifted to.
+- **The two Highwaymen exist only as battle enemies** (`highwayman_a` / `highwayman_b`) — no overworld sprites, in no scene's `npcs`, started by a direct `startBattle` call. Two ids rather than one repeated purely so each gets its own portrait; both are NAMED "Highwayman" (Danny — the player never learns who they are). 6hp/3/2 each, softer than a thornback boar because it is two-on-one with no chance to prepare.
+- **Fleeing re-arms the whole encounter** (he is still being robbed), victory sets the persisted `orrisRescued`, reveals him and drops straight back into dialogue. `enterScene` re-reveals him on C2 entry so a rescued save doesn't stage the robbery again.
+
+### Enchanting (`js/data/items.js`, `js/main.js`, `js/ui.js`)
+
+Orris has no money, so he pays in work: pick a weapon, pick a reagent, keep the result.
+
+- **Every combination is its own catalog id, GENERATED at module load** (3 plain weapons x 4 reagents = 12). The catalog is keyed by id and the save stores ids, so mutating an item in place would not survive a reload — as generated entries, an enchanted weapon is just another item and inventory, equipment, the save and the Stats panel all handle it for free. **Reuse this shape for any future item-transforming mechanic.**
+- **Eligibility is an ALLOW-list, not a deny-list.** `isEnchantable` requires `slot: 'mainhand'`, a `damage` value, and **no keys beyond a known-harmless set**. That is Danny's rule ("nothing outside of damage") and it is why Mara's Cutlass is out — its `bonusDamageVs`. The allow-list means **a future weapon with some new trick is excluded automatically** instead of silently slipping through a deny-list nobody remembered to update.
+- **The four enchantments** — Rootweaver Heart -> *Ensnaring* (20%, foe loses its next turn), Metallic Ore -> *Honed* (30%, +2 damage), Spider Fang -> *Venomous* (25%, 1/turn, and it respects `poisonable` exactly like the thrown fang), Lily's Mysterious Rock -> *Echoing* (20%, the blow simply lands twice; Orris has no idea why and says so). All four resolve in ONE place, the hit branch of `playerAttack`, and **every proc announces itself in the hit line** — an invisible 20% effect may as well not exist.
+- **Ensnare is new plumbing:** the rootweaver's existing `ensnare` blocks *fleeing*, not attacking, so this adds `skipTurn`, checked at the top of the enemy's turn. Note it is checked BEFORE the poison tick, so an ensnared foe doesn't fester that turn either — deliberate, and the comment says where to move it if that should change.
+- **The glow is one CSS filter, not twelve new images.** Each variant carries a `glow` colour; `ui.applyItemGlow` puts a drop-shadow on the `<img>` wherever an item is drawn, so the glow follows the item into the inventory grid, the reveals, the popout and the shop grid with no per-site knowledge. It also CLEARS the filter for plain items, so a recycled `<img>` element can't keep a stale glow.
+- `ui.closeDialog` is now exported — the ambush timer has to close the dialog with no player input.
+
 ### Round 3 fixes (2026-09-17)
 
 - **⚠️ COORDINATE-SPACE GOTCHA — the fires were in the wrong units, not the wrong place.** Danny's fire/smoke coordinates, (584,1080) and (1505,645), landed on bare ground with no fire pit anywhere near. He was measuring off an **1800x1800** render — the collision overlays I had been sending him were 1800px, not the scene's native 3000px — so every number needed **x 3000/1800 = x1.667**: (584,1080) -> (973,1800) = the herder camp's fire ring; (1505,645) -> (2508,1075) = the caravan pull-off's ring. Both then land dead-centre in a painted pit. **Render any overlay Danny might measure from at the scene's native 3000x3000, or state the scale on it — and if a coordinate he gives lands on nothing, try the 1.667 scale before concluding he meant empty ground.**

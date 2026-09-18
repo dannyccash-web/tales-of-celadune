@@ -268,7 +268,7 @@ export class World {
     let best = null;
     let bestDist = INTERACT_RANGE;
     for (const npc of this.npcs) {
-      if (npc.atHome || npc.defeated || npc.creature) continue; // creatures attack, not talk
+      if (npc.atHome || npc.defeated || npc.creature || npc.hidden) continue; // creatures attack, not talk; hidden ones aren't there yet
       const d = Math.hypot(npc.x - this.player.x, npc.y - this.player.y);
       if (d < bestDist) { best = npc; bestDist = d; }
     }
@@ -363,7 +363,7 @@ export class World {
     // Body-vs-body is circle-vs-circle: overlap when centres are closer than the
     // sum of the two radii (both COLLIDER/2, so < COLLIDER).
     for (const b of [this.player, ...this.npcs]) {
-      if (b === self || b.atHome || b.defeated) continue;
+      if (b === self || b.atHome || b.defeated || b.hidden) continue; // a hidden NPC has no body to bump into
       const dx = x - b.x, dy = y - b.y;
       if (dx * dx + dy * dy < COLLIDER * COLLIDER) {
         out.push({ id: b, cx: b.x, cy: b.y });
@@ -606,6 +606,10 @@ export class World {
 
     for (const npc of this.npcs) {
       if (npc.defeated) continue; // slain — no movement, no routine
+      // A `hidden` NPC holds still as well as staying invisible. Without this
+      // Orris would wander his patrol while unseen and the ambush would spring
+      // from wherever he had drifted to, rather than from the caravan rest.
+      if (npc.hidden) continue;
       // Door fades run to completion before anything else
       if (npc.fading) {
         const dir = npc.fading === 'in' ? 1 : -1;
@@ -1187,7 +1191,11 @@ export class World {
       this.drawSprite(this.images[it.sprite], it.x, it.y);
     }
     for (const npc of this.npcs) {
-      if (npc.atHome || npc.defeated) continue;
+      // `hidden` (2026-09-18, Orris Fenwick's ambush): the NPC exists, walks
+      // and can still fire proximityTalk, but is not DRAWN. Used to spring a
+      // scripted encounter on a player who had no idea anyone was there.
+      // Cleared in main.js once the encounter resolves.
+      if (npc.atHome || npc.defeated || npc.hidden) continue;
       const npcFlip = npc.moving
         && Math.floor(npc.walkTimer / WALK_FLIP_INTERVAL) % 2 === 1;
       this.drawSprite(this.images[npc.sprite], npc.x, npc.y, npc.rotation, npcFlip, npc.alpha);

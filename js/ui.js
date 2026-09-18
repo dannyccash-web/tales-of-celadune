@@ -341,7 +341,9 @@ export function updateDialogContent({ line, responses, responseEffects, contents
   if (contents) renderContentsList(contents);
 }
 
-function closeDialog() {
+// Exported 2026-09-18 so main.js can close the dialog with no player input —
+// Orris's ambush drops straight into a fight on a timer.
+export function closeDialog() {
   clearInterval(typeTimer);
   typeTimer = null;
   dialogState.typing = false;
@@ -379,6 +381,7 @@ function closeDialog() {
 let transferTimer = null;
 function showItemTransfer(itemDef, mode) {
   $('received-image').src = itemDef.image;
+  applyItemGlow($('received-image'), itemDef);
   $('received-image').alt = itemDef.name;
   $('received-name').textContent = itemDef.name;
   const el = $('dialog-received');
@@ -506,6 +509,7 @@ export function showCatch(itemDef, caption) {
   // real new src.
   img.src = '';
   img.src = itemDef.image;
+  applyItemGlow(img, itemDef);
   img.alt = itemDef.name;
   $('catch-name').textContent = itemDef.name;
   el.classList.remove('hidden');
@@ -538,6 +542,18 @@ const dialogGridState = {
 };
 
 export function isDialogGridOpen() { return dialogGridState.open; }
+
+// An enchanted weapon carries a `glow` colour (items.js's generator). Any place
+// an item's image is shown runs it through here, so the glow follows the item
+// into the inventory grid, the received/gave reveals, the popout and the shop
+// grid without each of those needing to know about enchanting. A plain item
+// clears the filter, so re-using an <img> element can't leave a stale glow.
+function applyItemGlow(img, def) {
+  if (!img) return;
+  img.style.filter = def?.glow
+    ? `drop-shadow(0 0 6px ${def.glow}) drop-shadow(0 0 14px ${def.glow})`
+    : '';
+}
 
 export function showDialogGrid({ kind, items, playerGold, vendorGold, emptyText, onSelect, onInspect, onBack }) {
   Object.assign(dialogGridState, {
@@ -611,7 +627,7 @@ function buildDialogGridTile(it, i) {
   frame.className = 'item-frame';
   const img = document.createElement('img');
   img.className = 'item-image';
-  img.src = it.image; img.alt = it.name;
+  img.src = it.image; img.alt = it.name; applyItemGlow(img, it);
   frame.appendChild(img);
   const label = document.createElement('div');
   label.className = 'item-label';
@@ -1236,6 +1252,7 @@ function buildItemTile(entry, def, equipment) {
   const img = document.createElement('img');
   img.className = 'item-image';
   img.src = def.image;
+  applyItemGlow(img, def);
   img.alt = def.name;
   frame.appendChild(img);
   if (def.questItem) {

@@ -17,7 +17,7 @@ import sceneC3 from './data/c3.js';
 import { World } from './world.js';
 import * as ui from './ui.js';
 import * as audio from './audio.js';
-import ITEMS, { statLineFor } from './data/items.js';
+import ITEMS, { statLineFor, isEnchantable, ENCHANTS } from './data/items.js';
 import QUESTS from './data/quests.js';
 import ENEMIES from './data/enemies.js';
 import * as battle from './battle.js';
@@ -424,6 +424,9 @@ async function boot() {
     'assets/images/cave_bat.png', // D4B cave bat — an ambush enemy, not in a `battles` list
     'assets/images/cave_spider.png', // D4B cave spider — a roaming creature enemy (aggro, not in `battles`)
     'assets/images/thornback_boar.png', // C2 thornback boars — roaming creature enemies (aggro, not in `battles`)
+    'assets/images/highwayman_1.png', // C2's scripted ambush — started from code, in no `battles` list
+    'assets/images/highwayman_2.png',
+    'assets/images/orris_fenwick.png', // his dialog opens on approach, so preload the portrait (same as Edras)
     'assets/images/Edras Holloweye.png', // D4B hermit — dialog auto-opens on approach, so preload the portrait
     'assets/images/ysra_nineshells.png', // C1B's Drownweft — fought via dialogue/theft-trigger, not a `battles` list
     ...Object.values(SCENES).flatMap((scene) => [
@@ -532,6 +535,9 @@ async function boot() {
     // fresh World built from a save where her quest was already resolved
     // last session (chaseTalk otherwise defaults to true off the scene data).
     if (id === 'C1' && questStatus('c1_lily_gull') !== 'active' && questStatus('c1_lily_gull') !== 'none') stopLilyChase();
+    // Same idea for Orris: a save made after his rescue must find him revealed
+    // and wandering rather than hidden and about to be robbed all over again.
+    if (id === 'C2') revealOrrisIfRescued();
     // Mara Hollowmast doesn't appear in town until rescued from C1D (2026-09-12)
     // - reuses `.defeated` purely as a presence gate (world.js: a defeated npc
     // "doesn't render, collide, aggro, or take interaction", exactly what
@@ -774,7 +780,7 @@ async function boot() {
         inventory: inventory.map((e) => ({ ...e })),
         equipment: { ...equipment },
         quests: quests.map((q) => ({ ...q })),
-        flags: { campQuestDone, campHostile, campTollTier, gafferHappy, thrumhornFed, wellCoinThrown, wellDrinks, vegetableDeliveredToTavern, calderToldStory, calderToldDangers, maraMet, lilyGullThanked, magicRevealed, maraHollowmastRescued, lockboxAcceptedFrom, lockboxGivenTo },
+        flags: { campQuestDone, campHostile, campTollTier, gafferHappy, thrumhornFed, orrisRescued, wellCoinThrown, wellDrinks, vegetableDeliveredToTavern, calderToldStory, calderToldDangers, maraMet, lilyGullThanked, magicRevealed, maraHollowmastRescued, lockboxAcceptedFrom, lockboxGivenTo },
         caveReturn, // where to exit to if saved inside a cave/dungeon
         worlds: snapshotWorlds(),
       };
@@ -821,7 +827,7 @@ async function boot() {
     quests.length = 0;
     campTollPaid = false; campEntered = false; campQuestDone = false;
     campHostile = false; campEntryGate = null; campTollTier = 0;
-    gafferHappy = false; thrumhornFed = false; wellCoinThrown = false; wellDrinks = 0; vegetableDeliveredToTavern = false;
+    gafferHappy = false; thrumhornFed = false; orrisRescued = false; wellCoinThrown = false; wellDrinks = 0; vegetableDeliveredToTavern = false;
     calderToldStory = false; calderToldDangers = false; maraMet = false;
     lilyGullThanked = false;
     magicRevealed = false;
@@ -848,7 +854,7 @@ async function boot() {
     const f = data.flags || {};
     campQuestDone = !!f.campQuestDone; campHostile = !!f.campHostile;
     campTollTier = f.campTollTier || 0;
-    gafferHappy = !!f.gafferHappy; thrumhornFed = !!f.thrumhornFed; wellCoinThrown = !!f.wellCoinThrown;
+    gafferHappy = !!f.gafferHappy; thrumhornFed = !!f.thrumhornFed; orrisRescued = !!f.orrisRescued; wellCoinThrown = !!f.wellCoinThrown;
     wellDrinks = f.wellDrinks || 0;
     calderToldStory = !!f.calderToldStory; calderToldDangers = !!f.calderToldDangers;
     maraMet = !!f.maraMet;
@@ -1007,6 +1013,7 @@ async function boot() {
   // Gaffer only warms up once he's been fed (session state, not persisted —
   // matches how the world's `defeated`/`collected` flags reset per World).
   let gafferHappy = false;
+  let orrisRescued = false; // C2's highwaymen have been beaten and Orris freed (2026-09-18)
   let thrumhornFed = false; // C2's thrumhorn has been fed corn (2026-09-16) — persisted like gafferHappy
 
   // Calder Rusk's conversation progress (2026-07-25): he only offers his
@@ -1536,6 +1543,19 @@ async function boot() {
       });
       return true;
     }
+    if (effect.orrisFightNow) { startOrrisAmbush(); return true; }
+    if (effect.orrisPickWeapon) { ui.updateDialogContent(orrisWeaponMenu()); return true; }
+    if (effect.orrisChoseWeapon) {
+      pendingEnchantWeapon = effect.orrisChoseWeapon;
+      ui.updateDialogContent(orrisReagentMenu(pendingEnchantWeapon));
+      return true;
+    }
+    if (effect.orrisChoseReagent) {
+      const weaponId = pendingEnchantWeapon;
+      pendingEnchantWeapon = null;
+      applyEnchant(weaponId, effect.orrisChoseReagent);
+      return true;
+    }
     if (effect.noCorn) {
       audio.sfx(audio.SFX.denied);
       ui.updateDialogContent({
@@ -1669,6 +1689,143 @@ async function boot() {
       };
     }
     return npc.dialog;
+  }
+
+  // ---- Orris Fenwick: the caravan-rest ambush, then enchanting (2026-09-18) --
+  // Orris sits `hidden` on C2's road until the player crosses his talkRange,
+  // which fires world.pendingApproach -> openNpcDialog -> buildOrrisDialog.
+  // Before the rescue that returns the ambush cry and arms a timer; the fight
+  // then starts on its own. Danny's spec: a total ambush, no way to decline.
+  const ORRIS_AMBUSH_DELAY_MS = 5200; // long enough to read the shout
+  let orrisAmbushTimer = null;
+
+  function orrisNpc() { return world.npcs.find((n) => n.id === 'orris_fenwick'); }
+
+  // Reveal him as an ordinary NPC: visible, no longer buttonholing, free to
+  // wander his patrol. Called on victory and on load of a save that already
+  // has orrisRescued set (enterScene -> revealOrrisIfRescued).
+  function revealOrris() {
+    const o = orrisNpc();
+    if (!o) return;
+    o.hidden = false;
+    o.proximityTalk = false;
+    o._talkArmed = false;
+  }
+  function revealOrrisIfRescued() { if (orrisRescued) revealOrris(); }
+
+  function startOrrisAmbush() {
+    if (orrisAmbushTimer) { clearTimeout(orrisAmbushTimer); orrisAmbushTimer = null; }
+    const o = orrisNpc();
+    if (o) o.hidden = false; // they're all on top of him now — show him for the fight
+    ui.closeDialog();
+    startBattle(['highwayman_a', 'highwayman_b'], (result) => {
+      if (result === 'victory') {
+        orrisRescued = true;
+        revealOrris();
+        saveGame();
+        // Straight back into dialogue with Orris — the thank-you IS the reward
+        // hand-off, so it shouldn't wait for the player to walk over and talk.
+        setTimeout(() => { const n = orrisNpc(); if (n) openNpcDialog(n); }, 700);
+      } else if (result === 'fled') {
+        // He's still being robbed. Hide him again and re-arm, so coming back
+        // down the road runs the whole ambush a second time.
+        const n = orrisNpc();
+        if (n) { n.hidden = true; n._talkArmed = false; }
+      }
+    }, 'assets/images/forest_background.jpg');
+  }
+
+  function buildOrrisAmbushDialog() {
+    if (!orrisAmbushTimer) orrisAmbushTimer = setTimeout(startOrrisAmbush, ORRIS_AMBUSH_DELAY_MS);
+    return {
+      line: 'Oh — oh thank every small god, a PERSON. Friend. FRIEND. These two gentlemen have my cart, my tools and my entire professional future in their hands and they are not listening to reason, I have tried reason, reason is DONE — please, I am a tinker, I mend things, I am not built for this—',
+      // The single response just skips the wait; the fight starts either way.
+      responses: ['Get behind me.'],
+      responseEffects: [{ orrisFightNow: true }],
+    };
+  }
+
+  // ---- Enchanting -----------------------------------------------------------
+  // A weapon qualifies only if it does nothing but damage (items.js's
+  // isEnchantable — Mara's Cutlass is out, its bonusDamageVs disqualifies it),
+  // and the reagent has to be in the player's bag. Both lists are built off
+  // live inventory, so the conversation can never offer something that isn't
+  // there. The enchanted weapon is a separate catalog id: remove the plain one,
+  // add the variant, and re-equip if the plain one was in hand.
+  let pendingEnchantWeapon = null;
+
+  function enchantableWeaponsHeld() {
+    return inventory.filter((it) => isEnchantable(ITEMS[it.id])).map((it) => ITEMS[it.id]);
+  }
+  function reagentsHeld() {
+    return Object.values(ENCHANTS).filter((e) => inventory.some((it) => it.id === e.reagentId));
+  }
+
+  function buildOrrisDialog() {
+    if (!orrisRescued) return buildOrrisAmbushDialog();
+    const weapons = enchantableWeaponsHeld();
+    const reagents = reagentsHeld();
+    if (!weapons.length) {
+      return {
+        line: 'The offer stands and it will keep standing — I owe you a debt I cannot pay in coin, on account of having none. Bring me a plain weapon, though. Something honest, that only knows how to be sharp. I cannot bind a new nature onto a blade that already has opinions of its own.',
+        responses: ['Leave.'],
+      };
+    }
+    if (!reagents.length) {
+      return {
+        line: 'Ah — half the pieces. A blade is only the argument; I need something to argue WITH. A rootweaver\u2019s heart, a lump of metallic ore, a spider\u2019s fang. Anything with a nature strong enough to lend. Find me one and the work is yours, free and gladly.',
+        responses: ['Leave.'],
+      };
+    }
+    return {
+      line: 'There he is. Listen — no coin, I have said so and I meant it, but I have hands and forty years of ruining things until they worked. Give me a weapon and something with a nature in it, and I will bind the one onto the other. Your pick, both times.',
+      responses: ['Enchant a weapon.', 'Leave.'],
+      responseEffects: [{ orrisPickWeapon: true }, null],
+    };
+  }
+
+  function orrisWeaponMenu() {
+    const weapons = enchantableWeaponsHeld();
+    return {
+      line: 'Right. Lay them out. Which one is going to be interesting?',
+      responses: [...weapons.map((w) => w.name), 'Never mind.'],
+      responseEffects: [...weapons.map((w) => ({ orrisChoseWeapon: w.id })), null],
+    };
+  }
+
+  function orrisReagentMenu(weaponId) {
+    const reagents = reagentsHeld();
+    return {
+      line: `The ${ITEMS[weaponId].name}, then. Good \u2014 no opinions on it at all. Now: what am I binding to it?`,
+      responses: [...reagents.map((e) => ITEMS[e.reagentId].name), 'Never mind.'],
+      responseEffects: [...reagents.map((e) => ({ orrisChoseReagent: e.reagentId })), null],
+    };
+  }
+
+  // What he says while he works — the rock is the one he has no idea about.
+  const ORRIS_RESULT_LINES = {
+    rootweaver_heart: 'He splits the heart with a thumbnail and it bleeds sap that moves against the grain of the world. Half an hour of muttering later he hands the weapon back, and something in the steel wants to grow.',
+    metallic_ore: 'He works the ore into the edge with a small hammer and an unbroken stream of complaint about the quality of everyone else\u2019s ore. The result is thinner than it was, and considerably meaner.',
+    spider_fang: 'He handles the fang with tongs, at arm\u2019s length, narrating what will happen to him if he is careless. He is not careless. The blade comes back with a wet green line down it that will not wipe off.',
+    mysterious_rock: 'He turns the rock over. He weighs it. He taps it against his teeth, which is either technique or despair. \u201cThis is a rock,\u201d he says. \u201cThis is just a rock. Someone has told you otherwise and they were wrong, and I am going to do it anyway because I want to see.\u201d He does it anyway. Something happens that makes both of you take a step back, and afterwards the weapon is warm, and every so often it does a thing twice.',
+  };
+
+  function applyEnchant(weaponId, reagentId) {
+    const ench = ENCHANTS[reagentId];
+    const enchantedId = `${weaponId}_${ench.id}`;
+    const def = ITEMS[enchantedId];
+    if (!def) { ui.toast('Nothing happens.'); return; }
+    const wasEquipped = equipment.mainhand === weaponId;
+    removeItem(weaponId, 1, true);
+    removeItem(reagentId, 1, true);
+    addItem(enchantedId, 1, true);
+    if (wasEquipped) equipItem(enchantedId);
+    audio.sfx(audio.SFX.magic);
+    ui.showReceivedItem(def); // the standard received-item reveal
+    ui.updateDialogContent({ line: ORRIS_RESULT_LINES[reagentId], responses: ['Leave.'] });
+    refreshItemsUi();
+    refreshStatsPanel();
+    requestAutosave();
   }
 
   // ---- The Reedwalkers' thornback boars, C2 (2026-09-16) ----
@@ -2952,6 +3109,7 @@ async function boot() {
     if (npc.id === 'gaffer') dialog = buildGafferDialog(npc);
     else if (npc.id === 'tovan') dialog = buildTovanDialog();
     else if (npc.id === 'thrumhorn') dialog = buildThrumhornDialog();
+    else if (npc.id === 'orris_fenwick') dialog = buildOrrisDialog();
     else if (npc.id === 'cinder') dialog = buildCinderDialog();
     else if (npc.id === 'mara_vellorne') dialog = buildMaraDialog();
     else if (npc.id === 'calder_rusk') dialog = buildCalderDialog(npc);
@@ -3194,6 +3352,19 @@ async function boot() {
     setTimeout(() => {
       if (!battleState.active) return;
       const enemy = current.enemy;
+      // ENSNARED (2026-09-18, the Rootweaver Heart enchantment): the foe loses
+      // this turn outright and the flag clears, so one proc costs it exactly
+      // one action. Checked BEFORE the poison tick, which means an ensnared
+      // foe doesn't fester this turn either — bound things don't thrash the
+      // venom around. Deliberate; move this below the poison block if that
+      // should change.
+      if (enemy.skipTurn) {
+        enemy.skipTurn = false;
+        ui.setBattleMessage(`The ${enemy.name} strains against the roots and cannot move.`);
+        battleState.turnPos += 1;
+        setTimeout(() => runQueue(), ENEMY_TURN_DELAY_MS);
+        return;
+      }
       // Poison ticks at the START of the poisoned enemy's OWN turn (2026-07-31,
       // Danny — Spider Fang). If the venom finishes it, skip its attack.
       if (enemy.poisoned && enemy.health > 0) {
@@ -3371,8 +3542,38 @@ async function boot() {
     const hit = battle.resolveAttack(effectiveAttack(), target.defense);
     let landed = false;
     if (hit) {
-      const dmg = battle.rollDamage(weaponDamage(slot, target.id));
+      let dmg = battle.rollDamage(weaponDamage(slot, target.id));
+      // ---- Orris Fenwick's enchantments (2026-09-18) ----
+      // Every enchanted weapon is its own catalog id carrying an `enchant`
+      // block (see items.js's generator), so this is the ONE place any of them
+      // resolve: roll the chance, apply the effect. `procLine` is appended to
+      // the hit message so a proc always announces itself — an invisible 20%
+      // effect may as well not exist.
+      const ench = weapon?.enchant;
+      const procced = ench && Math.random() < ench.chance;
+      let procLine = '';
+      if (procced && ench.kind === 'bonusDamage') {
+        dmg += ench.amount;
+        procLine = ' The honed edge bites deep!';
+      } else if (procced && ench.kind === 'echo') {
+        // The blow simply happens a second time — same roll, applied again.
+        const second = battle.rollDamage(weaponDamage(slot, target.id));
+        dmg += second;
+        procLine = ` The blow echoes — it lands a second time for ${second} more.`;
+      }
       target.health = Math.max(0, target.health - dmg);
+      if (procced && ench.kind === 'ensnare' && target.health > 0) {
+        target.skipTurn = true;
+        procLine = ` Roots burst from the earth and bind the ${target.name} fast!`;
+      } else if (procced && ench.kind === 'poison' && target.health > 0) {
+        // Respects `poisonable` exactly like the thrown Spider Fang does — you
+        // can't envenom a rootweaver or anything else that isn't flesh.
+        if (ENEMIES[target.id]?.poisonable && !target.poisoned) {
+          target.poisoned = true;
+          target.poisonDamage = ench.poison;
+          procLine = ` The venom takes — the ${target.name} is envenomed!`;
+        }
+      }
       // Fire weapon (the torch, `burn`): a flammable (`wood`) foe — rootweaver,
       // bramblekin — catches alight and burns for `burn` at the start of every
       // player turn (tickBurns) until it dies (2026-07-26). (`weapon` is the
@@ -3383,8 +3584,8 @@ async function boot() {
         ? `The ${target.name} falls! +${dmg} damage done.`
         : ignites
           ? `You hit the ${target.name} — the flames catch! +${dmg} damage done.`
-          : `You hit the ${target.name}. +${dmg} damage done.`);
-      audio.sfx(ignites ? audio.SFX.magic : audio.SFX.punch);
+          : `You hit the ${target.name}. +${dmg} damage done.${procLine}`);
+      audio.sfx(ignites || (procced && ench.kind !== 'bonusDamage') ? audio.SFX.magic : audio.SFX.punch);
       landed = true;
     } else {
       audio.sfx(audio.SFX.miss);

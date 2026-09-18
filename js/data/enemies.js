@@ -10,6 +10,42 @@
 // player. speed drives this round's turn order (battle.turnOrder) alongside
 // the player's stats.speed.
 export default {
+  // ---- The two Highwaymen (C2 caravan-rest ambush, 2026-09-18) ----
+  // Both are NAMED "Highwayman" on purpose (Danny) — the player never learns
+  // who they are. They exist ONLY inside the scripted ambush on Orris Fenwick,
+  // so they have no overworld sprite and appear in no scene's `npcs`; main.js
+  // calls startBattle(['highwayman_a','highwayman_b']) directly. Two ids rather
+  // than one repeated, purely so each gets its own portrait.
+  // Tuned as a two-on-one the player is FORCED into with no chance to prepare:
+  // individually softer than a thornback boar (6hp vs 8) so the pair is a real
+  // fight without being a wall for a player who wandered in early.
+  highwayman_a: {
+    id: 'highwayman_a',
+    name: 'Highwayman',
+    portrait: 'assets/images/highwayman_1.png',
+    health: 6,
+    attack: 3,
+    defense: 2,
+    speed: 9,
+    damage: { min: 2, max: 3 },
+    poisonable: true,
+    background: 'assets/images/forest_background.jpg',
+    drops: { gold: { min: 6, max: 11 } },
+  },
+  highwayman_b: {
+    id: 'highwayman_b',
+    name: 'Highwayman',
+    portrait: 'assets/images/highwayman_2.png',
+    health: 6,
+    attack: 3,
+    defense: 2,
+    speed: 8,
+    damage: { min: 2, max: 3 },
+    poisonable: true,
+    background: 'assets/images/forest_background.jpg',
+    drops: { gold: { min: 6, max: 11 } },
+  },
+
   // Thornback Boar (C2 Windmarch Grassland, 2026-09-16) — the mid-tier beast
   // the row-C brief always called for, finally real. A heavy grassland charger
   // that killed the Reedwalkers' herd in the night. Sits between the cragclaw

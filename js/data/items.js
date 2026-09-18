@@ -74,6 +74,61 @@ export const SLOT_LABEL = {
 // Short secondary stat line shown under an item's name on its tile within
 // Equipment/Weapons (e.g. "2 DMG" for the dagger, per Danny's mockup) — null
 // if the item has nothing worth showing yet (armor with no bonuses set).
+// ---- ENCHANTING (Orris Fenwick, C2, 2026-09-18) ----------------------------
+// Orris upgrades a plain weapon using a reagent the player is carrying. Rather
+// than mutating the item in place (the catalog is keyed by id and the save
+// stores ids, so a mutated entry would not survive a reload), every
+// combination exists as its own catalog entry, GENERATED at module load from
+// the table below. That means an enchanted weapon is just another item id —
+// inventory, equipment, the save and the Stats panel all handle it for free.
+//
+// A weapon is enchantable only if it has NOTHING going on but damage — Danny's
+// rule, and the reason Mara's Cutlass is excluded (its bonusDamageVs). That is
+// enforced with an ALLOW-list of harmless keys rather than a deny-list of
+// gimmick ones, so a future weapon with some new trick is excluded
+// automatically instead of silently slipping through.
+const PLAIN_WEAPON_KEYS = new Set([
+  'id', 'name', 'image', 'description', 'slot', 'damage', 'price', 'questItem',
+  'enchant', 'glow', 'baseId', 'reagentId',
+]);
+export function isEnchantable(item) {
+  return !!item
+    && item.slot === 'mainhand'
+    && item.damage != null
+    && !item.enchant                                   // one enchantment per weapon
+    && Object.keys(item).every((k) => PLAIN_WEAPON_KEYS.has(k));
+}
+
+// Each enchantment: the reagent that buys it, the word that goes in front of
+// the weapon's name, the proc chance, and the colour the item image glows.
+// `kind` is what main.js's playerAttack switches on when a hit lands.
+export const ENCHANTS = {
+  rootweaver_heart: {
+    id: 'ensnare', kind: 'ensnare', reagentId: 'rootweaver_heart',
+    prefix: 'Ensnaring', chance: 0.20, glow: '#d08b2c',
+    blurb: 'Roots answer the blade: a 20% chance on any hit to bind a foe fast, costing it its next turn.',
+    procMessage: (t) => `Roots burst from the earth and bind the ${t} fast!`,
+  },
+  metallic_ore: {
+    id: 'honed', kind: 'bonusDamage', reagentId: 'metallic_ore', amount: 2,
+    prefix: 'Honed', chance: 0.30, glow: '#9fd4ff',
+    blurb: 'Ore-hardened edge: a 30% chance on any hit to bite 2 damage deeper.',
+    procMessage: null, // folded into the hit line instead
+  },
+  spider_fang: {
+    id: 'venomous', kind: 'poison', reagentId: 'spider_fang', poison: 1,
+    prefix: 'Venomous', chance: 0.25, glow: '#5fd35f',
+    blurb: 'Fang-bitten steel: a 25% chance on any hit to envenom a living foe, festering for 1 damage at the start of each of its turns.',
+    procMessage: (t) => `The venom takes — the ${t} is envenomed!`,
+  },
+  mysterious_rock: {
+    id: 'echoing', kind: 'echo', reagentId: 'mysterious_rock',
+    prefix: 'Echoing', chance: 0.20, glow: '#b98cff',
+    blurb: 'Something Lily Farrow found on a beach. A 20% chance that the blow simply happens twice. Orris could not tell you why.',
+    procMessage: null, // folded into the hit line
+  },
+};
+
 export function statLineFor(item) {
   if (item.damage != null) {
     const dmg = typeof item.damage === 'object' ? `${item.damage.min}-${item.damage.max}` : item.damage;
@@ -91,7 +146,7 @@ export function statLineFor(item) {
   return parts.length ? parts.join(' / ') : null;
 }
 
-export default {
+const ITEMS = {
   vegetable_crate: {
     id: 'vegetable_crate',
     name: 'Crate of Vegetables',
@@ -471,3 +526,29 @@ export default {
     questItem: false,
   },
 };
+
+// Build <weapon>_<enchant> for every plain weapon x every enchantment. Runs
+// once at import, so the ids are stable across reloads and saves.
+(function generateEnchantedWeapons(catalog) {
+  const bases = Object.values(catalog).filter(isEnchantable);
+  for (const base of bases) {
+    for (const ench of Object.values(ENCHANTS)) {
+      const id = `${base.id}_${ench.id}`;
+      catalog[id] = {
+        ...base,
+        id,
+        baseId: base.id,
+        reagentId: ench.reagentId,
+        name: `${ench.prefix} ${base.name}`,
+        description: `${base.description} ${ench.blurb}`,
+        // Worth a little more than the plain weapon, so selling one back is not
+        // a downgrade. Plain price + half again, rounded.
+        price: base.price ? Math.round(base.price * 1.5) : undefined,
+        enchant: { kind: ench.kind, chance: ench.chance, amount: ench.amount, poison: ench.poison, key: ench.id },
+        glow: ench.glow,
+      };
+    }
+  }
+})(ITEMS);
+
+export default ITEMS;

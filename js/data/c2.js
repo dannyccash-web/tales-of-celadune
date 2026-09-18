@@ -705,6 +705,55 @@ export default {
   // 36px collider (nearest reachable point with >=30px clearance to the
   // intended spot), not eyeballed off the art.
   npcs: [
+    // ---- Orris Fenwick, the tinker-enchanter, and his ambush (2026-09-18) ----
+    // This is the "wandering tinker/enchanter caravan" the row-C brief always
+    // owed C2, finally placed — and the bandits the brief put in the watchtower
+    // ruins are what he's being robbed by, which folds two loose threads into
+    // one encounter and explains why the caravan pull-off sits empty in the art.
+    //
+    // THE AMBUSH. He starts `hidden: true` — present, but not drawn, not
+    // talkable and with no body to bump into (see world.js's `hidden`). The
+    // player walks the road past the caravan rest, crosses `talkRange`, and
+    // `proximityTalk` fires into main.js's buildOrrisAmbushDialog: Orris
+    // appears mid-robbery shouting for help, and a few seconds later the fight
+    // starts whether the player engages the dialogue or not. There is no
+    // "decline" — Danny's spec is a total ambush. Fleeing the fight re-arms the
+    // whole thing, so the encounter is still waiting the next time through.
+    //
+    // The two Highwaymen exist ONLY as battle enemies (enemies.js's
+    // highwayman_a / highwayman_b) — no overworld sprites, because they are
+    // never seen outside this fight.
+    //
+    // AFTERWARDS he is a normal NPC: revealed, proximityTalk off, wandering the
+    // pull-off, and offering to enchant a weapon (main.js's buildOrrisDialog).
+    // `orrisRescued` persists in the save, so his state survives a reload.
+    {
+      id: 'orris_fenwick', name: 'Orris Fenwick', role: 'TINKER',
+      sprite: 'assets/images/orris_fenwick_overhead.png',
+      portrait: 'assets/images/orris_fenwick.png',
+      hidden: true,
+      proximityTalk: true, talkRange: 300,
+      // Stands on the road at the pull-off's south edge — he was flagged down
+      // and robbed right where travellers pass. Engine-verified walkable.
+      x: 2460, y: 1180, speed: 26, startsHome: false,
+      // He holds still while `hidden` (world.js skips movement for hidden NPCs),
+      // so the ambush always springs at the caravan rest rather than from
+      // wherever an invisible man had wandered off to. This loop only starts
+      // running once main.js reveals him.
+      patrol: [
+        { x: 2460, y: 1180 },
+        { x: 2320, y: 1200 },
+        { x: 2600, y: 1210 },
+      ],
+      dialog: {
+        line: 'Bent axle, bent nerves, and a bent opinion of the open road. But the tools still work, friend, and that is the main thing.',
+        responses: ['Leave.'],
+      },
+      chatter: [
+        { q: 'What is it you do, exactly?', a: 'Bindings, mostly. You take a thing with a nature to it — a heart, a fang, a lump of ore — and you argue with a weapon until it agrees to behave the same way. It is less mystical than it sounds and more arguing than anyone admits.' },
+        { q: 'Why travel alone out here?', a: 'Because a cart with two people in it is a cart worth stopping, and a cart with one skinny man in it is usually not worth the walk. That theory has now been tested. The theory lost.' },
+      ],
+    },
     {
       id: 'tovan', name: 'Tovan Reedwalker', role: 'HERDER',
       sprite: 'assets/images/tovan_reedwalker_overhead.png',
