@@ -447,7 +447,8 @@ async function boot() {
     'assets/images/thornback_boar.png', // C2 thornback boars — roaming creature enemies (aggro, not in `battles`)
     'assets/images/highwayman_1.png', // C2's scripted ambush — started from code, in no `battles` list
     'assets/images/highwayman_2.png',
-    'assets/images/orris_fenwick.png', // his dialog opens on approach, so preload the portrait (same as Edras)
+    'assets/images/orris_fenwick_1.png', // his dialog opens on approach, so preload BOTH portraits (same as Edras)
+    'assets/images/orris_fenwick_2.png',
     'assets/images/Edras Holloweye.png', // D4B hermit — dialog auto-opens on approach, so preload the portrait
     'assets/images/ysra_nineshells.png', // C1B's Drownweft — fought via dialogue/theft-trigger, not a `battles` list
     ...Object.values(SCENES).flatMap((scene) => [
