@@ -1817,7 +1817,7 @@ async function boot() {
     } else if (!reagents.length) {
       line = 'Ah — half the pieces. A blade is only the argument; I need something to argue WITH. A rootweaver\u2019s heart, a spider\u2019s fang. Something with a nature strong enough to lend. Find me one and the work is yours, free and gladly.';
     } else {
-      line = 'There he is. Listen \u2014 I was up at the old fort, the soldiers' ruin on the rise there, taking rubbings off what is left of the stonework, which is the sort of thing that gets a man robbed and I knew it when I set out. No coin. I said so and I meant it. But I have hands, and forty years of ruining things until they worked. Give me a weapon and something with a nature in it, and I will bind the one onto the other.';
+      line = 'There he is. Listen \u2014 I was up at the old fort, the soldiers\u2019 ruin on the rise there, taking rubbings off what is left of the stonework, which is the sort of thing that gets a man robbed and I knew it when I set out. No coin. I said so and I meant it. But I have hands, and forty years of ruining things until they worked. Give me a weapon and something with a nature in it, and I will bind the one onto the other.';
     }
     return { line, responses, responseEffects: effects };
   }
