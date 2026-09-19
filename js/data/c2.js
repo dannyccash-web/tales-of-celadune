@@ -730,7 +730,9 @@ export default {
     {
       id: 'orris_fenwick', name: 'Orris Fenwick', role: 'TINKER',
       sprite: 'assets/images/orris_fenwick_overhead.png',
-      portrait: 'assets/images/orris_fenwick.png',
+      // Two portraits: _1 is the man being robbed, _2 the man who has just been
+      // rescued. main.js swaps `portrait` on the instance as the state changes.
+      portrait: 'assets/images/orris_fenwick_1.png',
       hidden: true,
       proximityTalk: true, talkRange: 300,
       // Stands on the road at the pull-off's south edge — he was flagged down

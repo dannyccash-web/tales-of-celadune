@@ -102,6 +102,12 @@ export function isEnchantable(item) {
 // Each enchantment: the reagent that buys it, the word that goes in front of
 // the weapon's name, the proc chance, and the colour the item image glows.
 // `kind` is what main.js's playerAttack switches on when a hit lands.
+// Trimmed 2026-09-19 to the two Danny re-specified. Metallic Ore (which was
+// "Honed", +2 damage) and Lily's Mysterious Rock (which was "Echoing") are no
+// longer enchantments: the ore belongs to Sorcha's longsword quest and nothing
+// else, and the rock is now a LEAD rather than a reagent — Orris marvels at it,
+// admits he can't read it, and points the player at Kingsreach. That drops the
+// generated variants from 12 to 6.
 export const ENCHANTS = {
   rootweaver_heart: {
     id: 'ensnare', kind: 'ensnare', reagentId: 'rootweaver_heart',
@@ -109,23 +115,11 @@ export const ENCHANTS = {
     blurb: 'Roots answer the blade: a 20% chance on any hit to bind a foe fast, costing it its next turn.',
     procMessage: (t) => `Roots burst from the earth and bind the ${t} fast!`,
   },
-  metallic_ore: {
-    id: 'honed', kind: 'bonusDamage', reagentId: 'metallic_ore', amount: 2,
-    prefix: 'Honed', chance: 0.30, glow: '#9fd4ff',
-    blurb: 'Ore-hardened edge: a 30% chance on any hit to bite 2 damage deeper.',
-    procMessage: null, // folded into the hit line instead
-  },
   spider_fang: {
     id: 'venomous', kind: 'poison', reagentId: 'spider_fang', poison: 1,
     prefix: 'Venomous', chance: 0.25, glow: '#5fd35f',
     blurb: 'Fang-bitten steel: a 25% chance on any hit to envenom a living foe, festering for 1 damage at the start of each of its turns.',
     procMessage: (t) => `The venom takes — the ${t} is envenomed!`,
-  },
-  mysterious_rock: {
-    id: 'echoing', kind: 'echo', reagentId: 'mysterious_rock',
-    prefix: 'Echoing', chance: 0.20, glow: '#b98cff',
-    blurb: 'Something Lily Farrow found on a beach. A 20% chance that the blow simply happens twice. Orris could not tell you why.',
-    procMessage: null, // folded into the hit line
   },
 };
 
@@ -278,6 +272,21 @@ const ITEMS = {
     description: 'A tin of wriggling bait. Fish find it irresistible.',
     questItem: false,
     price: 2,
+  },
+  // Small Shield (2026-09-19, Danny) — spoils from C2's highwaymen. An OFF-HAND
+  // weapon like the torch: it can be swung for 1 damage, but the point of it is
+  // `damageReduction`, a NEW field read by main.js's damagePlayer — every point
+  // of damage the player takes, from any source, is reduced by the total across
+  // their equipped gear. First item in the game to carry it.
+  small_shield: {
+    id: 'small_shield',
+    name: 'Small Shield',
+    image: 'assets/images/small_shield.png',
+    description: 'A banded buckler, scarred and much repaired. Turns aside 2 damage from anything that reaches you, and there is always the option of simply hitting someone with it.',
+    slot: 'offhand',
+    damage: 1,
+    damageReduction: 2,
+    price: 30,
   },
   fishing_rod: {
     id: 'fishing_rod',

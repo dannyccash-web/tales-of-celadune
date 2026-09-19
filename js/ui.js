@@ -183,6 +183,7 @@ export function openDialog(npc, onClose, onResponse) {
   dialogState.npc = npc;
   dialogState.onClose = onClose || null;
   dialogState.onResponse = onResponse || null;
+  dialogState.locked = !!npc.lockDialog;
 
   $('dialog-name').textContent = npc.name;
   $('dialog-role').textContent = npc.role || '';
@@ -294,7 +295,10 @@ export function dialogKey(key) {
     if (dialogState.typing) { finishTyping(); return; }
     chooseResponse();
   }
-  if (key === 'Escape') closeDialog();
+  // A LOCKED dialog ignores Escape (2026-09-19, Orris's ambush): the player is
+  // being jumped on the road and the only way out is the response that starts
+  // the fight. Set via `lockDialog` on the npc view handed to openDialog.
+  if (key === 'Escape' && !dialogState.locked) closeDialog();
 }
 
 function chooseResponse() {
@@ -344,6 +348,7 @@ export function updateDialogContent({ line, responses, responseEffects, contents
 // Exported 2026-09-18 so main.js can close the dialog with no player input —
 // Orris's ambush drops straight into a fight on a timer.
 export function closeDialog() {
+  dialogState.locked = false; // never leave the lock set for the next dialog
   clearInterval(typeTimer);
   typeTimer = null;
   dialogState.typing = false;

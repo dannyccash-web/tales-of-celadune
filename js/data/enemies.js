@@ -30,7 +30,10 @@ export default {
     damage: { min: 2, max: 3 },
     poisonable: true,
     background: 'assets/images/forest_background.jpg',
-    drops: { gold: { min: 6, max: 11 } },
+    // The spoils Danny specified are split across the pair, all at chance 1 so
+    // the haul is fixed rather than a roll — this is a scripted set-piece, not
+    // a random encounter, and the shield in particular is the reward for it.
+    drops: { gold: { min: 8, max: 14 }, loot: [{ id: 'short_sword' }, { id: 'health_potion' }] },
   },
   highwayman_b: {
     id: 'highwayman_b',
@@ -43,7 +46,7 @@ export default {
     damage: { min: 2, max: 3 },
     poisonable: true,
     background: 'assets/images/forest_background.jpg',
-    drops: { gold: { min: 6, max: 11 } },
+    drops: { gold: { min: 8, max: 14 }, loot: [{ id: 'small_shield' }] },
   },
 
   // Thornback Boar (C2 Windmarch Grassland, 2026-09-16) — the mid-tier beast

@@ -279,12 +279,33 @@ function spendGold(amount) {
   requestAutosave();
 }
 
+// Total `damageReduction` across everything equipped (2026-09-19 — the Small
+// Shield is the first and only source). Kept as a sum so a second piece of
+// protective gear just works.
+function equipmentDamageReduction() {
+  return Object.values(equipment)
+    .filter(Boolean)
+    .reduce((n, id) => n + (ITEMS[id]?.damageReduction || 0), 0);
+}
+
+// The ONE place the player loses health, so gear that soaks damage belongs
+// here: Danny's spec is "reduces ANY damage the player receives", so this
+// applies to every source, not just enemy swings. Returns what actually landed
+// after the soak so callers can say so — resolveEnemyTurn uses it to report a
+// fully-absorbed hit as a hit, rather than "−0 damage taken".
+// ⚠️ BALANCE: at this tier a flat −2 is a lot. Most D/C-row enemies roll 1-4,
+// so a Small Shield negates roughly half of all incoming damage and zeroes a
+// highwayman's 2-3 outright. That is exactly what was asked for; if it plays
+// too strong, the floor below is the knob (Math.max(1, ...) makes every hit
+// sting for at least 1).
 function damagePlayer(amount) {
-  stats.health = Math.max(0, stats.health - amount);
+  const dealt = Math.max(0, amount - equipmentDamageReduction());
+  stats.health = Math.max(0, stats.health - dealt);
   ui.updateHud(stats);
-  ui.flashHealthDamage();
+  if (dealt > 0) ui.flashHealthDamage();
   audio.sfx(audio.SFX.hurt);
   requestAutosave(); // no-ops mid-battle (the hook guards on that)
+  return dealt;
 }
 
 // Restore health, clamped to healthMax. Returns how much was ACTUALLY restored
@@ -1545,6 +1566,7 @@ async function boot() {
     }
     if (effect.orrisFightNow) { startOrrisAmbush(); return true; }
     if (effect.orrisPickWeapon) { ui.updateDialogContent(orrisWeaponMenu()); return true; }
+    if (effect.orrisRock) { ui.updateDialogContent({ line: ORRIS_ROCK_LINE, responses: ['Leave.'] }); return true; }
     if (effect.orrisChoseWeapon) {
       pendingEnchantWeapon = effect.orrisChoseWeapon;
       ui.updateDialogContent(orrisReagentMenu(pendingEnchantWeapon));
@@ -1696,34 +1718,36 @@ async function boot() {
   // which fires world.pendingApproach -> openNpcDialog -> buildOrrisDialog.
   // Before the rescue that returns the ambush cry and arms a timer; the fight
   // then starts on its own. Danny's spec: a total ambush, no way to decline.
-  const ORRIS_AMBUSH_DELAY_MS = 5200; // long enough to read the shout
-  let orrisAmbushTimer = null;
+  // The two faces of Orris: mid-robbery, and afterwards. openNpcDialog spreads
+  // the live npc, so swapping `portrait` on the instance is all it takes.
+  const ORRIS_PORTRAIT_AMBUSH = 'assets/images/orris_fenwick_1.png';
+  const ORRIS_PORTRAIT_SAFE = 'assets/images/orris_fenwick_2.png';
 
   function orrisNpc() { return world.npcs.find((n) => n.id === 'orris_fenwick'); }
 
-  // Reveal him as an ordinary NPC: visible, no longer buttonholing, free to
-  // wander his patrol. Called on victory and on load of a save that already
-  // has orrisRescued set (enterScene -> revealOrrisIfRescued).
+  // Reveal him as an ordinary NPC: visible, second portrait, no longer
+  // buttonholing, free to wander. Called on victory and on any entry to C2 with
+  // orrisRescued already set.
   function revealOrris() {
     const o = orrisNpc();
     if (!o) return;
     o.hidden = false;
     o.proximityTalk = false;
     o._talkArmed = false;
+    o.portrait = ORRIS_PORTRAIT_SAFE;
   }
   function revealOrrisIfRescued() { if (orrisRescued) revealOrris(); }
 
   function startOrrisAmbush() {
-    if (orrisAmbushTimer) { clearTimeout(orrisAmbushTimer); orrisAmbushTimer = null; }
     const o = orrisNpc();
-    if (o) o.hidden = false; // they're all on top of him now — show him for the fight
+    if (o) o.hidden = false; // they're all over him now — show him for the fight
     ui.closeDialog();
     startBattle(['highwayman_a', 'highwayman_b'], (result) => {
       if (result === 'victory') {
         orrisRescued = true;
         revealOrris();
         saveGame();
-        // Straight back into dialogue with Orris — the thank-you IS the reward
+        // Back to Orris once the spoils screen is done — the thank-you IS the
         // hand-off, so it shouldn't wait for the player to walk over and talk.
         setTimeout(() => { const n = orrisNpc(); if (n) openNpcDialog(n); }, 700);
       } else if (result === 'fled') {
@@ -1735,13 +1759,19 @@ async function boot() {
     }, 'assets/images/forest_background.jpg');
   }
 
+  // THE AMBUSH DIALOG. Danny's spec: the player cannot run, flee, or close the
+  // window — the ONLY way out is the one response, which starts the fight.
+  // `lockDialog` tells ui.js to ignore Escape while this is open (see
+  // dialogKey), and there is no timer and no second response, so the fight is
+  // the only exit that exists.
   function buildOrrisAmbushDialog() {
-    if (!orrisAmbushTimer) orrisAmbushTimer = setTimeout(startOrrisAmbush, ORRIS_AMBUSH_DELAY_MS);
+    const o = orrisNpc();
+    if (o) o.portrait = ORRIS_PORTRAIT_AMBUSH;
     return {
-      line: 'Oh — oh thank every small god, a PERSON. Friend. FRIEND. These two gentlemen have my cart, my tools and my entire professional future in their hands and they are not listening to reason, I have tried reason, reason is DONE — please, I am a tinker, I mend things, I am not built for this—',
-      // The single response just skips the wait; the fight starts either way.
-      responses: ['Get behind me.'],
+      line: 'You there — YES, you, do not walk on, do not — these two have my cart and my tools and one of them has a knife against my ribs and is making a point of letting me feel it. I have nothing worth this. I have told them. They do not care. Please.',
+      responses: ['Draw your weapon.'],
       responseEffects: [{ orrisFightNow: true }],
+      lockDialog: true,
     };
   }
 
@@ -1765,23 +1795,30 @@ async function boot() {
     if (!orrisRescued) return buildOrrisAmbushDialog();
     const weapons = enchantableWeaponsHeld();
     const reagents = reagentsHeld();
+    const hasRock = inventory.some((it) => it.id === 'mysterious_rock');
+    const responses = [];
+    const effects = [];
+    if (weapons.length && reagents.length) {
+      responses.push('Enchant a weapon.');
+      effects.push({ orrisPickWeapon: true });
+    }
+    // Lily Farrow's rock is NOT a reagent (2026-09-19) — it's a lead. Orris can
+    // tell it matters and cannot tell why, and points the player at Kingsreach.
+    if (hasRock) {
+      responses.push('Show him the strange rock.');
+      effects.push({ orrisRock: true });
+    }
+    responses.push('Leave.');
+    effects.push(null);
+    let line;
     if (!weapons.length) {
-      return {
-        line: 'The offer stands and it will keep standing — I owe you a debt I cannot pay in coin, on account of having none. Bring me a plain weapon, though. Something honest, that only knows how to be sharp. I cannot bind a new nature onto a blade that already has opinions of its own.',
-        responses: ['Leave.'],
-      };
+      line = 'The offer stands and it will keep standing — I owe you a debt I cannot pay in coin, on account of having none. Bring me a plain weapon, though. Something honest, that only knows how to be sharp. I cannot bind a new nature onto a blade that already has opinions of its own.';
+    } else if (!reagents.length) {
+      line = 'Ah — half the pieces. A blade is only the argument; I need something to argue WITH. A rootweaver\u2019s heart, a spider\u2019s fang. Something with a nature strong enough to lend. Find me one and the work is yours, free and gladly.';
+    } else {
+      line = 'There he is. Listen \u2014 I was up at the old fort, the soldiers' ruin on the rise there, taking rubbings off what is left of the stonework, which is the sort of thing that gets a man robbed and I knew it when I set out. No coin. I said so and I meant it. But I have hands, and forty years of ruining things until they worked. Give me a weapon and something with a nature in it, and I will bind the one onto the other.';
     }
-    if (!reagents.length) {
-      return {
-        line: 'Ah — half the pieces. A blade is only the argument; I need something to argue WITH. A rootweaver\u2019s heart, a lump of metallic ore, a spider\u2019s fang. Anything with a nature strong enough to lend. Find me one and the work is yours, free and gladly.',
-        responses: ['Leave.'],
-      };
-    }
-    return {
-      line: 'There he is. Listen — no coin, I have said so and I meant it, but I have hands and forty years of ruining things until they worked. Give me a weapon and something with a nature in it, and I will bind the one onto the other. Your pick, both times.',
-      responses: ['Enchant a weapon.', 'Leave.'],
-      responseEffects: [{ orrisPickWeapon: true }, null],
-    };
+    return { line, responses, responseEffects: effects };
   }
 
   function orrisWeaponMenu() {
@@ -1802,12 +1839,15 @@ async function boot() {
     };
   }
 
-  // What he says while he works — the rock is the one he has no idea about.
+  // The rock: he marvels, and sends the player on. Kingsreach is the city beside
+  // the King's Castle (overworld B3, "Town" on the grid) — named here for the
+  // first time, so anything else that needs to name it should use this.
+  const ORRIS_ROCK_LINE = 'He goes quiet, which he does not do. He holds it up, turns it, and holds it up again. \u201cWhere did you \u2014 no. No, do not tell me on the road.\u201d He gives it back with both hands, the way you hand back something that is not yours. \u201cI have bound hearts and fangs and ore and once, memorably, a tooth. I cannot read this at all, and I can tell you it is very rare indeed, and those two facts sitting together are keeping me up tonight. Take it to Kingsreach \u2014 the city under the castle walls. There are people there who read things for a living. Do not sell it to the first one who offers.\u201d';
+
+  // What he says while he works.
   const ORRIS_RESULT_LINES = {
     rootweaver_heart: 'He splits the heart with a thumbnail and it bleeds sap that moves against the grain of the world. Half an hour of muttering later he hands the weapon back, and something in the steel wants to grow.',
-    metallic_ore: 'He works the ore into the edge with a small hammer and an unbroken stream of complaint about the quality of everyone else\u2019s ore. The result is thinner than it was, and considerably meaner.',
     spider_fang: 'He handles the fang with tongs, at arm\u2019s length, narrating what will happen to him if he is careless. He is not careless. The blade comes back with a wet green line down it that will not wipe off.',
-    mysterious_rock: 'He turns the rock over. He weighs it. He taps it against his teeth, which is either technique or despair. \u201cThis is a rock,\u201d he says. \u201cThis is just a rock. Someone has told you otherwise and they were wrong, and I am going to do it anyway because I want to see.\u201d He does it anyway. Something happens that makes both of you take a step back, and afterwards the weapon is warm, and every so often it does a thing twice.',
   };
 
   function applyEnchant(weaponId, reagentId) {
@@ -3126,7 +3166,9 @@ async function boot() {
     else dialog = withBlessing(withChatter(resolveNpcDialog(npc, isQuestReady), npc), npc);
     // Any Bramblekin (guards or Chief) parley shows the camp backdrop (2026-07-22).
     const background = (npc.bramblekin || npc.id === 'bramblekin_chief') ? BRAMBLEKIN_BG : npc.background;
-    ui.openDialog({ ...npc, dialog, background }, onClose, applyResponseEffect);
+    // `lockDialog` rides on the built dialog (Orris's ambush) — ui.js reads it
+    // off the npc view to disable Escape.
+    ui.openDialog({ ...npc, dialog, background, lockDialog: !!dialog.lockDialog }, onClose, applyResponseEffect);
   }
 
   // ---- Battle (2026-07-08) ----
@@ -3502,10 +3544,14 @@ async function boot() {
     const hit = battle.resolveAttack(enemy.attack, effectiveDefense());
     if (hit) {
       const dmg = battle.rollDamage(enemy.damage);
-      damagePlayer(dmg); // plays the player's hurt grunt
+      const dealt = damagePlayer(dmg); // plays the player's hurt grunt; returns post-shield damage
       audio.sfx(audio.SFX.punch); // the impact, layered over the grunt
       ui.shakeScreen(); // player was hit — shake the whole battle scene
-      ui.setBattleMessage(`The ${enemy.name} hits you. −${dmg} damage taken.`);
+      ui.setBattleMessage(dealt === 0
+        ? `The ${enemy.name} hits you — your shield turns it aside.`
+        : dealt < dmg
+          ? `The ${enemy.name} hits you. −${dealt} damage taken (${dmg - dealt} turned aside).`
+          : `The ${enemy.name} hits you. −${dmg} damage taken.`);
     } else {
       audio.sfx(audio.SFX.miss);
       ui.setBattleMessage(`The ${enemy.name} attacks but misses.`);
@@ -3542,25 +3588,18 @@ async function boot() {
     const hit = battle.resolveAttack(effectiveAttack(), target.defense);
     let landed = false;
     if (hit) {
-      let dmg = battle.rollDamage(weaponDamage(slot, target.id));
-      // ---- Orris Fenwick's enchantments (2026-09-18) ----
+      const dmg = battle.rollDamage(weaponDamage(slot, target.id));
+      // ---- Orris Fenwick's enchantments (2026-09-18; trimmed 2026-09-19) ----
       // Every enchanted weapon is its own catalog id carrying an `enchant`
-      // block (see items.js's generator), so this is the ONE place any of them
-      // resolve: roll the chance, apply the effect. `procLine` is appended to
-      // the hit message so a proc always announces itself — an invisible 20%
-      // effect may as well not exist.
+      // block (see items.js's generator), so this is the ONE place either of
+      // them resolves: roll the chance, apply the effect. `procLine` is
+      // appended to the hit message so a proc always announces itself — an
+      // invisible 20% effect may as well not exist. Both surviving enchantments
+      // are status effects that only matter on a LIVING target, so both are
+      // applied after the damage, gated on `target.health > 0`.
       const ench = weapon?.enchant;
       const procced = ench && Math.random() < ench.chance;
       let procLine = '';
-      if (procced && ench.kind === 'bonusDamage') {
-        dmg += ench.amount;
-        procLine = ' The honed edge bites deep!';
-      } else if (procced && ench.kind === 'echo') {
-        // The blow simply happens a second time — same roll, applied again.
-        const second = battle.rollDamage(weaponDamage(slot, target.id));
-        dmg += second;
-        procLine = ` The blow echoes — it lands a second time for ${second} more.`;
-      }
       target.health = Math.max(0, target.health - dmg);
       if (procced && ench.kind === 'ensnare' && target.health > 0) {
         target.skipTurn = true;
@@ -3585,7 +3624,7 @@ async function boot() {
         : ignites
           ? `You hit the ${target.name} — the flames catch! +${dmg} damage done.`
           : `You hit the ${target.name}. +${dmg} damage done.${procLine}`);
-      audio.sfx(ignites || (procced && ench.kind !== 'bonusDamage') ? audio.SFX.magic : audio.SFX.punch);
+      audio.sfx(ignites || procced ? audio.SFX.magic : audio.SFX.punch);
       landed = true;
     } else {
       audio.sfx(audio.SFX.miss);
