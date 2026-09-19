@@ -909,6 +909,63 @@ Following up on the D1/D3 walkable-area overlay images delivered earlier this ro
 
 **Not live-verified in-browser** (same standing `device_bash`-has-no-network caveat, see [[celadune-deploy]]); checked instead with the headless 36px-collider BFS above (both before/after, zero regressions) plus the visual red/green overlay cross-check. Danny should walk both D1's beach/campsite and D3's farm on the live site and confirm the newly-opened areas (and the newly-blocked D3 field-row strips) feel right — the BFS check only confirms nothing became unreachable, not that every individual cell's blocked/walkable state is pixel-perfect to his intent.
 
+## Boot failure: an unescaped apostrophe took the whole game down (2026-09-19)
+
+**Symptom (Danny):** "I get the load screen, but the status bar doesn't move and the game doesn't load."
+
+**Cause:** one character. `js/main.js` line ~1820, in Orris Fenwick's post-rescue line:
+
+```js
+line = 'There he is. Listen \u2014 I was up at the old fort, the soldiers' ruin on the rise there, ...';
+//                                                              ^ string ends HERE
+```
+
+The apostrophe in `soldiers'` closed the single-quoted string, so `ruin` parsed as a
+stray identifier → `SyntaxError: Unexpected identifier 'ruin'`. A module that fails to
+PARSE never executes a single statement, so `boot()` was never called at all. The
+loading overlay lives in `index.html` and renders from first paint, which is why the
+screen appeared and the bar sat at 0% forever. Fixed by escaping it as `\u2019`, matching
+the `\u2014` already on the same line.
+
+**Why the pre-push verification missed it — read this before trusting a syntax sweep:**
+the check I ran was
+
+```bash
+for f in $(find js -name '*.js'); do node --check "$f" 2>&1 | head -3; done   # WRONG
+```
+
+Piping through `head` discards the exit code, and the loop printed "SYNTAX OK" over a
+real failure. The correct shape tests the status:
+
+```bash
+find js -name '*.js' -print0 | while IFS= read -r -d '' f; do
+  node --check "$f" >/dev/null 2>/tmp/e || { echo "SYNTAX ERROR in $f"; head -4 /tmp/e; }
+done
+```
+
+Always prove a checker works by feeding it a deliberately broken sentinel file first
+(`echo "var x = 'a' b;" > /tmp/broken.js`) — if the sentinel passes, the checker is lying.
+
+**Standing rule this adds: a change is not verified until the game has been LOADED IN A
+BROWSER.** Every check behind the two commits that shipped this bug (`18f6552`,
+`37b90b1`) was static — `node --check`, module imports, regex assertions over source
+text, HTTP 200s on the assets. All of them passed on a file that cannot parse. Finish
+with an actual page load and a console read; the very first console line named the
+problem exactly.
+
+**Browser caching gotcha found while verifying the fix:** a bare `location.reload()` and
+a cache-busted query on the *HTML* both kept re-running the stale cached `js/main.js`,
+so the fix looked like it hadn't worked for three reload cycles. GitHub Pages serves JS
+with a ~10-minute max-age and the `<script type="module" src="js/main.js">` entry is
+keyed on the URL *without* a query string, so `fetch('js/main.js?x=1')` refreshes a
+different cache entry and changes nothing. What actually works:
+`await fetch('js/main.js', {cache:'reload'})` (no query — same URL as the module tag),
+then reload. **This applies to Danny too: after any deploy, hard-reload (Cmd+Shift+R)
+before concluding a fix didn't land.**
+
+Fixed and pushed in `6b159e0`. Verified live: bar 100%, status "Ready", loading overlay
+hidden, title menu rendered, zero new console errors.
+
 ## Status / roadmap
 
 - ✅ D3 Farm: 4-layer scene, movement, collision (25px-grid traced), camera, walk animation, four NPCs (Mirelle, Tuckwell, Brenna on home routines; Old Gaffer the goat on a patrol loop in the pen) plus one unoccupied building (Your House, formerly Storehouse, stocked with a Dagger + Health Potion) — leave/return + door SFX + interior dialog with per-character voice-clip SFX, response effects (Gaffer's bite, Mirelle's vegetable-crate quest + item, Brenna's completable barn-rat quest with a 5-gold turn-in, the silo's one ear of corn + feeding Gaffer to make petting safe, the well's drink-for-HP + coin-for-Luck), per-NPC dialog variants by quest status incl. the readyToComplete turn-in pseudo-status (no re-granting a one-time quest item), multi-NPC steering avoidance, dialog with portrait slide/fade + typewriter text + item-received reveal (also used for taking items from Your House), PDF-matched UI styling, HUD (Magic bar hidden until the player owns a magic-cost item — see the Ysra Nine-Shells section, 2026-09-10; health bar width scales with max-health and flashes on damage), gold/health/item SFX centralized through addGold/damagePlayer/addItem/removeItem, "Quest Added" top-center banner, Menu (Quests/Stats/Audio/Controls tabs — Quests lists active + a Completed section with check/X icons; Controls is a static key-cap binding reference) + Inventory (mockup-matched chrome, no section headers, arrow-indicator tabs; four mutually-exclusive item categories — Equipment/Weapons/Magic/Items — each with its own tile grid + action popout; Equipment/Weapons further split into per-slot subcategory sections — Head/Clothing/Feet/Hands, Main Hand/Off Hand — each its own header+grid, equip/unequip via the tile's own expand-from-frame popout, equipped items marked with a checkmark corner badge, quest items with a star badge, weapon/gear tiles show a secondary stat line, consistent item naming), fully keyboard-navigable (I/M/arrows/Space/Escape, no mouse required, including the Items grid + popout and battle), one hidden collectible ("A shiny object" near Mirelle's farmhouse), start screen (click/Enter/Space), theme + overworld soundtrack with crossfade (race-condition-free).
