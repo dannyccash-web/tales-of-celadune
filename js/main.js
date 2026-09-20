@@ -516,10 +516,24 @@ async function boot() {
   let caveReturn = null;
   function applyWorldFlags(w, f) {
     if (!f) return;
-    (f.collected || []).forEach((i) => { if (w.interactables[i]) w.interactables[i].collected = true; });
+    // `collected` is a list of interactable IDs (2026-09-20). Plain numbers are
+    // still tolerated so saves written before that change — which stored the
+    // ARRAY INDEX — keep restoring correctly.
+    (f.collected || []).forEach((key) => {
+      const it = typeof key === 'number' ? w.interactables[key] : w.interactables.find((x) => x.id === key);
+      if (it) it.collected = true;
+    });
     (f.battles || []).forEach((id) => { const b = w.battles.find((x) => x.id === id); if (b) b.defeated = true; });
     (f.ambushes || []).forEach((id) => { const a = w.ambushes.find((x) => x.id === id); if (a) a.defeated = true; });
     (f.npcsDefeated || []).forEach((id) => { const n = w.npcs.find((x) => x.id === id); if (n) n.defeated = true; });
+    // Bought off rather than beaten (2026-09-20) — currently just Ysra
+    // Nine-Shells, paid 25 gold for Lily's gull. It lives on the live npc, so
+    // without its own snapshot entry the payment didn't survive a reload: she
+    // came back hostile and chasing, with the player's gold gone.
+    (f.npcsAppeased || []).forEach((id) => {
+      const n = w.npcs.find((x) => x.id === id);
+      if (n) { n.appeased = true; n.chaseTalk = false; n._chasing = false; }
+    });
     // Restore vendor inventory/purse (2026-07-31) so bought-out limited stock
     // stays depleted and resold items stay buyable across a save.
     (f.vendors || []).forEach((s) => {
@@ -673,7 +687,7 @@ async function boot() {
     const live = world.npcs.find((n) => n.id === npcId);
     const enemyId = npcId === 'bramblekin_chief' ? 'bramblekin_chief' : 'bramblekin';
     setTimeout(() => startBattle([enemyId], (result) => {
-      if (result === 'victory' && live) { live.defeated = true; saveGame(); } // persist the kill immediately (2026-09-12)
+      if (result === 'victory' && live) { live.defeated = true; saveGame({ checkpoint: true }); } // kill is permanent: live save AND death checkpoint (2026-09-12/2026-09-20)
     }), 0);
   }
 
@@ -698,7 +712,7 @@ async function boot() {
     // when the target track is already playing, so this is safe on every
     // overworld-to-overworld hop too.
     audio.play(sceneMusicTrack(exit.to), 1200);
-    saveGame(); // autosave on entering a new screen (2026-07-22)
+    saveGame({ checkpoint: true }); // autosave + death checkpoint on entering a new screen (2026-07-22)
   }
 
   // ---- Caves / dungeons (2026-07-26) ----
@@ -724,7 +738,7 @@ async function boot() {
     world.player.y = at?.y ?? world.scene.spawn.y;
     world.player.rotation = Math.PI;
     audio.play(sceneMusicTrack(caveId), 1200); // cross-fade to the cave theme
-    saveGame(); // entering a new screen
+    saveGame({ checkpoint: true }); // entering a new screen
   }
   // `overridePos` (2026-09-11, added for C1C's ship dungeon): a cave/dungeon
   // exit interactable can carry `exitTo: {x,y}` to drop the player at a
@@ -751,25 +765,56 @@ async function boot() {
     if (back.rotation != null) world.player.rotation = back.rotation;
     audio.play(sceneMusicTrack(currentSceneId), 1200); // cross-fade back to the overworld theme
     caveReturn = null;
-    saveGame();
+    saveGame({ checkpoint: true });
   }
 
-  // ---- Save system (2026-07-22, Danny) ----
-  // One versioned localStorage slot. Autosaves on entering a new screen
-  // (switchScene, above) and on starting a new game, so "the last screen you
-  // walked into" is always the resume point. The start screen offers New Game /
-  // Continue; Continue on the death screen reloads this same save. Progression
-  // is gear-driven (no level/XP), so the save is stats + inventory + equipment +
-  // quests + a few cross-scene story flags + a compact per-scene world snapshot
-  // (which collectibles/battles/ambushes/camp-members are already cleared).
+  // ---- Save system (2026-07-22, Danny; reworked 2026-09-20) ----
+  // TWO versioned localStorage slots:
+  //   SAVE_KEY        - the LIVE save. Rewritten (debounced) whenever anything
+  //                     changes, plus on scene entry. This is what the start
+  //                     screen's Continue reads, so quitting at any moment
+  //                     resumes exactly where the player left off.
+  //   CHECKPOINT_KEY  - the death-respawn slot. Written only on scene entry and
+  //                     battle victories. This is what the death screen's
+  //                     Continue reads, which is what preserves Danny's
+  //                     "dying rewinds the current screen" model now that the
+  //                     live save follows the player continuously.
+  // Progression is gear-driven (no level/XP), so a save is stats + inventory +
+  // equipment + quests + the cross-scene story flags + a compact per-scene
+  // world snapshot (which collectibles/chests/battles/ambushes/camp-members are
+  // cleared, and each vendor's remaining stock, resale pile and purse).
   const SAVE_KEY = 'celadune_save_v1';
+  // Second slot (2026-09-20). SAVE_KEY is now a LIVE save, rewritten as the
+  // player acts, so quitting mid-screen no longer loses anything. The old
+  // "dying rewinds you to the entrance of the screen you're on" behaviour
+  // (Danny's checkpoint model, 2026-07-31) is preserved separately here:
+  // scene entry and battle victories write BOTH slots, and continueFromDeath
+  // reads this one. Battle victories checkpoint too, so a kill still can't be
+  // undone by dying afterwards (2026-09-12, Danny: "once they're dead, they're
+  // gone for good") — and the position stored with a victory is safe by
+  // definition, since whatever was standing there is dead.
+  const CHECKPOINT_KEY = 'celadune_checkpoint_v1';
+  const SAVE_VERSION = 1;
 
   function hasSave() {
     try { return !!localStorage.getItem(SAVE_KEY); } catch { return false; }
   }
 
   function snapshotWorlds() {
-    const out = {};
+    // Seed from the per-scene state the LOADED save carried, so scenes that
+    // haven't been instantiated this session survive the next write instead of
+    // being silently dropped (2026-09-20 fix; Danny: "I'll kill an enemy, but
+    // when I restart the game later and choose continue, the enemy has
+    // returned"). `worlds` only holds scenes actually walked into since the
+    // last load — loadGame() empties it — so the old `const out = {}` meant
+    // every UNVISITED scene's kills, chests, collectibles, looted houses and
+    // vendor stock were erased from the save the next time anything saved.
+    // It took two restarts to notice, which is what made it look intermittent.
+    // It was also an item-duplication bug: `inventory` is global while chest
+    // loot is per-scene, so a dropped scene handed back a refilled chest while
+    // the player still had everything they'd taken out of it.
+    // Live worlds below overwrite their own entries; everything else rides along.
+    const out = JSON.parse(JSON.stringify(pendingWorldFlags || {}));
     for (const [id, w] of Object.entries(worlds)) {
       // Remaining loot in unoccupied buildings: Your House (isPlace, items on
       // the npc itself) and any lockpicked home (items on npc._house). Only
@@ -780,10 +825,15 @@ async function boot() {
         else if (n._house) places[n.id] = n._house.items;
       }
       out[id] = {
-        collected: w.interactables.map((it, i) => (it.collected ? i : -1)).filter((i) => i >= 0),
+        // Keyed by ID, not array index (2026-09-20) — an index silently
+        // mis-restored every existing save the moment a scene's interactables
+        // array was reordered or had an entry inserted. Every interactable in
+        // every scene has a unique id (verified), so this is lossless.
+        collected: w.interactables.filter((it) => it.collected).map((it) => it.id),
         battles: w.battles.filter((b) => b.defeated).map((b) => b.id),
         ambushes: w.ambushes.filter((a) => a.defeated).map((a) => a.id),
         npcsDefeated: w.npcs.filter((n) => n.defeated).map((n) => n.id),
+        npcsAppeased: w.npcs.filter((n) => n.appeased).map((n) => n.id),
         // Vendor inventory + purse (2026-07-31, Danny): limited stock counts
         // (npc.stockLeft), items resold to the vendor (npc.resale), and the
         // vendor's own coin (npc.gold) — so a shop you've bought out STAYS
@@ -798,10 +848,12 @@ async function boot() {
     return out;
   }
 
-  function saveGame() {
+  // `checkpoint: true` also writes the death-respawn slot — used by scene
+  // entry and battle victories only. Everything else writes the live save.
+  function saveGame({ checkpoint = false } = {}) {
     try {
       const data = {
-        v: 1,
+        v: SAVE_VERSION,
         scene: currentSceneId,
         player: { x: world.player.x, y: world.player.y, rotation: world.player.rotation },
         stats: { ...stats },
@@ -812,31 +864,76 @@ async function boot() {
         caveReturn, // where to exit to if saved inside a cave/dungeon
         worlds: snapshotWorlds(),
       };
-      localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+      const json = JSON.stringify(data);
+      localStorage.setItem(SAVE_KEY, json);
+      if (checkpoint) localStorage.setItem(CHECKPOINT_KEY, json);
     } catch { /* storage blocked or full — skip silently, gameplay is unaffected */ }
   }
 
-  // Saves are written ONLY on entering a scene (switchScene / enterCave /
-  // exitCave) and on New Game — NOT on every mutation (2026-07-31, Danny's
-  // checkpoint model). The save therefore always represents "state as of
-  // entering the current scene": dying and continuing reverts the current
-  // scene's progress and resumes at its entrance, while everything carried
-  // BETWEEN scenes (stats, gold, items, quests, vendor stock, defeated enemies)
-  // locks in the moment you leave one scene for the next. The module-level
-  // mutators still call requestAutosave(), but the hook is deliberately left
-  // unset so those calls are harmless no-ops (keeps the mutators simple, and a
-  // mid-scene/mid-battle write can never strand a half-resolved state).
-  // (2026-09-12, Danny: "make sure the game's save file is accounting for
-  // enemies that have been killed... once they're dead, they're gone for
-  // good.") One exception to the checkpoint model above: saveGame() is also
-  // called directly at each of the six places a battle victory sets an
-  // enemy/ambush/camp-member/roaming-creature `.defeated = true`, right after
-  // setting it - the reward sequence has already fully resolved by then, so
-  // nothing half-applied gets saved. Previously a kill only became permanent
-  // once the NEXT scene transition autosaved it, so dying again (or just
-  // reloading the page) before ever leaving the scene could bring an already-
-  // slain enemy back (the bug Danny hit with D1's cragclaws).
-  autosaveHook = null;
+  // WHO WRITES WHAT (2026-09-20). Three kinds of write:
+  //   1. The debounced autosave below  -> live save only. Fires off the
+  //      requestAutosave() calls already sprinkled through the centralized
+  //      mutators (addItem/removeItem/addGold/spendGold/damagePlayer/
+  //      startQuest/completeQuest/equipItem/...), so anything that moves gold,
+  //      items, quests or stats is captured, and — because it's debounced past
+  //      the end of the current call stack — so is whatever the surrounding
+  //      code touched alongside it (vendor stock, chest contents, place loot).
+  //   2. Scene entry (switchScene / enterCave / exitCave / the C3 ferry) and
+  //      New Game -> BOTH slots.
+  //   3. Battle victory, at each of the seven places a victory sets an
+  //      enemy/ambush/camp-member/roaming-creature `.defeated = true`
+  //      -> BOTH slots, right after setting it (the reward sequence has fully
+  //      resolved by then, so nothing half-applied is saved). Checkpointing a
+  //      kill is what stops dying afterwards from undoing it — 2026-09-12,
+  //      Danny: "once they're dead, they're gone for good."
+  // ---- Live autosave (2026-09-20) ----
+  // `autosaveHook` had been deliberately left null since 2026-07-31, which made
+  // all ~30 requestAutosave() calls scattered through the mutators no-ops:
+  // nothing that happened MID-screen was ever written. Selling to a vendor,
+  // looting a chest, picking something up, taking a quest, equipping gear or
+  // enchanting a weapon were all lost if the player quit without crossing into
+  // another scene (Danny, 2026-09-20: "if I sell an item to a vendor, quit the
+  // game, then continue the game later, that vendor should still have the item
+  // I sold to them"). The original reason for going checkpoint-only was vendor
+  // farming via reload — that reason is gone, because stockLeft/resale/gold
+  // have been persisted since 2026-07-31, so a live save cannot restock a shop.
+  //
+  // Debounced, for two reasons: a single player action fans out into several
+  // mutator calls ("Take everything" from a chest = one addGold plus N addItem
+  // calls), and — more importantly — it means the write happens AFTER the
+  // surrounding synchronous code finishes. That's why no new requestAutosave()
+  // calls were needed at the vendor grid, the chest window or usePotion: they
+  // all move gold or items through the centralized mutators, and by the time
+  // the timer fires, npc.stockLeft / npc.resale / npc.gold / chest.emptied /
+  // stats.healthMax are already updated and get picked up by snapshotWorlds().
+  //
+  // Gated so it can never fire before the game has started (the flags saveGame
+  // reads are declared further down in boot(), so an early call would hit a
+  // TDZ), nor during a fight or the death fade, where a half-resolved battle
+  // could be captured. Re-checked when the timer fires, not just when queued.
+  let autosaveTimer = null;
+  const AUTOSAVE_DEBOUNCE_MS = 350;
+  function canAutosave() { return state.started && !battleState.active && !deathFading; }
+  autosaveHook = () => {
+    if (!canAutosave()) return;
+    if (autosaveTimer != null) clearTimeout(autosaveTimer);
+    autosaveTimer = setTimeout(() => {
+      autosaveTimer = null;
+      if (canAutosave()) saveGame();
+    }, AUTOSAVE_DEBOUNCE_MS);
+  };
+  // Closing the tab wrote NOTHING before this (there was no unload handler at
+  // all), so even with the hook on, the last few seconds of a session would be
+  // lost. `pagehide` is the reliable event — 'unload' never fires on iOS Safari
+  // and 'beforeunload' is unreliable on mobile; visibilitychange covers being
+  // backgrounded on a phone, which often happens without a pagehide.
+  function saveOnExit() {
+    if (autosaveTimer != null) { clearTimeout(autosaveTimer); autosaveTimer = null; }
+    if (!canAutosave()) return; // never capture a half-resolved fight
+    saveGame();
+  }
+  window.addEventListener('pagehide', saveOnExit);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') saveOnExit(); });
 
   function refreshAllUi() {
     ui.updateHud(stats);
@@ -865,16 +962,26 @@ async function boot() {
     caveReturn = null;
     for (const k of Object.keys(worlds)) delete worlds[k];
     pendingWorldFlags = null;
+    // Drop the old death checkpoint too — startNewGame writes a fresh pair
+    // immediately, but a stale one must never outlive an erase (2026-09-20).
+    try { localStorage.removeItem(CHECKPOINT_KEY); } catch { /* storage blocked */ }
     enterScene('D3');
     world.player.x = world.scene.spawn.x;
     world.player.y = world.scene.spawn.y;
     refreshAllUi();
   }
 
-  function loadGame() {
+  // `key` picks the slot: SAVE_KEY (the live save, what Continue reads) or
+  // CHECKPOINT_KEY (what continueFromDeath reads). Returns false on a missing
+  // or unrecognized save so the caller can fall back.
+  function loadGame(key = SAVE_KEY) {
     let data;
-    try { data = JSON.parse(localStorage.getItem(SAVE_KEY)); } catch { data = null; }
+    try { data = JSON.parse(localStorage.getItem(key)); } catch { data = null; }
     if (!data) return false;
+    // Schema guard (2026-09-20): `v` was written but never checked, so a save
+    // from an older shape would silently half-merge. Bump SAVE_VERSION when the
+    // shape changes and old saves get cleanly rejected instead.
+    if (data.v !== SAVE_VERSION) return false;
     Object.assign(stats, NEW_GAME_STATS, data.stats || {});
     inventory.length = 0; (data.inventory || []).forEach((e) => inventory.push({ ...e }));
     for (const k of Object.keys(equipment)) equipment[k] = null;
@@ -906,6 +1013,9 @@ async function boot() {
     world.player.y = p.y ?? world.scene.spawn.y;
     if (p.rotation != null) world.player.rotation = p.rotation;
     refreshAllUi();
+    // Resuming from the death checkpoint makes it the live save too, so a later
+    // quit + Continue can't resurrect the state the player just died in.
+    if (key !== SAVE_KEY) { try { localStorage.setItem(SAVE_KEY, JSON.stringify(data)); } catch { /* storage blocked */ } }
     return true;
   }
 
@@ -978,7 +1088,7 @@ async function boot() {
   function startNewGame() {
     resetToNewGame();
     beginPlay();
-    saveGame(); // so Continue works immediately and a right-away death has a save
+    saveGame({ checkpoint: true }); // so Continue works immediately and a right-away death has a save
   }
   function continueGame() {
     if (!loadGame()) { startNewGame(); return; }
@@ -1042,15 +1152,20 @@ async function boot() {
     setTimeout(() => loadingScreen.classList.add('hidden'), 650);
   }
 
-  // Continue from the death screen (2026-07-22): reload the last save (the start
-  // of the screen the player last walked into). Discards the dead fight's onEnd
-  // callback since loadGame rebuilds the scene from scratch. Falls back to the
-  // old full-heal respawn only if, somehow, there's no save on file.
+  // Continue from the death screen (2026-07-22): reload the CHECKPOINT slot —
+  // the start of the screen the player last walked into, or their last battle
+  // victory in it, whichever came later (2026-09-20). Reading the checkpoint
+  // rather than the live save is what preserves the "dying rewinds the current
+  // screen" model now that the live save follows the player continuously.
+  // Discards the dead fight's onEnd callback since loadGame rebuilds the scene
+  // from scratch. Falls back to the live save, then to the old full-heal
+  // respawn, if there's somehow no checkpoint on file (e.g. a save written
+  // before the second slot existed).
   function continueFromDeath() {
     pendingDefeatCallback = null;
     deathFading = false;      // clear the fade lock (hideGameOver also clears the black overlay)
     ui.hideGameOver();
-    if (!loadGame()) respawnAfterDefeat();
+    if (!loadGame(CHECKPOINT_KEY) && !loadGame()) respawnAfterDefeat();
   }
 
   // Gaffer only warms up once he's been fed (session state, not persisted —
@@ -1562,7 +1677,10 @@ async function boot() {
     // followUp below finish the exchange. `heal` is a full/large restore used
     // as a priestess "blessing".
     if (effect.takeItem) { removeItem(effect.takeItem, effect.takeQty ?? 1, true); ui.showGaveItem(ITEMS[effect.takeItem]); }
-    if (effect.heal) { stats.health = Math.min(stats.healthMax, stats.health + effect.heal); ui.updateHud(stats); }
+    // The only health change in the file that goes through no mutator at all,
+    // so it needs its own autosave nudge (2026-09-20). Potions get one for free
+    // via removeItem; this one had nothing.
+    if (effect.heal) { stats.health = Math.min(stats.healthMax, stats.health + effect.heal); ui.updateHud(stats); requestAutosave(); }
     if (effect.startQuest) startQuest(effect.startQuest);
     if (effect.addGold) addGold(effect.addGold);
     if (effect.completeQuest) completeQuest(effect.completeQuest);
@@ -1899,7 +2017,7 @@ async function boot() {
     world.player.y = pose.land.y;
     world.player.moving = false;
     world.player.walkTimer = 0;
-    saveGame(); // the crossing is a real position change — checkpoint it
+    saveGame({ checkpoint: true }); // the crossing is a real position change — checkpoint it
   }
 
   // ---- The Lakewarden's dialogue (state-built: which shore he's on) ----------
@@ -1956,7 +2074,7 @@ async function boot() {
       if (result === 'victory') {
         orrisRescued = true;
         revealOrris();
-        saveGame();
+        saveGame({ checkpoint: true }); // permanent story beat — checkpoint it
         // Back to Orris once the spoils screen is done — the thank-you IS the
         // hand-off, so it shouldn't wait for the player to walk over and talk.
         setTimeout(() => { const n = orrisNpc(); if (n) openNpcDialog(n); }, 700);
@@ -2396,8 +2514,10 @@ async function boot() {
         removeItem('lockpicks', 1);
         chest.locked = false; // stays open for good
         audio.sfx(audio.SFX.door); // the lid creaks open
-        // (No mid-scene save — chest state persists via the world snapshot on
-        // the next scene-entry save; see the save-system note above.)
+        // The lockpick spend routes through removeItem, whose debounced
+        // autosave fires after this returns and so captures locked=false too
+        // (2026-09-20; before the hook was live this had to wait for the next
+        // scene-entry save, and quitting here re-locked the chest).
         setTimeout(() => openChestContents(chest), 0); // let this prompt close first
       }
       return; // falsy -> close the prompt either way
@@ -2458,7 +2578,7 @@ async function boot() {
             return true;
           }
           ui.toast('The chest is empty.');
-          return; // falsy -> close the window (state persists on next scene-entry save)
+          return; // falsy -> close the window (the take's autosave captures emptied=true)
         }
         ({ responses, acts } = build());
         ui.updateDialogContent({ line: CHEST_LINE, responses });
@@ -2673,7 +2793,7 @@ async function boot() {
   // 2026-07-17).
   function startAmbush(ambush) {
     startBattle(ambush.enemies, (result) => {
-      if (result === 'victory') { ambush.defeated = true; saveGame(); } // persist the kill immediately (2026-09-12)
+      if (result === 'victory') { ambush.defeated = true; saveGame({ checkpoint: true }); } // kill is permanent: live save AND death checkpoint (2026-09-12/2026-09-20)
       else if (result === 'fled' && ambush.retreat) {
         world.player.x = ambush.retreat.x;
         world.player.y = ambush.retreat.y;
@@ -3352,7 +3472,7 @@ async function boot() {
   function fightYsra() {
     const live = world.npcs.find((n) => n.id === 'ysra_nineshells');
     setTimeout(() => startBattle(['ysra_nineshells'], (result) => {
-      if (result === 'victory' && live) { live.defeated = true; saveGame(); } // persist the kill immediately (2026-09-12)
+      if (result === 'victory' && live) { live.defeated = true; saveGame({ checkpoint: true }); } // kill is permanent: live save AND death checkpoint (2026-09-12/2026-09-20)
       else if (result === 'fled' && live) { live.pause = 2; live._chasing = false; }
     }), 0);
   }
@@ -3370,7 +3490,7 @@ async function boot() {
     audio.sfx(audio.SFX.denied);
     live._chasing = false;
     startBattle(['ysra_nineshells'], (result) => {
-      if (result === 'victory') { live.defeated = true; saveGame(); } // persist the kill immediately (2026-09-12)
+      if (result === 'victory') { live.defeated = true; saveGame({ checkpoint: true }); } // kill is permanent: live save AND death checkpoint (2026-09-12/2026-09-20)
       else if (result === 'fled') { live.pause = 2; live._chasing = false; }
     });
     return true;
@@ -4282,7 +4402,7 @@ async function boot() {
     const trigger = world.battleNearDoor();
     if (trigger) {
       startBattle(trigger.enemies, (result) => {
-        if (result === 'victory') { trigger.defeated = true; saveGame(); } // persist the kill immediately (2026-09-12)
+        if (result === 'victory') { trigger.defeated = true; saveGame({ checkpoint: true }); } // kill is permanent: live save AND death checkpoint (2026-09-12/2026-09-20)
       }, trigger.background);
       return;
     }
@@ -4505,7 +4625,7 @@ async function boot() {
       // enemy's own catalog background instead (miremen -> beach_background).
       const bg = foe.pack === 'clearing_bramblekin' ? 'assets/images/forest_background.jpg' : undefined;
       startBattle(enemyIds, (result) => {
-        if (result === 'victory') { foes.forEach((m) => { m.defeated = true; }); saveGame(); } // persist the kill(s) immediately (2026-09-12)
+        if (result === 'victory') { foes.forEach((m) => { m.defeated = true; }); saveGame({ checkpoint: true }); } // kill is permanent: live save AND death checkpoint (2026-09-12/2026-09-20)
         // Fleeing a charging creature/guard: it stands down for 2s (world.js's
         // updateNpcs skips the whole aggro/chase branch while `pause` > 0) so
         // the player gets a head start to run before it can re-charge

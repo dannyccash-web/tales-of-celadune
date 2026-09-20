@@ -181,6 +181,57 @@ The D4 woodland camp is inhabited by **5 Bramblekin guards + 1 Bramblekin Chief*
 - **Death screen**: the button reads **Continue** now (was "Try Again") and calls `continueFromDeath()` → `loadGame()` (reload the last save = start of the screen you last entered), discarding the dead fight's `pendingDefeatCallback`. `respawnAfterDefeat()` (old full-heal-at-current-spawn) is kept only as the fallback if no save somehow exists.
 - **`walkable`-named images are dev-only & gitignored (2026-07-31):** the collision-guide images (`*[Ww]alkable*`) are working/reference files, never shipped in the game. Danny deletes them from the project folder as he goes; a `.gitignore` rule (`*[Ww]alkable*`) keeps an `add -A` from ever re-committing one. Do NOT restore a walkable file into the repo (I did once by mistake — it looked like an accidental deletion — then had to remove it again).
 
+## Save system REWORKED — two slots, live autosave, and a scene-dropping bug fixed (2026-09-20)
+
+Danny: "I'll kill an enemy, but when I restart the game later and choose continue, the enemy has returned. Same thing with chests, quest items... if I sell an item to a vendor, quit the game, then continue the game later, that vendor should still have the item I sold to them." **Two separate root causes, both fixed.** This section supersedes the write-policy parts of the 2026-07-22 section above.
+
+### ⚠️ ROOT CAUSE 1 (the big one) — `snapshotWorlds()` was deleting every scene the player hadn't re-entered that session
+
+`snapshotWorlds()` built its output from `const out = {}` and iterated only `Object.entries(worlds)` — i.e. only scenes **instantiated this session**. But `loadGame()` empties `worlds` and parks the save's real per-scene data in `pendingWorldFlags`, which `snapshotWorlds()` never read. So the next time anything called `saveGame()`, the new save contained **only the scenes walked into since the last load**; every other scene's kills, chests, collectibles, looted houses and vendor stock were silently erased.
+
+It takes **two restarts** to observe, which is exactly why it looked intermittent: kill something → quit → Continue and it's still dead (that save was fine) → play elsewhere → quit → Continue again → it's alive. Reproduced with a faithful copy of the real logic before fixing.
+
+It was **also an item-duplication bug**: `inventory` is global while chest/collectible state is per-scene, so a dropped scene handed back a refilled chest while the player still held everything they'd taken out of it. C4's Royal Summons, every gold glint — repeatable. That punched a hole straight through the bounded-economy design.
+
+**Fix (`main.js`'s `snapshotWorlds`):** seed from the loaded save's own per-scene data, then let live worlds overwrite their own entries:
+```js
+const out = JSON.parse(JSON.stringify(pendingWorldFlags || {}));
+```
+`pendingWorldFlags` was already in scope, already populated by `loadGame`, and already never cleared — nothing else had to change. **If `snapshotWorlds` is ever refactored, keep this seed** or the bug comes straight back.
+
+### ROOT CAUSE 2 — nothing saved mid-screen (`autosaveHook` was null)
+
+`autosaveHook = null` (2026-07-31) made all ~30 `requestAutosave()` calls in the mutators no-ops, and there was **no `beforeunload`/`pagehide` handler at all**, so closing the tab wrote nothing. Selling to a vendor, looting a chest, picking something up, taking a quest, equipping gear or enchanting a weapon were all lost if the player quit without crossing into another scene. The vendor data model was always right (`stockLeft`/`resale`/`gold` are snapshotted and restored) — nothing just called save.
+
+**The original reason for checkpoint-only saving is gone.** It was vendor farming via reload; vendor depletion has been persisted since 2026-07-31, so a live save cannot restock a shop.
+
+### The new model — TWO slots
+
+| slot | written by | read by |
+|---|---|---|
+| `celadune_save_v1` (**live**) | the debounced autosave, **plus** everything below | start-screen **Continue** |
+| `celadune_checkpoint_v1` (**death respawn**) | scene entry (`switchScene`/`enterCave`/`exitCave`/the C3 ferry), New Game, and **every battle victory** | death-screen **Continue** |
+
+So Continue-from-the-title resumes exactly where the player left off, while Continue-from-death still rewinds to the start of the screen — Danny's 2026-07-31 checkpoint model, preserved. **Battle victories checkpoint too**, so a kill can't be undone by dying afterwards (2026-09-12: "once they're dead, they're gone for good"); the position stored with a victory is safe by definition, since whatever was standing there is dead. `loadGame(key)` takes the slot; loading the checkpoint **promotes it to the live save** so a later quit can't resurrect the state the player just died in. `resetToNewGame` clears the checkpoint.
+
+**The debounce is load-bearing, not just an optimization.** `autosaveHook` waits `AUTOSAVE_DEBOUNCE_MS` (350), so the write happens *after* the surrounding synchronous code finishes. That is why **no new `requestAutosave()` calls were needed** at the vendor grid, the chest window, `applyPlaceResponse` or `usePotion`: they all move gold or items through the centralized mutators, and by the time the timer fires, `npc.stockLeft`/`npc.resale`/`npc.gold`/`chest.emptied`/`chest.locked`/`stats.healthMax` are already updated and get picked up by `snapshotWorlds()`. **If the debounce is ever removed, every one of those sites needs an explicit save call.** (`effect.heal` was the one health change routing through no mutator at all, so it got its own `requestAutosave()`.)
+
+`canAutosave()` gates on `state.started && !battleState.active && !deathFading`, **re-checked when the timer fires**, not only when queued — so a half-resolved fight can never be captured. `pagehide` + `visibilitychange:hidden` flush on exit (`unload` never fires on iOS Safari; `beforeunload` is unreliable on mobile).
+
+### Three smaller save-integrity fixes in the same pass
+
+- **Ysra's `appeased` now persists** (`npcsAppeased` in the snapshot). Paying her 25 gold for Lily's gull lives on the live npc and had no snapshot entry — reload and she was hostile and chasing again, with the gold gone. Restoring it also re-clears `chaseTalk`/`_chasing`.
+- **`collected` is keyed by interactable ID, not array index.** The index silently mis-restored every existing save the moment a scene's `interactables` array was reordered or had an entry inserted. Verified every interactable in all 13 scenes has a unique id, so it's lossless. **Plain numbers are still tolerated on read**, so pre-fix saves keep working.
+- **Schema guard:** `v` was written but never checked. `loadGame` now rejects anything that isn't `SAVE_VERSION`. Bump it when the shape changes instead of half-merging an old save.
+
+### Known, NOT fixed here (latent, flagged for later)
+
+`enterScene('D3')` runs at `main.js:~586`, but `gafferHappy`/`orrisRescued`/`maraHollowmastRescued`/`ferrySide` are `let`-declared much further down in `boot()`. It only works because the boot scene is hardcoded to D3, which hits none of the branches that read them. **Change the boot scene, or add one flag-reading branch for D3, and boot dies with a TDZ `ReferenceError`.** The new autosave can't trigger it (it's gated on `state.started`), but the hoist is still worth doing.
+
+### Verification
+
+17/17 on a harness that **extracts the real `applyWorldFlags`/`snapshotWorlds` out of `main.js` by source and runs them against real `World` instances built from real scene data** (not a reimplementation): the three-session drop scenario, vendor stock/resale/purse round-trip, chest emptied/unlocked round-trip, collected-by-id, legacy index-based restore, and Ysra's `appeased`. Plus the sentinel-guarded syntax sweep (a deliberately broken file is fed to the checker first to prove it actually fails — see the 2026-09-19 boot-failure section) and a live browser run.
+
 ## Dialogue/vendor UI unification + text sizes (2026-07-22)
 
 - **Name + title now sit ABOVE the window frame for ALL dialogue** (previously only vendors did this; normal NPCs had name/role inside the box). One shared `#dialog-header` (was `#vendor-header`) holds `#dialog-name` + `#dialog-role`, always populated by `openDialog`. Default position sits over the LEFT text column (portrait on the right); `#dialog.vendor #dialog-header` shifts it right (vendor portrait is on the left). The vendor's `#vendor-gold` readout lives in the same header, shown only for vendors (toggled by `.hidden`). The old in-box `<h2 id="dialog-name">`/`<h3 id="dialog-role">` and the `#vendor-name`/`#vendor-title` elements + their CSS are gone; `.dialog-text` now holds just the line + shop grid.
