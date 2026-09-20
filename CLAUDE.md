@@ -966,6 +966,85 @@ before concluding a fix didn't land.**
 Fixed and pushed in `6b159e0`. Verified live: bar 100%, status "Ready", loading overlay
 hidden, title menu rendered, zero new console errors.
 
+## The Lakewarden — C3's ferryman, and a general `props` layer (2026-09-20)
+
+C3's first NPC. Danny: put him on a raft in the water docked next to the left-hand dock; he
+guards the passage to the temple, only those with the silver lotus may cross, and he tells how
+the temple was once a sanctuary of goodness and light, was taken by evil long ago, and how the
+river was rerouted into a lake as a barrier that nobody has crossed since.
+
+- **His name is literally "The Lakewarden"** (Danny's words, "his name is just The Lakewarden"),
+  so `role` is deliberately EMPTY — no title over the dialog frame. Add one only if he asks.
+- **Assets were already in `assets/images/` before this session started** (Danny dropped them
+  while the art prompt was being written): `the_lakewarden.png` (500x750 portrait — fills the
+  canvas edge to edge, so it needs NONE of the narrow-cropping the C1 portraits needed; the
+  500x500 dialog window lands on a clean head-to-mid-torso framing, checked), and
+  `the_lakewarden_overhead.png` (54x81 sprite, hooded figure with the pole held diagonally,
+  drawn facing south like every other overhead so it takes the default rotation 0).
+- **The RAFT is a THIRD, separate asset** (`lakewarden_raft.png`, 136x100 top-down lashed logs),
+  which is what forced a small engine addition — see props below.
+- **Placement.** The mainland jetty's deck is x1355-1462, y1255-1350 (mooring posts at the
+  corners), measured off the art. Raft centred at **(1545,1302)**, long axis east-west so it
+  points across at the island, west edge ~15px off the posts; the Lakewarden at **(1528,1300)**,
+  standing on the raft's shore end with the dock at his back. Both sit in open water, which is
+  already blocked terrain, so **his body collider costs the deck exactly zero walkable cells**
+  (verified, below) — an NPC parked on a narrow dock would have been the obvious way to break it.
+- **He is stationary the cheap way**: `speed: 0`, `startsHome: false`, and NO routine/patrol/home
+  — world.js leaves such an NPC exactly where scene data puts him (same shape as the Bramblekin
+  Chief). No new "stationary" flag needed.
+- **Voice**: `lakewarden` -> `universfield-muffled-reaction-242214.mp3` (M2). Checked the pool
+  first, per the standing rule: there were no unused files in `assets/audio`, M1 (mrstokes) is the
+  obvious adult-male pick but already carries 8 men, and "muffled" happens to suit a voice coming
+  out of a deep hood. M2 had 5 owners.
+- **Dialogue is plain scene data**, not a state-built builder — three responses ("Will you take me
+  across?" / "What stands across the water?" / "Leave.") with `followUp` effects, so the engine's
+  existing Go-back/Leave machinery handles the rest. Unquoted direct speech, curly apostrophes
+  throughout. Names **Aeluna** and keeps the evil unnamed ("I will not give that a name out here
+  over open water") so nothing is committed that the temple build would have to honour.
+
+### NEW: `scene.props` — a static scenery layer (world.js)
+
+`props: [{ sprite, x, y, rotation? }]`, rendered in `world.js`'s `render()` **immediately before
+the chests loop** (so a prop always sits UNDER whatever stands on it), through the same
+`drawSprite` path and multiply drop shadow as chests and characters. Rotation is in DEGREES like
+a chest's. Read straight off `this.scene` — props have no per-instance state, nothing to reset,
+nothing to persist. Preloaded via a new line in main.js's scene preload sweep.
+
+**Why not reuse a sprite-marked interactable** (the C1B gull mechanism, which also draws a static
+ground image)? Because an interactable is *a thing the player can press space on*. A label-less,
+reward-less one would still be returned by `nearestInteractableInRange()` and fall through
+`interact()` to a bare "You found something!" toast the moment anything stopped the NPC from
+winning the spacebar first. **Use `props` for scenery, `interactables` for things you can touch.**
+
+### What is deliberately NOT built
+
+**He talks; he does not row.** There is no `silver_lotus` item, no quest, and no crossing. That is
+on purpose, not an omission: the lotus pool's glade is **walkable region C in c3.js's header — the
+one that is unreachable BY ACCIDENT**, ringed by ~168px of solid canopy with no trail into it, so
+the fare cannot currently be obtained; and the island it would ferry you to has a walkable plaza
+but no temple interior behind it. Gating a crossing behind an unobtainable flower, to an empty
+island, is two dead ends instead of one. **The art needs a spur trail painted into the south-west
+glade first** (flagged to Danny 2026-09-19 and again here), then: regenerate C3's collision, add
+the item, convert his dialog to a state-built builder in main.js (the `buildCalderDialog` /
+`buildMaraHollowmastDialog` pattern), check the lotus in inventory, and teleport to the island
+jetty (~x2000,y1300) with a return option on the far side. The hook points are commented in c3.js.
+
+### Verification
+
+Sentinel-guarded syntax sweep (a deliberately broken file is fed to the checker first to prove it
+actually fails — see the 2026-09-19 boot-failure section, whose whole cause was a sweep that
+silently swallowed its exit code); **import-and-print of the parsed c3.js object**, not just
+`node --check`, since that check demonstrably passes on a file broken by a stray apostrophe;
+a truncation canary on every dialogue string; and a `paginate()` round-trip proving all three
+strings survive page-splitting losslessly (210/443/725 chars -> 2/4/5 pages). Then the real
+`World` class headless: he is on blocked water (true), the nearest standable point is 59.7px away
+and the nearest point actually REACHABLE from spawn is 62.5px (both well inside INTERACT_RANGE
+141), 2235 standable cells on the dock are in talking range, `nearestNpcInRange()` returns him
+from the dock and null from inland, the deck keeps all 3711 walkable cells with him present, and
+10s of `update()` leaves him exactly where he was with no stray pendingAggro/Approach/ChaseTalk.
+Plus a PIL composite of raft + sprite onto the background at the real coordinates to check it
+reads as moored rather than beached. **Then loaded live in the browser** per the standing rule.
+
 ## Status / roadmap
 
 - ✅ D3 Farm: 4-layer scene, movement, collision (25px-grid traced), camera, walk animation, four NPCs (Mirelle, Tuckwell, Brenna on home routines; Old Gaffer the goat on a patrol loop in the pen) plus one unoccupied building (Your House, formerly Storehouse, stocked with a Dagger + Health Potion) — leave/return + door SFX + interior dialog with per-character voice-clip SFX, response effects (Gaffer's bite, Mirelle's vegetable-crate quest + item, Brenna's completable barn-rat quest with a 5-gold turn-in, the silo's one ear of corn + feeding Gaffer to make petting safe, the well's drink-for-HP + coin-for-Luck), per-NPC dialog variants by quest status incl. the readyToComplete turn-in pseudo-status (no re-granting a one-time quest item), multi-NPC steering avoidance, dialog with portrait slide/fade + typewriter text + item-received reveal (also used for taking items from Your House), PDF-matched UI styling, HUD (Magic bar hidden until the player owns a magic-cost item — see the Ysra Nine-Shells section, 2026-09-10; health bar width scales with max-health and flashes on damage), gold/health/item SFX centralized through addGold/damagePlayer/addItem/removeItem, "Quest Added" top-center banner, Menu (Quests/Stats/Audio/Controls tabs — Quests lists active + a Completed section with check/X icons; Controls is a static key-cap binding reference) + Inventory (mockup-matched chrome, no section headers, arrow-indicator tabs; four mutually-exclusive item categories — Equipment/Weapons/Magic/Items — each with its own tile grid + action popout; Equipment/Weapons further split into per-slot subcategory sections — Head/Clothing/Feet/Hands, Main Hand/Off Hand — each its own header+grid, equip/unequip via the tile's own expand-from-frame popout, equipped items marked with a checkmark corner badge, quest items with a star badge, weapon/gear tiles show a secondary stat line, consistent item naming), fully keyboard-navigable (I/M/arrows/Space/Escape, no mouse required, including the Items grid + popout and battle), one hidden collectible ("A shiny object" near Mirelle's farmhouse), start screen (click/Enter/Space), theme + overworld soundtrack with crossfade (race-condition-free).
@@ -980,7 +1059,7 @@ hidden, title menu rendered, zero new console errors.
 - ✅ Caves / dungeons (2026-07-26): interact-based sub-scenes — an overworld `cave:` entrance interactable enters a cave scene (own bg/collision), an `caveExit:` interactable returns to the exact overworld spot entered from (`enterCave`/`exitCave`, `caveReturn` persisted). First one: **D1B** cave (entrance on D1 at (1033,1664), spawn (1338,164), exit (1412,5)) — traversal shell, no content inside yet. See the "Caves / dungeons" section above.
 - ⏳ Later: real dialog trees, ranged/varied enemy types beyond the Blight Rat encounters, an actual Magic system behind the Menu's hidden bar (battle Magic slot removed until then), gear that grants attackBonus/defenseBonus (none exists yet — only weapon damage is wired), more items/collectibles/unoccupied buildings, interiors (incl. the D4 cave), the other 14 scenes, camp inhabitants/content in D4, Steam wrap.
 - ✅ **C2 got its first content 2026-09-16** (see the dated section above) — new background art + regenerated collision, the Reedwalker herders (Tovan the quest-giver, Nera the travelling trader), their last thrumhorn (pet/feed), the `c2_thornbacks` quest, and three roaming Thornback Boars. C2 is no longer terrain-only.
-- ✅ **C3 Hallowmere Forest built 2026-09-15** (see the dated section above) — **TERRAIN ONLY**: background art + collision + two edge exits (west→C2 LIVE; north→B3 stubbed) + two landmark labels + **a two-way cave link to D4B** (C3 2561,2750 ↔ D4B 146,63), which required the new `enterAt` / `exitTo.scene` fields and made D4B a through-passage. Three intentional walkable regions — read that section's warning before regenerating. No NPCs, enemies, quests, battles, ambushes or chests.
+- ✅ **C3 Hallowmere Forest built 2026-09-15** (see the dated section above) — background art + collision + two edge exits (west→C2 LIVE; north→B3 stubbed) + two landmark labels + **a two-way cave link to D4B** (C3 2561,2750 ↔ D4B 146,63), which required the new `enterAt` / `exitTo.scene` fields and made D4B a through-passage. Three intentional walkable regions — read that section's warning before regenerating. **THE LAKEWARDEN added 2026-09-20** (see that dated section) — C3's first NPC, on a raft at the mainland jetty; he states the fare (a silver lotus) and tells the temple's history, but does NOT yet ferry anyone, and that is deliberate until the lotus glade gets a trail painted into the art. Still no enemies, quests, battles, ambushes or chests. Brought the new `scene.props` static-scenery layer with him.
 - ✅ **C2 Windmarch Grassland built 2026-09-14** (see the dated section above) — **TERRAIN ONLY**: background art + collision + the three edge exits (west→C1, south→D2 both now LIVE; east→C3 stubbed) + three landmark labels. No NPCs, enemies, quests, battles, ambushes, interactables or chests yet; the content brief is in the Row C design notes. Building it also exposed and fixed exit-band bugs in C1 and D2 — see that section before touching any other stubbed edge.
 - ✅ **C1 Tidewrack Harbor built 2026-09-02** (see the dated section above) — 12-NPC fishing village, 5 quests (Lily's lost-gull chase-quest added 2026-09-10, see that dated section — also the game's first `failed`-quest outcome and first `chaseTalk` NPC), mireman pack guarding the (still-unbuilt) *Maiden's Grace*, plus a small cave (**C1B**, 2026-09-10) — now also home to the boss fight **Ysra Nine-Shells, "the Drownweft of the Hollow Tide"** (2026-09-10, see that dated section), the game's first summon-capable enemy and first magic-cost/cursed item. The derelict *Maiden's Grace* moored at the pier now has an interior too — **C1C** (2026-09-11), the game's first multi-level dungeon (just Level 1/the hold so far, see that dated section). 📝 **Row C's terrain is now complete** (C1 fully built; C2 and C3 terrain-only) — the remaining row-C work is content, per the Row C design notes above.
 - Player stats hardcoded in `js/main.js` (health 5/5, magic 5/10 [bar hidden], gold 0, attack 1, defense 1, **speed 1, luck 1 (2026-09-11, was 0)** — all deliberate new-game-start values). **Level/XP were REMOVED entirely on 2026-07-22** (Danny — the game has no experience/leveling loop; progression is gear-driven: weapons/armor + vitality potions). The old `stats.level`/`stats.xp`/`xpMax` fields, the hidden Stats-tab Level/Experience rows, `ui.updateStatsPanel`'s xp bar, and the `.bar-fill.xp`/`.xp-row` CSS are all gone. `NEW_GAME_STATS` (a `{...stats}` snapshot taken at module load) is the canonical fresh-start reset, used by the save system. Speed (1–3, cap 3) and Luck (starts 1, raised only by the D3 well's one-time coin toss, to 2) are real stats: **Speed** scales overworld movement AND grants battle initiative (50/75/100% at Speed 1/2/3); **Luck is a non-combat probability bonus** (2026-07-31 rework — NOT attack/defense rolls, that's stale/pre-rework phrasing): +10%/point to fishing's rare-catch odds and battle loot; both shown in the Stats tab, alongside the new Damage subsection (2026-09-11 — see that dated section) listing equipped Main Hand/Off Hand damage + effects and a Magic placeholder. **Gear can raise Speed now (2026-07-26):** `main.js`'s `effectiveSpeed() = min(3, stats.speed + equipmentBonus('speedBonus'))` feeds BOTH `moveMultForSpeed` (frame loop) and `playerInitiativeChance` (default arg), so `leather_boots` (`speedBonus: 1`, feet slot, in D1's locked chest) speeds movement and initiative. (`effectiveAttack`/`effectiveDefense` already folded in attack/defense gear + Luck.) Audio defaults: music 50%, effects 100%. Inventory state (`inventory` array) starts empty and `equipment` starts with every slot unequipped — first items obtainable in-game are Mirelle's vegetable-crate quest and whatever's still in Your House (Dagger, Health Potion).

@@ -144,6 +144,14 @@ export const DIALOGUE_SFX = {
   lily_farrow: 'assets/audio/freesound_community-hey-36263.mp3', // dedicated clip (2026-09-09, Danny)
   senna_brineholt: 'assets/audio/freesound_community-girl-chucklewav-14669.mp3',
   isolde_pearlwake: 'assets/audio/u_xg7ssi08yr-female-ah-ha-389835.mp3',
+
+  // C3 Hallowmere Forest (2026-09-20) — the Lakewarden. No bespoke clip was
+  // supplied (checked: no unused files in assets/audio), so he takes one from
+  // the existing male pool. M2, the MUFFLED reaction, on purpose: it is the
+  // least-used adult-male clip after the audit and "muffled" suits a voice
+  // coming out of a deep hood. M1 (mrstokes) would have been the obvious
+  // pick tonally but already carries 8 of the game's men.
+  lakewarden: 'assets/audio/universfield-muffled-reaction-242214.mp3',
 };
 
 // ---- Volume controls (wired to the Menu > Audio sliders) ----

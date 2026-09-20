@@ -11,10 +11,14 @@
 // between them. A cave mouth opens in a rock bluff in the far south-east, and a
 // secluded lotus pool sits in the dark forest of the south-west.
 //
-// TERRAIN ONLY for now (2026-09-15, Danny: "no NPCs, enemies, or quests yet").
-// No npcs, battles, ambushes or chests. The ONE piece of live content is the
-// cave link to D4B (see `interactables` below). Everything the row-C design
-// brief calls for here — the ferryman, the Silver Lotus hunt, the rootweaver /
+// CONTENT SO FAR. Built terrain-only on 2026-09-15 (Danny: "no NPCs, enemies,
+// or quests yet"); THE LAKEWARDEN was added 2026-09-20 (see the npcs block
+// below) — the ferryman the row-C brief owed this scene. He is talk-only: he
+// names the fare (a silver lotus) and tells the temple's history, and there is
+// still no silver_lotus item, no quest, and no actual crossing (why: see the
+// comment above `npcs`). Still no battles, ambushes or chests. The other live
+// content is the cave link to D4B (see `interactables`). Everything else the
+// row-C brief calls for here — the Silver Lotus hunt, the rootweaver /
 // Bramblekin scouts, the temple's descending levels, the Stone Warden boss and
 // the Ward-Shard — is still to come.
 //
@@ -72,8 +76,10 @@
 //      dock, and the long south-east shore trail down to the cave. This is the
 //      only region the player can reach on foot, and `spawn` sits in it.
 //   B. The ISLAND (516k px): its jetty, shore ring and the temple plaza.
-//      Unreachable BY DESIGN — the ferryman is the only way across and he
-//      isn't built yet. Kept walkable so the island is ready the moment he is.
+//      Unreachable BY DESIGN — the crossing is the only way over. The
+//      Lakewarden himself exists as of 2026-09-20, but he does not yet ROW
+//      anyone (see the npcs comment), so this region is still unreachable in
+//      practice. Kept walkable so the island is ready the moment he ferries.
 //   C. The SOUTH-WEST GLADE (389k px): the big lower-left clearing and the
 //      shore of the lotus pool. **This one is unreachable BY ACCIDENT** — the
 //      art rings it completely with forest, with no trail in from anywhere
@@ -474,8 +480,57 @@ export default {
     },
   ],
 
-  // Nothing else yet — see the header comment.
-  npcs: [],
+  // ---- Static scenery (2026-09-20) ----
+  // The Lakewarden's raft, moored off the outer (east) face of the mainland
+  // jetty with its long axis pointing across the water at the island. Purely
+  // decorative — `props` carry no collision and no interaction (see the props
+  // loop in world.js); the open lake is already blocked terrain, and the
+  // Lakewarden himself stands on it as a normal NPC drawn on top.
+  // Raft art is 136x100, so this centre puts its west edge ~15px off the
+  // jetty's mooring posts (deck runs x1355-1462, y1255-1350).
+  props: [
+    { sprite: 'assets/images/lakewarden_raft.png', x: 1545, y: 1302 },
+  ],
+
+  // ---- The Lakewarden (2026-09-20) ----
+  // The ferryman the row-C brief always owed this scene. Stationary on his
+  // raft (no routine, no patrol, no home — world.js leaves a speed-0 NPC with
+  // no routine exactly where scene data puts him), standing at the shore end
+  // of the raft so a player on the jetty is ~58px away, well inside
+  // INTERACT_RANGE (141). He is in the water, which is blocked terrain, so
+  // his body collider can never pinch the walkable deck.
+  //
+  // He states the fare — a silver lotus — and tells the temple's history, and
+  // that is ALL he does for now: there is deliberately no `silver_lotus` item,
+  // no quest and no crossing yet, because the lotus pool's glade is still
+  // walled off by forest (see the THREE WALKABLE REGIONS warning in the header
+  // — region C has no trail into it), so a fare the player cannot obtain would
+  // gate a crossing to an island with no temple interior behind it. When that
+  // art spur lands, the crossing hooks in here: give him a state-built dialog
+  // in main.js (the buildCalderDialog / buildMaraHollowmastDialog pattern),
+  // check the lotus in inventory, and teleport the player to the island jetty
+  // (~x2000, y1300) with a matching return option on the far side.
+  npcs: [
+    {
+      id: 'lakewarden', name: 'The Lakewarden', role: '',
+      sprite: 'assets/images/the_lakewarden_overhead.png',
+      portrait: 'assets/images/the_lakewarden.png',
+      x: 1528, y: 1300, speed: 0, startsHome: false,
+      dialog: {
+        line: 'Far enough, traveller. You have come to the end of the dock, and most who come this far only ever look. I am the Lakewarden. This water is mine to keep and the crossing with it, and I do not row for the asking.',
+        responses: [
+          'Will you take me across?',
+          'What stands across the water?',
+          'Leave.',
+        ],
+        responseEffects: [
+          { followUp: 'Not for coin. Not for a good enough reason either, and every one of you arrives with one of those. There is one fare for this crossing and there has only ever been one: a silver lotus, cut the same night you bring it. The flower opens after dark, deep in these woods, and by morning it is grey and worth nothing. Put one in my hand while it still holds its shine and I will set you on the far shore. Bring me anything else and you may keep it.' },
+          { followUp: 'The Temple of Aeluna. A sanctuary, once — dawn and moonlight and doors that were never shut, and the sick who were carried up those steps walked back down them. Then something came into it. I will not give that a name out here over open water. When the light went out of the temple, those who were left did the only thing there was left to do: they broke the river out of its old bed and turned it into this basin, and let the water climb until the temple stood alone on its stone. What holds it now is a poor swimmer. That has been enough, so far. No one has crossed to those stones in my time, nor in the time of the one who held this pole before me — and I have had a long while out here to hope that no one ever needs to.' },
+          null,
+        ],
+      },
+    },
+  ],
   chests: [],
   battles: [],
   ambushes: [],

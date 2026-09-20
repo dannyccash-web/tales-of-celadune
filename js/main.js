@@ -460,6 +460,9 @@ async function boot() {
       // Sprite-marked interactables (2026-09-10, e.g. C1B's gull) — drawn as
       // a static ground image (world.js), so preload same as any other sprite.
       ...(scene.interactables || []).filter((it) => it.sprite).map((it) => it.sprite),
+      // Static scenery props (2026-09-20, e.g. C3's lakewarden raft) — plain
+      // decorative images drawn by world.js, so preload like any other sprite.
+      ...(scene.props || []).map((pr) => pr.sprite),
       // Every enemy portrait a scene's battles could use — battle art
       // shouldn't pop in mid-fight.
       ...(scene.battles || []).flatMap((b) => b.enemies).map((id) => ENEMIES[id].portrait),

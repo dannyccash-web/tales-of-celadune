@@ -1172,6 +1172,20 @@ export class World {
     // (drawRipples(), drawn near the end of render() above the sprites).
     for (const w of this.waterRipples) this.drawWaterRipple(w);
 
+    // Static scenery props (2026-09-20, first user: the Lakewarden's raft on
+    // C3's lake). `scene.props: [{ sprite, x, y, rotation? }]` — a plain
+    // decorative image with NO collision, NO label and NO interaction, drawn
+    // through the same drawSprite path (and multiply drop shadow) as chests
+    // and characters. Deliberately its own array rather than a sprite-marked
+    // interactable: an interactable is a thing the player can press space on,
+    // and a prop is scenery an NPC happens to be standing on. Rotation is in
+    // DEGREES here (same convention as chests), converted below. Read straight
+    // off the scene — props have no per-instance state to reset. Drawn before
+    // the chests so a prop always sits UNDER whatever is standing on it.
+    for (const pr of this.scene.props || []) {
+      this.drawSprite(this.images[pr.sprite], pr.x, pr.y, ((pr.rotation || 0) * Math.PI) / 180);
+    }
+
     // Layer 2: treasure chests (on the ground, so under characters), then NPCs,
     // then the player on top. Emptied chests are gone. Drawn via drawSprite so
     // they get the same multiply drop shadow as characters (rotation 0).
