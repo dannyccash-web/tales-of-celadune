@@ -211,7 +211,7 @@ const ITEMS = {
     questItem: false,
     slot: 'item',
     vitality: 1,
-    price: 45,
+    price: 32,
   },
   bread: {
     id: 'bread',
@@ -241,7 +241,7 @@ const ITEMS = {
     questItem: false,
     slot: 'clothing',
     defenseBonus: 1,
-    price: 30,
+    price: 22,
   },
   leather_gloves: {
     id: 'leather_gloves',
@@ -251,7 +251,7 @@ const ITEMS = {
     questItem: false,
     slot: 'hands', // Equipment tab (see SLOT_CATEGORY)
     attackBonus: 1,
-    price: 28,
+    price: 18,
   },
   // +1 Speed (2026-07-26) — raises the player's effective Speed, which speeds
   // overworld movement AND improves battle initiative (main.js's effectiveSpeed).
@@ -439,7 +439,7 @@ const ITEMS = {
     questItem: false,
     slot: 'mainhand',
     damage: { min: 4, max: 7 },
-    price: 70,
+    price: 46,
   },
   // Mara's Cutlass (C1D, 2026-09-12; renamed + bonus surfaced 2026-09-12
   // round 4) — Mara Hollowmast's reward for driving the miremen off the
