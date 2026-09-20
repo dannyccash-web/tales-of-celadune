@@ -921,6 +921,19 @@ async function boot() {
     hasScene: (id) => !!SCENES[id],
   };
 
+  // Same idea for C3's ferry cutscene (2026-09-20). It advances off the frame
+  // loop's dt, and rAF is frozen in a hidden tab, so a backgrounded automation
+  // run starts the crossing and then sits there forever looking like a bug.
+  // `update(dt)` lets a test step it by hand. (Not named after an element id,
+  // same rule as sceneDebug/battleDebug.)
+  window.ferryDebug = {
+    start: () => startFerry(),
+    update: (dt) => updateFerry(dt),
+    state: () => ferry,
+    side: () => ferrySide,
+    docks: () => FERRY_DOCKS,
+  };
+
   ui.initStage();
   ui.initPanels(audio);
   ui.updateHud(stats);
