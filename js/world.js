@@ -51,6 +51,12 @@ export class World {
       ? (document.getElementById('labels')?.getContext('2d') || this.ctx)
       : this.ctx;
     this.scene = scene;
+    // Static scenery props: copied per-instance (like every other mutable world
+    // object) so moving one — the Lakewarden's raft crosses C3's lake — never
+    // writes back into the shared scene-data module. A fresh World therefore
+    // always starts with the raft at its scene-data mooring; where it ACTUALLY
+    // is comes from the saved `ferrySide` flag, re-applied on scene entry.
+    this.props = (scene.props || []).map((pr) => ({ ...pr }));
     this.images = images; // { [src]: HTMLImageElement }
     this.silhouettes = new Map(); // img -> black-silhouette canvas for shadows
 
@@ -1179,10 +1185,11 @@ export class World {
     // and characters. Deliberately its own array rather than a sprite-marked
     // interactable: an interactable is a thing the player can press space on,
     // and a prop is scenery an NPC happens to be standing on. Rotation is in
-    // DEGREES here (same convention as chests), converted below. Read straight
-    // off the scene — props have no per-instance state to reset. Drawn before
-    // the chests so a prop always sits UNDER whatever is standing on it.
-    for (const pr of this.scene.props || []) {
+    // DEGREES here (same convention as chests), converted below. Copied
+    // per-instance in the constructor, so moving one (the ferry raft crossing
+    // the lake) never writes back into scene data. Drawn before the chests so
+    // a prop always sits UNDER whatever is standing on it.
+    for (const pr of this.props) {
       this.drawSprite(this.images[pr.sprite], pr.x, pr.y, ((pr.rotation || 0) * Math.PI) / 180);
     }
 

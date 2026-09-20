@@ -93,4 +93,15 @@ export default {
     name: 'A Gull Gone Missing',
     description: 'Lily Farrow’s pet gull has been missing for two days. Find her — dead or alive — and bring word back to Lily.',
   },
+  // Started by showing Orris Fenwick the mysterious rock (C2, 2026-09-20) —
+  // the reward for finishing Lily's gull hunt. He can bind hearts, fangs and
+  // ore, cannot read this at all, and says those two facts sitting together
+  // are what make it worth the trip. NO turn-in exists yet: Kingsreach is
+  // overworld B3, which isn't built, so this stays active as a northward pull.
+  // Wire the completion to whoever ends up reading it there.
+  kingsreach_rock: {
+    id: 'kingsreach_rock',
+    name: 'A Stone Without a Name',
+    description: 'Orris Fenwick can bind almost anything to a blade, and cannot read the strange rock at all — which he says is the remarkable part. Take it north to Kingsreach, the city under the castle walls, and find someone who knows what it is.',
+  },
 };

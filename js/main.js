@@ -563,6 +563,9 @@ async function boot() {
     // Same idea for Orris: a save made after his rescue must find him revealed
     // and wandering rather than hidden and about to be robbed all over again.
     if (id === 'C2') revealOrrisIfRescued();
+    // Same idea for C3: a save made after a crossing must find the raft (and
+    // the Lakewarden standing on it) at the dock the player left it at.
+    if (id === 'C3') applyFerrySide();
     // Mara Hollowmast doesn't appear in town until rescued from C1D (2026-09-12)
     // - reuses `.defeated` purely as a presence gate (world.js: a defeated npc
     // "doesn't render, collide, aggro, or take interaction", exactly what
@@ -805,7 +808,7 @@ async function boot() {
         inventory: inventory.map((e) => ({ ...e })),
         equipment: { ...equipment },
         quests: quests.map((q) => ({ ...q })),
-        flags: { campQuestDone, campHostile, campTollTier, gafferHappy, thrumhornFed, orrisRescued, wellCoinThrown, wellDrinks, vegetableDeliveredToTavern, calderToldStory, calderToldDangers, maraMet, lilyGullThanked, magicRevealed, maraHollowmastRescued, lockboxAcceptedFrom, lockboxGivenTo },
+        flags: { campQuestDone, campHostile, campTollTier, gafferHappy, thrumhornFed, orrisRescued, wellCoinThrown, wellDrinks, vegetableDeliveredToTavern, calderToldStory, calderToldDangers, maraMet, lilyGullThanked, magicRevealed, maraHollowmastRescued, lockboxAcceptedFrom, lockboxGivenTo , ferrySide },
         caveReturn, // where to exit to if saved inside a cave/dungeon
         worlds: snapshotWorlds(),
       };
@@ -853,6 +856,7 @@ async function boot() {
     campTollPaid = false; campEntered = false; campQuestDone = false;
     campHostile = false; campEntryGate = null; campTollTier = 0;
     gafferHappy = false; thrumhornFed = false; orrisRescued = false; wellCoinThrown = false; wellDrinks = 0; vegetableDeliveredToTavern = false;
+    ferrySide = 'mainland'; // the C3 raft starts moored on the near shore
     calderToldStory = false; calderToldDangers = false; maraMet = false;
     lilyGullThanked = false;
     magicRevealed = false;
@@ -880,6 +884,7 @@ async function boot() {
     campQuestDone = !!f.campQuestDone; campHostile = !!f.campHostile;
     campTollTier = f.campTollTier || 0;
     gafferHappy = !!f.gafferHappy; thrumhornFed = !!f.thrumhornFed; orrisRescued = !!f.orrisRescued; wellCoinThrown = !!f.wellCoinThrown;
+    ferrySide = f.ferrySide === 'island' ? 'island' : 'mainland';
     wellDrinks = f.wellDrinks || 0;
     calderToldStory = !!f.calderToldStory; calderToldDangers = !!f.calderToldDangers;
     maraMet = !!f.maraMet;
@@ -1569,18 +1574,48 @@ async function boot() {
       return true;
     }
     if (effect.orrisFightNow) { startOrrisAmbush(); return true; }
-    if (effect.orrisPickWeapon) { ui.updateDialogContent(orrisWeaponMenu()); return true; }
-    if (effect.orrisRock) { ui.updateDialogContent({ line: ORRIS_ROCK_LINE, responses: ['Leave.'] }); return true; }
-    if (effect.orrisChoseWeapon) {
-      pendingEnchantWeapon = effect.orrisChoseWeapon;
-      ui.updateDialogContent(orrisReagentMenu(pendingEnchantWeapon));
+    // Enchanting, reworked 2026-09-20 into reagent -> explain -> weapon ->
+    // confirm (Danny). Every menu is rebuilt from live inventory at the moment
+    // it opens, so a step can never offer something the player no longer has.
+    if (effect.orrisMenu) { ui.updateDialogContent(buildOrrisDialog()); return true; }
+    if (effect.orrisReagent) { ui.updateDialogContent(orrisExplainMenu(effect.orrisReagent)); return true; }
+    if (effect.orrisProceed) { ui.updateDialogContent(orrisWeaponMenu(effect.orrisProceed)); return true; }
+    if (effect.orrisConfirm) {
+      ui.updateDialogContent(orrisConfirmMenu(effect.orrisConfirm.weaponId, effect.orrisConfirm.reagentId));
       return true;
     }
-    if (effect.orrisChoseReagent) {
-      const weaponId = pendingEnchantWeapon;
-      pendingEnchantWeapon = null;
-      applyEnchant(weaponId, effect.orrisChoseReagent);
+    if (effect.orrisEnchant) {
+      applyEnchant(effect.orrisEnchant.weaponId, effect.orrisEnchant.reagentId);
       return true;
+    }
+    // The rock is a LEAD, not a reagent: his marvelling line is unchanged, and
+    // as of 2026-09-20 it also starts the Kingsreach quest (once — startQuest
+    // no-ops on a quest the player already has).
+    if (effect.orrisRock) {
+      startQuest('kingsreach_rock');
+      ui.updateDialogContent({
+        line: ORRIS_ROCK_LINE,
+        responses: ['Go back.', 'Leave.'],
+        responseEffects: [{ orrisMenu: true }, null],
+      });
+      return true;
+    }
+    // ---- The Lakewarden's crossing (C3, 2026-09-20) ----
+    if (effect.lakewardenMenu) { ui.updateDialogContent(buildLakewardenDialog()); return true; }
+    if (effect.lakewardenFerryOffer) {
+      ui.updateDialogContent({
+        line: LAKEWARDEN_WARNING,
+        responses: ['Take me across.', 'Not yet.'],
+        responseEffects: [{ lakewardenFerry: true }, { lakewardenMenu: true }],
+      });
+      return true;
+    }
+    if (effect.lakewardenFerry) {
+      // Deliberately NOT `return true`: the dialog has to close so the crossing
+      // is visible. startFerry is deferred a beat so the close animation isn't
+      // fighting the first frame of the cutscene (same shape as fightYsra).
+      setTimeout(startFerry, 120);
+      return;
     }
     if (effect.noCorn) {
       audio.sfx(audio.SFX.denied);
@@ -1717,6 +1752,164 @@ async function boot() {
     return npc.dialog;
   }
 
+  // ---- The Lakewarden's ferry, C3 (2026-09-20) ------------------------------
+  // He states a fare (a silver lotus) that cannot yet be obtained — the lotus
+  // glade is still walled off by forest — so until it can be, he relents and
+  // rows anyway after a warning (Danny, 2026-09-20). **When the lotus lands,
+  // the gate goes back in `lakewardenFerryOffer` below**, and this comment is
+  // the thing to delete.
+  //
+  // The crossing is a real animated cutscene, driven off the frame loop's dt
+  // in `updateFerry()` — NOT an NPC routine that gets polled for arrival. That
+  // is deliberate: Mara Hollowmast's cutscene worked that way, froze the game,
+  // and was scrapped (2026-09-12, round 3). This one has no dependency on
+  // steering, collision or pathfinding: it lerps three sprites between two
+  // hard-coded poses on a timer and cannot fail to finish.
+  //
+  // Poses per side. `raft`/`warden` are where those two sit at rest; `ride` is
+  // where the player stands on the raft; `land` is the dock point they step
+  // on and off at. The player always rides the raft's DOCK-FACING half at the
+  // destination, so stepping off is a clean straight line; boarding passes the
+  // Lakewarden, which reads as squeezing past the ferryman.
+  const FERRY_DOCKS = {
+    mainland: {
+      raft: { x: 1545, y: 1302 }, warden: { x: 1528, y: 1300 },
+      ride: { x: 1583, y: 1318 }, land: { x: 1432, y: 1305 },
+    },
+    island: {
+      raft: { x: 1920, y: 1302 }, warden: { x: 1903, y: 1300 },
+      ride: { x: 1958, y: 1318 }, land: { x: 2030, y: 1300 },
+    },
+  };
+  // ~7.3s end to end. The crossing itself is 375px in 4.2s (~89px/s), which is
+  // deliberately slower than the player's own 130px/s walk — a man poling a
+  // raft should not outpace walking — but not so slow that going back and
+  // forth becomes a chore.
+  const FERRY_PHASES = [
+    { name: 'settle', s: 0.35 }, // a beat after the dialog closes, before anything moves
+    { name: 'board',  s: 1.20 }, // player steps from the dock onto the raft
+    { name: 'cross',  s: 4.20 }, // raft + Lakewarden + player glide across
+    { name: 'land',   s: 1.20 }, // player steps off onto the far dock
+    { name: 'rest',   s: 0.35 }, // a beat before control comes back
+  ];
+  const FERRY_BOB = 3; // px of vertical sway on the raft mid-crossing
+
+  let ferrySide = 'mainland'; // which dock the raft (and the Lakewarden) is at — persisted
+  let ferry = null;           // the live crossing: { from, to, phase, t, startPlayer, walking }
+
+  function lakewardenNpc() { return world.npcs.find((n) => n.id === 'lakewarden'); }
+  function ferryRaft() { return world.props.find((pr) => pr.sprite.includes('lakewarden_raft')); }
+
+  // Put the raft + the Lakewarden at whichever dock the save says, without any
+  // animation. Called on every fresh build of C3 (enterScene), the same way
+  // revealOrrisIfRescued re-applies Orris's state.
+  function applyFerrySide() {
+    const pose = FERRY_DOCKS[ferrySide] || FERRY_DOCKS.mainland;
+    const raft = ferryRaft();
+    if (raft) { raft.x = pose.raft.x; raft.y = pose.raft.y; }
+    const lw = lakewardenNpc();
+    if (lw) { lw.x = pose.warden.x; lw.y = pose.warden.y; }
+  }
+
+  function startFerry() {
+    const lw = lakewardenNpc();
+    const raft = ferryRaft();
+    if (!lw || !raft) return; // not on C3 somehow — fail closed rather than lock the player
+    const from = ferrySide === 'island' ? 'island' : 'mainland';
+    const to = from === 'mainland' ? 'island' : 'mainland';
+    ferry = {
+      from, to, phase: 0, t: 0, walking: false,
+      startPlayer: { x: world.player.x, y: world.player.y },
+    };
+  }
+
+  // Smoothstep, so the raft eases off the dock and settles against the far one
+  // instead of starting and stopping dead.
+  const ease = (u) => u * u * (3 - 2 * u);
+  const lerp = (a, b, u) => a + (b - a) * u;
+
+  function updateFerry(dt) {
+    if (!ferry) return;
+    const A = FERRY_DOCKS[ferry.from], B = FERRY_DOCKS[ferry.to];
+    const p = world.player, lw = lakewardenNpc(), raft = ferryRaft();
+    if (!lw || !raft) { ferry = null; return; } // scene swapped out mid-crossing
+
+    ferry.t += dt;
+    let phase = FERRY_PHASES[ferry.phase];
+    while (phase && ferry.t >= phase.s) {
+      ferry.t -= phase.s;
+      ferry.phase += 1;
+      phase = FERRY_PHASES[ferry.phase];
+    }
+    if (!phase) { finishFerry(); return; }
+
+    const u = ease(Math.min(1, ferry.t / phase.s));
+    ferry.walking = false;
+
+    if (phase.name === 'settle') {
+      // hold everything at the near dock
+    } else if (phase.name === 'board') {
+      p.x = lerp(ferry.startPlayer.x, A.ride.x, u);
+      p.y = lerp(ferry.startPlayer.y, A.ride.y, u);
+      p.rotation = Math.atan2(A.ride.y - ferry.startPlayer.y, A.ride.x - ferry.startPlayer.x) - Math.PI / 2;
+      ferry.walking = true;
+    } else if (phase.name === 'cross') {
+      const bob = Math.sin(ferry.t * 2.2) * FERRY_BOB;
+      raft.x = lerp(A.raft.x, B.raft.x, u);   raft.y = lerp(A.raft.y, B.raft.y, u) + bob;
+      lw.x = lerp(A.warden.x, B.warden.x, u); lw.y = lerp(A.warden.y, B.warden.y, u) + bob;
+      p.x = lerp(A.ride.x, B.ride.x, u);      p.y = lerp(A.ride.y, B.ride.y, u) + bob;
+      // Face the way the raft is going, so the player isn't riding backwards.
+      p.rotation = (B.raft.x > A.raft.x ? -1 : 1) * (Math.PI / 2);
+    } else if (phase.name === 'land') {
+      raft.x = B.raft.x; raft.y = B.raft.y;
+      lw.x = B.warden.x; lw.y = B.warden.y;
+      p.x = lerp(B.ride.x, B.land.x, u);
+      p.y = lerp(B.ride.y, B.land.y, u);
+      p.rotation = Math.atan2(B.land.y - B.ride.y, B.land.x - B.ride.x) - Math.PI / 2;
+      ferry.walking = true;
+    } else if (phase.name === 'rest') {
+      p.x = B.land.x; p.y = B.land.y;
+    }
+    // Keep the walk-flip mirroring running while the player is actually
+    // stepping (world.update zeroes both every frame while input is locked).
+    p.moving = ferry.walking;
+    p.walkTimer = ferry.walking ? p.walkTimer + dt : 0;
+  }
+
+  function finishFerry() {
+    const to = ferry.to;
+    ferry = null;
+    ferrySide = to;
+    applyFerrySide();
+    const pose = FERRY_DOCKS[to];
+    world.player.x = pose.land.x;
+    world.player.y = pose.land.y;
+    world.player.moving = false;
+    world.player.walkTimer = 0;
+    saveGame(); // the crossing is a real position change — checkpoint it
+  }
+
+  // ---- The Lakewarden's dialogue (state-built: which shore he's on) ----------
+  const LAKEWARDEN_GREETING = 'Far enough, traveller. You have come to the end of the dock, and most who come this far only ever look. I am the Lakewarden. This water is mine to keep and the crossing with it, and I do not row for the asking.';
+  const LAKEWARDEN_TEMPLE = 'The Temple of Aeluna. A sanctuary, once — dawn and moonlight and doors that were never shut, and the sick who were carried up those steps walked back down them. Then something came into it. I will not give that a name out here over open water. When the light went out of the temple, those who were left did the only thing there was left to do: they broke the river out of its old bed and turned it into this basin, and let the water climb until the temple stood alone on its stone. What holds it now is a poor swimmer. That has been enough, so far. No one has crossed to those stones in my time, nor in the time of the one who held this pole before me — and I have had a long while out here to hope that no one ever needs to.';
+  const LAKEWARDEN_WARNING = 'You have asked plainly, so I will answer plainly. The fare is a silver lotus and the fare stands — but it has stood since before anyone now living was born to pay it, and I am tired of being the only thing left between that place and the rest of the world. So. I will take you. Hear me first, because I will only say it once. Whatever is over there does not sleep so much as wait, and it has had a very long time to get patient. Keep to the stone. Do not go below. And when you want off that island, come back to this dock and call for me — I will not come looking for you. Still willing?';
+  const LAKEWARDEN_ISLAND = 'The stones are that way. Mind what I told you. I will be here when you want off — I am always here.';
+
+  function buildLakewardenDialog() {
+    if (ferrySide === 'island') {
+      return {
+        line: LAKEWARDEN_ISLAND,
+        responses: ['Take me back across.', 'Leave.'],
+        responseEffects: [{ lakewardenFerry: true }, null],
+      };
+    }
+    return {
+      line: LAKEWARDEN_GREETING,
+      responses: ['Will you take me across?', 'What stands across the water?', 'Leave.'],
+      responseEffects: [{ lakewardenFerryOffer: true }, { followUp: LAKEWARDEN_TEMPLE }, null],
+    };
+  }
+
   // ---- Orris Fenwick: the caravan-rest ambush, then enchanting (2026-09-18) --
   // Orris sits `hidden` on C2's road until the player crosses his talkRange,
   // which fires world.pendingApproach -> openNpcDialog -> buildOrrisDialog.
@@ -1786,7 +1979,11 @@ async function boot() {
   // live inventory, so the conversation can never offer something that isn't
   // there. The enchanted weapon is a separate catalog id: remove the plain one,
   // add the variant, and re-equip if the plain one was in hand.
-  let pendingEnchantWeapon = null;
+  //
+  // The chosen weapon + reagent ride INSIDE the response effects through the
+  // whole conversation ({ orrisConfirm: { weaponId, reagentId } } and so on)
+  // rather than in a module-level "pending" holder, so backing out of a menu
+  // or walking away mid-flow can't leave a half-made selection lying around.
 
   function enchantableWeaponsHeld() {
     return inventory.filter((it) => isEnchantable(ITEMS[it.id])).map((it) => ITEMS[it.id]);
@@ -1795,16 +1992,22 @@ async function boot() {
     return Object.values(ENCHANTS).filter((e) => inventory.some((it) => it.id === e.reagentId));
   }
 
+  // The conversation runs REAGENT -> EXPLAIN -> WEAPON -> CONFIRM (reworked
+  // 2026-09-20, Danny). He opens by offering the work and asking what the
+  // player is carrying; the first menu is the reagents themselves, listed only
+  // if they're actually in the bag. Picking one gets an excited explanation of
+  // what it would do and a yes/no; yes opens the weapon list; picking a weapon
+  // gets one last are-you-sure before anything is consumed. Every menu is
+  // rebuilt from live inventory when it opens, so nothing stale can be offered.
   function buildOrrisDialog() {
     if (!orrisRescued) return buildOrrisAmbushDialog();
-    const weapons = enchantableWeaponsHeld();
     const reagents = reagentsHeld();
     const hasRock = inventory.some((it) => it.id === 'mysterious_rock');
     const responses = [];
     const effects = [];
-    if (weapons.length && reagents.length) {
-      responses.push('Enchant a weapon.');
-      effects.push({ orrisPickWeapon: true });
+    for (const e of reagents) {
+      responses.push(`Show him the ${ITEMS[e.reagentId].name}.`);
+      effects.push({ orrisReagent: e.reagentId });
     }
     // Lily Farrow's rock is NOT a reagent (2026-09-19) — it's a lead. Orris can
     // tell it matters and cannot tell why, and points the player at Kingsreach.
@@ -1814,32 +2017,60 @@ async function boot() {
     }
     responses.push('Leave.');
     effects.push(null);
-    let line;
-    if (!weapons.length) {
-      line = 'The offer stands and it will keep standing — I owe you a debt I cannot pay in coin, on account of having none. Bring me a plain weapon, though. Something honest, that only knows how to be sharp. I cannot bind a new nature onto a blade that already has opinions of its own.';
-    } else if (!reagents.length) {
-      line = 'Ah — half the pieces. A blade is only the argument; I need something to argue WITH. A rootweaver\u2019s heart, a spider\u2019s fang. Something with a nature strong enough to lend. Find me one and the work is yours, free and gladly.';
-    } else {
-      line = 'There he is. Listen \u2014 I was up at the old fort, the soldiers\u2019 ruin on the rise there, taking rubbings off what is left of the stonework, which is the sort of thing that gets a man robbed and I knew it when I set out. No coin. I said so and I meant it. But I have hands, and forty years of ruining things until they worked. Give me a weapon and something with a nature in it, and I will bind the one onto the other.';
-    }
+    const line = (reagents.length || hasRock)
+      ? 'There he is. Listen \u2014 I have no coin, I said so and I meant it, but I have hands and forty years of ruining things until they worked. Binding is what I am for. Give me something with a nature in it and I will put that nature into a weapon and you will keep it. So. What are you carrying? Show me everything, I am not proud.'
+      : 'The offer stands and it will keep standing \u2014 I owe you a debt I cannot pay in coin, on account of having none. But a blade is only the argument; I need something to argue WITH. A rootweaver\u2019s heart. A spider\u2019s fang. Something with a nature strong enough to lend. Bring me one and the work is yours, free and gladly.';
     return { line, responses, responseEffects: effects };
   }
 
-  function orrisWeaponMenu() {
-    const weapons = enchantableWeaponsHeld();
+  // Step 2 — what that reagent would DO. The effect text is ENCHANTS[].blurb,
+  // the same string the item tooltips use, so the pitch can never drift from
+  // the mechanic. He is thrilled about it; that is the whole character.
+  const ORRIS_PITCH = {
+    rootweaver_heart: 'His whole face changes. A rootweaver\u2019s heart \u2014 still wet, you absolute menace. Do you know what this is? It is a thing that grew by taking. Bind that to a blade and the blade learns the habit.',
+    spider_fang: 'He holds it up to the light by the very end of it, delighted and sensible about it at the same time. Oh, that is a good one. Still charged, see the bead at the tip? Bind this to a weapon and the weapon starts biting the way the spider did.',
+  };
+
+  function orrisExplainMenu(reagentId) {
+    const ench = ENCHANTS[reagentId];
     return {
-      line: 'Right. Lay them out. Which one is going to be interesting?',
-      responses: [...weapons.map((w) => w.name), 'Never mind.'],
-      responseEffects: [...weapons.map((w) => ({ orrisChoseWeapon: w.id })), null],
+      line: `${ORRIS_PITCH[reagentId]} ${ench.blurb} Shall I do it?`,
+      responses: ['Do it.', 'Not yet.'],
+      responseEffects: [{ orrisProceed: reagentId }, { orrisMenu: true }],
     };
   }
 
-  function orrisReagentMenu(weaponId) {
-    const reagents = reagentsHeld();
+  // Step 3 — the weapon. A weapon qualifies only if it does nothing but damage
+  // (items.js's isEnchantable — Mara's Cutlass is out, its bonusDamageVs
+  // disqualifies it). Holding none is a dead end he explains rather than an
+  // empty list.
+  function orrisWeaponMenu(reagentId) {
+    const weapons = enchantableWeaponsHeld();
+    if (!weapons.length) {
+      return {
+        line: 'He puts his hands out for the weapon and you have nothing to put in them. Ah. Bring me a plain one, then \u2014 something honest, that only knows how to be sharp. I cannot bind a new nature onto a blade that already has opinions of its own.',
+        responses: ['Go back.', 'Leave.'],
+        responseEffects: [{ orrisMenu: true }, null],
+      };
+    }
     return {
-      line: `The ${ITEMS[weaponId].name}, then. Good \u2014 no opinions on it at all. Now: what am I binding to it?`,
-      responses: [...reagents.map((e) => ITEMS[e.reagentId].name), 'Never mind.'],
-      responseEffects: [...reagents.map((e) => ({ orrisChoseReagent: e.reagentId })), null],
+      line: `Right. Lay them out. Which one is going to be interesting?`,
+      responses: [...weapons.map((w) => w.name), 'Never mind.'],
+      responseEffects: [...weapons.map((w) => ({ orrisConfirm: { weaponId: w.id, reagentId } })), { orrisMenu: true }],
+    };
+  }
+
+  // Step 4 — the last word before anything is consumed. Both the weapon and
+  // the reagent are spent by applyEnchant, so this is the point of no return
+  // and he says so.
+  function orrisConfirmMenu(weaponId, reagentId) {
+    const ench = ENCHANTS[reagentId];
+    const name = `${ench.prefix} ${ITEMS[weaponId].name}`;
+    const article = /^[aeiou]/i.test(name) ? 'an' : 'a'; // "an Ensnaring Dagger" / "a Venomous Dagger"
+    return {
+      line: `The ${ITEMS[weaponId].name}, then, and the ${ITEMS[reagentId].name} into it. You will get back ${article} ${name} and you will not get back either of the things you gave me \u2014 there is no unpicking this afterwards, not by me and not by anyone. Say the word and I will start.`,
+      responses: ['Do it.', 'Wait \u2014 let me think.'],
+      responseEffects: [{ orrisEnchant: { weaponId, reagentId } }, { orrisMenu: true }],
     };
   }
 
@@ -3164,6 +3395,7 @@ async function boot() {
     else if (npc.id === 'toby_farrow') dialog = buildTobyDialog();
     else if (npc.id === 'lily_farrow') dialog = buildLilyDialog();
     else if (npc.id === 'ysra_nineshells') dialog = buildYsraDialog();
+    else if (npc.id === 'lakewarden') dialog = buildLakewardenDialog();
     else if (npc.id === 'bramblekin_chief') dialog = buildChiefDialog();
     else if (npc.bramblekin) dialog = buildBramblekinDialog(npc);
     else if (npc.vendor) dialog = buildVendorDialog(npc); // adds its own chatter
@@ -4175,7 +4407,10 @@ async function boot() {
     // world; fishing only locks the PLAYER — NPCs keep wandering during a cast
     // (2026-07-23). `locked` gates the player, `worldFrozen` gates the world.
     const modalLock = ui.isDialogOpen() || ui.isAnyPanelOpen() || ui.isBattleOpen() || ui.isVictoryOpen() || ui.isGameOverOpen() || deathFading || !state.started;
-    const locked = modalLock || fishing;
+    // The C3 ferry locks the PLAYER only, like fishing — the cutscene drives
+    // the player, the Lakewarden and the raft itself, so input has to be off
+    // but the world must keep ticking (the camera follows the raft across).
+    const locked = modalLock || fishing || !!ferry;
     // Camp membrane state (no-op in scenes without a camp): sealed until the
     // player has passage (paid this visit OR did the Chief's favor) — and never
     // sealed once the camp's hostile, since then the guards attack rather than
@@ -4198,11 +4433,16 @@ async function boot() {
     world.playerTorch = state.started && hasTorch;
     // Hide proximity labels while any modal (dialog/panel/battle/…) is open so
     // they don't render over the overlay (2026-07-28, the "Old Barn" label bug).
-    world.suppressLabels = modalLock;
+    world.suppressLabels = modalLock || !!ferry; // no name labels floating over the crossing
     world.update(dt, input, locked, modalLock);
+    // Runs AFTER world.update, which zeroes player.moving/walkTimer every frame
+    // while input is locked — the cutscene sets both itself so the walk-flip
+    // still plays while the player steps on and off the raft. One frame of
+    // camera lag against the new position is imperceptible at 60fps.
+    updateFerry(dt);
     world.render();
 
-    audio.setWalking(!locked && world.player.moving);
+    audio.setWalking((!locked && world.player.moving) || !!ferry?.walking);
 
     // Scene exits: crossing an edge with a matching exit either walks the
     // player straight into the adjacent scene (registered in SCENES) or,

@@ -1045,6 +1045,96 @@ from the dock and null from inland, the deck keeps all 3711 walkable cells with 
 Plus a PIL composite of raft + sprite onto the background at the real coordinates to check it
 reads as moored rather than beached. **Then loaded live in the browser** per the standing rule.
 
+## The Lakewarden ferries you across, and Orris's enchanting becomes a real flow (2026-09-20, round 2)
+
+Two asks in one round.
+
+### The crossing (main.js, world.js, c3.js)
+
+Danny: until the silver lotus and the rest of C3 exist, have him ferry the player anyway, after a
+warning, with the boarding, the crossing and the landing all animated.
+
+- **The fare gate is gone FOR NOW and the code says exactly where to put it back.** He still states
+  the fare in `LAKEWARDEN_WARNING`, then relents because he is tired of being the only thing between
+  the temple and the world. **When the lotus lands, the check goes in `lakewardenFerryOffer`** —
+  there is a comment in main.js saying so.
+- **The cutscene is time-driven, not routine-driven, and that is the whole design.** `updateFerry(dt)`
+  runs off the frame loop's dt through five phases — settle 0.35s, board 1.2s, cross 4.2s, land 1.2s,
+  rest 0.35s, **7.3s end to end** — lerping three sprites (player, Lakewarden, raft) between two
+  hard-coded poses with a smoothstep ease and a ±3px bob mid-lake. It touches no steering, no
+  collision and no pathfinding, so it cannot fail to arrive. **Mara Hollowmast's cutscene polled an
+  NPC routine for arrival, froze the game and was scrapped (2026-09-12 round 3) — do not build the
+  next one that way either.**
+- **Pacing note:** the crossing is 375px in 4.2s (~89px/s), deliberately slower than the player's own
+  130px/s walk (a man poling a raft should not outpace walking) but not so slow that going back and
+  forth becomes a chore. An earlier cut at 8.9s total felt like a toll.
+- **`locked` vs `modalLock`:** the ferry joins `fishing` in the PLAYER-only lock — the world has to
+  keep ticking because the camera follows the player across the lake. `updateFerry` runs AFTER
+  `world.update`, which zeroes `player.moving`/`walkTimer` every frame while input is locked; the
+  cutscene sets both itself so the walk-flip still plays while stepping on and off. Labels are
+  suppressed during the ride, and footsteps play during the board/land phases only.
+- **`world.props` is now copied per-instance** (`this.props = scene.props.map(p => ({...p}))`).
+  It had been read straight off the scene, which was fine for scenery that never moves and very much
+  not fine the moment the raft crosses a lake — mutating it would have written back into the shared
+  module and persisted into a New Game.
+- **Which shore the raft is on is a persisted flag, `ferrySide`** ('mainland' | 'island'), saved with
+  the other story flags and re-applied by `applyFerrySide()` on every fresh build of C3 — the same
+  shape as `revealOrrisIfRescued`. A crossing calls `saveGame()` when it finishes, since it is a real
+  position change. Per-side poses live in `FERRY_DOCKS`.
+- **His dialogue moved out of c3.js into `buildLakewardenDialog()`** (the Calder precedent), because
+  it now depends on which shore he is at: mainland gets the crossing offer and the temple story,
+  island gets "take me back". **His warning tells the player how to get home** — come back to this
+  dock and call for him — which is the only in-game instruction for it, so keep that line if it is
+  ever rewritten.
+- **Geometry, verified against the real collider:** mainland raft (1545,1302) / warden (1528,1300);
+  island raft (1920,1302) / warden (1903,1300); landings at (1432,1305) and (2030,1300). Every raft,
+  warden and ride pose is on blocked water; both landings are walkable; the Lakewarden is 96px away
+  on the mainland side and 127px on the island side, both inside INTERACT_RANGE 141. The island
+  landing was moved in from x2040 to x2030 because 137px was a thin margin for "can I still talk to
+  him to get back".
+- **The island is still empty.** Crossing takes the player to a walkable plaza with no temple
+  interior and nothing on it. That is the point of the warning, and it is what the crossing is for
+  until the temple gets built.
+
+### Orris's enchanting: reagent -> explain -> weapon -> confirm (main.js, quests.js)
+
+Danny: he should offer the work and ask what you have; the options should be the reagents you are
+actually carrying; heart or fang should get an excited explanation and a yes/no; then a weapon; then
+one final confirmation.
+
+- **The order INVERTED.** It used to be weapon-first, then reagent, with an "Enchant a weapon."
+  intermediate step. Now the top menu IS the reagent list, built from live inventory, so the first
+  thing he says is the offer and the first thing you see is what you can give him.
+- **Every menu is rebuilt from live inventory when it opens**, and the chosen weapon + reagent ride
+  INSIDE the response effects (`{ orrisConfirm: { weaponId, reagentId } }`) rather than in a
+  module-level `pendingEnchantWeapon` holder, which is now deleted. Backing out of a menu or walking
+  away mid-flow can no longer leave a half-made selection lying around.
+- **The pitch text is `ENCHANTS[].blurb`** — the same string the item tooltips use — wrapped in a
+  per-reagent line of him being thrilled (`ORRIS_PITCH`). Pitch and mechanic cannot drift apart.
+- **Holding a reagent but no plain weapon** is a dead end he explains rather than an empty list;
+  Mara's Cutlass is still excluded by `isEnchantable` (its `bonusDamageVs` disqualifies it).
+- **The confirm step says it is irreversible**, because it is — `applyEnchant` consumes both the
+  weapon and the reagent. "an Ensnaring Dagger" / "a Venomous Dagger" picks its article off the name.
+- **The mysterious rock now starts a quest**, `kingsreach_rock` ("A Stone Without a Name"). His
+  marvelling line is unchanged, per Danny. **There is no turn-in** — Kingsreach is overworld B3,
+  which is not built — so it stays active as a northward pull. Wire the completion to whoever ends
+  up reading it there.
+
+### Verification
+
+Both features were exercised by **slicing the real functions out of main.js and running them**,
+rather than by re-implementing them in a test: the ferry's `FERRY_DOCKS`/`FERRY_PHASES`/`startFerry`/
+`updateFerry`/`finishFerry` were evaluated against a stub world carrying C3's actual obstacle list
+and stepped at 60fps — three consecutive crossings, each finishing in 7.32s with the ferry state
+cleared, the player on walkable ground, raft and warden at the correct dock, `ferrySide` flipped and
+exactly one `saveGame()` per crossing, and the player's y staying inside the raft's own bounds the
+whole ride. Orris's four menu builders were evaluated against five inventories (nothing / heart +
+dagger / fang with no weapon / heart + fang + rock + sword + cutlass / rock only) and every response
+checked against its effect for length mismatches. Plus the sentinel-guarded syntax sweep, an
+import-and-print of c3.js and quests.js, a lexical-depth check confirming every new binding sits
+inside `boot()`'s closure at depth 1 (the `magicRevealed` scope bug, 2026-09-11, was exactly this),
+and a live browser run.
+
 ## Status / roadmap
 
 - ✅ D3 Farm: 4-layer scene, movement, collision (25px-grid traced), camera, walk animation, four NPCs (Mirelle, Tuckwell, Brenna on home routines; Old Gaffer the goat on a patrol loop in the pen) plus one unoccupied building (Your House, formerly Storehouse, stocked with a Dagger + Health Potion) — leave/return + door SFX + interior dialog with per-character voice-clip SFX, response effects (Gaffer's bite, Mirelle's vegetable-crate quest + item, Brenna's completable barn-rat quest with a 5-gold turn-in, the silo's one ear of corn + feeding Gaffer to make petting safe, the well's drink-for-HP + coin-for-Luck), per-NPC dialog variants by quest status incl. the readyToComplete turn-in pseudo-status (no re-granting a one-time quest item), multi-NPC steering avoidance, dialog with portrait slide/fade + typewriter text + item-received reveal (also used for taking items from Your House), PDF-matched UI styling, HUD (Magic bar hidden until the player owns a magic-cost item — see the Ysra Nine-Shells section, 2026-09-10; health bar width scales with max-health and flashes on damage), gold/health/item SFX centralized through addGold/damagePlayer/addItem/removeItem, "Quest Added" top-center banner, Menu (Quests/Stats/Audio/Controls tabs — Quests lists active + a Completed section with check/X icons; Controls is a static key-cap binding reference) + Inventory (mockup-matched chrome, no section headers, arrow-indicator tabs; four mutually-exclusive item categories — Equipment/Weapons/Magic/Items — each with its own tile grid + action popout; Equipment/Weapons further split into per-slot subcategory sections — Head/Clothing/Feet/Hands, Main Hand/Off Hand — each its own header+grid, equip/unequip via the tile's own expand-from-frame popout, equipped items marked with a checkmark corner badge, quest items with a star badge, weapon/gear tiles show a secondary stat line, consistent item naming), fully keyboard-navigable (I/M/arrows/Space/Escape, no mouse required, including the Items grid + popout and battle), one hidden collectible ("A shiny object" near Mirelle's farmhouse), start screen (click/Enter/Space), theme + overworld soundtrack with crossfade (race-condition-free).
@@ -1059,7 +1149,7 @@ reads as moored rather than beached. **Then loaded live in the browser** per the
 - ✅ Caves / dungeons (2026-07-26): interact-based sub-scenes — an overworld `cave:` entrance interactable enters a cave scene (own bg/collision), an `caveExit:` interactable returns to the exact overworld spot entered from (`enterCave`/`exitCave`, `caveReturn` persisted). First one: **D1B** cave (entrance on D1 at (1033,1664), spawn (1338,164), exit (1412,5)) — traversal shell, no content inside yet. See the "Caves / dungeons" section above.
 - ⏳ Later: real dialog trees, ranged/varied enemy types beyond the Blight Rat encounters, an actual Magic system behind the Menu's hidden bar (battle Magic slot removed until then), gear that grants attackBonus/defenseBonus (none exists yet — only weapon damage is wired), more items/collectibles/unoccupied buildings, interiors (incl. the D4 cave), the other 14 scenes, camp inhabitants/content in D4, Steam wrap.
 - ✅ **C2 got its first content 2026-09-16** (see the dated section above) — new background art + regenerated collision, the Reedwalker herders (Tovan the quest-giver, Nera the travelling trader), their last thrumhorn (pet/feed), the `c2_thornbacks` quest, and three roaming Thornback Boars. C2 is no longer terrain-only.
-- ✅ **C3 Hallowmere Forest built 2026-09-15** (see the dated section above) — background art + collision + two edge exits (west→C2 LIVE; north→B3 stubbed) + two landmark labels + **a two-way cave link to D4B** (C3 2561,2750 ↔ D4B 146,63), which required the new `enterAt` / `exitTo.scene` fields and made D4B a through-passage. Three intentional walkable regions — read that section's warning before regenerating. **THE LAKEWARDEN added 2026-09-20** (see that dated section) — C3's first NPC, on a raft at the mainland jetty; he states the fare (a silver lotus) and tells the temple's history, but does NOT yet ferry anyone, and that is deliberate until the lotus glade gets a trail painted into the art. Still no enemies, quests, battles, ambushes or chests. Brought the new `scene.props` static-scenery layer with him.
+- ✅ **C3 Hallowmere Forest built 2026-09-15** (see the dated section above) — background art + collision + two edge exits (west→C2 LIVE; north→B3 stubbed) + two landmark labels + **a two-way cave link to D4B** (C3 2561,2750 ↔ D4B 146,63), which required the new `enterAt` / `exitTo.scene` fields and made D4B a through-passage. Three intentional walkable regions — read that section's warning before regenerating. **THE LAKEWARDEN added 2026-09-20** (see that dated section) — C3's first NPC, on a raft at the mainland jetty; he states the fare (a silver lotus) and tells the temple's history, and **as of 2026-09-20 he FERRIES the player to the island and back** in a 7.3s animated crossing — the fare gate is off until the lotus glade gets a trail painted into the art, and the code says where to put it back. The island itself is still empty terrain. Still no enemies, quests, battles, ambushes or chests. Brought the new `scene.props` static-scenery layer with him.
 - ✅ **C2 Windmarch Grassland built 2026-09-14** (see the dated section above) — **TERRAIN ONLY**: background art + collision + the three edge exits (west→C1, south→D2 both now LIVE; east→C3 stubbed) + three landmark labels. No NPCs, enemies, quests, battles, ambushes, interactables or chests yet; the content brief is in the Row C design notes. Building it also exposed and fixed exit-band bugs in C1 and D2 — see that section before touching any other stubbed edge.
 - ✅ **C1 Tidewrack Harbor built 2026-09-02** (see the dated section above) — 12-NPC fishing village, 5 quests (Lily's lost-gull chase-quest added 2026-09-10, see that dated section — also the game's first `failed`-quest outcome and first `chaseTalk` NPC), mireman pack guarding the (still-unbuilt) *Maiden's Grace*, plus a small cave (**C1B**, 2026-09-10) — now also home to the boss fight **Ysra Nine-Shells, "the Drownweft of the Hollow Tide"** (2026-09-10, see that dated section), the game's first summon-capable enemy and first magic-cost/cursed item. The derelict *Maiden's Grace* moored at the pier now has an interior too — **C1C** (2026-09-11), the game's first multi-level dungeon (just Level 1/the hold so far, see that dated section). 📝 **Row C's terrain is now complete** (C1 fully built; C2 and C3 terrain-only) — the remaining row-C work is content, per the Row C design notes above.
 - Player stats hardcoded in `js/main.js` (health 5/5, magic 5/10 [bar hidden], gold 0, attack 1, defense 1, **speed 1, luck 1 (2026-09-11, was 0)** — all deliberate new-game-start values). **Level/XP were REMOVED entirely on 2026-07-22** (Danny — the game has no experience/leveling loop; progression is gear-driven: weapons/armor + vitality potions). The old `stats.level`/`stats.xp`/`xpMax` fields, the hidden Stats-tab Level/Experience rows, `ui.updateStatsPanel`'s xp bar, and the `.bar-fill.xp`/`.xp-row` CSS are all gone. `NEW_GAME_STATS` (a `{...stats}` snapshot taken at module load) is the canonical fresh-start reset, used by the save system. Speed (1–3, cap 3) and Luck (starts 1, raised only by the D3 well's one-time coin toss, to 2) are real stats: **Speed** scales overworld movement AND grants battle initiative (50/75/100% at Speed 1/2/3); **Luck is a non-combat probability bonus** (2026-07-31 rework — NOT attack/defense rolls, that's stale/pre-rework phrasing): +10%/point to fishing's rare-catch odds and battle loot; both shown in the Stats tab, alongside the new Damage subsection (2026-09-11 — see that dated section) listing equipped Main Hand/Off Hand damage + effects and a Magic placeholder. **Gear can raise Speed now (2026-07-26):** `main.js`'s `effectiveSpeed() = min(3, stats.speed + equipmentBonus('speedBonus'))` feeds BOTH `moveMultForSpeed` (frame loop) and `playerInitiativeChance` (default arg), so `leather_boots` (`speedBonus: 1`, feet slot, in D1's locked chest) speeds movement and initiative. (`effectiveAttack`/`effectiveDefense` already folded in attack/defense gear + Luck.) Audio defaults: music 50%, effects 100%. Inventory state (`inventory` array) starts empty and `equipment` starts with every slot unequipped — first items obtainable in-game are Mirelle's vegetable-crate quest and whatever's still in Your House (Dagger, Health Potion).

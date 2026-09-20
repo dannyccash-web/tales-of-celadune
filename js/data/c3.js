@@ -516,19 +516,12 @@ export default {
       sprite: 'assets/images/the_lakewarden_overhead.png',
       portrait: 'assets/images/the_lakewarden.png',
       x: 1528, y: 1300, speed: 0, startsHome: false,
-      dialog: {
-        line: 'Far enough, traveller. You have come to the end of the dock, and most who come this far only ever look. I am the Lakewarden. This water is mine to keep and the crossing with it, and I do not row for the asking.',
-        responses: [
-          'Will you take me across?',
-          'What stands across the water?',
-          'Leave.',
-        ],
-        responseEffects: [
-          { followUp: 'Not for coin. Not for a good enough reason either, and every one of you arrives with one of those. There is one fare for this crossing and there has only ever been one: a silver lotus, cut the same night you bring it. The flower opens after dark, deep in these woods, and by morning it is grey and worth nothing. Put one in my hand while it still holds its shine and I will set you on the far shore. Bring me anything else and you may keep it.' },
-          { followUp: 'The Temple of Aeluna. A sanctuary, once — dawn and moonlight and doors that were never shut, and the sick who were carried up those steps walked back down them. Then something came into it. I will not give that a name out here over open water. When the light went out of the temple, those who were left did the only thing there was left to do: they broke the river out of its old bed and turned it into this basin, and let the water climb until the temple stood alone on its stone. What holds it now is a poor swimmer. That has been enough, so far. No one has crossed to those stones in my time, nor in the time of the one who held this pole before me — and I have had a long while out here to hope that no one ever needs to.' },
-          null,
-        ],
-      },
+      // His dialogue is STATE-BUILT in main.js (buildLakewardenDialog) because
+      // it depends on which shore the raft is at: the offer to cross on the
+      // mainland side, the offer to come back on the island side. Same pattern
+      // as Calder Rusk, whose inline dialog moved out of d1.js for the same
+      // reason. Nothing inline here, deliberately — two copies of a character's
+      // lines is how they drift apart.
     },
   ],
   chests: [],
