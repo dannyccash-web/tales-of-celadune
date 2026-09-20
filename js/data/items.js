@@ -211,7 +211,7 @@ const ITEMS = {
     questItem: false,
     slot: 'item',
     vitality: 1,
-    price: 30,
+    price: 45,
   },
   bread: {
     id: 'bread',
@@ -241,7 +241,7 @@ const ITEMS = {
     questItem: false,
     slot: 'clothing',
     defenseBonus: 1,
-    price: 17,
+    price: 30,
   },
   leather_gloves: {
     id: 'leather_gloves',
@@ -251,7 +251,7 @@ const ITEMS = {
     questItem: false,
     slot: 'hands', // Equipment tab (see SLOT_CATEGORY)
     attackBonus: 1,
-    price: 15,
+    price: 28,
   },
   // +1 Speed (2026-07-26) — raises the player's effective Speed, which speeds
   // overworld movement AND improves battle initiative (main.js's effectiveSpeed).
@@ -285,7 +285,7 @@ const ITEMS = {
     description: 'A banded buckler, scarred and much repaired. Turns aside 2 damage from anything that reaches you, and there is always the option of simply hitting someone with it.',
     slot: 'offhand',
     damage: 1,
-    damageReduction: 2,
+    damageReduction: 1,
     price: 30,
   },
   fishing_rod: {
@@ -370,7 +370,7 @@ const ITEMS = {
     slot: 'offhand', // an off-hand weapon (Weapons tab)
     damage: 1,
     burn: 2, // per-turn burn inflicted on flammable (wood) foes
-    price: 6,
+    price: 12,
   },
   // Dropped by a slain Rootweaver (2026-07-17). The Bramblekin Chief wants one
   // as proof for safe passage through his camp. A quest item — can't be sold.
@@ -439,7 +439,7 @@ const ITEMS = {
     questItem: false,
     slot: 'mainhand',
     damage: { min: 4, max: 7 },
-    price: 38,
+    price: 70,
   },
   // Mara's Cutlass (C1D, 2026-09-12; renamed + bonus surfaced 2026-09-12
   // round 4) — Mara Hollowmast's reward for driving the miremen off the

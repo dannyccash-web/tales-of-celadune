@@ -232,6 +232,43 @@ So Continue-from-the-title resumes exactly where the player left off, while Cont
 
 17/17 on a harness that **extracts the real `applyWorldFlags`/`snapshotWorlds` out of `main.js` by source and runs them against real `World` instances built from real scene data** (not a reimplementation): the three-session drop scenario, vendor stock/resale/purse round-trip, chest emptied/unlocked round-trip, collected-by-id, legacy index-based restore, and Ysra's `appeased`. Plus the sentinel-guarded syntax sweep (a deliberately broken file is fed to the checker first to prove it actually fails — see the 2026-09-19 boot-failure section) and a live browser run.
 
+## Balance + bug pass from the mid-project audit (2026-09-20, round 2)
+
+Danny picked a subset off the audit's recommendation list (`docs/Celadune_Midpoint_Audit_2026-09-20.md`). **Deliberately NOT taken this round** — don't re-propose them as if they were oversights: the initial-battle roster cap, base HP 5→8, the Small Shield minimum-damage floor, the Cragclaw Queen / Ysra / Chief re-tiering, per-round initiative, trimming the D4B filler ambushes, the sell-ratio ⅓ change, Roderick's fishing-rod repricing, charging for enchanting, the Elowen blessing loop, and unlimited bait.
+
+### Combat
+
+- **C4's clearing Bramblekin pack cut 4 → 3** (`c4.js`; `bramblekin_c4_4` removed outright, its coordinates recorded in a comment where it used to sit). Striking one drags the whole pack into a single fight and **there is still no roster cap** — `main.js`'s `pendingAggro` handler builds `foes` from `world.npcs.filter(n => n.pack === foe.pack)` with no `.slice()`, and `MAX_BATTLE_ENEMIES` gates only *summons*. So **a fourth member added back = a 4-v-1 again; cap the roster first.** Simulated 900s headless after the cut: no livelock, worst continuous idle 5.0s (scripted waits).
+- **Rootweaver damage 1–3 → 2–5**, restoring the 2026-07-23 softening. At 1–3 it had the lowest per-turn output of any mid-tier foe (1.15 expected vs Defense 2 — *below* a Bramblekin Chief's) while carrying the fattest purse in the game, so the designed "flee for now" wall had stopped reading as one at all: ~0.5% death against a full D-row kit. HP/attack/defense/speed unchanged (10/4/3/9).
+- **Small Shield `damageReduction` 2 → 1.** ⚠️ **There is still no minimum-damage floor** in `damagePlayer` (`Math.max(0, amount - equipmentDamageReduction())`), so at DR 1 the **Blight Rat and Cave Bat (flat 1 damage) remain literally incapable of dealing damage** while it's equipped. That's a deliberate partial fix — the floor was offered and not taken this round. Add `Math.max(amount > 0 ? 1 : 0, …)` if it ever matters.
+
+### Economy
+
+- **Every enemy's gold drop cut 25%** (×0.75, round-half-up, floor 1), across all 13 stat blocks:
+
+  | | was | now | | was | now |
+  |---|---|---|---|---|---|
+  | rootweaver | 18–30 | **14–23** | cragclaw | 5–10 | **4–8** |
+  | ysra_nineshells | 22–34 | **17–26** | cave_spider | 5–9 | **4–7** |
+  | cragclaw_queen | 15–25 | **11–19** | mireman | 4–9 | **3–7** |
+  | bramblekin_chief | 10–18 | **8–14** | bramblekin | 4–8 | **3–6** |
+  | highwayman_a/_b, thornback_boar | 8–14 | **6–11** | blight_rat | 2–4 | **2–3** |
+  | | | | cave_bat | 1–3 | **1–2** |
+
+  Note `computeBattleRewards` still floors a win at `MIN_BATTLE_GOLD`, so the cave bat's 1–2 is mostly academic on a solo fight.
+- **Five prices raised** so gear is an actual choice rather than a formality (gear-that-matters goes 108 → 180 gold): **torch 6 → 12** (it gates two cave scenes and is the only `burn` source, yet cost less than one rat paid), **leather_armor 17 → 30**, **leather_gloves 15 → 28**, **longsword 38 → 70**, **vitality_potion 30 → 45**. Short sword, dagger, lockpicks, hood and boots were **left alone** on purpose. The enchant generator prices variants at `base × 1.5`, so enchanted longswords repriced automatically (57 → 105) — verified.
+- **`c1_lockbox` → Roderick: 50 → 25 gold** (`LOCKBOX_RODERICK_GOLD`, and his line's "(Gained 50 gold.)" text with it). The whole point of that quest is Roderick's coin vs Wynne's permanent +1 Defense; at 50 the coin was simply better, so the mutually-exclusive branch wasn't a decision.
+- **Cragclaw's `fishing_bait` drop chance 0.25 → 0.50.** It's the only bait dropper in the game and there are only 4 cragclaws, so this roughly doubles drop-side bait (~1.4 → ~2.6 expected at Luck 1, counting the +0.10 luck bonus `computeBattleRewards` adds). ⚠️ **This does NOT unblock the fish-gated quests** — `perrin_feast`, `toby_net`, `rare_fish` and `osric_boot` need six specific catches and bait remains hard-capped (Emeric stocks 5), so most players still can't finish all four. Emeric's stock was left as-is this round.
+
+### Two real bugs fixed
+
+- **`pendingUseItem` could freeze the battle UI.** `ui.battleKey`'s targeting-Escape returned focus to the action row without telling `main.js`, so the intent survived. Same fight: Item → Escape → Main Hand → confirm threw a Spider Fang instead of swinging. Next fight: Escape out of targeting, Flee, then attack — `playerUseOffensiveItem` ran against whatever was in `equipment.item` (empty → `def` undefined, or a potion → `rollDamage(undefined)` destructures undefined) and **threw from inside `onConfirmTarget`, leaving `battleUiState.mode === 'idle'` with nothing to re-arm the menu** — the exact lockup fixed on 2026-07-09, reintroduced by a different route. Fixed three ways: both pending intents cleared in `startBattle` **and** `endBattle`; a new **`onCancelTarget`** handler (`ui.openBattle` takes it, `battleKey`'s Escape fires it, `main.js` clears both flags); and a `!def || def.useDamage == null` guard in `playerUseOffensiveItem` that re-shows the action row. **Any future battle action that can end without spending a turn must still call `showPlayerActions()` before returning** — that rule is unchanged.
+- **Death outside a battle did nothing.** `checkBattleEnd()` only runs from `runQueue`/`playerFlee`, and `damagePlayer` never checked for death, so a dialog `{ damage: n }` effect (today only Old Gaffer's bite) could take the player to 0 HP with no Game Over: they kept walking on an empty bar until the next fight fired an instant defeat. New module-level **`deathHook`**, called from `damagePlayer` when health hits 0 and installed in `boot()` next to `deathFading`. It stands down when `battleState.active` (endBattle('defeat') owns that path), sets `deathFading` synchronously so the player freezes at once, then after 600ms mirrors the battle-defeat sequence: `closeDialog` → fall SFX → 2s fade → Game Over. **Route any future out-of-battle damage source through `damagePlayer` and it gets this for free.**
+
+### Verification
+
+Sentinel-guarded syntax sweep (a deliberately broken file is fed to the checker first to prove it fails — see the 2026-09-19 boot-failure section); **39/39 on an import-and-assert harness** run against the real `enemies.js`/`items.js`/`c4.js` modules, checking every changed number *and* asserting the untouched ones didn't move; a 900s headless C4 sim; a re-run of the save-system harness to confirm no regression; and a live browser run.
+
 ## Dialogue/vendor UI unification + text sizes (2026-07-22)
 
 - **Name + title now sit ABOVE the window frame for ALL dialogue** (previously only vendors did this; normal NPCs had name/role inside the box). One shared `#dialog-header` (was `#vendor-header`) holds `#dialog-name` + `#dialog-role`, always populated by `openDialog`. Default position sits over the LEFT text column (portrait on the right); `#dialog.vendor #dialog-header` shifts it right (vendor portrait is on the left). The vendor's `#vendor-gold` readout lives in the same header, shown only for vendors (toggled by `.hidden`). The old in-box `<h2 id="dialog-name">`/`<h3 id="dialog-role">` and the `#vendor-name`/`#vendor-title` elements + their CSS are gone; `.dialog-text` now holds just the line + shop grid.

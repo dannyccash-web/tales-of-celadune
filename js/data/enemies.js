@@ -33,7 +33,7 @@ export default {
     // The spoils Danny specified are split across the pair, all at chance 1 so
     // the haul is fixed rather than a roll — this is a scripted set-piece, not
     // a random encounter, and the shield in particular is the reward for it.
-    drops: { gold: { min: 8, max: 14 }, loot: [{ id: 'short_sword' }, { id: 'health_potion' }] },
+    drops: { gold: { min: 6, max: 11 }, loot: [{ id: 'short_sword' }, { id: 'health_potion' }] },
   },
   highwayman_b: {
     id: 'highwayman_b',
@@ -46,7 +46,7 @@ export default {
     damage: { min: 2, max: 3 },
     poisonable: true,
     background: 'assets/images/forest_background.jpg',
-    drops: { gold: { min: 8, max: 14 }, loot: [{ id: 'small_shield' }] },
+    drops: { gold: { min: 6, max: 11 }, loot: [{ id: 'small_shield' }] },
   },
 
   // Thornback Boar (C2 Windmarch Grassland, 2026-09-16) — the mid-tier beast
@@ -67,7 +67,7 @@ export default {
     speed: 10,
     damage: { min: 2, max: 4 },
     poisonable: true,
-    drops: { gold: { min: 8, max: 14 } },
+    drops: { gold: { min: 6, max: 11 } },
   },
 
   blight_rat: {
@@ -84,7 +84,7 @@ export default {
     // enemy + `loot: [{id, chance?, qty?}]` (chance defaults to 1). Weakest
     // foe, so a couple of coins and nothing else. main.js's computeBattleRewards
     // aggregates every defeated enemy's drops into the victory screen.
-    drops: { gold: { min: 2, max: 4 } },
+    drops: { gold: { min: 2, max: 3 } },
   },
 
   // Cave Bat (D4B woods cave, 2026-07-31) — a flitting cave-dweller that drops
@@ -102,7 +102,7 @@ export default {
     speed: 12, // fast/erratic flyer — beats the player's initiative often
     damage: 1,
     poisonable: true,
-    drops: { gold: { min: 1, max: 3 } },
+    drops: { gold: { min: 1, max: 2 } },
   },
 
   // Cave Spider (D4B woods cave, 2026-07-31) — a skittering cave-dweller that
@@ -124,7 +124,7 @@ export default {
     poisonable: true,
     // Gold 5-9 (avg 7) so a now-tougher-than-a-cragclaw spider pays like one,
     // plus its 30% Spider Fang (2026-07-31 economy pass).
-    drops: { gold: { min: 5, max: 9 }, loot: [{ id: 'spider_fang', chance: 0.30 }] },
+    drops: { gold: { min: 4, max: 7 }, loot: [{ id: 'spider_fang', chance: 0.30 }] },
   },
 
   // The Bramblekin toll-camp (D4, 2026-07-11). Both share +2 attack / +2
@@ -143,7 +143,7 @@ export default {
     damage: { min: 1, max: 4 }, // 1d4
     background: 'assets/images/bramblekin_camp.jpg', // battle backdrop (2026-07-22)
     wood: true, // thorn/bramble body — catches fire from a torch (see main.js)
-    drops: { gold: { min: 4, max: 8 }, loot: [{ id: 'health_potion', chance: 0.2 }] },
+    drops: { gold: { min: 3, max: 6 }, loot: [{ id: 'health_potion', chance: 0.2 }] },
   },
 
   bramblekin_chief: {
@@ -161,7 +161,7 @@ export default {
     // guards the toll-camp and is the closest thing this camp has to a
     // 'king') — a guaranteed drop, on top of the existing gold/health/magic-
     // potion chances.
-    drops: { gold: { min: 10, max: 18 }, loot: [{ id: 'health_potion', chance: 0.5 }, { id: 'magic_potion', chance: 0.2 }, { id: 'vitality_potion', chance: 1 }] },
+    drops: { gold: { min: 8, max: 14 }, loot: [{ id: 'health_potion', chance: 0.5 }, { id: 'magic_potion', chance: 0.2 }, { id: 'vitality_potion', chance: 1 }] },
   },
 
   // Cragclaw (D1 beach, 2026-07-25) — a snapping crab-thing that mills about
@@ -184,7 +184,7 @@ export default {
     damage: { min: 1, max: 2 },
     background: 'assets/images/beach_background.jpg', // battle backdrop (2026-07-25)
     poisonable: true,
-    drops: { gold: { min: 5, max: 10 }, loot: [{ id: 'fishing_bait', chance: 0.25 }] },
+    drops: { gold: { min: 4, max: 8 }, loot: [{ id: 'fishing_bait', chance: 0.50 }] },
   },
 
   // Cragclaw Queen (D1B cave, 2026-07-26) — the big one guarding Calder's
@@ -207,7 +207,7 @@ export default {
     // count is deliberately limited to fixed placements (the D1B chest + the
     // apothecary's stock), not random loot. ALWAYS drops her eggs (2026-07-31,
     // Danny) — a basic curio that does nothing yet.
-    drops: { gold: { min: 15, max: 25 }, loot: [{ id: 'queen_cragclaw_eggs', chance: 1 }] },
+    drops: { gold: { min: 11, max: 19 }, loot: [{ id: 'queen_cragclaw_eggs', chance: 1 }] },
   },
 
   // Mireman (D1, 2026-07-25) — an unseen bog-thing that rises from the mire
@@ -225,7 +225,7 @@ export default {
     damage: { min: 1, max: 2 }, // was {1,3} then {0,2} -- Danny asked for 1-2 specifically (a landed hit still stings a little, never a true 0)
     background: 'assets/images/beach_background.jpg', // battle backdrop (2026-07-25)
     poisonable: true,
-    drops: { gold: { min: 4, max: 9 }, loot: [{ id: 'health_potion', chance: 0.25 }] },
+    drops: { gold: { min: 3, max: 7 }, loot: [{ id: 'health_potion', chance: 0.25 }] },
   },
 
   // Rootweaver (D4 shortcut ambushes, 2026-07-11) — a deliberate "too tough
@@ -241,7 +241,10 @@ export default {
     attack: 4,
     defense: 3,
     speed: 9,
-    damage: { min: 1, max: 3 }, // softened 2-5 -> 1-3 on 2026-07-23 (Danny — still too strong)
+    damage: { min: 2, max: 5 }, // softened 2-8 -> 2-5 -> 1-3, then RESTORED to 2-5 on 2026-09-20:
+    // at 1-3 it had the lowest per-turn output of any mid-tier foe while
+    // carrying the fattest purse, so the designed "flee for now" wall had
+    // stopped reading as one at all.
     background: 'assets/images/forest_background.jpg', // battle backdrop (2026-07-22)
     wood: true, // living wood — a torch sets it ablaze (see main.js)
     // Loot on death (2026-07-17, reworked 2026-07-21 to the unified schema):
@@ -250,7 +253,7 @@ export default {
     // true` makes the first flee attempt against it fail (see playerFlee).
     // Heart guaranteed; no vitality-potion drop (2026-07-26 — vitality is
     // permanent, kept to fixed placements only).
-    drops: { gold: { min: 18, max: 30 }, loot: [{ id: 'rootweaver_heart', chance: 1 }] },
+    drops: { gold: { min: 14, max: 23 }, loot: [{ id: 'rootweaver_heart', chance: 1 }] },
     ensnare: true,
   },
 
@@ -281,6 +284,6 @@ export default {
     damage: { min: 2, max: 5 },
     summon: { every: 3, pool: ['cave_bat', 'blight_rat'] },
     background: 'assets/images/cave_background.jpg',
-    drops: { gold: { min: 22, max: 34 }, loot: [{ id: 'staff', chance: 1 }] },
+    drops: { gold: { min: 17, max: 26 }, loot: [{ id: 'staff', chance: 1 }] },
   },
 };

@@ -469,14 +469,12 @@ export default {
       x: 1618, y: 1399, speed: 40, chaseSpeed: 150, aggroRange: 344, giveUpRange: 875, startsHome: false,
       patrol: [ { x: 1618, y: 1399 }, { x: 1539, y: 1461 } ],
     },
-    {
-      id: 'bramblekin_c4_4', name: 'Bramblekin', role: '',
-      creature: true, enemyId: 'bramblekin', pack: 'clearing_bramblekin',
-      sprite: 'assets/images/Bramblekin_Overhead.png',
-      portrait: 'assets/images/Bramblekin.png',
-      x: 1570, y: 1680, speed: 40, chaseSpeed: 150, aggroRange: 344, giveUpRange: 875, startsHome: false,
-      patrol: [ { x: 1570, y: 1680 }, { x: 1493, y: 1618 } ],
-    },
+    // NOTE: a FOURTH member (bramblekin_c4_4, patrolling 1570,1680 <-> 1493,1618)
+    // was removed 2026-09-20. Striking one drags the whole pack into a single
+    // fight, so four made this a 4-v-1 — ~85% death for the best kit the D row
+    // can produce, in the first C-row scene most players walk into. Three is a
+    // real fight without being a wall. If a fourth is ever added back, cap the
+    // roster in main.js's pendingAggro handler first.
 
     // ---- Mara Vellorne + Vozhik (2026-08-02) ----
     // Adventurers camped by the fire, robbed by the clearing bramblekin. Mara

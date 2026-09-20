@@ -1625,7 +1625,7 @@ export function initPanels(audio) {
 const battleUiState = {
   open: false,
   mode: 'idle',
-  handlers: null, // { onAction(action), onConfirmTarget(enemy) }
+  handlers: null, // { onAction(action), onConfirmTarget(enemy), onCancelTarget() }
   enemies: [], // live object refs shared with main.js's battleState.enemies — health mutates in place, so re-rendering always reflects the current fight
   enemySlots: [], // [{ el, enemy }], in render order — rebuilt each renderBattleEnemies() call
   actionIndex: 0,
@@ -1634,10 +1634,10 @@ const battleUiState = {
 
 export function isBattleOpen() { return battleUiState.open; }
 
-export function openBattle({ enemies, onAction, onConfirmTarget, background }) {
+export function openBattle({ enemies, onAction, onConfirmTarget, onCancelTarget, background }) {
   battleUiState.open = true;
   battleUiState.mode = 'idle';
-  battleUiState.handlers = { onAction, onConfirmTarget };
+  battleUiState.handlers = { onAction, onConfirmTarget, onCancelTarget };
   battleUiState.actionIndex = 0;
   renderBattleEnemies(enemies);
   // Optional scene backdrop behind the fight (barn interior, forest, camp) —
@@ -1912,7 +1912,10 @@ export function battleKey(key) {
 
   if (battleUiState.mode === 'target') {
     const alive = aliveSlots();
-    if (key === 'Escape') { battleUiState.mode = 'action'; refreshTargetFocus(); refreshActionFocus(); return; }
+    // Tell main.js the intent that put us into targeting is off (2026-09-20) —
+    // without this, a pendingAttackSlot/pendingUseItem survives the cancel and
+    // hijacks the next attack (or the next FIGHT). See startBattle's note.
+    if (key === 'Escape') { h?.onCancelTarget?.(); battleUiState.mode = 'action'; refreshTargetFocus(); refreshActionFocus(); return; }
     if (key === 'ArrowLeft') { battleUiState.targetIndex = (battleUiState.targetIndex - 1 + alive.length) % alive.length; refreshTargetFocus(); return; }
     if (key === 'ArrowRight') { battleUiState.targetIndex = (battleUiState.targetIndex + 1) % alive.length; refreshTargetFocus(); return; }
     if (key === ' ' || key === 'Enter') {

@@ -82,6 +82,15 @@ function refreshItemsUi() {
 let autosaveHook = null;
 function requestAutosave() { if (autosaveHook) autosaveHook(); }
 
+// Death outside a fight (2026-09-20). checkBattleEnd() only runs from
+// runQueue/playerFlee, and damagePlayer never checked for death itself — so an
+// out-of-battle damage source (today: a dialog's `{ damage: n }` effect, e.g.
+// Old Gaffer's bite) could take the player to 0 HP with no Game Over at all.
+// They just kept walking on an empty bar until the next fight fired an instant
+// defeat. boot() installs the real handler; mid-battle deaths still go through
+// endBattle('defeat') and this hook stands down for them.
+let deathHook = null;
+
 // `silent` skips the bag SFX — used by vendor trades, which play the coin
 // exchange sound (via addGold/spendGold) instead so the transaction reads as
 // money changing hands, not an item being rummaged out of a bag.
@@ -305,6 +314,7 @@ function damagePlayer(amount) {
   if (dealt > 0) ui.flashHealthDamage();
   audio.sfx(audio.SFX.hurt);
   requestAutosave(); // no-ops mid-battle (the hook guards on that)
+  if (stats.health <= 0 && deathHook) deathHook();
   return dealt;
 }
 
@@ -1432,14 +1442,19 @@ async function boot() {
       return true;
     }
     if (effect.giveLockboxToRoderick) {
+      // 25, cut from 50 on 2026-09-20: the choice this quest exists to pose is
+      // Roderick's coin vs Wynne's permanent +1 Defense, and at 50 gold the coin
+      // was simply the better deal, so the "mutually exclusive" branch wasn't a
+      // decision. At 25 the two sides are genuinely comparable.
+      const LOCKBOX_RODERICK_GOLD = 25;
       removeItem('lockbox', 1, true);
       lockboxGivenTo = 'roderick';
       completeQuest('c1_lockbox');
-      addGold(50);
+      addGold(LOCKBOX_RODERICK_GOLD);
       requestAutosave();
       ui.showGaveItem(ITEMS.lockbox);
       ui.updateDialogContent({
-        line: 'Now THAT’S a fine piece of work. You’ve done the Crown a real service, friend — and yourself no disservice either, by the weight of it. (Gained 50 gold.) Walk down to the counting house when you get the chance — they’ll want to know a debt’s been settled.',
+        line: 'Now THAT’S a fine piece of work. You’ve done the Crown a real service, friend — and yourself no disservice either, by the weight of it. (Gained 25 gold.) Walk down to the counting house when you get the chance — they’ll want to know a debt’s been settled.',
         responses: ['Leave.'],
       });
       return true;
@@ -3651,7 +3666,15 @@ async function boot() {
     battleState.order = rollRoundOrder();
     battleState.turnPos = 0;
     battleState.ensnared = false;
+    // Both pending intents are cleared here AND in endBattle (2026-09-20). A
+    // pendingUseItem left set by escaping out of targeting used to survive into
+    // the NEXT fight, where playerAttack short-circuits into
+    // playerUseOffensiveItem against whatever is in equipment.item — empty, or a
+    // potion with no useDamage — which threw from inside ui.battleKey's
+    // onConfirmTarget and left the action menu with nothing to re-arm it: the
+    // exact 'battle froze' lockup fixed on 2026-07-09, by a different route.
     pendingAttackSlot = null;
+    pendingUseItem = false;
     // Scene backdrop: an explicit override (e.g. the barn encounter) wins,
     // then the current scene's `battleBackground` (caves force the cave backdrop
     // over each enemy's own, 2026-07-26), then the first enemy's catalog
@@ -3662,6 +3685,9 @@ async function boot() {
       enemies: battleState.enemies,
       onAction: handleBattleAction,
       onConfirmTarget: playerAttack,
+      // Escaping out of target-select hands control back to the action row, so
+      // the intent that put us in targeting has to be dropped too (2026-09-20).
+      onCancelTarget: () => { pendingAttackSlot = null; pendingUseItem = false; },
       background: bg,
     });
     // No standalone "encounter begins" line — runQueue immediately sets the
@@ -4035,6 +4061,9 @@ async function boot() {
   // Spends the turn regardless.
   function playerUseOffensiveItem(target) {
     const def = ITEMS[equipment.item];
+    // Defensive: only reachable with a stale intent, but rollDamage(undefined)
+    // destructures undefined and throws, which would freeze the battle UI.
+    if (!def || def.useDamage == null) { showPlayerActions(); return; }
     removeItem(equipment.item, 1); // consume one (auto-unequips at 0)
     let dmg = battle.rollDamage(def.useDamage);
     let msg;
@@ -4108,6 +4137,8 @@ async function boot() {
 
   function endBattle(result) {
     battleState.active = false;
+    pendingAttackSlot = null; pendingUseItem = false; // never leak an intent out of a fight
+
     const onEnd = battleState.onEnd;
     battleState.onEnd = null;
     // Cross-fade the battle track back out to whatever was playing before,
@@ -4186,6 +4217,22 @@ async function boot() {
   // as battleState.onEnd, just surviving past endBattle() clearing it.
   let pendingDefeatCallback = null;
   let deathFading = false; // true during the 2s fade-to-black before Game Over (freezes input)
+  // Out-of-battle death (2026-09-20) — see the deathHook note at the top of the
+  // file. Mirrors endBattle('defeat')'s sequence: fall sound, 2s fade to black,
+  // then the Game Over screen, whose Continue reloads the checkpoint as usual.
+  // Deferred a beat so whatever dialog dealt the damage finishes its own
+  // response handling (and its closing line lands) before the screen goes.
+  // `deathFading` is set synchronously, so the player is frozen immediately.
+  deathHook = () => {
+    if (!state.started || battleState.active || deathFading || ui.isGameOverOpen()) return;
+    deathFading = true;
+    pendingDefeatCallback = null;
+    setTimeout(() => {
+      ui.closeDialog();
+      audio.sfx(audio.SFX.enemyDeath);
+      ui.startDeathFade(() => { deathFading = false; ui.showGameOver(); });
+    }, 600);
+  };
 
   // No real death penalty/checkpoint system yet (2026-07-08 — Danny opted
   // for a Game Over screen over an instant respawn): full-heal and return
