@@ -14,6 +14,7 @@ import sceneC1C from './data/c1c.js';
 import sceneC1D from './data/c1d.js';
 import sceneC2 from './data/c2.js';
 import sceneC3 from './data/c3.js';
+import sceneC3B from './data/c3b.js';
 import { World } from './world.js';
 import * as ui from './ui.js';
 import * as audio from './audio.js';
@@ -421,7 +422,7 @@ function loadImages(sources, onProgress) {
 // Every scene in the game, keyed by the ids that exits point at. Adding a
 // scene = write its data file, import it, and register it here — the
 // transition system below handles everything else.
-const SCENES = { D1: sceneD1, D1B: sceneD1B, D2: sceneD2, D3: sceneD3, D4: sceneD4, D4B: sceneD4B, C4: sceneC4, C1: sceneC1, C1B: sceneC1B, C1C: sceneC1C, C1D: sceneC1D, C2: sceneC2, C3: sceneC3 };
+const SCENES = { D1: sceneD1, D1B: sceneD1B, D2: sceneD2, D3: sceneD3, D4: sceneD4, D4B: sceneD4B, C4: sceneC4, C1: sceneC1, C1B: sceneC1B, C1C: sceneC1C, C1D: sceneC1D, C2: sceneC2, C3: sceneC3, C3B: sceneC3B };
 
 async function boot() {
   // Preload assets for EVERY registered scene up front — scene switches are
@@ -1767,10 +1768,23 @@ async function boot() {
     if (effect.lakewardenFerryOffer) {
       ui.updateDialogContent({
         line: LAKEWARDEN_WARNING,
-        responses: ['Take me across.', 'Not yet.'],
-        responseEffects: [{ lakewardenFerry: true }, { lakewardenMenu: true }],
+        responses: ['Pay the fifty gold.', 'Not yet.'],
+        responseEffects: [{ lakewardenPayFerry: true }, { lakewardenMenu: true }],
       });
       return true;
+    }
+    if (effect.lakewardenPayFerry) {
+      if (stats.gold < LAKEWARDEN_FARE) {
+        audio.sfx(audio.SFX.denied);
+        ui.updateDialogContent({
+          line: 'Fifty gold, I said. Come back when your purse agrees with me.',
+          responses: ['Leave.'],
+        });
+        return true;
+      }
+      spendGold(LAKEWARDEN_FARE);
+      setTimeout(startFerry, 120);
+      return;
     }
     if (effect.lakewardenFerry) {
       // Deliberately NOT `return true`: the dialog has to close so the crossing
@@ -2053,9 +2067,10 @@ async function boot() {
 
   // ---- The Lakewarden's dialogue (state-built: which shore he's on) ----------
   const LAKEWARDEN_GREETING = 'Far enough, traveller. You have come to the end of the dock, and most who come this far only ever look. I am the Lakewarden. This water is mine to keep and the crossing with it, and I do not row for the asking.';
-  const LAKEWARDEN_TEMPLE = 'The Temple of Aeluna. A sanctuary, once — dawn and moonlight and doors that were never shut, and the sick who were carried up those steps walked back down them. Then something came into it. I will not give that a name out here over open water. When the light went out of the temple, those who were left did the only thing there was left to do: they broke the river out of its old bed and turned it into this basin, and let the water climb until the temple stood alone on its stone. What holds it now is a poor swimmer. That has been enough, so far. No one has crossed to those stones in my time, nor in the time of the one who held this pole before me — and I have had a long while out here to hope that no one ever needs to.';
-  const LAKEWARDEN_WARNING = 'You have asked plainly, so I will answer plainly. The fare is a silver lotus and the fare stands — but it has stood since before anyone now living was born to pay it, and I am tired of being the only thing left between that place and the rest of the world. So. I will take you. Hear me first, because I will only say it once. Whatever is over there does not sleep so much as wait, and it has had a very long time to get patient. Keep to the stone. Do not go below. And when you want off that island, come back to this dock and call for me — I will not come looking for you. Still willing?';
+  const LAKEWARDEN_TEMPLE = 'The Temple of Aeluna. A sanctuary, once — dawn and moonlight and doors that were never shut, and the sick who were carried up those steps walked back down them whole. Then evil found its way in, and it did not leave when the temple’s people did. Those who survived did the only thing left to do: they tore the river out of its old bed and let the water climb until the temple stood alone on its stone, moated in on every side. I am the one charged with keeping it that way — with making certain that whatever still moves in those halls stays on that side of the water, and never finds its way to yours. That is the whole of my title, traveller. Not warden of the lake. Warden of what the lake is holding back.';
+  const LAKEWARDEN_WARNING = 'You want to go where I have spent my whole charge keeping people out of. That is your business once you are past this dock, not mine. But you will hear this first, because I will only say it once. What overran that temple never left it — it only went quiet, and quiet things get patient with enough years to practice. Keep to the stone. Do not go below. And when you want off that island, come back to this dock and call for me — I will not come looking for you. Now. I do not pole a raft across open water for strangers out of the goodness of my heart, not at my age. Fifty gold, and I will take you across. Not a copper less.';
   const LAKEWARDEN_ISLAND = 'The stones are that way. Mind what I told you. I will be here when you want off — I am always here.';
+  const LAKEWARDEN_FARE = 50;
 
   function buildLakewardenDialog() {
     if (ferrySide === 'island') {

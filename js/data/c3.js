@@ -13,14 +13,19 @@
 //
 // CONTENT SO FAR. Built terrain-only on 2026-09-15 (Danny: "no NPCs, enemies,
 // or quests yet"); THE LAKEWARDEN was added 2026-09-20 (see the npcs block
-// below) — the ferryman the row-C brief owed this scene. He is talk-only: he
-// names the fare (a silver lotus) and tells the temple's history, and there is
-// still no silver_lotus item, no quest, and no actual crossing (why: see the
-// comment above `npcs`). Still no battles, ambushes or chests. The other live
-// content is the cave link to D4B (see `interactables`). Everything else the
-// row-C brief calls for here — the Silver Lotus hunt, the rootweaver /
-// Bramblekin scouts, the temple's descending levels, the Stone Warden boss and
-// the Ward-Shard — is still to come.
+// below) — the ferryman the row-C brief owed this scene. 2026-09-24: the
+// Lakewarden's dialogue was reworked — he no longer names the silver lotus as
+// his fare (that item is deferred), and instead tells his usual explanation
+// of the temple's fall, the river rerouted into a moat, and his charge as
+// warden over whatever the water is holding back; he now actually ferries the
+// player across for a flat 50-gold fee (see buildLakewardenDialog in
+// main.js). The same date, Level 1 of the temple's interior (scene C3B) went
+// live, reached via the `temple_of_aeluna_entrance` interactable on the
+// island plaza (see `interactables`). Still no battles, ambushes or chests on
+// this overworld scene itself. The other live content is the cave link to
+// D4B (see `interactables`). Everything else the row-C brief calls for here —
+// the Silver Lotus hunt, the rootweaver / Bramblekin scouts, the temple's
+// deeper levels, the Stone Warden boss and the Ward-Shard — is still to come.
 //
 // EXITS. Bands measured against the art's actual open ground at each edge and
 // matched to the neighbour's band so a round trip preserves the player's
@@ -60,8 +65,9 @@
 //      (V >= 110 and (G - R) < 30). That recovers the paving while leaving the
 //      moss, rubble and most column drums blocked, which reads correctly. The
 //      domed roof and the stair well beneath it are then stamped solid
-//      (disc 2960,1240 r300) — when the temple's interior levels get built,
-//      that stamp is where the descent interactable goes.
+//      (disc 2960,1240 r300). 2026-09-24: that solid stamp is exactly where
+//      the `temple_of_aeluna_entrance` interactable now sits, just outside
+//      its west edge — see `interactables`.
 //   3. De-speckle both ways at <4 cells, 1-cell shoulder dilation, forced
 //      aprons at the two edge bands, then the collider-clearance pass from C2
 //      (full-res EDT thresholded at the 18px collider radius, component
@@ -76,10 +82,11 @@
 //      dock, and the long south-east shore trail down to the cave. This is the
 //      only region the player can reach on foot, and `spawn` sits in it.
 //   B. The ISLAND (516k px): its jetty, shore ring and the temple plaza.
-//      Unreachable BY DESIGN — the crossing is the only way over. The
-//      Lakewarden himself exists as of 2026-09-20, but he does not yet ROW
-//      anyone (see the npcs comment), so this region is still unreachable in
-//      practice. Kept walkable so the island is ready the moment he ferries.
+//      Unreachable ON FOOT BY DESIGN — the Lakewarden's ferry (2026-09-20,
+//      dialogue reworked 2026-09-24) is the only way over, for a 50-gold fee.
+//      The `temple_of_aeluna_entrance` interactable (2026-09-24) sits at
+//      x2635,y1245, confirmed reachable from the ferry's island landing
+//      (2030,1300) by a headless BFS over this scene's real obstacles.
 //   C. The SOUTH-WEST GLADE (389k px): the big lower-left clearing and the
 //      shore of the lotus pool. **This one is unreachable BY ACCIDENT** — the
 //      art rings it completely with forest, with no trail in from anywhere
@@ -478,6 +485,20 @@ export default {
       enterAt: { x: 146, y: 63 },
       label: 'Hollow Cave',
     },
+    // The temple's door (2026-09-24): sits just outside the west edge of the
+    // dome/stairwell's stamped-solid collision disc (2960,1240 r300 — see the
+    // collision header comment), on a walkable pocket of plaza flagstone
+    // confirmed reachable from the Lakewarden's island landing (2030,1300) by
+    // a headless BFS over this scene's real obstacles. Only reachable at all
+    // once the Lakewarden has ferried the player across (region B, per the
+    // THREE WALKABLE REGIONS note above).
+    {
+      id: 'temple_of_aeluna_entrance',
+      x: 2635, y: 1245,
+      range: 150,
+      cave: 'C3B',
+      label: 'Temple of Aeluna',
+    },
   ],
 
   // ---- Static scenery (2026-09-20) ----
@@ -492,7 +513,8 @@ export default {
     { sprite: 'assets/images/lakewarden_raft.png', x: 1545, y: 1302 },
   ],
 
-  // ---- The Lakewarden (2026-09-20) ----
+  // ---- The Lakewarden (2026-09-20; ferry added same date; dialogue
+  // reworked 2026-09-24) ----
   // The ferryman the row-C brief always owed this scene. Stationary on his
   // raft (no routine, no patrol, no home — world.js leaves a speed-0 NPC with
   // no routine exactly where scene data puts him), standing at the shore end
@@ -500,16 +522,18 @@ export default {
   // INTERACT_RANGE (141). He is in the water, which is blocked terrain, so
   // his body collider can never pinch the walkable deck.
   //
-  // He states the fare — a silver lotus — and tells the temple's history, and
-  // that is ALL he does for now: there is deliberately no `silver_lotus` item,
-  // no quest and no crossing yet, because the lotus pool's glade is still
-  // walled off by forest (see the THREE WALKABLE REGIONS warning in the header
-  // — region C has no trail into it), so a fare the player cannot obtain would
-  // gate a crossing to an island with no temple interior behind it. When that
-  // art spur lands, the crossing hooks in here: give him a state-built dialog
-  // in main.js (the buildCalderDialog / buildMaraHollowmastDialog pattern),
-  // check the lotus in inventory, and teleport the player to the island jetty
-  // (~x2000, y1300) with a matching return option on the far side.
+  // He no longer names the silver lotus as his fare (that item and its quest
+  // are deferred until the lotus pool's glade — region C, see the THREE
+  // WALKABLE REGIONS note above — has a trail into it). Instead he gives his
+  // usual explanation of the temple's fall: evil overran it, the river was
+  // torn out of its bed to moat the island, and he is charged with making
+  // sure nothing in those halls ever reaches the mainland — hence "Lakewarden":
+  // warden over what the lake holds back, not of the lake itself. He gives a
+  // dire warning, then actually ferries the player across for a flat 50-gold
+  // fee (LAKEWARDEN_FARE in main.js). All of this — the state-built dialog,
+  // the ferry cutscene, the fee gate — lives in main.js
+  // (buildLakewardenDialog / startFerry / the `lakewardenPayFerry` effect);
+  // nothing inline here, deliberately, same reasoning as Calder Rusk.
   npcs: [
     {
       id: 'lakewarden', name: 'The Lakewarden', role: '',

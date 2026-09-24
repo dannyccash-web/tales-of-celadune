@@ -1285,6 +1285,69 @@ to hand him a rootweaver heart once he's dead — so the favor quest needed to r
   `*_walkable.jpg`/`*_Walkable.jpg` collision guides are gitignored and don't exist in this working
   copy, so they weren't (and can't be) checked here.
 
+## Temple of Aeluna Level 1 (C3B), and the Lakewarden's ferry fee (2026-09-24)
+
+- **C3B — Temple of Aeluna, Level 1** is the first level of the multi-level dungeon under C3's
+  temple, per Danny's design brief: a large central stained-glass sacred-geometry medallion lighting
+  the whole level, getting darker/more treacherous toward the edges, a densely packed labyrinth of
+  halls and rooms showing decay but never blocking access, a corner staircase down, and old
+  shelves/boxes/spellcrafting clutter as pure set dressing (painted into the art, not interactable —
+  per spec, no separate data for any of it). Built from `C3B_Background_1.jpg` (3000x3000, already
+  matching that brief almost exactly, including a genuine octagonal staircase room in the
+  bottom-left corner). **Collision** auto-classified (no hand-painted walkable guide supplied): a
+  per-20px-cell scan of the mean max-colour-channel value, thresholded at 24, largest 4-connected
+  component kept as walkable, small (<6-cell) noise on the blocked side folded back in, merged into
+  375 rects via row-run + row-stack (same recipe as every other auto-classified scene). Two regions
+  (bottom-right "SE room complex" and the NW divination alcove) were visually spot-checked against
+  the raw art before finalizing — both read correctly. **`spawn: {x:1500,y:1500}`** — the exact
+  centre of the art and of the stained-glass medallion, per Danny's literal spec ("take them to the
+  center of C3B_Background_1.jpg"). Two interactables: `c3b_exit` right at spawn (`caveExit: true`,
+  no fixed `exitTo` — a single-mouth cave, so the normal captured-entry `caveReturn` drops the
+  player back exactly where they entered C3's temple door) and `c3b_stairs_down` in the corner
+  staircase room (290,2570), pointed at `cave: 'C3C'` — Level 2 doesn't exist yet, so this safely
+  toasts "The way in is blocked." via `enterCave`'s own guard until it's built. (A second,
+  smaller step-down feature at the bottom of the south corridor is NOT in a corner and was
+  deliberately left non-interactive — purely decorative, per the brief.) Registered in `main.js`'s
+  `SCENES` (`C3B: sceneC3B`) alongside the new `sceneC3B` import. **Verified headlessly**
+  (replicating `world.js`'s exact `circleRectOverlap`, 18px collider radius): a BFS flood-fill from
+  spawn reaches every perimeter room sampled, all four spoke corridors, and both staircase features.
+  **Not yet live-verified in-browser.**
+- **C3's temple door.** New `temple_of_aeluna_entrance` interactable on C3's overworld (`cave:
+  'C3B'`), sitting just outside the west edge of the temple's stamped-solid dome/stairwell collision
+  disc (2960,1240 r300 — see that scene's collision header comment, which used to say this was
+  where a future descent interactable would go). Placement was NOT a naive nearest-walkable-point
+  guess: an initial radial scan around the disc found walkable pockets that turned out to be
+  isolated by the plaza's colonnade (individual column obstacles breaking up the ring into
+  disconnected gaps), so the final spot (2635,1245) was chosen only after a headless BFS from the
+  Lakewarden's actual island landing point (2030,1300) confirmed it's really reachable once he
+  ferries you across — not just "not blocked in isolation."
+- **The Lakewarden's dialogue reworked** — he no longer names the silver lotus as his fare (that
+  item/quest is deferred, per Danny). Asked what stands across the water, he now gives his usual
+  explanation: the temple fell to something that never named itself, the survivors tore the river
+  out of its bed to moat the island until the water climbed high enough to pen it in, and he's the
+  one charged with making sure whatever still moves in those halls never reaches the mainland —
+  "Lakewarden" as warden over what the lake holds back, not of the lake itself. Asked to cross, he
+  gives a dire warning (keep to the stone, don't go below, he won't come looking for you) and then
+  asks a flat **50 gold** (`LAKEWARDEN_FARE`) before he'll actually pole the raft over — a new
+  `lakewardenPayFerry` effect handler checks `stats.gold`, denies with a line + SFX if short, else
+  `spendGold`s the fare and hands off to the same `startFerry` cutscene as before. The return trip
+  (island → mainland) is still free — he was never charging to let you off, only to take you into
+  danger. `LAKEWARDEN_GREETING`/`LAKEWARDEN_ISLAND` are unchanged.
+- **A `node --check` gotcha reconfirmed, and generalized.** Re-hit the exact class of bug the
+  2026-09-19 boot-failure section warns about, but from a NEW angle this time: `node --check` on
+  this project's plain `.js` files (which use `import`/`export`) can auto-detect ES module syntax
+  and then silently report **exit 0 on a real syntax error** — reproduced with a trivial
+  `export const x=1; ...(unclosed brace)` file, and independently against a copy of `main.js`'s own
+  HEAD revision. The fix isn't a one-off: check syntax by copying the target file to a `.mjs` path
+  first (`.mjs` forces real module parsing without the auto-detect quirk) and run `node --check` on
+  *that* copy — confirmed both that this correctly reports errors (sentinel test: a deliberately
+  broken copy fails) and that plain `node --check FILE.js` on the same broken content does not. Used
+  this for every file touched this round (`c3.js`, `c3b.js`, `main.js`), plus an import-and-print of
+  the real parsed `c3.js`/`c3b.js` objects and a grep-level static check that `main.js` actually
+  wires up `sceneC3B`/`C3B`/`LAKEWARDEN_FARE`/`lakewardenPayFerry` (can't import `main.js` itself
+  headlessly — it touches `document` on load). **Prefer the `.mjs`-copy check over bare
+  `node --check` on any `.js` file in this repo from now on.**
+
 ## Status / roadmap
 
 - ✅ D3 Farm: 4-layer scene, movement, collision (25px-grid traced), camera, walk animation, four NPCs (Mirelle, Tuckwell, Brenna on home routines; Old Gaffer the goat on a patrol loop in the pen) plus one unoccupied building (Your House, formerly Storehouse, stocked with a Dagger + Health Potion) — leave/return + door SFX + interior dialog with per-character voice-clip SFX, response effects (Gaffer's bite, Mirelle's vegetable-crate quest + item, Brenna's completable barn-rat quest with a 5-gold turn-in, the silo's one ear of corn + feeding Gaffer to make petting safe, the well's drink-for-HP + coin-for-Luck), per-NPC dialog variants by quest status incl. the readyToComplete turn-in pseudo-status (no re-granting a one-time quest item), multi-NPC steering avoidance, dialog with portrait slide/fade + typewriter text + item-received reveal (also used for taking items from Your House), PDF-matched UI styling, HUD (Magic bar hidden until the player owns a magic-cost item — see the Ysra Nine-Shells section, 2026-09-10; health bar width scales with max-health and flashes on damage), gold/health/item SFX centralized through addGold/damagePlayer/addItem/removeItem, "Quest Added" top-center banner, Menu (Quests/Stats/Audio/Controls tabs — Quests lists active + a Completed section with check/X icons; Controls is a static key-cap binding reference) + Inventory (mockup-matched chrome, no section headers, arrow-indicator tabs; four mutually-exclusive item categories — Equipment/Weapons/Magic/Items — each with its own tile grid + action popout; Equipment/Weapons further split into per-slot subcategory sections — Head/Clothing/Feet/Hands, Main Hand/Off Hand — each its own header+grid, equip/unequip via the tile's own expand-from-frame popout, equipped items marked with a checkmark corner badge, quest items with a star badge, weapon/gear tiles show a secondary stat line, consistent item naming), fully keyboard-navigable (I/M/arrows/Space/Escape, no mouse required, including the Items grid + popout and battle), one hidden collectible ("A shiny object" near Mirelle's farmhouse), start screen (click/Enter/Space), theme + overworld soundtrack with crossfade (race-condition-free).
@@ -1299,7 +1362,7 @@ to hand him a rootweaver heart once he's dead — so the favor quest needed to r
 - ✅ Caves / dungeons (2026-07-26): interact-based sub-scenes — an overworld `cave:` entrance interactable enters a cave scene (own bg/collision), an `caveExit:` interactable returns to the exact overworld spot entered from (`enterCave`/`exitCave`, `caveReturn` persisted). First one: **D1B** cave (entrance on D1 at (1033,1664), spawn (1338,164), exit (1412,5)) — traversal shell, no content inside yet. See the "Caves / dungeons" section above.
 - ⏳ Later: real dialog trees, ranged/varied enemy types beyond the Blight Rat encounters, an actual Magic system behind the Menu's hidden bar (battle Magic slot removed until then), gear that grants attackBonus/defenseBonus (none exists yet — only weapon damage is wired), more items/collectibles/unoccupied buildings, interiors (incl. the D4 cave), the other 14 scenes, camp inhabitants/content in D4, Steam wrap.
 - ✅ **C2 got its first content 2026-09-16** (see the dated section above) — new background art + regenerated collision, the Reedwalker herders (Tovan the quest-giver, Nera the travelling trader), their last thrumhorn (pet/feed), the `c2_thornbacks` quest, and three roaming Thornback Boars. C2 is no longer terrain-only.
-- ✅ **C3 Hallowmere Forest built 2026-09-15** (see the dated section above) — background art + collision + two edge exits (west→C2 LIVE; north→B3 stubbed) + two landmark labels + **a two-way cave link to D4B** (C3 2561,2750 ↔ D4B 146,63), which required the new `enterAt` / `exitTo.scene` fields and made D4B a through-passage. Three intentional walkable regions — read that section's warning before regenerating. **THE LAKEWARDEN added 2026-09-20** (see that dated section) — C3's first NPC, on a raft at the mainland jetty; he states the fare (a silver lotus) and tells the temple's history, and **as of 2026-09-20 he FERRIES the player to the island and back** in a 7.3s animated crossing — the fare gate is off until the lotus glade gets a trail painted into the art, and the code says where to put it back. The island itself is still empty terrain. Still no enemies, quests, battles, ambushes or chests. Brought the new `scene.props` static-scenery layer with him.
+- ✅ **C3 Hallowmere Forest built 2026-09-15** (see the dated section above) — background art + collision + two edge exits (west→C2 LIVE; north→B3 stubbed) + two landmark labels + **a two-way cave link to D4B** (C3 2561,2750 ↔ D4B 146,63), which required the new `enterAt` / `exitTo.scene` fields and made D4B a through-passage. Three intentional walkable regions — read that section's warning before regenerating. **THE LAKEWARDEN added 2026-09-20** (see that dated section) — C3's first NPC, on a raft at the mainland jetty; he **FERRIES the player to the island and back** in a 7.3s animated crossing. **2026-09-24 (see that dated section): his dialogue no longer names the silver lotus** (deferred) — instead his usual evil-overran-the-temple/river-rerouted-into-a-moat/warden-over-what-it-holds-back explanation, a dire warning, then a flat **50-gold fee** to actually cross (free coming back). **The island now has real content**: Level 1 of the temple's interior (`C3B`, see that dated section) is live via the new `temple_of_aeluna_entrance` interactable on the plaza. Still no enemies, quests, battles, ambushes or chests on the C3 overworld itself. Brought the new `scene.props` static-scenery layer with the Lakewarden.
 - ✅ **C2 Windmarch Grassland built 2026-09-14** (see the dated section above) — **TERRAIN ONLY**: background art + collision + the three edge exits (west→C1, south→D2 both now LIVE; east→C3 stubbed) + three landmark labels. No NPCs, enemies, quests, battles, ambushes, interactables or chests yet; the content brief is in the Row C design notes. Building it also exposed and fixed exit-band bugs in C1 and D2 — see that section before touching any other stubbed edge.
 - ✅ **C1 Tidewrack Harbor built 2026-09-02** (see the dated section above) — 12-NPC fishing village, 5 quests (Lily's lost-gull chase-quest added 2026-09-10, see that dated section — also the game's first `failed`-quest outcome and first `chaseTalk` NPC), mireman pack guarding the (still-unbuilt) *Maiden's Grace*, plus a small cave (**C1B**, 2026-09-10) — now also home to the boss fight **Ysra Nine-Shells, "the Drownweft of the Hollow Tide"** (2026-09-10, see that dated section), the game's first summon-capable enemy and first magic-cost/cursed item. The derelict *Maiden's Grace* moored at the pier now has an interior too — **C1C** (2026-09-11), the game's first multi-level dungeon (just Level 1/the hold so far, see that dated section). 📝 **Row C's terrain is now complete** (C1 fully built; C2 and C3 terrain-only) — the remaining row-C work is content, per the Row C design notes above.
 - Player stats hardcoded in `js/main.js` (health 5/5, magic 5/10 [bar hidden], gold 0, attack 1, defense 1, **speed 1, luck 1 (2026-09-11, was 0)** — all deliberate new-game-start values). **Level/XP were REMOVED entirely on 2026-07-22** (Danny — the game has no experience/leveling loop; progression is gear-driven: weapons/armor + vitality potions). The old `stats.level`/`stats.xp`/`xpMax` fields, the hidden Stats-tab Level/Experience rows, `ui.updateStatsPanel`'s xp bar, and the `.bar-fill.xp`/`.xp-row` CSS are all gone. `NEW_GAME_STATS` (a `{...stats}` snapshot taken at module load) is the canonical fresh-start reset, used by the save system. Speed (1–3, cap 3) and Luck (starts 1, raised only by the D3 well's one-time coin toss, to 2) are real stats: **Speed** scales overworld movement AND grants battle initiative (50/75/100% at Speed 1/2/3); **Luck is a non-combat probability bonus** (2026-07-31 rework — NOT attack/defense rolls, that's stale/pre-rework phrasing): +10%/point to fishing's rare-catch odds and battle loot; both shown in the Stats tab, alongside the new Damage subsection (2026-09-11 — see that dated section) listing equipped Main Hand/Off Hand damage + effects and a Magic placeholder. **Gear can raise Speed now (2026-07-26):** `main.js`'s `effectiveSpeed() = min(3, stats.speed + equipmentBonus('speedBonus'))` feeds BOTH `moveMultForSpeed` (frame loop) and `playerInitiativeChance` (default arg), so `leather_boots` (`speedBonus: 1`, feet slot, in D1's locked chest) speeds movement and initiative. (`effectiveAttack`/`effectiveDefense` already folded in attack/defense gear + Luck.) Audio defaults: music 50%, effects 100%. Inventory state (`inventory` array) starts empty and `equipment` starts with every slot unequipped — first items obtainable in-game are Mirelle's vegetable-crate quest and whatever's still in Your House (Dagger, Health Potion).
