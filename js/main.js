@@ -15,6 +15,7 @@ import sceneC1D from './data/c1d.js';
 import sceneC2 from './data/c2.js';
 import sceneC3 from './data/c3.js';
 import sceneC3B from './data/c3b.js';
+import sceneC3C from './data/c3c.js';
 import { World } from './world.js';
 import * as ui from './ui.js';
 import * as audio from './audio.js';
@@ -422,7 +423,7 @@ function loadImages(sources, onProgress) {
 // Every scene in the game, keyed by the ids that exits point at. Adding a
 // scene = write its data file, import it, and register it here — the
 // transition system below handles everything else.
-const SCENES = { D1: sceneD1, D1B: sceneD1B, D2: sceneD2, D3: sceneD3, D4: sceneD4, D4B: sceneD4B, C4: sceneC4, C1: sceneC1, C1B: sceneC1B, C1C: sceneC1C, C1D: sceneC1D, C2: sceneC2, C3: sceneC3, C3B: sceneC3B };
+const SCENES = { D1: sceneD1, D1B: sceneD1B, D2: sceneD2, D3: sceneD3, D4: sceneD4, D4B: sceneD4B, C4: sceneC4, C1: sceneC1, C1B: sceneC1B, C1C: sceneC1C, C1D: sceneC1D, C2: sceneC2, C3: sceneC3, C3B: sceneC3B, C3C: sceneC3C };
 
 async function boot() {
   // Preload assets for EVERY registered scene up front — scene switches are
