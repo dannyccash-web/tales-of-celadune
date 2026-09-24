@@ -697,7 +697,23 @@ async function boot() {
     const live = world.npcs.find((n) => n.id === npcId);
     const enemyId = npcId === 'bramblekin_chief' ? 'bramblekin_chief' : 'bramblekin';
     setTimeout(() => startBattle([enemyId], (result) => {
-      if (result === 'victory' && live) { live.defeated = true; saveGame({ checkpoint: true }); } // kill is permanent: live save AND death checkpoint (2026-09-12/2026-09-20)
+      if (result === 'victory' && live) {
+        live.defeated = true;
+        // Killing the Chief outright auto-completes his favor quest (2026-09-23,
+        // Danny) — there's no one left standing to hand a rootweaver heart to.
+        // Starts it first if it was never formally accepted (same "complete even
+        // if never started" shape as Calder's painting/Mara's summons turn-ins),
+        // grants no reward gold (that's the peaceful bargain's payout, not a
+        // kill's), and settles the camp for good so the surviving guards stop
+        // asking for toll (mirrors turnInHeart's permanent-passage flags).
+        if (npcId === 'bramblekin_chief') {
+          if (questStatus('rootweaver_favor') !== 'active') startQuest('rootweaver_favor');
+          completeQuest('rootweaver_favor');
+          campQuestDone = true;
+          campTollPaid = true;
+        }
+        saveGame({ checkpoint: true }); // kill is permanent: live save AND death checkpoint (2026-09-12/2026-09-20)
+      }
     }), 0);
   }
 

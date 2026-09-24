@@ -146,22 +146,35 @@ export default {
     drops: { gold: { min: 3, max: 6 }, loot: [{ id: 'health_potion', chance: 0.2 }] },
   },
 
+  // Bramblekin Chief — MADE SIGNIFICANTLY HARDER 2026-09-23 (Danny: bring him
+  // up toward Ysra Nine-Shells / the Cragclaw Queen's tier — he'd been a
+  // pushover at 5hp/atk2/def2 despite being the camp's named boss). New block
+  // sits right between the Queen (12/3/3) and Ysra (15/4/3), matching Ysra's
+  // attack/defense exactly and landing his damage between the two:
   bramblekin_chief: {
     id: 'bramblekin_chief',
     name: 'Bramblekin Chief',
     portrait: 'assets/images/Bramblekin_Chief.png',
-    health: 5,
-    attack: 2,
-    defense: 2,
-    speed: 7,
-    damage: { min: 2, max: 5 }, // 1d4+1
+    health: 14,
+    attack: 4,
+    defense: 3,
+    speed: 8,
+    damage: { min: 3, max: 6 },
+    // He calls guards in mid-fight now (2026-09-23), same summon mechanic as
+    // Ysra Nine-Shells (main.js's takeEnemyTurn/MAX_BATTLE_ENEMIES already
+    // handle this generically — no engine change needed, just this field):
+    // every 3rd turn HE personally takes, a fresh Bramblekin joins the fight
+    // (if the roster has room under the existing 3-enemy cap). Pool of one
+    // on purpose — it's always a rank-and-file guard coming to his aid, never
+    // another Chief.
+    summon: { every: 3, pool: ['bramblekin'] },
     background: 'assets/images/bramblekin_camp.jpg', // battle backdrop (2026-07-22)
     wood: true, // thorn/bramble body — flammable
-    // Vitality potion added to the Chief's drop table (2026-09-11, Danny: he
-    // guards the toll-camp and is the closest thing this camp has to a
-    // 'king') — a guaranteed drop, on top of the existing gold/health/magic-
-    // potion chances.
-    drops: { gold: { min: 8, max: 14 }, loot: [{ id: 'health_potion', chance: 0.5 }, { id: 'magic_potion', chance: 0.2 }, { id: 'vitality_potion', chance: 1 }] },
+    // Gold bumped 8-14 -> 12-20 to pay like the tougher fight this now is
+    // (between the Queen's 11-19 and Ysra's 17-26). Vitality potion (2026-09-11,
+    // Danny: he guards the toll-camp and is the closest thing it has to a
+    // 'king') stays a guaranteed drop, on top of the health/magic-potion chances.
+    drops: { gold: { min: 12, max: 20 }, loot: [{ id: 'health_potion', chance: 0.5 }, { id: 'magic_potion', chance: 0.2 }, { id: 'vitality_potion', chance: 1 }] },
   },
 
   // Cragclaw (D1 beach, 2026-07-25) — a snapping crab-thing that mills about

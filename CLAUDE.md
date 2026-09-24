@@ -1227,6 +1227,64 @@ and a live browser run.
 
 Danny painted `D1_collision_markup.jpg` (native 3000x3000; red = current collision) with **yellow = block, blue = walkable**. Applied as a delta: every painted 25px cell flipped, the 363 obstacle rects that touched no changed pixel kept byte-for-byte, the 26 that did were replaced by 28 exact re-emitted rects (`note: 'Danny markup 2026-09-21'`). Yellow sealed the two walkable slivers across the sea (y1300-1325, y1550-1575), the thin seam along the top-right treeline (y175-200), three narrow gaps between palms, and three small grass spots. Blue removed **every** obstacle, down to 1px slivers, in the central beach clearing (x1298-1698, y1551-1824) plus two small spots north and south of it. Verified with the real `World` collider: spawn walkable, both exits + all interactables/chests/doors/ambushes reachable, and the blue clearing now has zero blocking pixels. **Tip:** a paint-detection threshold of `min(R,G)-B>120` (yellow) / `B-max(R,G)>120` (blue) picked up only the strokes, none of the sand. Rendering the overlay at native 3000px meant Danny's strokes lined up exactly, with no rescaling needed.
 
+## Bramblekin Chief made a real boss fight + kills auto-complete his quest (2026-09-23)
+
+Danny: the Chief was a pushover compared to the game's other named bosses, and there was no way
+to hand him a rootweaver heart once he's dead — so the favor quest needed to resolve on its own.
+
+- **Stat block overhauled** (`js/data/enemies.js`) to sit between the Cragclaw Queen (12/3/3) and
+  Ysra Nine-Shells (15/4/3), the game's two other named boss fights: **health 5 -> 14, attack 2 -> 4,
+  defense 2 -> 3, speed 7 -> 8, damage 2-5 -> 3-6**. Attack/defense now match Ysra's exactly; health
+  and damage land between the two. Gold bumped 8-14 -> 12-20 to pay like the harder fight this now
+  is (between the Queen's 11-19 and Ysra's 17-26); the guaranteed vitality-potion drop (2026-09-11)
+  and the health/magic-potion chances are untouched.
+- **He calls for backup mid-fight now** — reuses Ysra's existing `summon` mechanic verbatim (no
+  engine change needed; `main.js`'s `takeEnemyTurn`/`MAX_BATTLE_ENEMIES` already handle any
+  `summon`-carrying enemy generically): `summon: { every: 3, pool: ['bramblekin'] }` — every 3rd
+  turn the Chief personally takes, a fresh rank-and-file Bramblekin joins the fight, capped at the
+  existing 3-enemy battle roster. Pool of one on purpose: it's always a guard coming to his aid,
+  never a second Chief.
+- **Killing him outright now auto-completes `rootweaver_favor`** (`main.js`'s `fightCampMember`,
+  the "Draw steel" path both from his own dialog and from the gate confrontation) — there's no one
+  left standing to hand a rootweaver heart to, so the quest can't just sit stuck active/none
+  forever. Starts it first if it was never formally accepted (same "complete even if never
+  started" shape as Calder's painting / Mara Vellorne's summons turn-in), grants **no reward
+  gold** (that payout is specifically for the peaceful bargain, not for killing him), and sets
+  `campQuestDone`/`campTollPaid` so the surviving guards stop asking for toll — consistent with
+  `turnInHeart`'s existing permanent-passage flags. (The camp membrane was already permanently
+  open the moment steel was drawn, via `campHostile` — this doesn't change passage, just settles
+  the quest log and the guards' dialogue to match a dead Chief.)
+- **Verified:** the sentinel-guarded syntax sweep (a deliberately broken file fed to `node --check`
+  first, to prove it actually fails — see the 2026-09-19 boot-failure section, whose whole cause
+  was a checker that silently swallowed a real syntax error), plus an import-and-print of the real
+  parsed `enemies.js` object (not just `node --check`, per that same section's standing rule) to
+  confirm the new stat block and `summon.pool` reference a real enemy id. A lexical-depth check
+  confirmed `fightCampMember`'s new code sits inside `boot()`'s closure (unaffected — it edits an
+  existing function, doesn't add a new top-level binding) and that `questStatus`/`startQuest`/
+  `completeQuest` are themselves declared in the enclosing module scope, so calling them from
+  inside `boot()` is safe (the reverse — an inner `boot()` binding read from outer scope — is what
+  caused the `magicRevealed` bug on 2026-09-11). **Not live-verified in-browser** (this session had
+  no network path to the live site); Danny should fight the Chief on the live site to confirm the
+  harder fight feels right, that a guard actually joins in around turn 3, and that killing him
+  (both via his own "Draw steel" and via fighting past the gate) logs the quest as completed.
+
+## Housekeeping (2026-09-23)
+
+- **Verified GitHub API + push access.** The token embedded in the local git remote (`git remote
+  -v`) authenticates against the GitHub API (`GET /user` -> 200) and reports `push`/`admin: true`
+  on `dannyccash-web/tales-of-celadune` (`GET /repos/.../` `permissions`). This session ran **On
+  your computer** (a `device_bash` shell with real network — see the CLAUDE.md deploy section's
+  workaround table), so the commit for this round's Chief changes push directly with no Terminal
+  step, confirming both read AND write access end to end.
+- **Verified all 15 shipped scene background images are exactly 3000x3000px** (JPEG SOF-marker
+  read, no library needed): C1, C1B, C1C, C1D, C2, C3, C4, D1, D1B, D2, D3, D4, D4B — every
+  `*_Background.jpg` actually referenced from `js/data/*.js`. The three battle-only backdrops
+  (`beach_background.jpg`, `forest_background.jpg` at 1920x1080; `cave_background.jpg` at
+  6688x3764) are intentionally NOT scene backgrounds and were left alone — they're fixed to the
+  battle UI's own 1920x1080 design resolution, not the world's 3000x3000 scale. The dev-only
+  `*_walkable.jpg`/`*_Walkable.jpg` collision guides are gitignored and don't exist in this working
+  copy, so they weren't (and can't be) checked here.
+
 ## Status / roadmap
 
 - ✅ D3 Farm: 4-layer scene, movement, collision (25px-grid traced), camera, walk animation, four NPCs (Mirelle, Tuckwell, Brenna on home routines; Old Gaffer the goat on a patrol loop in the pen) plus one unoccupied building (Your House, formerly Storehouse, stocked with a Dagger + Health Potion) — leave/return + door SFX + interior dialog with per-character voice-clip SFX, response effects (Gaffer's bite, Mirelle's vegetable-crate quest + item, Brenna's completable barn-rat quest with a 5-gold turn-in, the silo's one ear of corn + feeding Gaffer to make petting safe, the well's drink-for-HP + coin-for-Luck), per-NPC dialog variants by quest status incl. the readyToComplete turn-in pseudo-status (no re-granting a one-time quest item), multi-NPC steering avoidance, dialog with portrait slide/fade + typewriter text + item-received reveal (also used for taking items from Your House), PDF-matched UI styling, HUD (Magic bar hidden until the player owns a magic-cost item — see the Ysra Nine-Shells section, 2026-09-10; health bar width scales with max-health and flashes on damage), gold/health/item SFX centralized through addGold/damagePlayer/addItem/removeItem, "Quest Added" top-center banner, Menu (Quests/Stats/Audio/Controls tabs — Quests lists active + a Completed section with check/X icons; Controls is a static key-cap binding reference) + Inventory (mockup-matched chrome, no section headers, arrow-indicator tabs; four mutually-exclusive item categories — Equipment/Weapons/Magic/Items — each with its own tile grid + action popout; Equipment/Weapons further split into per-slot subcategory sections — Head/Clothing/Feet/Hands, Main Hand/Off Hand — each its own header+grid, equip/unequip via the tile's own expand-from-frame popout, equipped items marked with a checkmark corner badge, quest items with a star badge, weapon/gear tiles show a secondary stat line, consistent item naming), fully keyboard-navigable (I/M/arrows/Space/Escape, no mouse required, including the Items grid + popout and battle), one hidden collectible ("A shiny object" near Mirelle's farmhouse), start screen (click/Enter/Space), theme + overworld soundtrack with crossfade (race-condition-free).
