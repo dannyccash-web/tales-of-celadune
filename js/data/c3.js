@@ -19,13 +19,19 @@
 // of the temple's fall, the river rerouted into a moat, and his charge as
 // warden over whatever the water is holding back; he now actually ferries the
 // player across for a flat 50-gold fee (see buildLakewardenDialog in
-// main.js). The same date, Level 1 of the temple's interior (scene C3B) went
-// live, reached via the `temple_of_aeluna_entrance` interactable on the
-// island plaza (see `interactables`). Still no battles, ambushes or chests on
-// this overworld scene itself. The other live content is the cave link to
-// D4B (see `interactables`). Everything else the row-C brief calls for here —
-// the Silver Lotus hunt, the rootweaver / Bramblekin scouts, the temple's
-// deeper levels, the Stone Warden boss and the Ward-Shard — is still to come.
+// main.js). 2026-09-25: that fee is a ONE-TIME toll (`lakewardenPaid`) — pay
+// it once and every crossing after that, either direction, is free. Level 1
+// of the temple's interior (scene C3B) went live the same day as the fee,
+// reached via the `temple_of_aeluna_entrance` interactable on the island
+// plaza (see `interactables`) — its own label is the ONLY temple label now
+// (the standalone far-off "Temple of Aeluna" building label was removed
+// 2026-09-25, per the project's one-label rule: a visible label should mean
+// "you can interact here," so the label rides on the door itself). Still no
+// battles, ambushes or chests on this overworld scene itself. The other live
+// content is the cave link to D4B (see `interactables`). Everything else the
+// row-C brief calls for here — the Silver Lotus hunt, the rootweaver /
+// Bramblekin scouts, the temple's deeper levels, the Stone Warden boss and
+// the Ward-Shard — is still to come.
 //
 // EXITS. Bands measured against the art's actual open ground at each edge and
 // matched to the neighbour's band so a round trip preserves the player's
@@ -461,7 +467,6 @@ export default {
   // The cave's label rides on its interactable instead (the project's
   // one-label rule — see D4's "Old Cave"), not on a standalone entry here.
   buildings: [
-    { label: 'Temple of Aeluna', x: 2700, y: 900, r: 700 },
     { label: 'Hallowmere Lotus Pool', x: 640, y: 2180, r: 430 },
   ],
 

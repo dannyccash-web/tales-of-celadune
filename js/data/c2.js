@@ -652,9 +652,7 @@ export default {
   // own name labels only show at talk range, and the camp reads as a place
   // from much further off.
   buildings: [
-    { label: 'Ruined Watchtower', x: 1785, y: 300, r: 620 },
     { label: 'Herders\u2019 Camp', x: 880, y: 1730, r: 540 },
-    { label: 'Caravan Rest', x: 2500, y: 990, r: 360 },
   ],
 
   // Code-drawn campfires + their smoke (world.js's drawFire/drawSmoke, no art

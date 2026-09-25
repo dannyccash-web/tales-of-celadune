@@ -547,7 +547,6 @@ export default {
     { label: 'Isolde’s House', x: 2190, y: 1901, r: 180, door: { x: 2190, y: 1946 } },
     { label: 'Cade Fathom’s House', x: 2339, y: 2044, r: 180, door: { x: 2339, y: 2089 } },
     { label: 'The Old Lighthouse', x: 1300, y: 300, r: 180 },
-    { label: 'Maiden’s Grace', x: 500, y: 1400, r: 480 },
   ],
 
   // Chimney smoke on half the village's homes (2026-09-03, Danny) — thin

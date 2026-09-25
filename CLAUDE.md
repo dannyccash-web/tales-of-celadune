@@ -1488,6 +1488,85 @@ to hand him a rootweaver heart once he's dead — so the favor quest needed to r
 - No changes needed to `main.js`'s `SCENES` wiring or `index.html`'s level-indicator markup — both
   were already correct from the previous two rounds and are unaffected by a pure resize.
 
+## Fixed: leaving the temple could strand the player on the wrong shore, the Lakewarden's fare made one-time, dead labels removed (2026-09-25)
+
+Danny reported three things after the temple's three levels shipped: leaving the temple sometimes
+dropped the player on the mainland dock instead of near the temple door — stranded, since the raft
+was still moored on the island and there was no way back on foot; the temple should have exactly
+one label, sitting near/above the entrance itself; and the caravan-rest, ruined-watchtower and
+Maiden's Grace labels should go. He also asked the Lakewarden's 50-gold fare to become a one-time
+toll rather than a charge on every crossing.
+
+### ROOT CAUSE of the stranding bug — a single global `caveReturn` slot shared across nested caves
+
+`enterCave(caveId)` unconditionally overwrites the one module-level `caveReturn` variable with
+`{scene: currentSceneId, x, y}` every time it's called, and `exitCave()` unconditionally sets it
+back to `null` on every exit — regardless of whether that exit used `caveReturn` or a fixed
+`exitTo`. That's harmless for a single-mouth cave, but the temple is THREE levels deep
+(C3B → C3C → C3D), and descending calls `enterCave()` again at each stair: walking down from C3B to
+C3C overwrites `caveReturn` with the C3B-side stairs position (clobbering the original C3-overworld
+entry point), and coming back up through C3C's `c3c_stairs_up` (which correctly uses its own fixed
+`exitTo`, not `caveReturn`) still runs `exitCave()`'s unconditional `caveReturn = null` on the way
+out. So a player who went down to C3C or C3D and back up before leaving the temple ENTIRELY found
+`caveReturn` null once they reached `c3b_exit` (which had no `exitTo` of its own and relied on the
+generic `caveReturn` fallback chain) — that fallback has no x/y, so the player landed on plain C3
+`spawn`: near the mainland jetty, the opposite shore from the temple, with the raft and the
+Lakewarden still on the island and `LAKEWARDEN_ISLAND`'s dialogue nowhere in reach. Exactly Danny's
+report. (The Maiden's Grace ship dungeon, C1C/C1D, never had this bug — its own exit back to the
+overworld, `c1c_topdeck_exit`, already used a fixed `exitTo` rather than `caveReturn`, which is
+what made it robust to the same nested-`enterCave` clobbering happening internally.)
+
+**Fix:** gave `c3b_exit` a fixed `exitTo: {x:2635,y:1290}` (45px south of the
+`temple_of_aeluna_entrance` interactable, engine-verified walkable and BFS-reachable from the
+ferry's island landing point) — same pattern as the ship dungeon's own top-level exit. This
+sidesteps `caveReturn` entirely for the temple's ONE portal back to the overworld, so it can never
+matter what happened to that slot while descending/ascending the levels in between. **The general
+lesson, worth remembering for any future multi-level dungeon:** a dungeon's outermost exit back to
+the overworld should always use a fixed `exitTo`, never the bare generic `caveReturn` fallback,
+the moment that dungeon gains more than one level — `caveReturn` is a single slot, not a stack, and
+every nested `enterCave`/`exitCave` call along the way stomps on it.
+
+### One label for the temple, dead labels removed
+
+The temple actually had TWO labels: a far-off, huge-radius (`r:700`) `buildings` entry ("Temple of
+Aeluna" at 2700,900, visible from most of the mainland shore) AND the `temple_of_aeluna_entrance`
+interactable's own label at the door (2635,1245) — a straightforward violation of this project's own
+one-label rule (a visible label should mean "you can interact here," see D4's Old Cave / the silo).
+Removed the `buildings` entry; the interactable's label (already drawn directly above its anchor
+point, per `world.js`'s `drawLabel`'s bottom-aligned text baseline) is now the only one, and it only
+shows within its 150px interact range — i.e. near and above the entrance itself, as asked.
+
+Also removed, per Danny's explicit ask, three more standalone `buildings` labels that no longer (or
+never did) earn their keep: **Ruined Watchtower** and **Caravan Rest** (C2 — Herders' Camp is
+untouched, it still names the Reedwalkers' camp), and **Maiden's Grace** (C1 — the ship itself is
+still fully present, guarded, and enterable via its own interactables; only the standalone landmark
+label over open water is gone).
+
+### The Lakewarden's fare is now a ONE-TIME toll
+
+New persisted flag `lakewardenPaid` (declared alongside `ferrySide`, saved/loaded/reset the same
+way). `buildLakewardenDialog()` on the mainland side now branches three ways: island side unchanged
+(always free, "Take me back across."); mainland + not yet paid, unchanged (`LAKEWARDEN_WARNING` +
+the 50-gold gate); mainland + already paid, a new `LAKEWARDEN_RETURN_MAINLAND` line and a direct
+`lakewardenFerry` effect with no gold check at all. `lakewardenPaid` is set the moment
+`lakewardenPayFerry` actually spends the gold, so it's impossible to end up marked paid without
+having paid once. Every crossing after the first is free in both directions.
+
+### Verification
+
+The sentinel-guarded `.mjs`-copy syntax sweep (a deliberately broken file fed to `node --check`
+first, to prove it actually fails — see the 2026-09-19 boot-failure section, whose whole cause was a
+checker that silently passed broken code) on every touched file; import-and-print of the real parsed
+`c1.js`/`c2.js`/`c3.js`/`c3b.js` objects confirming the exact label lists and the new `exitTo` shape;
+a lexical-depth check confirming `lakewardenPaid` sits inside `boot()`'s closure at the same depth as
+`ferrySide`, everywhere it's read (the `magicRevealed` scope bug, 2026-09-11, was exactly a case of
+this going wrong); and a headless BFS (18px collider, replicating `world.js`'s real
+`circleRectOverlap`) confirming `(2635,1290)` is walkable and reachable from the Lakewarden's actual
+island landing point. **Not live-verified in-browser** — Danny should confirm on the live site that
+descending to C3C/C3D and back up, then leaving the temple, lands right by the door every time; that
+only one label shows there and the three removed ones are gone; and that the fare is charged once
+and never again.
+
 ## Status / roadmap
 
 - ✅ D3 Farm: 4-layer scene, movement, collision (25px-grid traced), camera, walk animation, four NPCs (Mirelle, Tuckwell, Brenna on home routines; Old Gaffer the goat on a patrol loop in the pen) plus one unoccupied building (Your House, formerly Storehouse, stocked with a Dagger + Health Potion) — leave/return + door SFX + interior dialog with per-character voice-clip SFX, response effects (Gaffer's bite, Mirelle's vegetable-crate quest + item, Brenna's completable barn-rat quest with a 5-gold turn-in, the silo's one ear of corn + feeding Gaffer to make petting safe, the well's drink-for-HP + coin-for-Luck), per-NPC dialog variants by quest status incl. the readyToComplete turn-in pseudo-status (no re-granting a one-time quest item), multi-NPC steering avoidance, dialog with portrait slide/fade + typewriter text + item-received reveal (also used for taking items from Your House), PDF-matched UI styling, HUD (Magic bar hidden until the player owns a magic-cost item — see the Ysra Nine-Shells section, 2026-09-10; health bar width scales with max-health and flashes on damage), gold/health/item SFX centralized through addGold/damagePlayer/addItem/removeItem, "Quest Added" top-center banner, Menu (Quests/Stats/Audio/Controls tabs — Quests lists active + a Completed section with check/X icons; Controls is a static key-cap binding reference) + Inventory (mockup-matched chrome, no section headers, arrow-indicator tabs; four mutually-exclusive item categories — Equipment/Weapons/Magic/Items — each with its own tile grid + action popout; Equipment/Weapons further split into per-slot subcategory sections — Head/Clothing/Feet/Hands, Main Hand/Off Hand — each its own header+grid, equip/unequip via the tile's own expand-from-frame popout, equipped items marked with a checkmark corner badge, quest items with a star badge, weapon/gear tiles show a secondary stat line, consistent item naming), fully keyboard-navigable (I/M/arrows/Space/Escape, no mouse required, including the Items grid + popout and battle), one hidden collectible ("A shiny object" near Mirelle's farmhouse), start screen (click/Enter/Space), theme + overworld soundtrack with crossfade (race-condition-free).

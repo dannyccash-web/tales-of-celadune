@@ -889,7 +889,7 @@ async function boot() {
         inventory: inventory.map((e) => ({ ...e })),
         equipment: { ...equipment },
         quests: quests.map((q) => ({ ...q })),
-        flags: { campQuestDone, campHostile, campTollTier, gafferHappy, thrumhornFed, orrisRescued, wellCoinThrown, wellDrinks, vegetableDeliveredToTavern, calderToldStory, calderToldDangers, maraMet, lilyGullThanked, magicRevealed, maraHollowmastRescued, lockboxAcceptedFrom, lockboxGivenTo , ferrySide },
+        flags: { campQuestDone, campHostile, campTollTier, gafferHappy, thrumhornFed, orrisRescued, wellCoinThrown, wellDrinks, vegetableDeliveredToTavern, calderToldStory, calderToldDangers, maraMet, lilyGullThanked, magicRevealed, maraHollowmastRescued, lockboxAcceptedFrom, lockboxGivenTo , ferrySide, lakewardenPaid },
         caveReturn, // where to exit to if saved inside a cave/dungeon
         worlds: snapshotWorlds(),
       };
@@ -983,6 +983,7 @@ async function boot() {
     campHostile = false; campEntryGate = null; campTollTier = 0;
     gafferHappy = false; thrumhornFed = false; orrisRescued = false; wellCoinThrown = false; wellDrinks = 0; vegetableDeliveredToTavern = false;
     ferrySide = 'mainland'; // the C3 raft starts moored on the near shore
+    lakewardenPaid = false;
     calderToldStory = false; calderToldDangers = false; maraMet = false;
     lilyGullThanked = false;
     magicRevealed = false;
@@ -1021,6 +1022,7 @@ async function boot() {
     campTollTier = f.campTollTier || 0;
     gafferHappy = !!f.gafferHappy; thrumhornFed = !!f.thrumhornFed; orrisRescued = !!f.orrisRescued; wellCoinThrown = !!f.wellCoinThrown;
     ferrySide = f.ferrySide === 'island' ? 'island' : 'mainland';
+    lakewardenPaid = !!f.lakewardenPaid;
     wellDrinks = f.wellDrinks || 0;
     calderToldStory = !!f.calderToldStory; calderToldDangers = !!f.calderToldDangers;
     maraMet = !!f.maraMet;
@@ -1785,6 +1787,7 @@ async function boot() {
         return true;
       }
       spendGold(LAKEWARDEN_FARE);
+      lakewardenPaid = true; // one-time toll — every crossing after this is free
       setTimeout(startFerry, 120);
       return;
     }
@@ -1930,12 +1933,16 @@ async function boot() {
     return npc.dialog;
   }
 
-  // ---- The Lakewarden's ferry, C3 (2026-09-20) ------------------------------
-  // He states a fare (a silver lotus) that cannot yet be obtained — the lotus
-  // glade is still walled off by forest — so until it can be, he relents and
-  // rows anyway after a warning (Danny, 2026-09-20). **When the lotus lands,
-  // the gate goes back in `lakewardenFerryOffer` below**, and this comment is
-  // the thing to delete.
+  // ---- The Lakewarden's ferry, C3 (2026-09-20; fare reworked 2026-09-24/25) --
+  // He originally stated a fare (a silver lotus) that couldn't yet be obtained
+  // — the lotus glade is still walled off by forest — so he relented and rowed
+  // anyway after a warning (2026-09-20). 2026-09-24: that was replaced with an
+  // actual flat 50-gold fee (LAKEWARDEN_FARE) instead of waiting on the lotus.
+  // 2026-09-25 (Danny: "charge a 50 gold fee one time, then take players back
+  // and forth to the temple as necessary"): the fee is now ONE-TIME, tracked by
+  // `lakewardenPaid` — see buildLakewardenDialog below. **When the lotus lands,
+  // a real fare-item gate can replace `lakewardenPaid` in `lakewardenFerryOffer`
+  // below.**
   //
   // The crossing is a real animated cutscene, driven off the frame loop's dt
   // in `updateFerry()` — NOT an NPC routine that gets polled for arrival. That
@@ -1973,6 +1980,11 @@ async function boot() {
   const FERRY_BOB = 3; // px of vertical sway on the raft mid-crossing
 
   let ferrySide = 'mainland'; // which dock the raft (and the Lakewarden) is at — persisted
+  // The 50-gold fare is a ONE-TIME toll (2026-09-25, Danny: "charge a 50 gold
+  // fee one time, then take players back and forth to the temple as
+  // necessary") — once true, buildLakewardenDialog stops asking for gold on
+  // the mainland side (the island-side return trip was always free).
+  let lakewardenPaid = false;
   let ferry = null;           // the live crossing: { from, to, phase, t, startPlayer, walking }
 
   function lakewardenNpc() { return world.npcs.find((n) => n.id === 'lakewarden'); }
@@ -2073,6 +2085,9 @@ async function boot() {
   const LAKEWARDEN_WARNING = 'You want to go where I have spent my whole charge keeping people out of. That is your business once you are past this dock, not mine. But you will hear this first, because I will only say it once. What overran that temple never left it — it only went quiet, and quiet things get patient with enough years to practice. Keep to the stone. Do not go below. And when you want off that island, come back to this dock and call for me — I will not come looking for you. Now. I do not pole a raft across open water for strangers out of the goodness of my heart, not at my age. Fifty gold, and I will take you across. Not a copper less.';
   const LAKEWARDEN_ISLAND = 'The stones are that way. Mind what I told you. I will be here when you want off — I am always here.';
   const LAKEWARDEN_FARE = 50;
+  // Shown on the mainland side once LAKEWARDEN_FARE has already been paid once
+  // (2026-09-25) — the fee is a one-time toll, not a per-crossing charge.
+  const LAKEWARDEN_RETURN_MAINLAND = 'Back on my dock again. No charge this time, traveller — I said I’d take you across, and a Lakewarden’s word is the one thing that water hasn’t worn down yet. Climb aboard when you’re ready. Mind yourself in there, same as before.';
 
   function buildLakewardenDialog() {
     if (ferrySide === 'island') {
@@ -2080,6 +2095,13 @@ async function boot() {
         line: LAKEWARDEN_ISLAND,
         responses: ['Take me back across.', 'Leave.'],
         responseEffects: [{ lakewardenFerry: true }, null],
+      };
+    }
+    if (lakewardenPaid) {
+      return {
+        line: LAKEWARDEN_RETURN_MAINLAND,
+        responses: ['Take me across.', 'What stands across the water?', 'Leave.'],
+        responseEffects: [{ lakewardenFerry: true }, { followUp: LAKEWARDEN_TEMPLE }, null],
       };
     }
     return {

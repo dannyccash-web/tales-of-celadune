@@ -662,8 +662,22 @@ export default {
   ],
 
   interactables: [
-    // Leave the temple back to C3's overworld, at the spot the player entered.
-    { id: 'c3b_exit', x: 2000, y: 2000, range: 120, caveExit: true, label: 'Leave the Temple' },
+    // Leave the temple back to C3's overworld. FIXED exitTo (2026-09-25), not the
+    // generic captured-entry caveReturn every single-mouth cave otherwise uses —
+    // this dungeon has THREE levels (C3B/C3C/C3D), and descending to a lower
+    // level calls enterCave() again, which unconditionally overwrites the one
+    // global caveReturn slot with the in-dungeon stairs position; exitCave()
+    // also unconditionally nulls it on every exit, including the C3C->C3B
+    // stairs-up (which itself uses its own fixed exitTo, not caveReturn). So a
+    // player who went down to C3C/C3D and back up before leaving the temple
+    // entirely found caveReturn null, fell through to `world.scene.returns`
+    // with no x/y, and landed on C3's plain overworld spawn — near the
+    // MAINLAND jetty, the opposite shore from the temple, with the ferry still
+    // moored on the island and no way back (Danny, 2026-09-25). A fixed
+    // exitTo — same pattern as c1c_topdeck_exit/c1d's exit — sidesteps
+    // caveReturn entirely: (2635,1290) is 45px south of the entrance itself,
+    // engine-verified walkable and reachable from the ferry's island landing.
+    { id: 'c3b_exit', x: 2000, y: 2000, range: 120, caveExit: true, exitTo: { x: 2635, y: 1290 }, label: 'Leave the Temple' },
     // Stairs down to Level 2 (C3C) — south-west octagonal staircase chamber.
     // (387,3427) = the old (290,2570) scaled by 4/3, re-verified open against
     // the freshly regenerated collision, not just assumed from the scale factor.
