@@ -229,7 +229,8 @@ const ITEMS = {
     price: 32,
   },
   // Chestnut (2026-10-10). Found on the ground in C3, C4 and D4, one in each
-  // town's general store. Mateo Avellaneda (C3) wants ten. Edible, too.
+  // town's general store. Mateo Avellaneda (C3) wants ten; only nine exist so
+  // far — Danny is adding more. Edible, too.
   chestnut: {
     id: 'chestnut',
     name: 'Chestnut',

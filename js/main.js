@@ -1586,14 +1586,11 @@ async function boot() {
       return true;
     }
     if (effect.mateoAccept) {
+      // No hints about where the chestnuts are (Danny, 2026-10-10): finding
+      // them all is meant to be the challenge.
       startQuest('mateo_chestnuts');
-      // He starts you off with one of his own. This is also what makes the
-      // quest completable: the world holds exactly nine more (3 in this
-      // clearing, 2 in C4, 2 in D4, 1 in each town's general store).
-      addItem('chestnut', 1, true);
-      ui.showReceivedItem(ITEMS.chestnut);
       ui.updateDialogContent({
-        line: 'Splendid. Splendid! Here, the first one is from my own bag — consider it a seed of intent. Nine more. They fall in this clearing, in the woods to the east, and in the woods south of those, and I am told the shopkeepers in Millmere and Tidewrack keep one behind the counter, though what a shopkeeper knows about chestnuts I tremble to imagine. And please — I beg you — do not eat them on the way.',
+        line: 'Splendid. Splendid! Ten, then. Bring them to me and you will find me here, among the husks, where I always am. And please — I beg you — do not eat them on the way.',
         responses: ['Leave.'],
       });
       return true;

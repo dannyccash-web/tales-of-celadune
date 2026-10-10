@@ -104,7 +104,7 @@ export default {
   mateo_chestnuts: {
     id: 'mateo_chestnuts',
     name: 'Ten Chestnuts for Mateo',
-    description: 'Mateo Avellaneda of Hallowmere Forest wants ten chestnuts, and will explain why at any length you allow. They fall in the woods; the general stores sometimes carry one.',
+    description: 'Mateo Avellaneda of Hallowmere Forest wants ten chestnuts, and will explain why at any length you allow.',
   },
   kingsreach_rock: {
     id: 'kingsreach_rock',
