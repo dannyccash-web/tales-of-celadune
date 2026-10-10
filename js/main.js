@@ -530,6 +530,18 @@ async function boot() {
   // consumed in exitCave, and persisted in the save so quitting inside a cave
   // and continuing still exits to the right place.
   let caveReturn = null;
+  // Fast travel (2026-10-10). A TOWN is any scene whose data carries `travel:
+  // {name, x, y}` (so far D2 Millmere and C1 Tidewrack Harbor). Setting foot in
+  // one adds it here (enterScene); Menu > Travel lists exactly these. Persisted
+  // in the save. Declared up here, before enterScene's first call at boot, to
+  // avoid a TDZ (the magicRevealed lesson, 2026-09-11).
+  const visitedTowns = new Set();
+  let fastTraveling = false; // true for the whole fade-out / swap / fade-in
+  function refreshTravelPanel() {
+    ui.updateTravelPanel(Object.keys(SCENES)
+      .filter((id) => SCENES[id].travel && visitedTowns.has(id))
+      .map((id) => ({ id, name: SCENES[id].travel.name, here: id === currentSceneId })));
+  }
   function applyWorldFlags(w, f) {
     if (!f) return;
     // `collected` is a list of interactable IDs (2026-09-20). Plain numbers are
@@ -585,6 +597,8 @@ async function boot() {
     currentSceneId = id;
     window.world = world; // debug handle follows the active scene
     elowenBlessedThisVisit = false; // per-visit blessing gate resets each scene entry (2026-07-31)
+    if (SCENES[id]?.travel) visitedTowns.add(id); // a town, once entered, is a fast-travel destination
+    refreshTravelPanel(); // also moves the "You are here" marker
     if (fresh && pendingWorldFlags) applyWorldFlags(world, pendingWorldFlags[id]);
     // Re-sync Lily's chase-then-talk state on every C1 (re)entry — covers a
     // fresh World built from a save where her quest was already resolved
@@ -894,7 +908,7 @@ async function boot() {
         inventory: inventory.map((e) => ({ ...e })),
         equipment: { ...equipment },
         quests: quests.map((q) => ({ ...q })),
-        flags: { campQuestDone, campHostile, campTollTier, gafferHappy, thrumhornFed, orrisRescued, wellCoinThrown, wellDrinks, vegetableDeliveredToTavern, calderToldStory, calderToldDangers, maraMet, lilyGullThanked, magicRevealed, maraHollowmastRescued, lockboxAcceptedFrom, lockboxGivenTo , ferrySide, lakewardenPaid },
+        flags: { campQuestDone, campHostile, campTollTier, gafferHappy, thrumhornFed, orrisRescued, wellCoinThrown, wellDrinks, vegetableDeliveredToTavern, calderToldStory, calderToldDangers, maraMet, lilyGullThanked, magicRevealed, maraHollowmastRescued, lockboxAcceptedFrom, lockboxGivenTo , ferrySide, lakewardenPaid, visitedTowns: [...visitedTowns] },
         caveReturn, // where to exit to if saved inside a cave/dungeon
         worlds: snapshotWorlds(),
       };
@@ -947,7 +961,7 @@ async function boot() {
   // could be captured. Re-checked when the timer fires, not just when queued.
   let autosaveTimer = null;
   const AUTOSAVE_DEBOUNCE_MS = 350;
-  function canAutosave() { return state.started && !battleState.active && !deathFading; }
+  function canAutosave() { return state.started && !battleState.active && !deathFading && !fastTraveling; }
   autosaveHook = () => {
     if (!canAutosave()) return;
     if (autosaveTimer != null) clearTimeout(autosaveTimer);
@@ -995,6 +1009,7 @@ async function boot() {
     maraHollowmastRescued = false;
     lockboxAcceptedFrom = null; lockboxGivenTo = null;
     caveReturn = null;
+    visitedTowns.clear();
     for (const k of Object.keys(worlds)) delete worlds[k];
     pendingWorldFlags = null;
     // Drop the old death checkpoint too — startNewGame writes a fresh pair
@@ -1038,6 +1053,12 @@ async function boot() {
     lockboxGivenTo = f.lockboxGivenTo || null;
     caveReturn = data.caveReturn || null;
     vegetableDeliveredToTavern = !!f.vegetableDeliveredToTavern;
+    // Visited towns. Saves from before fast travel existed have no list, so
+    // backfill from the per-scene world snapshot, which has an entry for every
+    // scene the player has ever entered (see snapshotWorlds' seeding).
+    visitedTowns.clear();
+    const townSource = Array.isArray(f.visitedTowns) ? f.visitedTowns : Object.keys(data.worlds || {});
+    townSource.forEach((id) => { if (SCENES[id]?.travel) visitedTowns.add(id); });
     // Per-visit camp state always starts fresh on a load (toll re-armed, not
     // mid-entry) — only the permanent flags above persist.
     campTollPaid = false; campEntered = false; campEntryGate = null;
@@ -1065,6 +1086,9 @@ async function boot() {
     worlds,
     sceneIds: Object.keys(SCENES),
     hasScene: (id) => !!SCENES[id],
+    // Fast travel (2026-10-10): visited towns + a direct trigger for automation.
+    visitedTowns: () => [...visitedTowns],
+    fastTravel: (id) => fastTravel(id),
   };
 
   // Same idea for C3's ferry cutscene (2026-09-20). It advances off the frame
@@ -1082,6 +1106,48 @@ async function boot() {
 
   ui.initStage();
   ui.initPanels(audio);
+  ui.initTravel({ onTravel: (id) => fastTravel(id) });
+
+  // ---- Fast travel (Menu > Travel, 2026-10-10) ----
+  // Confirmed in the menu -> close the menu, teleport whoosh, fade to black,
+  // swap to the town and set the player down at its `travel` point, fade back.
+  // The player (and the world) stay frozen for the whole trip (fastTraveling
+  // is part of the frame loop's modalLock). Counts as entering a new screen,
+  // so it writes both save slots, same as switchScene/enterCave.
+  function fastTravel(id) {
+    const dest = SCENES[id]?.travel;
+    if (fastTraveling || !dest || !visitedTowns.has(id) || id === currentSceneId) return;
+    // Mid-crossing on the Lakewarden's raft: the cutscene owns the player.
+    if (ferry && !ferry.empty) {
+      ui.closeAllPanels();
+      audio.sfx(audio.SFX.denied);
+      ui.toast('Not while you’re out on the water.');
+      return;
+    }
+    // Inside the Bramblekin camp without passage: you agreed to see the Chief,
+    // and the camp doesn't let you leave without paying (see world.js's
+    // membrane). Fast travel mustn't be the loophole.
+    if (world.scene.camp && campEntered && !(campTollPaid || campQuestDone || campHostile)) {
+      ui.closeAllPanels();
+      audio.sfx(audio.SFX.denied);
+      ui.toast('The Bramblekin won’t let you slip away without paying.');
+      return;
+    }
+    ui.closeAllPanels();
+    fastTraveling = true;
+    for (const k of Object.keys(input)) input[k] = false; // no held key carries over
+    audio.sfx(audio.SFX.teleport);
+    ui.travelFadeOut(() => {
+      caveReturn = null; // travelling out of a cave/dungeon leaves it behind
+      enterScene(id);
+      world.player.x = dest.x;
+      world.player.y = dest.y;
+      world.player.rotation = 0; // facing south, toward the viewer
+      audio.play(sceneMusicTrack(id), 1200);
+      saveGame({ checkpoint: true });
+      ui.travelFadeIn(() => { fastTraveling = false; });
+    });
+  }
   ui.updateHud(stats);
   refreshStatsPanel();
   ui.initItemsPanel({ onAction: onItemAction });
@@ -3148,7 +3214,7 @@ async function boot() {
   // Accepting starts `calder_keepsake` (recover Marisol's portrait from the
   // wreck). While it's active he asks after it — and if the player is carrying
   // the portrait, offers to turn it in (completes the quest + a gold thanks).
-  const CALDER_STORY = 'Calder Rusk — captain of the Gull’s Regret, once, before she was a captain’s shame. That broken-backed hull rotting out on the sand is all that’s left of her. We ran aground in a storm, a black night with waves like moving hills, timbers screaming as she struck the shoal. My crew lived through it — every last one of them — and then, once the storm had passed and there was no captain’s authority left to fear, they turned on me. Split the hold between them, weighed out their shares of the loot we’d been carrying, and rowed north for that little fishing village, to play at being honest men with another man’s gold in their pockets. Left me here to the gulls, with nothing but what I could drag out of the surf. So I stayed. Salvaged what timber the sea hadn’t swallowed, raised this hut plank by plank with my own two hands, and hid away what little gold they never got their claws on — buried deep enough even the tide won’t find it.';
+  const CALDER_STORY = 'Calder Rusk — captain of the Gull’s Regret, once, before she was a captain’s shame. That broken-backed hull rotting out on the sand is all that’s left of her. We ran aground in a storm, a black night with waves like moving hills, timbers screaming as she struck the shoal. My crew lived through it — every last one of them — and then, once the storm had passed and there was no captain’s authority left to fear, they turned on me. Split the hold between them, weighed out their shares of the loot we’d been carrying, and rowed north for Tidewrack, that little fishing village up the coast, to play at being honest men with another man’s gold in their pockets. Left me here to the gulls, with nothing but what I could drag out of the surf. So I stayed. Salvaged what timber the sea hadn’t swallowed, raised this hut plank by plank with my own two hands, and hid away what little gold they never got their claws on — buried deep enough even the tide won’t find it.';
   // Shortened 2026-09-11 (Danny: "his dialogue path to get to his quest is
   // way too long... shorten it"), then partly reverted the same day (Danny:
   // the offer must come through an actual conversation, not be visible
@@ -4671,6 +4737,8 @@ async function boot() {
       if (['Enter', ' '].includes(e.key)) { e.preventDefault(); continueFromDeath(); }
       return;
     }
+    // Fast travel in progress: swallow everything until the fade-in finishes.
+    if (fastTraveling) { e.preventDefault(); return; }
     // Victory screen: Space/Enter/Escape skip the drip-feed (grant everything
     // remaining and close); otherwise it auto-awards and closes on its own.
     if (ui.isVictoryOpen()) {
@@ -4725,7 +4793,7 @@ async function boot() {
     // A modal (dialog/panel/battle/victory/game-over/pre-start) fully pauses the
     // world; fishing only locks the PLAYER — NPCs keep wandering during a cast
     // (2026-07-23). `locked` gates the player, `worldFrozen` gates the world.
-    const modalLock = ui.isDialogOpen() || ui.isAnyPanelOpen() || ui.isBattleOpen() || ui.isVictoryOpen() || ui.isGameOverOpen() || deathFading || !state.started;
+    const modalLock = ui.isDialogOpen() || ui.isAnyPanelOpen() || ui.isBattleOpen() || ui.isVictoryOpen() || ui.isGameOverOpen() || deathFading || fastTraveling || !state.started;
     // The C3 ferry locks the PLAYER only, like fishing — the cutscene drives
     // the player, the Lakewarden and the raft itself, so input has to be off
     // but the world must keep ticking (the camera follows the raft across).

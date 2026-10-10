@@ -22,6 +22,12 @@
 export default {
   id: 'D2',
   name: 'Millmere',
+  // Fast travel (2026-10-10): a scene with `travel` is a TOWN — it shows up in
+  // Menu > Travel once the player has set foot in it, and fast travel drops
+  // them at (x,y): the ring road beside the central green, open ground
+  // (55px clear of terrain), reachable from spawn, and 90px+ from every NPC
+  // door/waypoint so nobody walks into the arrival point.
+  travel: { name: 'Millmere', x: 1480, y: 1320 },
   background: 'assets/images/D2_Background.jpg',
   width: 3000,
   height: 3000,

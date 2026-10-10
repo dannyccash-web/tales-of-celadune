@@ -19,6 +19,9 @@ export const TRACKS = {
 
 export const SFX = {
   door: 'assets/audio/dragon-studio-open-door-stock-sfx-454246.mp3',
+  // Fast travel (2026-10-10): plays the moment the player confirms a
+  // destination in Menu > Travel, as the screen starts fading to black.
+  teleport: 'assets/audio/universfield-magic-teleport-whoosh-352764.mp3',
   footsteps: 'assets/audio/universfield-footsteps-walking-278819.mp3',
   // Gold change, health decrease, item given/received — each fires from one
   // centralized place in main.js (addGold/damagePlayer/addItem/removeItem)

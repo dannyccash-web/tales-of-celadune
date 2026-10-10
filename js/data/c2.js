@@ -803,6 +803,7 @@ export default {
       chatter: [
         { q: 'Are you all right out here?', a: 'We are alive and one of the herd is alive. Ask me again in a week and I might have a better answer for you.' },
         { q: 'Where were you headed?', a: 'East, and then north, and then wherever the grass is. That was before. Now we are headed nowhere until Tovan stops staring at that ridge.' },
+        { q: 'Is there a town near here?', a: 'Millmere, down the south road — mill, tavern, a smith who will mend anything you can carry in. West along the road, Tidewrack, if you like your bread with sand in it. We trade at both when we have anything worth trading.' },
       ],
     },
     {

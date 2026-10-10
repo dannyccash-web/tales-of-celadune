@@ -826,6 +826,7 @@ function openPanel(name) {
   audioFocusIndex = 0;
   gridFocusIndex = 0;
   sectionIndex = 0;
+  travelFocusIndex = firstSelectableTravel();
   setNavLevel(root, 'tabs');
 }
 
@@ -833,6 +834,7 @@ function closePanel(name) {
   panelState[name] = false;
   $(name).classList.add('hidden');
   closeItemPopout();
+  if (name === 'menu') closeTravelConfirm();
   navLevel = 'tabs';
 }
 
@@ -882,6 +884,7 @@ function setNavLevel(root, level) {
   root.querySelector('.panel-tabs').classList.toggle('content-mode', level === 'content');
   refreshAudioFocus();
   refreshGridFocus();
+  refreshTravelFocus();
 }
 
 function cycleTab(root, dir) {
@@ -892,8 +895,10 @@ function cycleTab(root, dir) {
   audioFocusIndex = 0;
   gridFocusIndex = 0;
   sectionIndex = 0;
+  travelFocusIndex = firstSelectableTravel();
   refreshAudioFocus();
   refreshGridFocus();
+  refreshTravelFocus();
 }
 
 function refreshAudioFocus() {
@@ -923,11 +928,35 @@ export function panelKey(key) {
     return;
   }
 
+  // Fast-travel confirm box, when open, owns the keyboard (like the popout):
+  // any arrow flips Yes/No, Space/Enter confirms, Escape backs out to the list.
+  if (travelConfirm) {
+    if (key === 'Escape') { closeTravelConfirm(); return; }
+    if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(key)) {
+      travelConfirm.sel = 1 - travelConfirm.sel;
+      refreshTravelConfirm();
+      return;
+    }
+    if (key === ' ' || key === 'Enter') {
+      if (travelConfirm.sel === 0) confirmTravel(); else closeTravelConfirm();
+    }
+    return;
+  }
+
   const tab = currentTabName(root);
 
   // Level 1: inside the active tab's content.
   if (navLevel === 'content') {
     if (key === 'Escape') { setNavLevel(root, 'tabs'); return; }
+
+    // Travel: Up/Down walk the town list (skipping the one you're in),
+    // Space asks to confirm the trip.
+    if (tab === 'travel') {
+      if (key === 'ArrowUp') { moveTravelFocus(-1); return; }
+      if (key === 'ArrowDown') { moveTravelFocus(1); return; }
+      if (key === ' ' || key === 'Enter') { if (travelFocusIndex >= 0) openTravelConfirm(travelFocusIndex); }
+      return;
+    }
 
     if (tab === 'audio') {
       if (key === 'ArrowUp') { audioFocusIndex = (audioFocusIndex + 1) % 2; refreshAudioFocus(); return; }
@@ -975,9 +1004,131 @@ export function panelKey(key) {
     // Weapons often have empty sections), focused on its first tile.
     gridFocusIndex = 0;
     sectionIndex = firstNonEmptySection(sectionGridEls(tab));
+    travelFocusIndex = firstSelectableTravel();
     setNavLevel(root, 'content');
     return;
   }
+}
+
+// ---- Fast travel (Menu > Travel, 2026-10-10) ----
+// main.js owns WHICH towns are listed (the ones the player has visited) and
+// what travelling does; ui.js only renders the list, runs the keyboard/mouse
+// nav and the Yes/No confirm, and calls handlers.onTravel(sceneId) on Yes.
+// The town the player is standing in is listed as "You are here" and can't
+// be picked.
+let travelDests = []; // [{ id, name, here }]
+let travelFocusIndex = -1; // -1 = nothing selectable
+let travelConfirm = null; // { id, name, sel: 0 = Yes, 1 = No } while the box is open
+let travelHandlers = {};
+
+function firstSelectableTravel() {
+  return travelDests.findIndex((d) => !d.here);
+}
+
+function refreshTravelFocus() {
+  document.querySelectorAll('#travel-list .travel-row').forEach((row, i) => {
+    row.classList.toggle('focused', navLevel === 'content' && i === travelFocusIndex);
+  });
+}
+
+function moveTravelFocus(dir) {
+  if (travelFocusIndex < 0) return;
+  // Clamp at the ends (no wrap), skipping the town you're already in.
+  for (let i = travelFocusIndex + dir; i >= 0 && i < travelDests.length; i += dir) {
+    if (!travelDests[i].here) { travelFocusIndex = i; break; }
+  }
+  refreshTravelFocus();
+}
+
+function renderTravelList() {
+  const list = $('travel-list');
+  if (!list) return;
+  list.innerHTML = '';
+  if (!travelDests.length) {
+    const p = document.createElement('p');
+    p.className = 'quests-empty';
+    p.textContent = 'You haven’t visited any towns yet.';
+    list.appendChild(p);
+    return;
+  }
+  travelDests.forEach((d, i) => {
+    const row = document.createElement('div');
+    row.className = 'travel-row' + (d.here ? ' here' : '');
+    const name = document.createElement('span');
+    name.className = 'travel-name';
+    name.textContent = d.name;
+    row.appendChild(name);
+    if (d.here) {
+      const note = document.createElement('span');
+      note.className = 'travel-note';
+      note.textContent = 'You are here';
+      row.appendChild(note);
+    } else {
+      // Mouse: a click is the same as focusing the row and pressing Space.
+      row.addEventListener('click', () => {
+        travelFocusIndex = i;
+        setNavLevel($('menu'), 'content');
+        openTravelConfirm(i);
+      });
+    }
+    list.appendChild(row);
+  });
+}
+
+// dests: [{ id, name, here }] in display order. Called by main.js whenever
+// the list or the player's current scene changes.
+export function updateTravelPanel(dests) {
+  travelDests = dests || [];
+  if (travelFocusIndex >= travelDests.length || travelDests[travelFocusIndex]?.here) {
+    travelFocusIndex = firstSelectableTravel();
+  }
+  renderTravelList();
+  refreshTravelFocus();
+}
+
+function openTravelConfirm(i) {
+  const d = travelDests[i];
+  if (!d || d.here) return;
+  travelConfirm = { id: d.id, name: d.name, sel: 0 };
+  $('travel-confirm-text').textContent = `Travel to ${d.name}?`;
+  $('travel-confirm').classList.remove('hidden');
+  refreshTravelConfirm();
+}
+
+function refreshTravelConfirm() {
+  if (!travelConfirm) return;
+  $('btn-travel-yes').classList.toggle('selected', travelConfirm.sel === 0);
+  $('btn-travel-no').classList.toggle('selected', travelConfirm.sel === 1);
+}
+
+function closeTravelConfirm() {
+  travelConfirm = null;
+  const box = $('travel-confirm');
+  if (box) box.classList.add('hidden');
+}
+
+function confirmTravel() {
+  const id = travelConfirm?.id;
+  closeTravelConfirm();
+  if (id && travelHandlers.onTravel) travelHandlers.onTravel(id);
+}
+
+export function initTravel(handlers) {
+  travelHandlers = handlers || {};
+  $('btn-travel-yes').addEventListener('click', () => { if (travelConfirm) confirmTravel(); });
+  $('btn-travel-no').addEventListener('click', () => closeTravelConfirm());
+}
+
+// Fade the whole stage to black (onDone fires once it's fully black), then
+// back again. 0.7s each way, matching #travel-fade's CSS transition.
+const TRAVEL_FADE_MS = 750;
+export function travelFadeOut(onDone) {
+  $('travel-fade').classList.add('show');
+  setTimeout(() => { if (onDone) onDone(); }, TRAVEL_FADE_MS);
+}
+export function travelFadeIn(onDone) {
+  $('travel-fade').classList.remove('show');
+  setTimeout(() => { if (onDone) onDone(); }, TRAVEL_FADE_MS);
 }
 
 // ---- Inventory tabs (Equipment / Weapons / Magic / Items, 2026-07-09) ----

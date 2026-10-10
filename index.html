@@ -174,13 +174,23 @@
       <div id="menu" class="hidden">
         <div class="panel-box">
           <div class="panel-tabs">
-            <div class="panel-tab active" data-tab="quests">Quests</div>
+            <div class="panel-tab active" data-tab="travel">Travel</div>
+            <div class="panel-tab" data-tab="quests">Quests</div>
             <div class="panel-tab" data-tab="stats">Stats</div>
             <div class="panel-tab" data-tab="audio">Audio</div>
             <div class="panel-tab" data-tab="controls">Controls</div>
           </div>
           <div class="panel-content">
-            <section class="tab-pane" data-pane="audio">
+            <!-- Fast travel (2026-10-10): one row per TOWN the player has
+                 visited (a scene carrying `travel` in its data). Rendered by
+                 ui.js's updateTravelPanel(); Space on a row opens the
+                 confirm box below, which sits over the whole panel. -->
+            <section class="tab-pane" data-pane="travel">
+              <div class="travel-list" id="travel-list">
+                <p class="quests-empty">You haven’t visited any towns yet.</p>
+              </div>
+            </section>
+            <section class="tab-pane hidden" data-pane="audio">
               <div class="slider-row">
                 <span class="stat-label">Music</span>
                 <div class="slider-track">
@@ -252,6 +262,18 @@
                 </div>
               </div>
             </section>
+          </div>
+          <!-- Fast-travel confirmation (2026-10-10). Covers the whole menu
+               box while open; Left/Right (or Up/Down) pick Yes/No, Space
+               confirms, Escape backs out to the town list. -->
+          <div id="travel-confirm" class="hidden">
+            <div class="confirm-box">
+              <p id="travel-confirm-text">Travel to this town?</p>
+              <div class="confirm-buttons">
+                <button id="btn-travel-yes" class="menu-btn">Yes</button>
+                <button id="btn-travel-no" class="menu-btn">No</button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -406,6 +428,10 @@
       <!-- On death the screen fades to black over 2s (ui.startDeathFade) before
            the Game Over screen fades in on top (2026-07-31, Danny). -->
       <div id="death-fade" class="hidden"></div>
+      <!-- Fast travel fade (2026-10-10): to black, swap scenes, back from
+           black. Its own element (not #death-fade) so hideGameOver can't
+           clear it mid-trip. Driven by ui.js's travelFadeOut/travelFadeIn. -->
+      <div id="travel-fade"></div>
       <div id="game-over" class="hidden">
         <h1>You Have Fallen</h1>
         <button id="btn-try-again">Continue</button>

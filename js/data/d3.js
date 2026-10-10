@@ -259,7 +259,7 @@ export default {
       // js/data/quests.js), and keeps the dialog open for a thank-you line
       // instead of closing — see ui.js's chooseResponse()/updateDialogContent().
       dialog: {
-        line: 'Oh, hello there, traveler. I’ve more vegetables than I know what to do with this week — would you carry a crate over to the tavern in the village for me?',
+        line: 'Oh, hello there, traveler. I’ve more vegetables than I know what to do with this week — would you carry a crate over to the tavern in Millmere for me?',
         responses: [
           'I’ll take them to the tavern.',
           'Not right now.',
@@ -307,7 +307,7 @@ export default {
             ],
           },
           completed: {
-            line: 'Those vegetables you ran to the tavern — half the village has had the stew by now. Thank you again, dear.',
+            line: 'Those vegetables you ran to the tavern — half of Millmere has had the stew by now. Thank you again, dear.',
             responses: ['Leave.'],
           },
         },

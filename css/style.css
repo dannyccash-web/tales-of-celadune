@@ -2205,3 +2205,80 @@ html, body {
 }
 
 .item-price::after { content: ' GP'; }
+
+/* ---- Fast travel (Menu > Travel, 2026-10-10) ----
+   One row per visited town. Same gold-arrow focus language as the Audio
+   sliders (.slider-row::before): the arrow drops from the tab into the list
+   on Space. The town the player is standing in is listed but dimmed and
+   skipped by the keyboard (you can't travel to where you already are). */
+.travel-list { display: flex; flex-direction: column; gap: 14px; }
+
+.travel-row {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  gap: 22px;
+  padding: 10px 0 10px 32px;
+  cursor: pointer;
+}
+
+.travel-row::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 7px 0 7px 10px;
+  border-color: transparent transparent transparent var(--gold-bright);
+  opacity: 0;
+}
+
+.travel-row.focused::before { opacity: 1; }
+
+.travel-name {
+  font-family: var(--font-medieval);
+  font-size: 28px;
+  color: var(--text);
+}
+
+.travel-row:hover .travel-name,
+.travel-row.focused .travel-name { color: var(--gold-bright); }
+
+.travel-note {
+  font-family: var(--font-lato);
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--role-gold);
+}
+
+.travel-row.here { cursor: default; }
+.travel-row.here .travel-name { color: var(--text-dim); }
+
+/* Confirm box over the whole menu (it lives inside #menu .panel-box). */
+#travel-confirm {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+}
+
+/* Fade to black and back. JS toggles .show; opacity transitions both ways.
+   Above everything in the stage except the Game Over screen. */
+#travel-fade {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 19;
+  transition: opacity 0.7s ease-in-out;
+}
+#travel-fade.show { opacity: 1; pointer-events: auto; }

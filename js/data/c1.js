@@ -123,6 +123,10 @@
 export default {
   id: 'C1',
   name: 'Tidewrack Harbor',
+  // Fast travel (2026-10-10) — see d2.js's `travel` note. Arrival point is the
+  // path in front of Perrin's Cookhouse: 55px clear of terrain, reachable from
+  // spawn, 140px+ from every NPC door/waypoint.
+  travel: { name: 'Tidewrack Harbor', x: 1910, y: 1610 },
   background: 'assets/images/C1_Background.jpg',
   width: 3000,
   height: 3000,
@@ -920,6 +924,7 @@ export default {
       dialog: { line: 'Rope doesn’t mend itself.', responses: ['Leave.'] },
       chatter: [
         { q: 'Rough work?', a: 'Better than idle hands. Idle hands remember too much.' },
+        { q: 'Where does your hemp come from?', a: 'A cart up from Millmere, inland past the grassland, when the road’s quiet enough to send one. Lately it isn’t. I’m splicing old line I’d have burned a year ago.' },
       ],
     },
     {
