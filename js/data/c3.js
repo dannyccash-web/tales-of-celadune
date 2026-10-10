@@ -482,6 +482,29 @@ export default {
   // drops the player at its own `spawn`, which for D4B is the far bottom-right
   // mouth by D4. Reuse it for any future second entrance to an existing cave.
   interactables: [
+    // Mateo's clearing (2026-10-10): three chestnuts at its west, north-east
+    // and south edges, under the trees. Same checks as the D4/C4 ones.
+    {
+      id: 'c3_chestnut_1',
+      x: 385, y: 520, w: 125, h: 125,
+      label: 'A fallen chestnut',
+      reward: { item: 'chestnut', qty: 1 },
+      message: 'You pick up a chestnut.',
+    },
+    {
+      id: 'c3_chestnut_2',
+      x: 760, y: 345, w: 125, h: 125,
+      label: 'A fallen chestnut',
+      reward: { item: 'chestnut', qty: 1 },
+      message: 'You pick up a chestnut.',
+    },
+    {
+      id: 'c3_chestnut_3',
+      x: 640, y: 775, w: 125, h: 125,
+      label: 'A fallen chestnut',
+      reward: { item: 'chestnut', qty: 1 },
+      message: 'You pick up a chestnut.',
+    },
     {
       id: 'cave_c3_entrance',
       x: 2561, y: 2750,
@@ -551,6 +574,24 @@ export default {
       // as Calder Rusk, whose inline dialog moved out of d1.js for the same
       // reason. Nothing inline here, deliberately — two copies of a character's
       // lines is how they drift apart.
+    },
+    // ---- Mateo Avellaneda (2026-10-10) ----
+    // Wanders the upper-left clearing (x330-1000, y280-820) talking about
+    // chestnuts to anyone who stands still. His four patrol points are 94px+
+    // clear of the tree line. Dialogue is state-built in main.js
+    // (buildMateoDialog) because it depends on the mateo_chestnuts quest and
+    // on how many chestnuts the player is carrying.
+    {
+      id: 'mateo_avellaneda', name: 'Mateo Avellaneda', role: 'CHESTNUT PHILOSOPHER',
+      sprite: 'assets/images/mateo_avellaneda_overhead.png',
+      portrait: 'assets/images/mateo_avellaneda.png',
+      x: 560, y: 500, speed: 30, startsHome: false,
+      patrol: [
+        { x: 560, y: 500 },
+        { x: 760, y: 480 },
+        { x: 700, y: 660 },
+        { x: 520, y: 650 },
+      ],
     },
   ],
   chests: [],

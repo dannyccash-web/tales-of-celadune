@@ -1565,6 +1565,50 @@ async function boot() {
       });
       return true;
     }
+    // ---- Mateo Avellaneda's chestnuts (C3, 2026-10-10) ----
+    if (effect.mateoMenu) { ui.updateDialogContent(buildMateoDialog(true)); return true; }
+    if (effect.mateoLecture) {
+      const line = MATEO_RHAPSODIES[mateoLectureIndex % MATEO_RHAPSODIES.length];
+      mateoLectureIndex++;
+      ui.updateDialogContent({
+        line,
+        responses: ['Tell me another.', 'Please stop.', 'Leave.'],
+        responseEffects: [{ mateoLecture: true }, { mateoMenu: true }, null],
+      });
+      return true;
+    }
+    if (effect.mateoOffer) {
+      ui.updateDialogContent({
+        line: `Want? Want is such a grasping word. I wish to gather. Ten chestnuts — ten, the fingers of two hands, the count of a full and honest harvest. With ten I can begin my treatise on the chestnut as the hidden axle of the world. With nine I could only begin a pamphlet, and I refuse to write a pamphlet. Bring me ${MATEO_NEEDED} and I will give you something that deepens the spirit the way a chestnut deepens a stew.`,
+        responses: ['Fine. Ten chestnuts.', 'I’d rather not.'],
+        responseEffects: [{ mateoAccept: true }, { followUp: 'A pity. The chestnuts will wait. They are very good at waiting. It is, in many ways, their whole point.' }],
+      });
+      return true;
+    }
+    if (effect.mateoAccept) {
+      startQuest('mateo_chestnuts');
+      // He starts you off with one of his own. This is also what makes the
+      // quest completable: the world holds exactly nine more (3 in this
+      // clearing, 2 in C4, 2 in D4, 1 in each town's general store).
+      addItem('chestnut', 1, true);
+      ui.showReceivedItem(ITEMS.chestnut);
+      ui.updateDialogContent({
+        line: 'Splendid. Splendid! Here, the first one is from my own bag — consider it a seed of intent. Nine more. They fall in this clearing, in the woods to the east, and in the woods south of those, and I am told the shopkeepers in Millmere and Tidewrack keep one behind the counter, though what a shopkeeper knows about chestnuts I tremble to imagine. And please — I beg you — do not eat them on the way.',
+        responses: ['Leave.'],
+      });
+      return true;
+    }
+    if (effect.mateoTurnIn) {
+      removeItem('chestnut', MATEO_NEEDED, true);
+      addItem('arcana_potion', 1, true);
+      ui.showReceivedItem(ITEMS.arcana_potion);
+      completeQuest('mateo_chestnuts');
+      ui.updateDialogContent({
+        line: 'Ten. A full harvest, counted out by honest hands. Take this — an Arcana Potion, brewed by a hedge-witch who owed me for a winter of chestnuts. It will deepen the well of you, the way a good root deepens the soil. Now, if you will excuse me, I have a treatise to begin. Chapter one is on the husk. Chapter two is also on the husk.',
+        responses: ['Leave.'],
+      });
+      return true;
+    }
     if (effect.tobyAccept) {
       startQuest('toby_net');
       ui.updateDialogContent({ line: 'Much obliged. The lines are still out, at least — I’m not entirely useless without a net.', responses: ['Leave.'] });
@@ -2498,9 +2542,10 @@ async function boot() {
   }
 
   // An item is "usable" (gets a Use action + the battle Use slot) if it has any
-  // consume-on-use effect: heal (HP), restoreMagic (MP), or vitality (max HP).
+  // consume-on-use effect: heal (HP), restoreMagic (MP), vitality (max HP), or
+  // arcana (max MP, 2026-10-10).
   function isConsumable(def) {
-    return !!(def && (def.heal || def.restoreMagic || def.vitality));
+    return !!(def && (def.heal || def.restoreMagic || def.vitality || def.arcana));
   }
 
   // Shared by the Items-tab "Use" action and the battle Potion action —
@@ -2536,6 +2581,19 @@ async function boot() {
       stats.health += def.vitality;
       ui.updateHud(stats);
       return { ok: true, message: `You drink a ${def.name}. Maximum health increased by ${def.vitality}!` };
+    }
+    if (def.arcana) {
+      // Permanent max-magic boost (2026-10-10, the Arcana Potion) — the magic
+      // twin of vitality. The new point fills in immediately, and the HUD's
+      // magic bar is revealed for good if it was still hidden (it normally
+      // waits for the first magic-cost weapon), since raising a stat the
+      // player can't see would read as nothing happening.
+      removeItem(itemId, 1);
+      stats.magicMax += def.arcana;
+      stats.magic += def.arcana;
+      if (!magicRevealed) { magicRevealed = true; ui.setMagicBarVisible(true); }
+      ui.updateHud(stats);
+      return { ok: true, message: `You drink an ${def.name}. Maximum magic increased by ${def.arcana}!` };
     }
     return { ok: false, message: 'Nothing happens.' };
   }
@@ -3538,6 +3596,73 @@ async function boot() {
 
   // Toby's net quest: bring him 2 Trout to tide his family over (his net's
   // torn, the culprit unnamed — seeds a future encounter, per CLAUDE.md).
+  // ---- Mateo Avellaneda (C3, 2026-10-10) ----
+  // A forager in the upper-left clearing of Hallowmere Forest who cannot stop
+  // talking about chestnuts: what they mean, what they teach, how the world
+  // turns on them. The player mostly wants him to stop. He wants ten.
+  // "Tell me more about chestnuts." cycles through MATEO_RHAPSODIES, offering
+  // "Tell me another." and "Please stop." (which drops back to his menu).
+  // Session-only state: whether he's already introduced himself this session
+  // (so a reopened dialog doesn't re-run the full opener) and which rhapsody
+  // comes next. Neither needs saving; the quest status carries the real state.
+  const MATEO_NEEDED = 10;
+  let mateoMet = false;
+  let mateoLectureIndex = 0;
+  const MATEO_RHAPSODIES = [
+    'The chestnut is a fortress that falls on purpose. Think on it! Armored in spines, it guards its heart with everything it has — and then, when the moment is right, it simply lets go. There is a whole philosophy of kingship in that, if kings would only listen. They will not. Kings never eat enough chestnuts.',
+    'Roast one and the shell splits along the very line it was always going to split along. Nothing in this world breaks at random, friend. Everything has its seam. The chestnut is simply honest enough to show you where.',
+    'Starch for the body, oil for the lamp, flour for the lean months, timber that will not rot in the rain. One tree feeds a village, lights it, and roofs it. And still people plant apple trees. Apple trees! For the sake of a crunch.',
+    'Squirrels bury more chestnuts than they will ever find again. That is not forgetfulness — that is how forests are planted. Every great wood began as a small animal’s mistake. I find that enormously comforting. You look as though you do not.',
+    'In the old tongue the word for chestnut and the word for patience were the same word. I cannot prove this. Nobody has ever disproved it either, which I consider a point in my favor.',
+    'Hold one up to the light. That gloss is not polish, it is a year of weather, folded down to the size of a thumb. Spring, summer, the long gold of the fall, all of it in your palm. You are holding time, friend. Mind you do not drop it.',
+  ];
+  // `returning`: back from a rhapsody ("Please stop.") or a declined offer, so
+  // skip the big entrance and pick up where things left off.
+  function buildMateoDialog(returning = false) {
+    const status = questStatus('mateo_chestnuts');
+    const have = inventory.find((it) => it.id === 'chestnut')?.qty || 0;
+    if (status === 'completed') {
+      return {
+        line: returning
+          ? '…Of course. Forgive me. The chestnut moves me, and I let it.'
+          : 'The treatise grows! Forty pages on the husk alone. Would you like to hear the opening? No? Of course not. But the chestnuts would.',
+        responses: ['Tell me more about chestnuts.', 'Leave.'],
+        responseEffects: [{ mateoLecture: true }, null],
+      };
+    }
+    if (status === 'active') {
+      if (have >= MATEO_NEEDED) {
+        return {
+          line: 'Is that — do I smell — ten! TEN! Oh, the weight of them. Oh, the quiet of them.',
+          responses: ['Here. Ten chestnuts.', 'Tell me more about chestnuts.', 'Not yet.'],
+          responseEffects: [{ mateoTurnIn: true }, { mateoLecture: true }, null],
+        };
+      }
+      const left = MATEO_NEEDED - have;
+      const line = returning
+        ? `…Of course. Forgive me. The chestnut moves me, and I let it. ${left} more, friend.`
+        : have === 0
+          ? 'Empty-handed, but not empty-hearted, I hope. Ten chestnuts, friend. The forest is generous to those who look down.'
+          : `${have} chestnut${have === 1 ? '' : 's'}! I can hear them from here, knocking together like a small applause. ${left} more and the treatise begins.`;
+      return {
+        line,
+        responses: ['Tell me more about chestnuts.', 'Leave.'],
+        responseEffects: [{ mateoLecture: true }, null],
+      };
+    }
+    // Not started yet.
+    let line;
+    if (returning) line = 'Where were we? Ah — chestnuts. We are always, in the end, at chestnuts.';
+    else if (mateoMet) line = 'You came back! The chestnuts said you would. Well — they implied it.';
+    else line = 'Ah — a traveler! Stand still a moment, the light is perfect. Do you know what you are standing beneath? The chestnut, mother of the forest floor. Every spined husk up there holds the whole turning of the year in one brown heart: the green of spring, the sweat of summer, the generosity of the fall. Mateo Avellaneda, at your service, and at theirs.';
+    mateoMet = true;
+    return {
+      line,
+      responses: ['What do you want, exactly?', 'Tell me more about chestnuts.', 'Leave.'],
+      responseEffects: [{ mateoOffer: true }, { mateoLecture: true }, null],
+    };
+  }
+
   function buildTobyDialog() {
     // One-time thank-you from Lily's father (2026-09-10): fires the FIRST
     // time the player talks to him after she's got her gull back — he's
@@ -3741,6 +3866,7 @@ async function boot() {
     else if (npc.id === 'lily_farrow') dialog = buildLilyDialog();
     else if (npc.id === 'ysra_nineshells') dialog = buildYsraDialog();
     else if (npc.id === 'lakewarden') dialog = buildLakewardenDialog();
+    else if (npc.id === 'mateo_avellaneda') dialog = buildMateoDialog();
     else if (npc.id === 'bramblekin_chief') dialog = buildChiefDialog();
     else if (npc.bramblekin) dialog = buildBramblekinDialog(npc);
     else if (npc.vendor) dialog = buildVendorDialog(npc); // adds its own chatter
@@ -4077,6 +4203,8 @@ async function boot() {
     const stats = [];
     if (def.heal) stats.push({ label: 'Heals', value: `${def.heal}`, tone: 'pos' });
     if (def.restoreMagic) stats.push({ label: 'Magic', value: `+${def.restoreMagic}`, tone: 'pos' });
+    if (def.vitality) stats.push({ label: 'Max Health', value: `+${def.vitality}`, tone: 'pos' });
+    if (def.arcana) stats.push({ label: 'Max Magic', value: `+${def.arcana}`, tone: 'pos' });
     stats.push({ label: 'Held', value: `${count}` });
     return { name: def.name, desc: def.description || '', stats };
   }

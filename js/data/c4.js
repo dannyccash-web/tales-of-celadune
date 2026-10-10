@@ -387,7 +387,27 @@ export default {
     { x: 851, y: 488 },
   ],
 
-  interactables: [],
+  interactables: [
+    // Chestnuts (2026-10-10) for Mateo Avellaneda's quest (C3). Plain item
+    // pickups, same shape as the shiny gold glints. Each spot is standable,
+    // reachable from spawn, at the edge of tree cover, and outside every
+    // enemy's aggro/ambush range (checked by script against this scene's
+    // real obstacles).
+    {
+      id: 'c4_chestnut_1',
+      x: 890, y: 1175, w: 125, h: 125,
+      label: 'A fallen chestnut',
+      reward: { item: 'chestnut', qty: 1 },
+      message: 'You pick up a chestnut.',
+    },
+    {
+      id: 'c4_chestnut_2',
+      x: 1050, y: 2250, w: 125, h: 125,
+      label: 'A fallen chestnut',
+      reward: { item: 'chestnut', qty: 1 },
+      message: 'You pick up a chestnut.',
+    },
+  ],
 
   // A fishing spot on the west river bank (2026-08-02, Danny). Sits on the
   // water; the player fishes from the reachable bank ~20px east (within the

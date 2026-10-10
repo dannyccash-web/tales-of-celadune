@@ -213,6 +213,33 @@ const ITEMS = {
     vitality: 1,
     price: 32,
   },
+  // Arcana Potion (2026-10-10) — the magic twin of the Vitality Potion:
+  // `arcana` permanently raises maximum magic by its amount (main.js's
+  // usePotion). Drinking one also reveals the HUD's magic bar if it was still
+  // hidden, since raising an invisible stat would read as nothing happening.
+  // Mateo Avellaneda's reward for ten chestnuts (C3).
+  arcana_potion: {
+    id: 'arcana_potion',
+    name: 'Arcana Potion',
+    image: 'assets/images/arcana_potion.png',
+    description: 'A rare violet draught that deepens the well of the spirit — permanently raises maximum magic by 1.',
+    questItem: false,
+    slot: 'item',
+    arcana: 1,
+    price: 32,
+  },
+  // Chestnut (2026-10-10). Found on the ground in C3, C4 and D4, one in each
+  // town's general store. Mateo Avellaneda (C3) wants ten. Edible, too.
+  chestnut: {
+    id: 'chestnut',
+    name: 'Chestnut',
+    image: 'assets/images/chestnut.png',
+    description: 'A glossy brown chestnut, fallen from the branch. Restores a little health — though Mateo Avellaneda would weep to see it eaten.',
+    questItem: false,
+    slot: 'item',
+    heal: 1,
+    price: 1,
+  },
   bread: {
     id: 'bread',
     name: 'Bread',

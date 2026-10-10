@@ -99,6 +99,13 @@ export default {
   // are what make it worth the trip. NO turn-in exists yet: Kingsreach is
   // overworld B3, which isn't built, so this stays active as a northward pull.
   // Wire the completion to whoever ends up reading it there.
+  // Mateo Avellaneda (C3, 2026-10-10). State-built dialogue in main.js
+  // (buildMateoDialog). Turn in ten chestnuts for an Arcana Potion.
+  mateo_chestnuts: {
+    id: 'mateo_chestnuts',
+    name: 'Ten Chestnuts for Mateo',
+    description: 'Mateo Avellaneda of Hallowmere Forest wants ten chestnuts, and will explain why at any length you allow. They fall in the woods; the general stores sometimes carry one.',
+  },
   kingsreach_rock: {
     id: 'kingsreach_rock',
     name: 'A Stone Without a Name',

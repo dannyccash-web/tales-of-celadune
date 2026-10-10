@@ -494,6 +494,25 @@ export default {
   entrances: [],
 
   interactables: [
+    // Chestnuts (2026-10-10) for Mateo Avellaneda's quest (C3). Plain item
+    // pickups, same shape as the shiny gold glints. Each spot is standable,
+    // reachable from spawn, at the edge of tree cover, and outside every
+    // enemy's aggro/ambush range (checked by script against this scene's
+    // real obstacles).
+    {
+      id: 'd4_chestnut_1',
+      x: 1185, y: 980, w: 125, h: 125,
+      label: 'A fallen chestnut',
+      reward: { item: 'chestnut', qty: 1 },
+      message: 'You pick up a chestnut.',
+    },
+    {
+      id: 'd4_chestnut_2',
+      x: 750, y: 2150, w: 125, h: 125,
+      label: 'A fallen chestnut',
+      reward: { item: 'chestnut', qty: 1 },
+      message: 'You pick up a chestnut.',
+    },
     {
       id: 'shiny-deadend-south',
       x: 1298, y: 2563, w: 125, h: 125,

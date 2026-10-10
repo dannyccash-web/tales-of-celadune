@@ -155,6 +155,9 @@ export const DIALOGUE_SFX = {
   // coming out of a deep hood. M1 (mrstokes) would have been the obvious
   // pick tonally but already carries 8 of the game's men.
   lakewarden: 'assets/audio/universfield-muffled-reaction-242214.mp3',
+  // Mateo Avellaneda (2026-10-10) — a male clip with only one other owner
+  // (Skitter, C1), so the two are never heard back to back.
+  mateo_avellaneda: 'assets/audio/pacomoya-eh-13143.mp3',
 };
 
 // ---- Volume controls (wired to the Menu > Audio sliders) ----
