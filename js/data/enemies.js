@@ -197,7 +197,7 @@ export default {
     damage: { min: 1, max: 2 },
     background: 'assets/images/beach_background.jpg', // battle backdrop (2026-07-25)
     poisonable: true,
-    drops: { gold: { min: 4, max: 8 }, loot: [{ id: 'fishing_bait', chance: 1 }] },
+    drops: { gold: { min: 4, max: 8 }, loot: [{ id: 'fishing_bait', chance: 0.50 }] },
   },
 
   // Cragclaw Queen (D1B cave, 2026-07-26) — the big one guarding Calder's
@@ -220,7 +220,7 @@ export default {
     // count is deliberately limited to fixed placements (the D1B chest + the
     // apothecary's stock), not random loot. ALWAYS drops her eggs (2026-07-31,
     // Danny) — a basic curio that does nothing yet.
-    drops: { gold: { min: 11, max: 19 }, loot: [{ id: 'queen_cragclaw_eggs', chance: 1 }] },
+    drops: { gold: { min: 11, max: 19 }, loot: [{ id: 'queen_cragclaw_eggs', chance: 1 }, { id: 'fishing_bait', chance: 0.50 }] }, // bait added 2026-10-10
   },
 
   // Mireman (D1, 2026-07-25) — an unseen bog-thing that rises from the mire
@@ -238,7 +238,7 @@ export default {
     damage: { min: 1, max: 2 }, // was {1,3} then {0,2} -- Danny asked for 1-2 specifically (a landed hit still stings a little, never a true 0)
     background: 'assets/images/beach_background.jpg', // battle backdrop (2026-07-25)
     poisonable: true,
-    drops: { gold: { min: 3, max: 7 }, loot: [{ id: 'health_potion', chance: 0.25 }] },
+    drops: { gold: { min: 3, max: 7 }, loot: [{ id: 'health_potion', chance: 0.25 }, { id: 'fishing_bait', chance: 0.50 }] }, // bait added 2026-10-10
   },
 
   // Rootweaver (D4 shortcut ambushes, 2026-07-11) — a deliberate "too tough
