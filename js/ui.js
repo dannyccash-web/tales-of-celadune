@@ -1865,7 +1865,10 @@ export function showBattleActions(slots) {
     if (cfg.image) {
       img.src = cfg.image;
       img.classList.remove('hidden');
+      // Enchanted weapons glow here exactly as in the inventory (2026-10-10).
+      applyItemGlow(img, cfg);
     } else {
+      applyItemGlow(img, null);
       img.classList.add('hidden');
       img.removeAttribute('src');
     }

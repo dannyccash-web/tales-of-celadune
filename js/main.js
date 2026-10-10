@@ -442,6 +442,8 @@ async function boot() {
     'assets/images/bramblekin_camp.jpg',
     'assets/images/beach_background.jpg', // cragclaw/mireman battle backdrop (2026-07-25)
     'assets/images/cave_background.jpg', // cave battle backdrop (2026-07-26)
+    'assets/images/boat_background.jpg', // Maiden's Grace deck fights, C1 (2026-10-10)
+    'assets/images/boat_background_2.jpg', // Maiden's Grace below-deck fights, C1C/C1D (2026-10-10)
     'assets/images/marisol_rusk_painting.png', // shown large in the shipwreck catch-reveal
     'assets/images/metallic_ore.png', // shown large in the cave-ore catch-reveal
     'assets/images/gull.png', // Lily's gull (C1B) — shown large in its own catch-reveal
@@ -593,6 +595,8 @@ async function boot() {
     // Same idea for C3: a save made after a crossing must find the raft (and
     // the Lakewarden standing on it) at the dock the player left it at.
     if (id === 'C3') applyFerrySide();
+    // Lily's gull is gone from Ysra's cave if the player gave up on it (2026-10-10).
+    if (id === 'C1B') applyGullSacrifice();
     // Mara Hollowmast doesn't appear in town until rescued from C1D (2026-09-12)
     // - reuses `.defeated` purely as a presence gate (world.js: a defeated npc
     // "doesn't render, collide, aggro, or take interaction", exactly what
@@ -1531,6 +1535,8 @@ async function boot() {
     // of her own to pay with — just a "mysterious" rock from the beach —
     // which is what actually completes the quest.
     if (effect.lilyTurnIn) {
+      const lilyQ = quests.find((q) => q.id === 'c1_lily_gull');
+      if (lilyQ && lilyQ.status === 'failed') lilyQ.status = 'active'; // late rescue after giving up
       removeItem('lily_gull', 1, true);
       addItem('mysterious_rock', 1, true);
       ui.showReceivedItem(ITEMS.mysterious_rock);
@@ -2013,6 +2019,25 @@ async function boot() {
     };
   }
 
+  // He comes to YOU (2026-10-10, Danny: "travel back and forth to whichever
+  // dock the player is standing on" — otherwise the player can be stranded on
+  // the shore the raft isn't at). Walking onto the dock the raft ISN'T at
+  // sends him poling over EMPTY: same timed lerp as a real crossing, but the
+  // board/land phases are skipped and the player is never moved or locked, so
+  // they just wait on the dock (or wander off) while he comes. Checked every
+  // frame on C3 from the frame loop.
+  const FERRY_CALL_RANGE = 170; // px from a dock's landing point that counts as "on the dock"
+  function maybeCallFerry() {
+    if (ferry || currentSceneId !== 'C3') return;
+    const lw = lakewardenNpc(), raft = ferryRaft();
+    if (!lw || !raft) return;
+    const other = ferrySide === 'island' ? 'mainland' : 'island';
+    const land = FERRY_DOCKS[other].land;
+    if (Math.hypot(world.player.x - land.x, world.player.y - land.y) > FERRY_CALL_RANGE) return;
+    ferry = { from: ferrySide === 'island' ? 'island' : 'mainland', to: other, phase: 0, t: 0, walking: false, empty: true };
+    ui.toast('The Lakewarden sees you on the dock and poles his raft across to meet you.');
+  }
+
   // Smoothstep, so the raft eases off the dock and settles against the far one
   // instead of starting and stopping dead.
   const ease = (u) => u * u * (3 - 2 * u);
@@ -2022,11 +2047,17 @@ async function boot() {
     if (!ferry) return;
     const A = FERRY_DOCKS[ferry.from], B = FERRY_DOCKS[ferry.to];
     const p = world.player, lw = lakewardenNpc(), raft = ferryRaft();
-    if (!lw || !raft) { ferry = null; return; } // scene swapped out mid-crossing
+    if (!lw || !raft) { // scene swapped out mid-crossing
+      if (ferry.empty) ferrySide = ferry.to; // he still gets where he was going
+      ferry = null; return;
+    }
 
     ferry.t += dt;
     let phase = FERRY_PHASES[ferry.phase];
-    while (phase && ferry.t >= phase.s) {
+    // An empty crossing (he's coming to fetch the player) only poles across.
+    const skip = (ph) => ferry.empty && ph && (ph.name === 'board' || ph.name === 'land');
+    while (phase && (ferry.t >= phase.s || skip(phase))) {
+      if (skip(phase)) { ferry.phase += 1; phase = FERRY_PHASES[ferry.phase]; continue; }
       ferry.t -= phase.s;
       ferry.phase += 1;
       phase = FERRY_PHASES[ferry.phase];
@@ -2047,9 +2078,11 @@ async function boot() {
       const bob = Math.sin(ferry.t * 2.2) * FERRY_BOB;
       raft.x = lerp(A.raft.x, B.raft.x, u);   raft.y = lerp(A.raft.y, B.raft.y, u) + bob;
       lw.x = lerp(A.warden.x, B.warden.x, u); lw.y = lerp(A.warden.y, B.warden.y, u) + bob;
-      p.x = lerp(A.ride.x, B.ride.x, u);      p.y = lerp(A.ride.y, B.ride.y, u) + bob;
-      // Face the way the raft is going, so the player isn't riding backwards.
-      p.rotation = (B.raft.x > A.raft.x ? -1 : 1) * (Math.PI / 2);
+      if (!ferry.empty) {
+        p.x = lerp(A.ride.x, B.ride.x, u);      p.y = lerp(A.ride.y, B.ride.y, u) + bob;
+        // Face the way the raft is going, so the player isn't riding backwards.
+        p.rotation = (B.raft.x > A.raft.x ? -1 : 1) * (Math.PI / 2);
+      }
     } else if (phase.name === 'land') {
       raft.x = B.raft.x; raft.y = B.raft.y;
       lw.x = B.warden.x; lw.y = B.warden.y;
@@ -2058,8 +2091,9 @@ async function boot() {
       p.rotation = Math.atan2(B.land.y - B.ride.y, B.land.x - B.ride.x) - Math.PI / 2;
       ferry.walking = true;
     } else if (phase.name === 'rest') {
-      p.x = B.land.x; p.y = B.land.y;
+      if (!ferry.empty) { p.x = B.land.x; p.y = B.land.y; }
     }
+    if (ferry.empty) return; // the player is walking freely — leave their state alone
     // Keep the walk-flip mirroring running while the player is actually
     // stepping (world.update zeroes both every frame while input is locked).
     p.moving = ferry.walking;
@@ -2068,9 +2102,11 @@ async function boot() {
 
   function finishFerry() {
     const to = ferry.to;
+    const empty = ferry.empty;
     ferry = null;
     ferrySide = to;
     applyFerrySide();
+    if (empty) { requestAutosave(); return; } // he moved, the player didn't — no checkpoint
     const pose = FERRY_DOCKS[to];
     world.player.x = pose.land.x;
     world.player.y = pose.land.y;
@@ -2090,6 +2126,10 @@ async function boot() {
   const LAKEWARDEN_RETURN_MAINLAND = 'Back on my dock again. No charge this time, traveller — I said I’d take you across, and a Lakewarden’s word is the one thing that water hasn’t worn down yet. Climb aboard when you’re ready. Mind yourself in there, same as before.';
 
   function buildLakewardenDialog() {
+    // Still poling over to fetch the player (2026-10-10) — finish that first.
+    if (ferry) {
+      return { line: 'Patience, traveller. Let me tie off before you start climbing aboard.', responses: ['Leave.'] };
+    }
     if (ferrySide === 'island') {
       return {
         line: LAKEWARDEN_ISLAND,
@@ -3479,6 +3519,15 @@ async function boot() {
       return { line: 'You’re my hero, you know that? Papa still can’t believe you found her.', responses: ['Leave.'] };
     }
     if (status === 'failed') {
+      // Only reachable if Ysra was already dead when the player gave up, so
+      // the gull survived in her cave — let a late rescue still land.
+      if (inventory.some((it) => it.id === 'lily_gull')) {
+        return {
+          line: 'Is — is that — is that HER?! You said she was gone!',
+          responses: ['Here she is.', 'Not yet.'],
+          responseEffects: [{ lilyTurnIn: true }, null],
+        };
+      }
       return { line: '…I still look for her sometimes. Silly, I know. Thank you for trying, at least.', responses: ['Leave.'] };
     }
     if (status === 'active') {
@@ -3492,7 +3541,7 @@ async function boot() {
       if (inventory.some((it) => it.id === 'feather')) {
         return {
           line: 'Feathers? Just… feathers, and no gull? Papa says that means — no. No, it doesn’t mean anything. Does it? What do YOU think happened to her?',
-          responses: ['I only found feathers. I think she’s gone.', 'I’m not giving up — I’ll keep looking.'],
+          responses: ['(Give up) Tell her you only found feathers, no bird.', 'I’m not giving up — I’ll keep looking.'],
           responseEffects: [{ lilyGiveUp: true }, { lilyKeepLooking: true }],
         };
       }
@@ -3528,6 +3577,17 @@ async function boot() {
     if (live?.appeased) {
       return { line: 'I told you — get. This is still my cave.', responses: ['Leave.'] };
     }
+    // The player gave up on Lily's gull while Ysra still had it (2026-10-10,
+    // Danny): she's already fed it to the tide for power, and gloats straight
+    // into a fight — no talking her down this time.
+    if (live?.sacrificed) {
+      return {
+        line: 'Ysra spins out of the dark, the sea-glass on her staff blazing a sick, bright green — "Come for the little gull, have you? Too late, too LATE! The tide took her at the turning, and gave me back her every breath. Feel it? I have never been STRONGER. Let me show you!"',
+        responses: ['Draw your weapon.'],
+        responseEffects: [{ ysraAttack: true }],
+        lockDialog: true,
+      };
+    }
     return {
       line: 'A ragged woman rounds on you out of the dark, a knot of green sea-glass crackling at the head of her staff — "WHO GOES THERE?! Answer me, quick — why have you come into MY cave?!"',
       responses: ['(Say nothing.)', 'I’m looking for a lost gull.', `Here — take ${YSRA_PRICE} gold.`],
@@ -3545,6 +3605,21 @@ async function boot() {
       if (result === 'victory' && live) { live.defeated = true; saveGame({ checkpoint: true }); } // kill is permanent: live save AND death checkpoint (2026-09-12/2026-09-20)
       else if (result === 'fled' && live) { live.pause = 2; live._chasing = false; }
     }), 0);
+  }
+
+  // Gave up on Lily's gull while Ysra still lived? Then by the time the player
+  // reaches her cave the gull is gone — sacrificed for power (2026-10-10). Run
+  // on every C1B entry (enterScene). Hiding the gull marks it `collected`,
+  // which the save already persists; `sacrificed` itself is re-derived here
+  // each time, so it needs no save flag of its own. If Ysra was already dead
+  // when the quest failed, the gull survives and Lily will still take it.
+  function applyGullSacrifice() {
+    if (questStatus('c1_lily_gull') !== 'failed') return;
+    const live = world.npcs.find((n) => n.id === 'ysra_nineshells');
+    if (!live || live.defeated || live.appeased) return;
+    const gull = world.interactables.find((it) => it.id === 'c1b_gull');
+    if (gull && !gull.collected) gull.collected = true;
+    if (gull?.collected) live.sacrificed = true;
   }
 
   // Reaching for the gull, or her chest, while she's alive and not yet
@@ -3951,8 +4026,8 @@ async function boot() {
     const mainhandNoMagic = mainhand?.magicCost > 0 && stats.magic < mainhand.magicCost;
     const offhandNoMagic = offhand?.magicCost > 0 && stats.magic < offhand.magicCost;
     ui.showBattleActions({
-      mainhand: { image: mainhand?.image || 'assets/images/icon_fist.svg', disabled: mainhandNoMagic, detail: weaponDetailCard(mainhand) },
-      offhand: { image: offhand?.image || 'assets/images/icon_fist.svg', disabled: offhandNoMagic, detail: weaponDetailCard(offhand) },
+      mainhand: { image: mainhand?.image || 'assets/images/icon_fist.svg', glow: mainhand?.glow, disabled: mainhandNoMagic, detail: weaponDetailCard(mainhand) },
+      offhand: { image: offhand?.image || 'assets/images/icon_fist.svg', glow: offhand?.glow, disabled: offhandNoMagic, detail: weaponDetailCard(offhand) },
       // No magic system yet: a blank circle that's skipped when toggling
       // (2026-07-28 — re-added to the row per Danny's mockup as a placeholder).
       magic: { disabled: true },
@@ -4645,7 +4720,8 @@ async function boot() {
     // The C3 ferry locks the PLAYER only, like fishing — the cutscene drives
     // the player, the Lakewarden and the raft itself, so input has to be off
     // but the world must keep ticking (the camera follows the raft across).
-    const locked = modalLock || fishing || !!ferry;
+    const ridingFerry = !!ferry && !ferry.empty; // an empty crossing (he's fetching you) doesn't lock
+    const locked = modalLock || fishing || ridingFerry;
     // Camp membrane state (no-op in scenes without a camp): sealed until the
     // player has passage (paid this visit OR did the Chief's favor) — and never
     // sealed once the camp's hostile, since then the guards attack rather than
@@ -4668,13 +4744,14 @@ async function boot() {
     world.playerTorch = state.started && hasTorch;
     // Hide proximity labels while any modal (dialog/panel/battle/…) is open so
     // they don't render over the overlay (2026-07-28, the "Old Barn" label bug).
-    world.suppressLabels = modalLock || !!ferry; // no name labels floating over the crossing
+    world.suppressLabels = modalLock || ridingFerry; // no name labels floating over the crossing
     world.update(dt, input, locked, modalLock);
     // Runs AFTER world.update, which zeroes player.moving/walkTimer every frame
     // while input is locked — the cutscene sets both itself so the walk-flip
     // still plays while the player steps on and off the raft. One frame of
     // camera lag against the new position is imperceptible at 60fps.
-    updateFerry(dt);
+    if (!modalLock) maybeCallFerry();
+    if (!(ferry?.empty && modalLock)) updateFerry(dt); // a fetch pauses with the world; a ride never has a modal open
     world.render();
 
     audio.setWalking((!locked && world.player.moving) || !!ferry?.walking);
@@ -4725,7 +4802,9 @@ async function boot() {
       // camp one. Any OTHER pack (e.g. C1's ship miremen) falls through to
       // undefined, so startBattle's normal priority chain picks up that
       // enemy's own catalog background instead (miremen -> beach_background).
-      const bg = foe.pack === 'clearing_bramblekin' ? 'assets/images/forest_background.jpg' : undefined;
+      // A creature can name its own backdrop (2026-10-10: C1's deck miremen
+      // fight on boat_background.jpg); otherwise the pack/scene/enemy chain.
+      const bg = foe.battleBackground || (foe.pack === 'clearing_bramblekin' ? 'assets/images/forest_background.jpg' : undefined);
       startBattle(enemyIds, (result) => {
         if (result === 'victory') { foes.forEach((m) => { m.defeated = true; }); saveGame({ checkpoint: true }); } // kill is permanent: live save AND death checkpoint (2026-09-12/2026-09-20)
         // Fleeing a charging creature/guard: it stands down for 2s (world.js's

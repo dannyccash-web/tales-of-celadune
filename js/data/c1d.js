@@ -37,6 +37,8 @@ export default {
   spawn: { x: 1496, y: 1810 }, // 30px north of the up-ladder, mirroring C1C's own spawn-offset-from-ladder convention
   returns: 'C1C',
   music: 'cave',
+  // Fights below deck use the ship-interior battle backdrop (2026-10-10, Danny).
+  battleBackground: 'assets/images/boat_background_2.jpg',
   level: 2, // shows "Level 2" in the HUD's vertical indicator (see main.js's enterScene)
 
   obstacles: [

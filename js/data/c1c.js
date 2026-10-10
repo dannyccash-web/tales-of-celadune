@@ -69,6 +69,8 @@ export default {
 
   // Enclosed/underground-feeling space — same track as every cave/hold.
   music: 'cave',
+  // Fights below deck use the ship-interior battle backdrop (2026-10-10, Danny).
+  battleBackground: 'assets/images/boat_background_2.jpg',
 
   level: 1, // first level of the ship dungeon — see header comment
 

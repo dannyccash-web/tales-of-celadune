@@ -1038,6 +1038,7 @@ export default {
     {
       id: 'mireman_c1_1', name: 'Mireman', role: '',
       creature: true, enemyId: 'mireman', pack: 'ship_miremen',
+      battleBackground: 'assets/images/boat_background.jpg', // fights on the Maiden's Grace's deck (2026-10-10)
       sprite: 'assets/images/mireman_overhead.png',
       portrait: 'assets/images/mireman.png',
       x: 428, y: 1560, speed: 35, chaseSpeed: 140, aggroRange: 300, giveUpRange: 700, startsHome: false,
@@ -1046,6 +1047,7 @@ export default {
     {
       id: 'mireman_c1_2', name: 'Mireman', role: '',
       creature: true, enemyId: 'mireman', pack: 'ship_miremen',
+      battleBackground: 'assets/images/boat_background.jpg', // fights on the Maiden's Grace's deck (2026-10-10)
       sprite: 'assets/images/mireman_overhead.png',
       portrait: 'assets/images/mireman.png',
       x: 390, y: 1650, speed: 35, chaseSpeed: 140, aggroRange: 300, giveUpRange: 700, startsHome: false,

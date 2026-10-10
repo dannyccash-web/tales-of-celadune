@@ -197,7 +197,7 @@ export default {
     damage: { min: 1, max: 2 },
     background: 'assets/images/beach_background.jpg', // battle backdrop (2026-07-25)
     poisonable: true,
-    drops: { gold: { min: 4, max: 8 }, loot: [{ id: 'fishing_bait', chance: 0.50 }] },
+    drops: { gold: { min: 4, max: 8 }, loot: [{ id: 'fishing_bait', chance: 1 }] },
   },
 
   // Cragclaw Queen (D1B cave, 2026-07-26) — the big one guarding Calder's
