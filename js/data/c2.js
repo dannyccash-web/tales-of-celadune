@@ -106,8 +106,9 @@ export default {
   spawn: { x: 1400, y: 1230 },
 
   // No `music` key -> the generic overworld track (audio.js TRACKS.overworld).
-  // No `battleBackground` -> the thornback boar fights use that enemy's own
-  // grassland backdrop from the catalog.
+  // Every fight in C2 (thornback boars, Orris's highwaymen) uses this backdrop
+  // (2026-10-10, Danny).
+  battleBackground: 'assets/images/C2_Combat_Background.jpg',
 
   obstacles: [
     { x: 0, y: 0, w: 3000, h: 120 },

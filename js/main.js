@@ -444,6 +444,7 @@ async function boot() {
     'assets/images/cave_background.jpg', // cave battle backdrop (2026-07-26)
     'assets/images/boat_background.jpg', // Maiden's Grace deck fights, C1 (2026-10-10)
     'assets/images/boat_background_2.jpg', // Maiden's Grace below-deck fights, C1C/C1D (2026-10-10)
+    'assets/images/C2_Combat_Background.jpg', // every C2 fight (2026-10-10)
     'assets/images/marisol_rusk_painting.png', // shown large in the shipwreck catch-reveal
     'assets/images/metallic_ore.png', // shown large in the cave-ore catch-reveal
     'assets/images/gull.png', // Lily's gull (C1B) — shown large in its own catch-reveal
@@ -4599,13 +4600,21 @@ async function boot() {
   // 30% at Luck 2, and so on (capped at 70%). Roll the Moonscale first at that
   // boosted chance; otherwise fall through to the ordinary catches in their
   // original 50:30:10 weighting.
+  // Reworked 2026-10-10 (Danny: nobody was ever catching a boot). The boot
+  // used to be the last slice of the ORDINARY table, AFTER the luck-boosted
+  // Moonscale roll — so it was only ~8.9% at Luck 1 and every point of Luck
+  // shaved it further (7.8% at Luck 2). With bait capped at a handful per
+  // playthrough, about half of players never saw one. Now the boot is rolled
+  // FIRST at a flat BOOT_CHANCE that Luck never touches; Luck only trades
+  // ordinary fish for the Moonscale Trout.
+  //   Luck 1: boot 15%, Moonscale 17%, trout ~43%, bluegill ~26%
+  //   Luck 2: boot 15%, Moonscale ~26%, trout ~37%, bluegill ~22%
+  const BOOT_CHANCE = 15; // percent per cast, independent of Luck
   function rollCatch() {
+    if (Math.random() * 100 < BOOT_CHANCE) return 'old_boot';
     const moon = Math.min(70, 10 + luckChance() * 100); // luckChance()*100 = luck*10 percentage points
     if (Math.random() * 100 < moon) return 'rare_fish';
-    const r = Math.random() * 90;
-    if (r < 50) return 'trout';
-    if (r < 80) return 'bluegill';
-    return 'old_boot';
+    return Math.random() * 80 < 50 ? 'trout' : 'bluegill';
   }
 
   // Cast a line: spend one bait, splash the water, wait 10s, then reveal the
