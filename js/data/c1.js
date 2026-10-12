@@ -659,6 +659,13 @@ export default {
   fishingSpots: [
     { x: 647, y: 2724 },
   ],
+  // Saltwater catch table (2026-10-11, Danny): every cast here lands a sea
+  // bass (75%) or a crimson sailback (25%) — no boot, no Moonscale, and Luck
+  // doesn't shift it. Read by main.js's rollCatch.
+  fishingCatch: [
+    { id: 'sea_bass', weight: 75 },
+    { id: 'crimson_sailback', weight: 25 },
+  ],
 
   chests: [],
   battles: [],

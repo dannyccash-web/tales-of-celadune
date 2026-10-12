@@ -1501,16 +1501,16 @@ async function boot() {
     // ---- Tidewrack Harbor, C1 (2026-09-02) ----
     if (effect.perrinAccept) {
       startQuest('perrin_feast');
-      ui.updateDialogContent({ line: 'Bless you. Bring them when you have them — I’ll be right here, stretching what’s left of the larder.', responses: ['Leave.'] });
+      ui.updateDialogContent({ line: 'Ha! That’s the spirit. Cragclaw eggs and a crimson sailback — bring me both and I’ll have the pot on before you’ve shut the door.', responses: ['Leave.'] });
       return true;
     }
     if (effect.perrinTurnIn) {
       removeItem('queen_cragclaw_eggs', 1, true);
-      removeItem('bluegill', 2, true);
-      ui.showGaveItem(ITEMS.queen_cragclaw_eggs);
+      removeItem('crimson_sailback', 1, true);
+      ui.showGaveItem(ITEMS.crimson_sailback);
       addGold(15);
       completeQuest('perrin_feast');
-      ui.updateDialogContent({ line: 'Now THAT’S a stew worth ladling. Thank you, truly — this village hasn’t eaten this well since before the wreck.', responses: ['Leave.'] });
+      ui.updateDialogContent({ line: 'Look at the colour on that sailback. Into the pot it goes, eggs and all. By sundown this whole harbour’ll be crowded round my door with bowls in hand, and for one night nobody’ll be talking about that ship. Thank you, friend.', responses: ['Leave.'] });
       return true;
     }
     // ---- The Maiden's Grace lockbox (Roderick/Wynne, 2026-09-13) ----
@@ -1608,15 +1608,15 @@ async function boot() {
     }
     if (effect.tobyAccept) {
       startQuest('toby_net');
-      ui.updateDialogContent({ line: 'Much obliged. The lines are still out, at least — I’m not entirely useless without a net.', responses: ['Leave.'] });
+      ui.updateDialogContent({ line: 'You will? Thank you. Three sea bass. The water off the beach is still full of them, even if my net isn’t.', responses: ['Leave.'] });
       return true;
     }
     if (effect.tobyTurnIn) {
-      removeItem('trout', 2, true);
-      ui.showGaveItem(ITEMS.trout);
+      removeItem('sea_bass', 3, true);
+      ui.showGaveItem(ITEMS.sea_bass);
       addGold(6);
       completeQuest('toby_net');
-      ui.updateDialogContent({ line: 'There — that’ll do us. Whatever’s out there, I mean to find out eventually. Not tonight, though.', responses: ['Leave.'] });
+      ui.updateDialogContent({ line: 'Three good bass. That’s supper for us and the neighbours besides. It’s not much I can give you, but take it. Whatever tore my net is still out there, mind. Keep your eyes open on the water.', responses: ['Leave.'] });
       return true;
     }
     // ---- Lily Farrow's lost-gull quest (2026-09-10) ----
@@ -3482,32 +3482,34 @@ async function boot() {
   }
 
   // ---- Tidewrack Harbor, C1 (2026-09-02) ----
-  // Perrin's main quest: bring him 1 Cragclaw Eggs + 2 Bluegill and he'll feed
-  // the village. State-built like Calder/Mara — offer, active nudge, a
-  // turn-in that only appears once both ingredients are actually in hand.
+  // Perrin's main quest (reworked 2026-10-11, Danny): he wants to lift the
+  // harbour's spirits with his famous stew, and needs 1 Cragclaw Eggs + 1
+  // Crimson Sailback (a saltwater catch, 25% per cast in C1/D1). State-built
+  // like Calder/Mara: offer, active nudge, and a turn-in that only appears
+  // once both are actually in hand.
   function perrinHasIngredients() {
     const eggs = inventory.find((it) => it.id === 'queen_cragclaw_eggs')?.qty || 0;
-    const fish = inventory.find((it) => it.id === 'bluegill')?.qty || 0;
-    return eggs >= 1 && fish >= 2;
+    const fish = inventory.find((it) => it.id === 'crimson_sailback')?.qty || 0;
+    return eggs >= 1 && fish >= 1;
   }
   function buildPerrinDialog() {
     const status = questStatus('perrin_feast');
     if (status === 'completed') {
-      return { line: 'The whole village ate well that night, thanks to you. Best evening we’ve had since the wreck. Come by any time — there’s always a bowl for the one who saved the feast.', responses: ['Leave.'] };
+      return { line: 'They’re still talking about that stew down on the docks. First night since the Maiden’s Grace came in that I heard laughing in the street. Come by any time. There’s always a bowl for you.', responses: ['Leave.'] };
     }
     if (status === 'active' && perrinHasIngredients()) {
       return {
-        line: 'Is that… Cragclaw eggs? And bluegill besides? Bless you, that’s exactly what I need. Hand them over and I’ll have this village fed by nightfall.',
-        responses: ['Here — take them.', 'Not yet.'],
+        line: 'Cragclaw eggs AND a crimson sailback? Oh, you beauty. That’s my stew, right there in your arms. Hand them over and I’ll have this whole harbour fed and smiling by nightfall.',
+        responses: ['Here, take them.', 'Not yet.'],
         responseEffects: [{ perrinTurnIn: true }, { followUp: 'No rush. Just don’t let them spoil.', noBack: true }],
       };
     }
     if (status === 'active') {
-      return { line: 'Cragclaw eggs, and a couple of bluegill besides — bring me both and I’ll turn this thin larder into a proper feast. The eggs won’t be easy; the fish, less so if the lines aren’t biting.', responses: ['Leave.'] };
+      return { line: 'Cragclaw eggs and a crimson sailback, that’s all I need. The eggs you’ll have to take off a cragclaw. The sailback’s a sea fish, red as a sunset, and it bites off the beaches if you’re patient.', responses: ['Leave.'] };
     }
     return {
-      line: 'Six months since the wreck and the stores are down to salt and prayers. If I had a clutch of Cragclaw eggs — rich enough to stretch a stew — and a couple of good bluegill, I could feed this whole village a proper meal. Would you help an old cook out?',
-      responses: ['I’ll see what I can find.', 'Leave.'],
+      line: 'Look around you. Long faces, every one. The Maiden’s Grace drifts in full of miremen and dead men, and the whole harbour’s been holding its breath ever since. What this town needs is a bowl of my stew. Famous for it, I am. But it wants two things I haven’t got: a clutch of Cragclaw eggs, and a crimson sailback. Bring me those and I’ll lift every spirit in Tidewrack.',
+      responses: ['I’ll find them for you.', 'Leave.'],
       responseEffects: [{ perrinAccept: true }, null],
     };
   }
@@ -3674,24 +3676,30 @@ async function boot() {
         responses: ['Leave.'],
       };
     }
+    // Reworked 2026-10-11 (Danny): something tore through his net and his
+    // whole catch got away. Wants three sea bass (75% per cast at the sea
+    // spots in C1/D1).
     const status = questStatus('toby_net');
-    const trout = inventory.find((it) => it.id === 'trout')?.qty || 0;
+    const bass = inventory.find((it) => it.id === 'sea_bass')?.qty || 0;
     if (status === 'completed') {
-      return { line: 'Line’s set. Might be weeks before I can afford a proper net again, but you kept my family fed in the meantime. Won’t forget it.', responses: ['Leave.'] };
+      return { line: 'I’ve got the net half mended. Couple more nights and I’ll be back out. You kept us fed through the worst of it, and I won’t forget that.', responses: ['Leave.'] };
     }
-    if (status === 'active' && trout >= 2) {
+    if (status === 'active' && bass >= 3) {
       return {
-        line: 'Trout, is it? That’ll more than cover what the net would’ve brought in. Bless you, truly.',
+        line: 'Is that sea bass? Three of them? You’ve no idea what that means to us right now.',
         responses: ['Here, take them.', 'Not yet.'],
         responseEffects: [{ tobyTurnIn: true }, { followUp: 'Whenever you’re ready.', noBack: true }],
       };
     }
     if (status === 'active') {
-      return { line: 'Still no net, and the lines only catch so much on their own. A couple of trout would tide us over, if you’ve had any luck.', responses: ['Leave.'] };
+      const left = 3 - bass;
+      return { line: bass > 0
+        ? `That’s ${bass} so far. ${left === 1 ? 'One more' : 'Two more'} and we’ll eat tonight.`
+        : 'Any luck? Three sea bass is all I’m asking. You’ll find them off the beaches if you’ve got a rod and some bait.', responses: ['Leave.'] };
     }
     return {
-      line: 'Something took my net clean off its stakes three nights back — snapped the stakes right out of the sand. I didn’t stay to see what. Can’t afford a new one, not with the ship still sitting there empty-handed. If you land a couple of trout, I’d take it as a kindness — we’re stretched thin till I can mend this.',
-      responses: ['I’ll bring you some trout.', 'Leave.'],
+      line: 'Look at this. Look at it! Something came through my net last night and tore it clean in half. A whole night’s catch, gone back to the sea. This town was already scraping by. The Maiden’s Grace drifted in full of miremen, her crew dead or gone, and every crate she was carrying with them. Without my catch there’s hardly anything left to eat. If you could bring me three sea bass, it’d keep us going till I can mend this.',
+      responses: ['I’ll bring you three sea bass.', 'Leave.'],
       responseEffects: [{ tobyAccept: true }, null],
     };
   }
@@ -4802,6 +4810,16 @@ async function boot() {
   //   Luck 2: boot 15%, Moonscale ~26%, trout ~37%, bluegill ~22%
   const BOOT_CHANCE = 15; // percent per cast, independent of Luck
   function rollCatch() {
+    // A scene can carry its own weighted catch table (2026-10-11: the sea
+    // spots in C1/D1 — sea bass 75%, crimson sailback 25%). It replaces the
+    // freshwater table entirely: no boot, no Moonscale, no Luck.
+    const table = world.scene.fishingCatch;
+    if (table && table.length) {
+      const total = table.reduce((s, e) => s + e.weight, 0);
+      let r = Math.random() * total;
+      for (const e of table) { if ((r -= e.weight) < 0) return e.id; }
+      return table[table.length - 1].id;
+    }
     if (Math.random() * 100 < BOOT_CHANCE) return 'old_boot';
     const moon = Math.min(70, 10 + luckChance() * 100); // luckChance()*100 = luck*10 percentage points
     if (Math.random() * 100 < moon) return 'rare_fish';

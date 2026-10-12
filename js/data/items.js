@@ -347,6 +347,24 @@ const ITEMS = {
     description: 'A small, scrappy bluegill. Not much meat, but it fries up fine.',
     price: 6,
   },
+  // Saltwater catches (2026-10-11, Danny). Only the sea spots in C1 and D1
+  // land these (see those scenes' fishingCatch tables): sea bass 75%,
+  // crimson sailback 25%. Toby Farrow wants three sea bass; Perrin Alders
+  // wants a crimson sailback for his stew.
+  sea_bass: {
+    id: 'sea_bass',
+    name: 'Sea Bass',
+    image: 'assets/images/fish_seabass.png',
+    description: 'A solid, silver-grey sea bass. Good eating, and the backbone of every supper in Tidewrack.',
+    price: 8,
+  },
+  crimson_sailback: {
+    id: 'crimson_sailback',
+    name: 'Crimson Sailback',
+    image: 'assets/images/fish_crimson_sailback.png',
+    description: 'A striking red fish with a tall, sail-like fin. Harder to land than a bass, and prized by cooks.',
+    price: 14,
+  },
   old_boot: {
     id: 'old_boot',
     name: 'Old Boot',

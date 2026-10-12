@@ -76,12 +76,12 @@ export default {
   perrin_feast: {
     id: 'perrin_feast',
     name: 'A Feast for Tidewrack',
-    description: 'Perrin the cook is nearly out of stores. Bring him Cragclaw eggs and a couple of bluegill so he can feed the village.',
+    description: 'Perrin wants to lift Tidewrack’s spirits with his famous stew. Bring him Cragclaw eggs and a Crimson Sailback.',
   },
   toby_net: {
     id: 'toby_net',
     name: 'Something in the Water',
-    description: 'Toby Farrow lost his fishing net to something in the water. Bring him a couple of trout to tide his family over.',
+    description: 'Something tore through Toby Farrow’s net and his whole catch got away. Bring him three sea bass so Tidewrack has something to eat.',
   },
   // Lily Farrow's lost gull (2026-09-10) — replaces the old plain-gold
   // "flash of grey and white" collectible with a real quest: a feather trail

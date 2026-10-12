@@ -507,6 +507,21 @@ export default {
   // south end of the beach — 18 gold and a few common supplies. Opening it needs
   // a lockpick; once emptied it's removed. State (locked/looted) persists via the
   // save system.
+  // Two sea fishing spots (2026-10-11, Danny — D1 had none). Both sit in open
+  // water just off the beach, within FISH_SPOT_RANGE (281) of walkable sand
+  // (engine BFS from spawn: nearest reachable ground ~145px and ~103px away):
+  // one on the north beach above the wreck, one at the south-west tip of the
+  // beach by the rocky headland.
+  fishingSpots: [
+    { x: 680, y: 630 },
+    { x: 120, y: 2140 },
+  ],
+  // Same saltwater table as C1 — sea bass 75%, crimson sailback 25%.
+  fishingCatch: [
+    { id: 'sea_bass', weight: 75 },
+    { id: 'crimson_sailback', weight: 25 },
+  ],
+
   chests: [
     {
       id: 'd1_beach_chest',
