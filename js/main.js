@@ -568,6 +568,7 @@ async function boot() {
       const n = w.npcs.find((x) => x.id === s.id);
       if (!n) return;
       if (s.stockLeft) n.stockLeft = { ...s.stockLeft };
+      if (s.stockBase) n.stockBase = { ...s.stockBase };
       if (s.resale) n.resale = { ...s.resale };
       if (s.gold != null) n.gold = s.gold;
     });
@@ -886,7 +887,7 @@ async function boot() {
         // (npc.stockLeft), items resold to the vendor (npc.resale), and the
         // vendor's own coin (npc.gold) — so a shop you've bought out STAYS
         // bought out across a save/reload, no farming the same limited stock.
-        vendors: w.npcs.filter((n) => n.vendor).map((n) => ({ id: n.id, stockLeft: n.stockLeft, resale: n.resale, gold: n.gold })),
+        vendors: w.npcs.filter((n) => n.vendor).map((n) => ({ id: n.id, stockLeft: n.stockLeft, stockBase: n.stockBase, resale: n.resale, gold: n.gold })),
         // Chest state (2026-07-24): unlocked/emptied flags + remaining loot, so a
         // picked-open or half-looted chest returns exactly as left it.
         chests: (w.chests || []).map((c) => ({ id: c.id, locked: c.locked, gold: c.gold, items: c.items, emptied: c.emptied })),
@@ -1507,10 +1508,13 @@ async function boot() {
     if (effect.perrinTurnIn) {
       removeItem('queen_cragclaw_eggs', 1, true);
       removeItem('crimson_sailback', 1, true);
-      ui.showGaveItem(ITEMS.crimson_sailback);
-      addGold(15);
+      // Reward reworked 2026-10-11 (Danny): a crock of the stew itself plus a
+      // Vitality Potion, instead of the old 15 gold.
+      addItem('seafood_stew', 1, true);
+      addItem('vitality_potion', 1);
+      ui.showReceivedItem(ITEMS.seafood_stew);
       completeQuest('perrin_feast');
-      ui.updateDialogContent({ line: 'Look at the colour on that sailback. Into the pot it goes, eggs and all. By sundown this whole harbour’ll be crowded round my door with bowls in hand, and for one night nobody’ll be talking about that ship. Thank you, friend.', responses: ['Leave.'] });
+      ui.updateDialogContent({ line: 'Look at the colour on that sailback. Into the pot it goes, eggs and all. By sundown this whole harbour’ll be crowded round my door with bowls in hand, and for one night nobody’ll be talking about that ship. Here, the first crock’s yours. Don’t mind the smell, everyone says it smells like low tide in a boot. One bowl and you’ll be right as rain. And take this Vitality Potion too. A traveller paid for a winter of suppers with it, and you’ve earned it more than I have. (Received a Vitality Potion.)', responses: ['Leave.'] });
       return true;
     }
     // ---- The Maiden's Grace lockbox (Roderick/Wynne, 2026-09-13) ----
@@ -2542,7 +2546,7 @@ async function boot() {
   // consume-on-use effect: heal (HP), restoreMagic (MP), vitality (max HP), or
   // arcana (max MP, 2026-10-10).
   function isConsumable(def) {
-    return !!(def && (def.heal || def.restoreMagic || def.vitality || def.arcana));
+    return !!(def && (def.heal || def.fullHeal || def.restoreMagic || def.vitality || def.arcana));
   }
 
   // Shared by the Items-tab "Use" action and the battle Potion action —
@@ -2556,6 +2560,14 @@ async function boot() {
     const entry = inventory.find((it) => it.id === itemId);
     if (!entry || entry.qty < 1) return { ok: false, message: 'You have none of those.' };
     const def = ITEMS[itemId];
+    if (def.fullHeal) {
+      // Perrin's Seafood Stew (2026-10-11): straight back to full health.
+      const before = stats.health;
+      removeItem(itemId, 1);
+      stats.health = stats.healthMax;
+      ui.updateHud(stats);
+      return { ok: true, message: `You hold your nose and eat ${def.name}. +${stats.health - before} health — you’re fully restored.` };
+    }
     if (def.heal) {
       const before = stats.health;
       removeItem(itemId, 1);
@@ -3184,8 +3196,20 @@ async function boot() {
       if (questStatus(q.questId) === 'completed') stockList.push({ id: q.id, qty: q.qty ?? Infinity });
     }
     npc.stockLeft = npc.stockLeft || {};
+    // stockBase (2026-10-11) remembers the stock size each count was seeded
+    // from, so raising a vendor's stock in scene data tops up saves that had
+    // already opened the shop (they'd otherwise keep the old, depleted
+    // count). Saves from before stockBase existed fall back to the entry's
+    // `prevQty` (the size it was raised from), else assume no change.
+    npc.stockBase = npc.stockBase || {};
     for (const s of stockList) {
-      if (s.qty !== Infinity && npc.stockLeft[s.id] === undefined) npc.stockLeft[s.id] = s.qty;
+      if (s.qty === Infinity) continue;
+      if (npc.stockLeft[s.id] === undefined) npc.stockLeft[s.id] = s.qty;
+      else {
+        const base = npc.stockBase[s.id] ?? s.prevQty ?? s.qty;
+        if (s.qty > base) npc.stockLeft[s.id] += s.qty - base;
+      }
+      npc.stockBase[s.id] = s.qty;
     }
     // Items the player has sold this vendor (2026-07-17, Danny): they go into
     // the vendor's stock and become buyable back at full catalog price. Lives
@@ -4206,6 +4230,7 @@ async function boot() {
   // Detail card for the equipped consumable in the Item slot.
   function itemDetailCard(def, count) {
     const stats = [];
+    if (def.fullHeal) stats.push({ label: 'Heals', value: 'Full', tone: 'pos' });
     if (def.heal) stats.push({ label: 'Heals', value: `${def.heal}`, tone: 'pos' });
     if (def.restoreMagic) stats.push({ label: 'Magic', value: `+${def.restoreMagic}`, tone: 'pos' });
     if (def.vitality) stats.push({ label: 'Max Health', value: `+${def.vitality}`, tone: 'pos' });

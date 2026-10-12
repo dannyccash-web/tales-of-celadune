@@ -16,6 +16,7 @@
 //   Attack/Defense stat while equipped (see main.js's effectiveAttack()/
 //   effectiveDefense()). Omitted = +0. No items grant these yet.
 // - heal: HP restored when Used (health_potion only so far).
+// - fullHeal: true restores health to max when Used (Perrin's Seafood Stew).
 // - price: the shop BUY cost in gold (2026-07-12). Vendors sell for this;
 //   they buy back from the player at half (sellValue() = floor(price/2), in
 //   main.js). Quest items have no price and can't be sold. Items without a
@@ -202,6 +203,20 @@ const ITEMS = {
     slot: 'item',
     restoreMagic: 5,
     price: 10,
+  },
+  // Perrin's Seafood Stew (2026-10-11) — Perrin Alders's reward for the
+  // perrin_feast quest, alongside a Vitality Potion. `fullHeal` restores
+  // health to max (handled in main.js's usePotion). Priced so it's worth
+  // something to a player who'd rather sell it (sells for 20).
+  seafood_stew: {
+    id: 'seafood_stew',
+    name: 'Perrin’s Seafood Stew',
+    image: 'assets/images/seafood_stew.png',
+    description: 'A sealed crock of Perrin’s famous stew. It smells absolutely awful, but one bowl restores you to full health.',
+    questItem: false,
+    slot: 'item',
+    fullHeal: true,
+    price: 40,
   },
   vitality_potion: {
     id: 'vitality_potion',
