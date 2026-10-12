@@ -1198,7 +1198,7 @@ export default {
     },
     {
       id: 'emeric', name: 'Emeric Vale', role: 'SHOPKEEPER',
-      vendor: true, stock: [{ id: 'fishing_bait', qty: 7, prevQty: 5 }, { id: 'lockpicks', qty: 1 }, { id: 'torch', qty: 1 }, { id: 'chestnut', qty: 1 }], gold: 39, // fishing_bait 3->5 (2026-09-11), 5->7 (2026-10-11, Danny); chestnut (2026-10-10)
+      vendor: true, stock: [{ id: 'fishing_bait', qty: 5 }, { id: 'lockpicks', qty: 1 }, { id: 'torch', qty: 1 }, { id: 'chestnut', qty: 1 }], gold: 39, // fishing_bait 3->5 (2026-09-11), briefly 7 then back to 5 (2026-10-12, Danny); chestnut (2026-10-10)
       awayLine: 'Come by the shop if you’re buying — I don’t carry the whole inventory in my pockets.',
       sprite: 'assets/images/Emeric Vale_overhead.png',
       portrait: 'assets/images/Emeric Vale.png',

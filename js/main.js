@@ -3201,13 +3201,16 @@ async function boot() {
     // already opened the shop (they'd otherwise keep the old, depleted
     // count). Saves from before stockBase existed fall back to the entry's
     // `prevQty` (the size it was raised from), else assume no change.
+    // Works both ways (2026-10-12): lowering a count takes the difference
+    // back off, floored at 0, so a stock raised and then reverted (Emeric's
+    // bait 5 -> 7 -> 5) doesn't leave the top-up behind in saves that got it.
     npc.stockBase = npc.stockBase || {};
     for (const s of stockList) {
       if (s.qty === Infinity) continue;
       if (npc.stockLeft[s.id] === undefined) npc.stockLeft[s.id] = s.qty;
       else {
         const base = npc.stockBase[s.id] ?? s.prevQty ?? s.qty;
-        if (s.qty > base) npc.stockLeft[s.id] += s.qty - base;
+        if (s.qty !== base) npc.stockLeft[s.id] = Math.max(0, npc.stockLeft[s.id] + s.qty - base);
       }
       npc.stockBase[s.id] = s.qty;
     }
@@ -3282,7 +3285,10 @@ async function boot() {
       // list in the same dialog window (updateDialogContent swaps content
       // without closing/reopening, same mechanism the goBack/thankYou flows
       // already use elsewhere).
-      onBack: () => ui.updateDialogContent(buildVendorDialog(npc)),
+      // Roderick's menu is state-built (his lockbox quest + withShop), not the
+      // standard vendor menu: rebuilding it with buildVendorDialog read his
+      // missing npc.dialog and threw, stranding the dialog (fixed 2026-10-12).
+      onBack: () => ui.updateDialogContent(npc.id === 'roderick_vane' ? buildRoderickDialog() : buildVendorDialog(npc)),
     });
   }
 
