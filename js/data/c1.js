@@ -657,7 +657,9 @@ export default {
   // New spot added 2026-09-09 (Danny) — the west shoreline below the
   // Maiden's Grace, verified walkable sand right at the waterline.
   fishingSpots: [
-    { x: 647, y: 2724 },
+    // 2026-10-12 (Danny): out in the surf south of the Maiden's Grace. On the
+    // water; nearest standable shore ~105px away, inside FISH_SPOT_RANGE (281).
+    { x: 518, y: 2751 },
   ],
   // Saltwater catch table (2026-10-11, Danny): every cast here lands a sea
   // bass (75%) or a crimson sailback (25%) — no boot, no Moonscale, and Luck
@@ -687,7 +689,7 @@ export default {
     // showed up once C2 existed (before, the exit just toasted). C2's `left`
     // band matches this exactly. Widen BOTH together if C1's road mouth is
     // ever reopened wider in the art/collision.
-    { edge: 'right', yMin: 1170, yMax: 1255, to: 'C2', note: 'the road east toward the grassland' },
+    { edge: 'right', yMin: 1168, yMax: 1256, to: 'C2', note: 'the road east toward the grassland' },
   ],
 
   // ---- Tidewrack NPCs (2026-09-02, repositioned for the new art) ----

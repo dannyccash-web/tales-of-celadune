@@ -563,10 +563,13 @@ export default {
     },
   ],
 
-  // Animated campfire smoke — code-drawn particles (World.drawSmoke), rising
-  // from the firepit at the centre of the woodland camp. No asset needed.
+  // The Bramblekin camp's firepit (2026-10-12, Danny): a code-drawn flame
+  // (World.drawFire) with its smoke rising from the same point.
+  fires: [
+    { x: 2177, y: 2307 },
+  ],
   smoke: [
-    { x: 2144, y: 2294 },
+    { x: 2177, y: 2307 },
   ],
 
   // The woodland camp is the Bramblekin toll-camp now — its guards + Chief
@@ -615,8 +618,8 @@ export default {
   // either edge lands on the other scene's path at the same height).
   // North toward C3/C4 woods — not built yet.
   exits: [
-    { edge: 'left', yMin: 1391, yMax: 1548, to: 'D3', note: 'main path west to the Farm' },
-    { edge: 'top', xMin: 1524, xMax: 1719, to: 'C4', note: 'path north into deeper woods' },
+    { edge: 'left', yMin: 1391, yMax: 1575, to: 'D3', note: 'main path west to the Farm' },
+    { edge: 'top', xMin: 1482, xMax: 1731, to: 'C4', note: 'path north into deeper woods' },
   ],
 
   // ---- Bramblekin toll-camp (2026-07-11) ----

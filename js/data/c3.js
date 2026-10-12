@@ -617,11 +617,10 @@ export default {
     // Sub-cell rects one collider radius (18px) clear of each band limit, so
     // the collider CENTRE is penned into exactly the declared band and the
     // player can never press against an edge outside one and hit a silent
-    // invisible wall. Left: blockers end at 1152 / resume at 1273, penning the
-    // centre to y1170-1255. Top: end at 980 / resume at 1100, penning it to
-    // x998-1082. Re-derive if a band moves. (Pattern introduced on C2.)
-    { x: 0, y: 1040, w: 60, h: 112 },
-    { x: 0, y: 1273, w: 60, h: 120 },
+    // invisible wall. Top: end at 980 / resume at 1100, penning it to
+    // x998-1082. Re-derive if a band moves. (Pattern introduced on C2.) The
+    // left pins were removed 2026-10-12 so the west mouth matches C2's widened
+    // road: the left band is now the terrain's own run, y1118-1283.
     { x: 940, y: 0, w: 40, h: 120 },
     { x: 1100, y: 0, w: 60, h: 120 },
   ],
@@ -762,7 +761,7 @@ export default {
   ambushes: [],
 
   exits: [
-    { edge: 'left', yMin: 1170, yMax: 1255, to: 'C2', note: 'the forest trail west to the grassland' },
+    { edge: 'left', yMin: 1118, yMax: 1283, to: 'C2', note: 'the forest trail west to the grassland' },
     { edge: 'top', xMin: 998, xMax: 1082, to: 'B3', note: 'the trail north out of the woods' },
   ],
 };

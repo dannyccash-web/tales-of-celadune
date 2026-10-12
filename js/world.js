@@ -2,6 +2,7 @@
 // Layers 1 (scrolling background) and 2 (player/NPC icons) are drawn here.
 
 import * as audio from './audio.js';
+import WATER from './data/water.js';
 
 const VIEW_W = 1920;
 const VIEW_H = 1080;
@@ -38,6 +39,38 @@ function circleRectOverlap(cx, cy, r, b) {
   const ny = Math.max(b.y, Math.min(cy, b.y + b.h));
   const dx = cx - nx, dy = cy - ny;
   return dx * dx + dy * dy < r * r;
+}
+
+
+// ---- Ambient water (2026-10-12) ----
+// Decodes a scene's entry in data/water.js into a Float32 flow field + a water
+// mask, plus shoreline contour chunks with bounding boxes for culling. Shared
+// per scene id (decoded once, not per World instance).
+const WATER_CACHE = {};
+function decodeWater(id) {
+  const w = WATER[id];
+  if (!w) return null;
+  if (WATER_CACHE[id]) return WATER_CACHE[id];
+  const n = w.n;
+  const bin = atob(w.field);
+  const f = new Float32Array(n * n * 2);
+  const mask = new Uint8Array(n * n);
+  for (let i = 0; i < n * n; i++) {
+    let vx = bin.charCodeAt(2 * i), vy = bin.charCodeAt(2 * i + 1);
+    if (vx > 127) vx -= 256;
+    if (vy > 127) vy -= 256;
+    f[2 * i] = vx / 127; f[2 * i + 1] = vy / 127;
+    if (vx || vy) mask[i] = 1;
+  }
+  const shores = w.shores.map(([lvl, pts]) => {
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (let k = 0; k < pts.length; k += 2) {
+      if (pts[k] < minX) minX = pts[k]; if (pts[k] > maxX) maxX = pts[k];
+      if (pts[k + 1] < minY) minY = pts[k + 1]; if (pts[k + 1] > maxY) maxY = pts[k + 1];
+    }
+    return { lvl, pts, minX, minY, maxX, maxY };
+  });
+  return (WATER_CACHE[id] = { n, cell: w.cell, f, mask, shores });
 }
 
 export class World {
@@ -144,6 +177,12 @@ export class World {
     // fishing spot. Scene data is { x, y } plus optional tunables; drawn in
     // drawWaterRipple() BEHIND the player/NPC sprites (Danny, 2026-09-09),
     // unlike drawRipples() which draws above them — see render()'s draw order.
+    // Ambient water animation (2026-10-12): flow streaks + shoreline lapping,
+    // from the scene's entry in data/water.js (null where a scene has none).
+    this.water = decodeWater(scene.id);
+    this.waterParts = [];
+    this.waterVis = [];
+    this.waterLast = null;
     this.waterRipples = (scene.waterRipples || []).map((w) => ({
       x: w.x,
       y: w.y,
@@ -997,6 +1036,96 @@ export class World {
     ctx.restore();
   }
 
+
+  // Ambient water (2026-10-12, Danny: "something subtle to indicate movement").
+  // Two layers, both drawn right after the background so every sprite sits on
+  // top:
+  //  1. Shoreline lapping on lakes, ponds and the sea — two contours traced
+  //     into the water from the bank (the foam line ~12px out, a swell ~30px
+  //     out), dashed so they read as broken foam, the dashes sliding slowly
+  //     along the shore, and the swell pulsing just ahead of the foam so the
+  //     water seems to roll in.
+  //  2. Faint streaks that ride the flow field: downstream and quickest mid-
+  //     channel on rivers, a slow along-shore drift on still water. Spawned only
+  //     in water cells near the camera and capped, so cost stays flat.
+  drawWater() {
+    const W = this.water;
+    if (!W) return;
+    const ctx = this.ctx, t = this.time;
+    const dt = this.waterLast == null ? 0 : Math.min(0.05, Math.max(0, t - this.waterLast));
+    this.waterLast = t;
+    const x0 = this.cameraX, y0 = this.cameraY, M = 80;
+
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    for (const s of W.shores) {
+      if (s.maxX < x0 - M || s.minX > x0 + VIEW_W + M || s.maxY < y0 - M || s.minY > y0 + VIEW_H + M) continue;
+      const foam = s.lvl < 20;
+      const a = foam
+        ? 0.22 + 0.08 * Math.sin(t * 1.1)
+        : 0.16 * (0.5 + 0.5 * Math.sin(t * 1.1 + 1.5));
+      if (a < 0.01) continue;
+      ctx.strokeStyle = `rgba(236,246,250,${a.toFixed(3)})`;
+      ctx.lineWidth = foam ? 2.6 : 1.8;
+      ctx.setLineDash(foam ? [26, 34, 10, 28] : [44, 70]);
+      ctx.lineDashOffset = foam ? -t * 7 : t * 5;
+      const p = s.pts;
+      ctx.beginPath();
+      ctx.moveTo(p[0] - x0, p[1] - y0);
+      for (let k = 2; k < p.length; k += 2) ctx.lineTo(p[k] - x0, p[k + 1] - y0);
+      ctx.stroke();
+    }
+    ctx.setLineDash([]);
+
+    // Water cells in (or just outside) the view, for spawning.
+    const n = W.n, c = W.cell, vis = this.waterVis;
+    vis.length = 0;
+    const ci0 = Math.max(0, Math.floor((x0 - M) / c)), ci1 = Math.min(n - 1, Math.floor((x0 + VIEW_W + M) / c));
+    const cj0 = Math.max(0, Math.floor((y0 - M) / c)), cj1 = Math.min(n - 1, Math.floor((y0 + VIEW_H + M) / c));
+    for (let j = cj0; j <= cj1; j++) for (let i = ci0; i <= ci1; i++) if (W.mask[j * n + i]) vis.push(j * n + i);
+    const parts = this.waterParts;
+    const target = Math.min(170, Math.round(vis.length * 0.22));
+    const flowAt = (x, y) => {
+      const i = Math.floor(x / c), j = Math.floor(y / c);
+      if (i < 0 || j < 0 || i >= n || j >= n || !W.mask[j * n + i]) return null;
+      return [W.f[2 * (j * n + i)], W.f[2 * (j * n + i) + 1]];
+    };
+    for (let tries = 0; parts.length < target && tries < 40 && vis.length; tries++) {
+      const cell = vis[(Math.random() * vis.length) | 0];
+      const x = (cell % n + Math.random()) * c, y = (((cell / n) | 0) + Math.random()) * c;
+      const v = flowAt(x, y);
+      if (!v || Math.random() > 0.25 + 0.75 * Math.hypot(v[0], v[1])) continue;
+      parts.push({ x, y, age: Math.random() * 0.5, life: 1.6 + Math.random() * 2.2 });
+    }
+    ctx.lineWidth = 1.8;
+    for (let k = parts.length - 1; k >= 0; k--) {
+      const q = parts[k];
+      const v = flowAt(q.x, q.y);
+      q.age += dt;
+      if (!v || q.age >= q.life || parts.length > target + 20 ||
+          q.x < x0 - M || q.x > x0 + VIEW_W + M || q.y < y0 - M || q.y > y0 + VIEW_H + M) {
+        parts[k] = parts[parts.length - 1];
+        parts.pop();
+        continue;
+      }
+      q.x += v[0] * 70 * dt;
+      q.y += v[1] * 70 * dt;
+      const m = Math.hypot(v[0], v[1]);
+      const fade = Math.sin(Math.PI * q.age / q.life);
+      const a = (0.07 + 0.17 * m) * fade;
+      if (a < 0.008) continue;
+      const len = 6 + 20 * m, ux = v[0] / m, uy = v[1] / m;
+      const sx = q.x - x0, sy = q.y - y0;
+      ctx.strokeStyle = `rgba(235,245,250,${a.toFixed(3)})`;
+      ctx.beginPath();
+      ctx.moveTo(sx - ux * len / 2, sy - uy * len / 2);
+      ctx.lineTo(sx + ux * len / 2, sy + uy * len / 2);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
   // Ambient water ripple (2026-09-09) — a always-on, larger sibling of
   // drawRipples() for decorating a patch of open water rather than marking a
   // cast. Same concentric-ring approach, scaled up and looping continuously
@@ -1176,6 +1305,8 @@ export class World {
     // Ambient water ripples (2026-09-09): drawn here, BEFORE chests/NPCs/player,
     // so they sit behind every character — unlike the fishing-cast ripples
     // (drawRipples(), drawn near the end of render() above the sprites).
+    // Ambient water animation (2026-10-12): flow streaks + shoreline lapping.
+    this.drawWater();
     for (const w of this.waterRipples) this.drawWaterRipple(w);
 
     // Static scenery props (2026-09-20, first user: the Lakewarden's raft on

@@ -741,6 +741,23 @@ async function boot() {
   }
 
   const EDGE_INSET = 20;
+  // Neighbouring scenes' road mouths don't always line up to the pixel (C2's
+  // west mouth is wider than C1's east one, 2026-10-12). If the mirrored
+  // arrival point lands inside an obstacle, slide along the edge to the
+  // nearest clear spot, so the player never arrives stuck in a wall.
+  function settleArrival(edge) {
+    const p = world.player, s = world.scene;
+    if (!world.blockersAt(p.x, p.y, p).length) return;
+    const alongY = edge === 'left' || edge === 'right';
+    for (let d = 2; d <= 800; d += 2) {
+      for (const k of [d, -d]) {
+        const x = alongY ? p.x : p.x + k, y = alongY ? p.y + k : p.y;
+        if (x < 20 || y < 20 || x > s.width - 20 || y > s.height - 20) continue;
+        if (!world.blockersAt(x, y, p).length) { p.x = x; p.y = y; return; }
+      }
+    }
+  }
+
   function switchScene(exit) {
     const { x: px, y: py, rotation } = world.player;
     enterScene(exit.to);
@@ -753,6 +770,7 @@ async function boot() {
     if (exit.edge === 'bottom') { world.player.y = EDGE_INSET; world.player.x = px; }
     if (exit.edge === 'top') { world.player.y = s.height - EDGE_INSET; world.player.x = px; }
     world.player.rotation = rotation; // keep facing across the boundary
+    settleArrival(exit.edge);
     // Cross-fade to the new scene's own track (2026-09-09 fix, Danny: walking
     // C1 -> D1 left C1's music playing). This was ALWAYS missing here — every
     // overworld scene sharing one generic track just hid it until a scene
