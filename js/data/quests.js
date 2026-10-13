@@ -114,6 +114,12 @@ export default {
     name: 'Settling Accounts',
     description: 'Roderick Vane has sent the Maiden\u2019s Grace lockbox on to the Crown. Call in at the king\u2019s counting house in Kingsreach, the city under the castle walls, and let them know the debt has been settled.',
   },
+  // Mara Vellorne (C4, 2026-10-13): offered when her quest ends, either way.
+  visit_the_king: {
+    id: 'visit_the_king',
+    name: 'An Audience with the King',
+    description: 'King Aldric summoned Mara Vellorne of Vaelanor to Aldermoor, but the Bramblekin waylaid her on the road. She has asked you to go north to Kingsreach, the city under the castle walls, and see the king in her place.',
+  },
   kingsreach_rock: {
     id: 'kingsreach_rock',
     name: 'A Stone Without a Name',

@@ -927,7 +927,7 @@ async function boot() {
         inventory: inventory.map((e) => ({ ...e })),
         equipment: { ...equipment },
         quests: quests.map((q) => ({ ...q })),
-        flags: { campQuestDone, campHostile, campTollTier, gafferHappy, thrumhornFed, orrisRescued, wellCoinThrown, wellDrinks, vegetableDeliveredToTavern, calderToldStory, calderToldDangers, maraMet, lilyGullThanked, magicRevealed, maraHollowmastRescued, lockboxAcceptedFrom, lockboxGivenTo , ferrySide, lakewardenPaid, visitedTowns: [...visitedTowns] },
+        flags: { campQuestDone, campHostile, campTollTier, gafferHappy, thrumhornFed, orrisRescued, wellCoinThrown, wellDrinks, vegetableDeliveredToTavern, calderToldStory, calderToldDangers, maraMet, maraToldTruth, lilyGullThanked, magicRevealed, maraHollowmastRescued, lockboxAcceptedFrom, lockboxGivenTo , ferrySide, lakewardenPaid, visitedTowns: [...visitedTowns] },
         caveReturn, // where to exit to if saved inside a cave/dungeon
         worlds: snapshotWorlds(),
       };
@@ -1022,7 +1022,7 @@ async function boot() {
     gafferHappy = false; thrumhornFed = false; orrisRescued = false; wellCoinThrown = false; wellDrinks = 0; vegetableDeliveredToTavern = false;
     ferrySide = 'mainland'; // the C3 raft starts moored on the near shore
     lakewardenPaid = false;
-    calderToldStory = false; calderToldDangers = false; maraMet = false;
+    calderToldStory = false; calderToldDangers = false; maraMet = false; maraToldTruth = null;
     lilyGullThanked = false;
     magicRevealed = false;
     maraHollowmastRescued = false;
@@ -1065,6 +1065,7 @@ async function boot() {
     wellDrinks = f.wellDrinks || 0;
     calderToldStory = !!f.calderToldStory; calderToldDangers = !!f.calderToldDangers;
     maraMet = !!f.maraMet;
+    maraToldTruth = f.maraToldTruth ?? null;
     lilyGullThanked = !!f.lilyGullThanked;
     magicRevealed = !!f.magicRevealed;
     maraHollowmastRescued = !!f.maraHollowmastRescued;
@@ -1310,6 +1311,10 @@ async function boot() {
   // drops the full self-introduction for a shorter "back again?" line, so going
   // back from her lore aside (or re-approaching) doesn't re-introduce her.
   let maraMet = false;
+  // How the player ended Mara's quest (2026-10-13): true = handed her things
+  // back, false = lied and kept them, null = not yet. Her later lines and the
+  // visit-the-king offer depend on it.
+  let maraToldTruth = null;
   // Toby's one-time thank-you for Lily's gull (C1, 2026-09-10): once she's
   // been reunited with it, the NEXT time the player talks to her father he
   // thanks them + pays a few gold — but only once. See buildTobyDialog().
@@ -1506,9 +1511,14 @@ async function boot() {
       if (questStatus('mara_belongings') !== 'active') startQuest('mara_belongings');
       addGold(MARA_REWARD);
       completeQuest('mara_belongings');
+      maraToldTruth = true;
+      requestAutosave();
+      // 2026-10-13 (Danny): Mara's quest now ends by pointing the player at the
+      // king; agreeing starts `visit_the_king`.
       ui.updateDialogContent({
-        line: 'Honest to a fault — the world could stand more of your sort. Here, for your trouble. And the summons… no. You keep it. Whatever’s festering in Aldermoor is worse than the king let on, and I fear Vozhik and I won’t see it through. If the road carries you to the castle before it carries us, better it’s in your hands than lost to these woods again.',
-        responses: ['Leave.'],
+        line: 'Honest to a fault — the world could stand more of your sort. Here, for your trouble. And the summons… no. You keep it. Vozhik and I are in no shape to ride on, and whatever’s festering in Aldermoor won’t wait for us to mend. Take it to Kingsreach yourself. Put it in King Aldric’s hand and tell him Vaelanor answered, just not the way he expected. Will you go?',
+        responses: ['I’ll take it to the king.', 'Not yet.'],
+        responseEffects: [{ maraKing: true }, { followUp: 'Then keep it close until you’re ready. It’s no use to anyone at the bottom of a Bramblekin’s sack.', noBack: true }],
       });
       return true;
     }
@@ -1516,8 +1526,22 @@ async function boot() {
     if (effect.maraLie) {
       if (questStatus('mara_belongings') !== 'active') startQuest('mara_belongings');
       completeQuest('mara_belongings');
+      maraToldTruth = false;
+      requestAutosave();
       ui.updateDialogContent({
-        line: 'Nothing at all? Ah… a shame, that. Well — thank you for looking, truly. We’ll manage. We always do.',
+        line: 'Nothing at all? Ah… a shame, that. Thank you for looking, truly. We’ll manage. But without the summons, the king will think Vaelanor never answered him. If your road takes you north, would you go to Kingsreach and see King Aldric for me? Tell him his summons was stolen on the road, and that we’re coming as soon as we’re able.',
+        responses: ['I’ll tell the king.', 'Not yet.'],
+        responseEffects: [{ maraKing: true }, { followUp: 'Well, if you change your mind, Kingsreach isn’t going anywhere. Neither, it seems, are we.', noBack: true }],
+      });
+      return true;
+    }
+    if (effect.maraKing) {
+      startQuest('visit_the_king');
+      requestAutosave();
+      ui.updateDialogContent({
+        line: maraToldTruth === false
+          ? 'You’re kinder than I deserve, after losing the thing. Kingsreach sits north of here, under the castle walls. Tell him we’re sorry, and that we’re coming.'
+          : 'Thank you. Kingsreach sits north of here, under the castle walls; follow the roads up and you can’t miss the towers. Vozhik will be glad to hear it. Well. Vozhik will be something.',
         responses: ['Leave.'],
       });
       return true;
@@ -3279,12 +3303,12 @@ async function boot() {
         .map((id) => ITEMS[id]).filter((d) => d && d.price != null)
         // qty = the vendor's remaining stock, so the buy tile can show a count
         // (the grid only renders it for 2+; Infinity = unbounded, no count).
-        .map((d) => ({ id: d.id, name: d.name, image: d.image, price: d.price, qty: avail[d.id] }));
+        .map((d) => ({ id: d.id, name: d.name, image: d.image, glow: d.glow, price: d.price, qty: avail[d.id] }));
     };
     const buildSell = () => inventory
       .map((e) => ({ e, d: ITEMS[e.id] }))
       .filter(({ d }) => d && !d.questItem && d.price != null)
-      .map(({ e, d }) => ({ id: d.id, name: d.name, image: d.image, value: sellValue(d), qty: e.qty }));
+      .map(({ e, d }) => ({ id: d.id, name: d.name, image: d.image, glow: d.glow, value: sellValue(d), qty: e.qty }));
     const refresh = () => ui.refreshDialogGrid({
       playerGold: stats.gold, vendorGold: npc.gold,
       items: mode === 'buy' ? buildBuy() : buildSell(),
@@ -3472,7 +3496,18 @@ async function boot() {
   function buildMaraDialog() {
     const status = questStatus('mara_belongings');
     if (status === 'completed') {
-      return { line: 'Safe roads, friend. And if you reach the castle before Vozhik and I do — you know what to carry. Aldermoor won’t wait forever.', responses: ['Leave.'] };
+      const kq = questStatus('visit_the_king');
+      if (kq === 'none') {
+        // Said "Not yet" at the end of her quest: she asks again.
+        return maraToldTruth === false
+          ? { line: 'Still no sign of the summons, I suppose. Will you go to Kingsreach and tell King Aldric what happened to us out here?',
+              responses: ['I’ll tell the king.', 'Leave.'], responseEffects: [{ maraKing: true }, null] }
+          : { line: 'You’ve still got the summons, I hope. Will you take it north to Kingsreach and put it in the king’s hand?',
+              responses: ['I’ll take it to the king.', 'Leave.'], responseEffects: [{ maraKing: true }, null] };
+      }
+      return { line: maraToldTruth === false
+        ? 'Safe roads, friend. If you reach the king before we do, tell him we haven’t forgotten him.'
+        : 'Safe roads, friend. Get that summons to the king — Aldermoor won’t wait forever.', responses: ['Leave.'] };
     }
     // Turn-in offered whenever the summons is in hand — even if the quest was
     // never formally accepted (the player may loot the chest before talking to
@@ -4197,6 +4232,8 @@ async function boot() {
       // should change.
       if (enemy.skipTurn) {
         enemy.skipTurn = false;
+        enemy.ensnareGlow = null; // the binding ends with the turn it cost
+        refreshEnemyGlow(enemy);
         ui.setBattleMessage(`The ${enemy.name} strains against the roots and cannot move.`);
         battleState.turnPos += 1;
         setTimeout(() => runQueue(), ENEMY_TURN_DELAY_MS);
@@ -4360,6 +4397,14 @@ async function boot() {
   // whichever weapon slot was picked (pendingAttackSlot). Damage numbers in
   // the status line carry a +/− sign so ui.setBattleMessage colorizes them
   // per the mockup (+N green = damage done, −N red = damage taken).
+  // Enchantment glow on an affected enemy (2026-10-13, Danny): ensnare shows
+  // until its lost turn passes, venom until the enemy dies. Ensnare wins while
+  // both are live (it's the shorter, more urgent one).
+  function refreshEnemyGlow(enemy) {
+    enemy.statusGlow = enemy.ensnareGlow || enemy.venomGlow || null;
+    ui.setEnemyGlow(enemy);
+  }
+
   function playerAttack(target) {
     // A pending offensive-item use (spider fang) borrows the same targeting flow.
     if (pendingUseItem) { pendingUseItem = false; playerUseOffensiveItem(target); return; }
@@ -4401,6 +4446,7 @@ async function boot() {
       target.health = Math.max(0, target.health - dmg);
       if (procced && ench.kind === 'ensnare' && target.health > 0) {
         target.skipTurn = true;
+        target.ensnareGlow = weapon.glow; // glows until its lost turn passes
         procLine = ` Roots burst from the earth and bind the ${target.name} fast!`;
       } else if (procced && ench.kind === 'poison' && target.health > 0) {
         // Respects `poisonable` exactly like the thrown Spider Fang does — you
@@ -4408,9 +4454,11 @@ async function boot() {
         if (ENEMIES[target.id]?.poisonable && !target.poisoned) {
           target.poisoned = true;
           target.poisonDamage = ench.poison;
+          target.venomGlow = weapon.glow; // glows for as long as the venom runs (to the death)
           procLine = ` The venom takes — the ${target.name} is envenomed!`;
         }
       }
+      refreshEnemyGlow(target);
       // Fire weapon (the torch, `burn`): a flammable (`wood`) foe — rootweaver,
       // bramblekin — catches alight and burns for `burn` at the start of every
       // player turn (tickBurns) until it dies (2026-07-26). (`weapon` is the
@@ -4603,7 +4651,7 @@ async function boot() {
     gold = Math.max(gold, MIN_BATTLE_GOLD);
     const rewards = [{ kind: 'gold', amount: gold }];
     for (const [id, qty] of Object.entries(items)) {
-      rewards.push({ kind: 'item', id, qty, name: ITEMS[id]?.name || id, image: ITEMS[id]?.image });
+      rewards.push({ kind: 'item', id, qty, name: ITEMS[id]?.name || id, image: ITEMS[id]?.image, glow: ITEMS[id]?.glow });
     }
     return rewards;
   }

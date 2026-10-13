@@ -2282,3 +2282,16 @@ html, body {
   transition: opacity 0.7s ease-in-out;
 }
 #travel-fade.show { opacity: 1; pointer-events: auto; }
+
+/* Enchantment glow (2026-10-13): a slow pulse shared by every enchanted item
+   image and every enemy currently under an enchantment's effect. The colour
+   comes from --glow, set per element by ui.js's applyGlow(). Other animations
+   on the same element (an enemy's hit shake or death dissolve) take over while
+   they run, then the pulse resumes. */
+.enchant-glow {
+  animation: enchant-pulse 2.8s ease-in-out infinite;
+}
+@keyframes enchant-pulse {
+  0%, 100% { filter: drop-shadow(0 0 3px var(--glow)) drop-shadow(0 0 8px var(--glow)); }
+  50%      { filter: drop-shadow(0 0 8px var(--glow)) drop-shadow(0 0 20px var(--glow)); }
+}

@@ -553,11 +553,31 @@ export function isDialogGridOpen() { return dialogGridState.open; }
 // into the inventory grid, the received/gave reveals, the popout and the shop
 // grid without each of those needing to know about enchanting. A plain item
 // clears the filter, so re-using an <img> element can't leave a stale glow.
-function applyItemGlow(img, def) {
-  if (!img) return;
-  img.style.filter = def?.glow
-    ? `drop-shadow(0 0 6px ${def.glow}) drop-shadow(0 0 14px ${def.glow})`
-    : '';
+//
+// 2026-10-13 (Danny): the glow now PULSES slowly. The colour rides on a CSS
+// custom property (--glow) and the .enchant-glow class runs the shared
+// `enchant-pulse` keyframes (style.css), so every enchanted item — and every
+// enemy currently under an enchantment's effect (setEnemyGlow) — breathes in
+// step with the same animation.
+function applyGlow(el, color) {
+  if (!el) return;
+  el.style.filter = '';
+  if (color) {
+    el.style.setProperty('--glow', color);
+    el.classList.add('enchant-glow');
+  } else {
+    el.style.removeProperty('--glow');
+    el.classList.remove('enchant-glow');
+  }
+}
+function applyItemGlow(img, def) { applyGlow(img, def?.glow || null); }
+
+// An enemy hit by an enchanted weapon glows in that enchantment's colour for
+// as long as the effect lasts (main.js sets/clears enemy.statusGlow and calls
+// this; renderBattleEnemies re-applies it whenever the slots are rebuilt).
+export function setEnemyGlow(enemy) {
+  const slot = battleUiState.enemySlots.find((s) => s.enemy === enemy)?.el;
+  applyGlow(slot?.querySelector('.enemy-portrait'), enemy.statusGlow || null);
 }
 
 export function showDialogGrid({ kind, items, playerGold, vendorGold, emptyText, onSelect, onInspect, onBack }) {
@@ -1884,6 +1904,7 @@ export function renderBattleEnemies(enemies) {
     portrait.className = 'enemy-portrait';
     portrait.src = enemy.portrait;
     portrait.alt = enemy.name;
+    applyGlow(portrait, enemy.statusGlow || null);
 
     // Order matters for stacking: shadow (back) -> ring -> portrait (front).
     // The portrait is bottom-justified again (2026-07-31), so the ground shadow
@@ -2210,6 +2231,7 @@ export function showVictory({ rewards, onReward, onClose, background }) {
       const img = document.createElement('img');
       img.src = r.image || '';
       img.alt = r.name || '';
+      applyGlow(img, r.glow || null);
       frame.appendChild(img);
     }
     const label = document.createElement('span');

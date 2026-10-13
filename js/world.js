@@ -53,14 +53,17 @@ function decodeWater(id) {
   if (WATER_CACHE[id]) return WATER_CACHE[id];
   const n = w.n;
   const bin = atob(w.field);
+  // Triples (vx, vy, kind) per cell — kind 1 = streaks along the flow,
+  // 2 = sea waves (lines across the flow), 0 = not water.
   const f = new Float32Array(n * n * 2);
   const mask = new Uint8Array(n * n);
   for (let i = 0; i < n * n; i++) {
-    let vx = bin.charCodeAt(2 * i), vy = bin.charCodeAt(2 * i + 1);
+    let vx = bin.charCodeAt(3 * i), vy = bin.charCodeAt(3 * i + 1);
+    const kind = bin.charCodeAt(3 * i + 2);
     if (vx > 127) vx -= 256;
     if (vy > 127) vy -= 256;
     f[2 * i] = vx / 127; f[2 * i + 1] = vy / 127;
-    if (vx || vy) mask[i] = 1;
+    if (vx || vy) mask[i] = kind || 1;
   }
   const shores = w.shores.map(([lvl, pts]) => {
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -1089,7 +1092,7 @@ export class World {
     const flowAt = (x, y) => {
       const i = Math.floor(x / c), j = Math.floor(y / c);
       if (i < 0 || j < 0 || i >= n || j >= n || !W.mask[j * n + i]) return null;
-      return [W.f[2 * (j * n + i)], W.f[2 * (j * n + i) + 1]];
+      return [W.f[2 * (j * n + i)], W.f[2 * (j * n + i) + 1], W.mask[j * n + i]];
     };
     for (let tries = 0; parts.length < target && tries < 40 && vis.length; tries++) {
       const cell = vis[(Math.random() * vis.length) | 0];
@@ -1122,11 +1125,16 @@ export class World {
       const a = (0.22 + 0.16 * m) * fade * fade;
       if (a < 0.01) continue;
       if (q.seed === undefined) q.seed = Math.random() * 6.28;
-      const len = 22 + 30 * m;            // px
+      // Sea waves (kind 2, C1/D1, 2026-10-13): the same ribbon, but turned
+      // ACROSS the motion and longer, so the open sea reads as lines of swell
+      // rolling east toward the beach rather than a current.
+      const wave = v[2] === 2;
+      const len = wave ? 50 + 50 * m : 22 + 30 * m; // px
       const half = 2.0 + 1.3 * m;         // max half-thickness, px
-      const amp = 1.8 + 1.2 * m;          // wave amplitude, px
-      const ux = v[0] / m, uy = v[1] / m; // along the flow
-      const nx = -uy, ny = ux;            // across it
+      const amp = wave ? 1.4 : 1.8 + 1.2 * m; // wobble amplitude, px
+      const fx = v[0] / m, fy = v[1] / m; // direction of travel
+      const ux = wave ? -fy : fx, uy = wave ? fx : fy; // the ribbon's long axis
+      const nx = -uy, ny = ux;            // across the ribbon
       const sx = q.x - x0, sy = q.y - y0;
       for (let i = 0; i <= SEG; i++) {
         const f = i / SEG;                // 0..1 along the ribbon

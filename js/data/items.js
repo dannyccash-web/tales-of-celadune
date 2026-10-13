@@ -112,14 +112,14 @@ export function isEnchantable(item) {
 export const ENCHANTS = {
   rootweaver_heart: {
     id: 'ensnare', kind: 'ensnare', reagentId: 'rootweaver_heart',
-    prefix: 'Ensnaring', chance: 0.20, glow: '#d08b2c',
-    blurb: 'Roots answer the blade: a 20% chance on any hit to bind a foe fast, costing it its next turn.',
+    prefix: 'Ensnaring', chance: 0.50, glow: '#d08b2c',
+    blurb: 'Roots answer the blade: a 50% chance on any hit to bind a foe fast, costing it its next turn.',
     procMessage: (t) => `Roots burst from the earth and bind the ${t} fast!`,
   },
   spider_fang: {
     id: 'venomous', kind: 'poison', reagentId: 'spider_fang', poison: 1,
-    prefix: 'Venomous', chance: 0.25, glow: '#5fd35f',
-    blurb: 'Fang-bitten steel: a 25% chance on any hit to envenom a living foe, festering for 1 damage at the start of each of its turns.',
+    prefix: 'Venomous', chance: 0.50, glow: '#5fd35f',
+    blurb: 'Fang-bitten steel: a 50% chance on any hit to envenom a living foe, festering for 1 damage at the start of each of its turns.',
     procMessage: (t) => `The venom takes — the ${t} is envenomed!`,
   },
 };
