@@ -1070,6 +1070,11 @@ async function boot() {
     maraHollowmastRescued = !!f.maraHollowmastRescued;
     lockboxAcceptedFrom = f.lockboxAcceptedFrom || null;
     lockboxGivenTo = f.lockboxGivenTo || null;
+    // Saves from before 2026-10-12 that already handed Roderick the lockbox
+    // never got the counting-house quest; add it quietly on load.
+    if (lockboxGivenTo === 'roderick' && !quests.some((q) => q.id === 'kingsreach_counting_house')) {
+      quests.push({ id: 'kingsreach_counting_house', status: 'active' });
+    }
     caveReturn = data.caveReturn || null;
     vegetableDeliveredToTavern = !!f.vegetableDeliveredToTavern;
     // Visited towns. Saves from before fast travel existed have no list, so
@@ -1567,8 +1572,9 @@ async function boot() {
       addGold(LOCKBOX_RODERICK_GOLD);
       requestAutosave();
       ui.showGaveItem(ITEMS.lockbox);
+      startQuest('kingsreach_counting_house'); // 2026-10-12 (Danny)
       ui.updateDialogContent({
-        line: 'Now THAT’S a fine piece of work. You’ve done the Crown a real service, friend — and yourself no disservice either, by the weight of it. (Gained 25 gold.) Walk down to the counting house when you get the chance — they’ll want to know a debt’s been settled.',
+        line: 'Now THAT’S a fine piece of work. You’ve done the Crown a real service, friend — and yourself no disservice either, by the weight of it. (Gained 25 gold.) If your road ever takes you to Kingsreach, call in at the king’s counting house — they’ll want to hear from someone who was there that a debt’s been settled.',
         responses: ['Leave.'],
       });
       return true;
@@ -1867,12 +1873,21 @@ async function boot() {
       return true;
     }
     if (effect.feedCinder) {
-      removeItem('corn', 1);
-      ui.showGaveItem(ITEMS.corn); // the GAVE reveal
+      removeItem('apple', 1);
+      audio.sfx(audio.DIALOGUE_SFX.cinder); // fed animals make their sound (2026-10-12)
+      ui.showGaveItem(ITEMS.apple); // the GAVE reveal
       ui.updateDialogContent({
-        line: 'Cinder lips the corn from your open palm and crunches it down, tail swishing with plain delight, then nuzzles your shoulder in thanks.',
+        line: 'Cinder takes the apple from your palm with enormous delicacy, like a lady accepting a teacup. Then she bites it in half with a crunch you feel in your molars, sprays juice across your boots, and chews with her eyes closed in deep private joy. When she is done she sniffs your other hand, just in case it has been holding out on her.',
         responses: ['Pet Cinder.', 'Leave.'],
         responseEffects: [{ followUp: CINDER_PET_LINE }, null],
+      });
+      return true;
+    }
+    if (effect.noApple) {
+      audio.sfx(audio.SFX.denied);
+      ui.updateDialogContent({
+        line: 'Cinder sniffs your empty hand. Then your other hand. Then your pockets, your satchel and, to be thorough, your ear. Finding no apple anywhere, she lets out a long, heavy sigh through her nose — not cross, just quietly let down, which is somehow worse — and rests her chin on your shoulder anyway.',
+        responses: ['Leave.'],
       });
       return true;
     }
@@ -1946,6 +1961,7 @@ async function boot() {
       removeItem('corn', 1);
       const firstTime = !thrumhornFed;
       thrumhornFed = true;
+      audio.sfx(audio.DIALOGUE_SFX.thrumhorn); // fed animals make their sound (2026-10-12)
       requestAutosave(); // persist that the thrumhorn's been fed (corn already removed)
       ui.showGaveItem(ITEMS.corn); // the GAVE reveal
       ui.updateDialogContent({
@@ -1976,14 +1992,23 @@ async function boot() {
       return true;
     }
     if (effect.feedGaffer) {
-      removeItem('corn', 1);
+      removeItem('cabbage', 1);
       gafferHappy = true;
-      requestAutosave(); // persist that Gaffer's been fed (corn already removed)
-      ui.showGaveItem(ITEMS.corn); // the GAVE reveal — mirror of receiving
+      audio.sfx(audio.DIALOGUE_SFX.gaffer); // fed animals make their sound (2026-10-12)
+      requestAutosave(); // persist that Gaffer's been fed (cabbage already removed)
+      ui.showGaveItem(ITEMS.cabbage); // the GAVE reveal — mirror of receiving
       ui.updateDialogContent({
-        line: 'Gaffer snatches the corn straight from your hand and demolishes it, cob and all. He fixes you with a look of profound reevaluation.',
+        line: 'Gaffer sees the cabbage and goes very still, the way a cat does before it does something regrettable. Then he hits it like a battering ram. Leaves fly. The stalk goes. A small piece of your glove goes. When it is over he looks up at you, chewing, with an expression of total, slightly unhinged devotion. You have a goat now. You did not ask for a goat.',
         responses: ['Pet Gaffer.', 'Leave.'],
         responseEffects: [{ followUp: GAFFER_HAPPY_PET_LINE }, null],
+      });
+      return true;
+    }
+    if (effect.noCabbage) {
+      audio.sfx(audio.SFX.denied);
+      ui.updateDialogContent({
+        line: 'You hold out an empty hand. Gaffer looks at it. He looks at you. Then, holding your gaze the entire time, he leans over, takes one slow, deliberate bite out of the fence post, and chews it at you. The message could not be clearer if he had written it down.',
+        responses: ['Leave.'],
       });
       return true;
     }
@@ -2040,7 +2065,7 @@ async function boot() {
     }
   }
 
-  const GAFFER_HAPPY_PET_LINE = 'Gaffer leans into your hand and bleats contentedly. His beard smells of corn and questionable decisions.';
+  const GAFFER_HAPPY_PET_LINE = 'Gaffer leans into your hand and bleats contentedly. His beard smells of cabbage and questionable decisions.';
 
   // Gaffer's dialog is built dynamically instead of via quest variants —
   // it depends on session state (fed or not) and inventory (holding corn),
@@ -2055,18 +2080,19 @@ async function boot() {
         responseEffects: [{ followUp: GAFFER_HAPPY_PET_LINE }, null],
       };
     }
-    if (inventory.some((it) => it.id === 'corn')) {
-      return {
-        line: npc.dialog.line,
-        responses: ['Pet Gaffer.', 'Feed Gaffer some corn.', 'Leave.'],
-        responseEffects: [
-          { damage: 1, message: 'Gaffer nips you! -1 health.' },
-          { feedGaffer: true },
-          null,
-        ],
-      };
-    }
-    return npc.dialog;
+    // 2026-10-12 (Danny): Gaffer wants CABBAGE now, and the feed option is
+    // always on the list (the thrumhorn pattern) so a player can discover it.
+    // Unfed, petting still bites.
+    const hasCabbage = inventory.some((it) => it.id === 'cabbage');
+    return {
+      line: npc.dialog.line,
+      responses: ['Pet Gaffer.', 'Feed Gaffer a cabbage.', 'Leave.'],
+      responseEffects: [
+        { damage: 1, message: 'Gaffer nips you! -1 health.' },
+        hasCabbage ? { feedGaffer: true } : { noCabbage: true },
+        null,
+      ],
+    };
   }
 
   // ---- The Lakewarden's ferry, C3 (2026-09-20; fare reworked 2026-09-24/25) --
@@ -3514,12 +3540,10 @@ async function boot() {
   // quest, no persistent state — just a pettable, feedable companion.
   const CINDER_PET_LINE = 'You run a hand down Cinder’s neck. She leans into it, ears swivelling, and lets out a long, contented huff. A good horse, through and through.';
   function buildCinderDialog() {
-    const responses = ['Pet Cinder.'];
-    const effects = [{ followUp: CINDER_PET_LINE }];
-    if (inventory.some((it) => it.id === 'corn')) {
-      responses.push('Feed Cinder some corn.');
-      effects.push({ feedCinder: true });
-    }
+    // 2026-10-12 (Danny): Cinder wants an APPLE, and the feed option is always
+    // on the list (the thrumhorn pattern) so a player can discover it.
+    const responses = ['Pet Cinder.', 'Feed Cinder an apple.'];
+    const effects = [{ followUp: CINDER_PET_LINE }, inventory.some((it) => it.id === 'apple') ? { feedCinder: true } : { noApple: true }];
     responses.push('Leave.');
     effects.push(null);
     return {

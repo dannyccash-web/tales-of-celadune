@@ -1063,7 +1063,7 @@ export class World {
       if (s.maxX < x0 - M || s.minX > x0 + VIEW_W + M || s.maxY < y0 - M || s.minY > y0 + VIEW_H + M) continue;
       const foam = s.lvl < 20;
       const a = foam
-        ? 0.22 + 0.08 * Math.sin(t * 1.1)
+        ? 0.26 + 0.08 * Math.sin(t * 1.1)
         : 0.16 * (0.5 + 0.5 * Math.sin(t * 1.1 + 1.5));
       if (a < 0.01) continue;
       ctx.strokeStyle = `rgba(236,246,250,${a.toFixed(3)})`;
@@ -1095,10 +1095,16 @@ export class World {
       const cell = vis[(Math.random() * vis.length) | 0];
       const x = (cell % n + Math.random()) * c, y = (((cell / n) | 0) + Math.random()) * c;
       const v = flowAt(x, y);
-      if (!v || Math.random() > 0.25 + 0.75 * Math.hypot(v[0], v[1])) continue;
-      parts.push({ x, y, age: Math.random() * 0.5, life: 1.6 + Math.random() * 2.2 });
+      if (!v || Math.random() > 0.45 + 0.55 * Math.hypot(v[0], v[1])) continue;
+      parts.push({ x, y, age: Math.random() * 0.5, life: 2.2 + Math.random() * 2.4 });
     }
-    ctx.lineWidth = 1.8;
+    // Each streak is a short, slightly wavy ribbon, tapered to a point at both
+    // ends, fading in and out over its life (2026-10-12, Danny: thicker, wavy,
+    // tapered, fading — the old ones read as thin straight lines). The wave
+    // travels along the ribbon so it seems to ripple as it drifts.
+    const SEG = 10;
+    const lx = new Float32Array(SEG + 1), ly = new Float32Array(SEG + 1);
+    const rx = new Float32Array(SEG + 1), ry = new Float32Array(SEG + 1);
     for (let k = parts.length - 1; k >= 0; k--) {
       const q = parts[k];
       const v = flowAt(q.x, q.y);
@@ -1113,15 +1119,31 @@ export class World {
       q.y += v[1] * 70 * dt;
       const m = Math.hypot(v[0], v[1]);
       const fade = Math.sin(Math.PI * q.age / q.life);
-      const a = (0.07 + 0.17 * m) * fade;
-      if (a < 0.008) continue;
-      const len = 6 + 20 * m, ux = v[0] / m, uy = v[1] / m;
+      const a = (0.22 + 0.16 * m) * fade * fade;
+      if (a < 0.01) continue;
+      if (q.seed === undefined) q.seed = Math.random() * 6.28;
+      const len = 22 + 30 * m;            // px
+      const half = 2.0 + 1.3 * m;         // max half-thickness, px
+      const amp = 1.8 + 1.2 * m;          // wave amplitude, px
+      const ux = v[0] / m, uy = v[1] / m; // along the flow
+      const nx = -uy, ny = ux;            // across it
       const sx = q.x - x0, sy = q.y - y0;
-      ctx.strokeStyle = `rgba(235,245,250,${a.toFixed(3)})`;
+      for (let i = 0; i <= SEG; i++) {
+        const f = i / SEG;                // 0..1 along the ribbon
+        const along = (f - 0.5) * len;
+        const wob = Math.sin(f * 5.2 + q.seed - t * 3.2) * amp;
+        const w = half * Math.sin(Math.PI * f); // taper to a point at both ends
+        const cx = sx + ux * along + nx * wob, cy = sy + uy * along + ny * wob;
+        lx[i] = cx + nx * w; ly[i] = cy + ny * w;
+        rx[i] = cx - nx * w; ry[i] = cy - ny * w;
+      }
+      ctx.fillStyle = `rgba(236,246,251,${a.toFixed(3)})`;
       ctx.beginPath();
-      ctx.moveTo(sx - ux * len / 2, sy - uy * len / 2);
-      ctx.lineTo(sx + ux * len / 2, sy + uy * len / 2);
-      ctx.stroke();
+      ctx.moveTo(lx[0], ly[0]);
+      for (let i = 1; i <= SEG; i++) ctx.lineTo(lx[i], ly[i]);
+      for (let i = SEG; i >= 0; i--) ctx.lineTo(rx[i], ry[i]);
+      ctx.closePath();
+      ctx.fill();
     }
     ctx.restore();
   }

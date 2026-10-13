@@ -106,6 +106,14 @@ export default {
     name: 'Ten Chestnuts for Mateo',
     description: 'Mateo Avellaneda of Hallowmere Forest wants ten chestnuts, and will explain why at any length you allow.',
   },
+  // Roderick Vane (C1, 2026-10-12): giving him the Maiden's Grace lockbox
+  // starts this. Kingsreach (overworld B3) isn't built, so it stays active as a
+  // northward pull — complete it at the counting house when the city exists.
+  kingsreach_counting_house: {
+    id: 'kingsreach_counting_house',
+    name: 'Settling Accounts',
+    description: 'Roderick Vane has sent the Maiden\u2019s Grace lockbox on to the Crown. Call in at the king\u2019s counting house in Kingsreach, the city under the castle walls, and let them know the debt has been settled.',
+  },
   kingsreach_rock: {
     id: 'kingsreach_rock',
     name: 'A Stone Without a Name',

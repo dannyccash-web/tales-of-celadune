@@ -741,6 +741,7 @@ export default {
         { id: 'fishing_rod', qty: 1 },
         { id: 'fishing_bait', qty: 2 }, // added 2026-10-12 (Danny)
         { id: 'chestnut', qty: 1 }, // for Mateo's quest (C3, 2026-10-10)
+        { id: 'cabbage', qty: 1 }, // Gaffer's favourite (D3, 2026-10-12)
       ],
       gold: 40,
       awayLine: 'Catch me at the warehouse if you’re looking to trade.',

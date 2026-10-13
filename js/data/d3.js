@@ -178,8 +178,8 @@ export default {
       label: 'Well',
       well: true,
     },
-    // The silo hands out exactly ONE ear of corn (Gaffer's favorite — see
-    // main.js's buildGafferDialog), then reports empty forever after
+    // The silo hands out exactly ONE ear of corn (the thrumhorn's favourite
+    // since 2026-10-12, when Gaffer switched to cabbage), then reports empty forever after
     // (2026-07-10, Danny's spec — replaced the earlier infinitely-repeatable
     // version). Its single 'Silo' label rides on THIS interactable (there is no
     // separate 'Silo' building label — verified 2026-07-28; one label per thing).
@@ -474,9 +474,8 @@ export default {
       ],
       dialog: {
         line: 'Gaffer fixes you with a flat yellow stare, lets out a low bleat, and goes back to chewing on a fence post.',
-        // "Offer him..." only appears once the player is actually carrying
-        // corn — main.js's buildGafferDialog swaps in the feed option then.
-        // With no corn, it's just pet-or-leave.
+        // main.js's buildGafferDialog builds the real menu (pet / feed him a
+        // cabbage / leave); this line is only used for his greeting.
         responses: [
           'Pet Gaffer.',
           'Leave.',

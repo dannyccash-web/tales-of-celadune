@@ -725,6 +725,41 @@ export default {
   // (buildLakewardenDialog / startFerry / the `lakewardenPayFerry` effect);
   // nothing inline here, deliberately, same reasoning as Calder Rusk.
   npcs: [
+    // ---- Thornback boars in the south-west glade (2026-10-12, Danny) ----
+    // Same creature AI and stats as C2's boars: mill on a small patrol, charge
+    // within aggroRange, fight on contact, give up and trot home past
+    // giveUpRange from their spawn. Fights use the forest backdrop (per-NPC
+    // `battleBackground`, read by main.js's pendingAggro handler). Every patrol
+    // point is >=490px from the travelled trails (spawn -> both exits, the ferry
+    // dock and the cave), so walking the shore trail doesn't wake them —
+    // heading into the glade does. Re-check that if they're moved.
+    {
+      id: 'thornback_c3_1', name: 'Thornback Boar', creature: true, enemyId: 'thornback_boar',
+      sprite: 'assets/images/thornback_boar_overhead.png',
+      portrait: 'assets/images/thornback_boar.png',
+      battleBackground: 'assets/images/forest_background.jpg',
+      x: 700, y: 1740, speed: 30, chaseSpeed: 150, aggroRange: 420, giveUpRange: 620,
+      startsHome: false,
+      patrol: [ { x: 700, y: 1740 }, { x: 860, y: 1880 }, { x: 780, y: 1900 } ],
+    },
+    {
+      id: 'thornback_c3_2', name: 'Thornback Boar', creature: true, enemyId: 'thornback_boar',
+      sprite: 'assets/images/thornback_boar_overhead.png',
+      portrait: 'assets/images/thornback_boar.png',
+      battleBackground: 'assets/images/forest_background.jpg',
+      x: 880, y: 2060, speed: 30, chaseSpeed: 150, aggroRange: 420, giveUpRange: 620,
+      startsHome: false,
+      patrol: [ { x: 880, y: 2060 }, { x: 1040, y: 2120 }, { x: 980, y: 2180 } ],
+    },
+    {
+      id: 'thornback_c3_3', name: 'Thornback Boar', creature: true, enemyId: 'thornback_boar',
+      sprite: 'assets/images/thornback_boar_overhead.png',
+      portrait: 'assets/images/thornback_boar.png',
+      battleBackground: 'assets/images/forest_background.jpg',
+      x: 980, y: 2280, speed: 30, chaseSpeed: 150, aggroRange: 420, giveUpRange: 620,
+      startsHome: false,
+      patrol: [ { x: 980, y: 2280 }, { x: 940, y: 2420 }, { x: 900, y: 2520 } ],
+    },
     {
       id: 'lakewarden', name: 'The Lakewarden', role: '',
       sprite: 'assets/images/the_lakewarden_overhead.png',
@@ -756,7 +791,11 @@ export default {
       ],
     },
   ],
-  chests: [],
+  // Locked chest at the foot of the glade, past the boars (2026-10-12, Danny).
+  chests: [
+    { id: 'c3_glade_chest', x: 701, y: 2649, locked: true, gold: 15,
+      items: [ { id: 'health_potion', qty: 1 }, { id: 'apple', qty: 1 } ] },
+  ],
   battles: [],
   ambushes: [],
 
