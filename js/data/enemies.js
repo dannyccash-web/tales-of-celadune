@@ -299,4 +299,57 @@ export default {
     background: 'assets/images/cave_background.jpg',
     drops: { gold: { min: 17, max: 26 }, loot: [{ id: 'staff', chance: 1 }] },
   },
+
+  // ---- The Gloamkin (Temple of Aeluna, C3B-C3D, 2026-10-15) ----
+  // Aeluna's temple elves, rotted over centuries in the dark by the thing the
+  // Lakewarden won't name: ash-gray skin, decayed moon-and-sun armor, and
+  // polearms. The toughest regular foes so far, tuned by simulation against a
+  // player who has explored the D and C rows (attack 2, defense 3-4, a
+  // longsword, ~10 HP, a few potions): a lone Moonwretch is a sure win, a lone
+  // Sentinel ~90-98%, a Moonwretch+Sentinel pair ~60-85%, so potions matter.
+  // All flesh, so `poisonable`; none are `wood`.
+  gloamkin_moonwretch: {
+    id: 'gloamkin_moonwretch',
+    name: 'Gloamkin Moonwretch',
+    portrait: 'assets/images/gloamkin_moonwretch.png',
+    health: 7,
+    attack: 3,
+    defense: 2,
+    speed: 11, // feral and quick — out-paces the other Gloamkin
+    damage: { min: 2, max: 4 },
+    poisonable: true,
+    drops: { gold: { min: 6, max: 10 }, loot: [{ id: 'health_potion', chance: 0.15 }] },
+  },
+  gloamkin_sentinel: {
+    id: 'gloamkin_sentinel',
+    name: 'Gloamkin Sentinel',
+    portrait: 'assets/images/gloamkin_sentinel.png',
+    health: 12,
+    attack: 4,
+    defense: 3,
+    speed: 7, // heavy armor, slow
+    damage: { min: 2, max: 5 },
+    poisonable: true,
+    drops: { gold: { min: 10, max: 16 }, loot: [{ id: 'health_potion', chance: 0.3 }, { id: 'magic_potion', chance: 0.15 }] },
+  },
+  // Morrowvane, the Eclipsed — the temple's sub-boss and the hardest fight in
+  // the game so far (Danny). Stronger than Ysra (15/4/3) and the Bramblekin
+  // Chief (14/4/3): a well-equipped player wins about 4 in 10 attempts in
+  // simulation without enchantments, so it is meant to take a retry or a
+  // better plan (Venomous/Ensnaring weapons, a full potion belt). Calls a
+  // Moonwretch out of the dark every 5th turn he takes (the Ysra/Chief summon
+  // mechanic, capped by MAX_BATTLE_ENEMIES).
+  morrowvane: {
+    id: 'morrowvane',
+    name: 'Morrowvane, the Eclipsed',
+    portrait: 'assets/images/Morrowvane_the_Eclipsed.png',
+    health: 21,
+    attack: 5,
+    defense: 3,
+    speed: 9,
+    damage: { min: 3, max: 5 },
+    summon: { every: 5, pool: ['gloamkin_moonwretch'] },
+    poisonable: true,
+    drops: { gold: { min: 35, max: 50 }, loot: [{ id: 'vitality_potion', chance: 1 }, { id: 'health_potion', chance: 1, qty: 2 }] },
+  },
 };

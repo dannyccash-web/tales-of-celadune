@@ -467,6 +467,14 @@ async function boot() {
     'assets/images/orris_fenwick_2.png',
     'assets/images/Edras Holloweye.png', // D4B hermit — dialog auto-opens on approach, so preload the portrait
     'assets/images/ysra_nineshells.png', // C1B's Drownweft — fought via dialogue/theft-trigger, not a `battles` list
+    // Temple of Aeluna (2026-10-15): the Gloamkin are roaming creatures and
+    // Morrowvane is fought from his dialogue, so none are in a `battles` list.
+    'assets/images/gloamkin_moonwretch.png',
+    'assets/images/gloamkin_sentinel.png',
+    'assets/images/Morrowvane_the_Eclipsed.png',
+    'assets/images/C3B1_Battle_Background.jpg',
+    'assets/images/C3B2_Battle_Background.jpg',
+    'assets/images/C3B3_Battle_Background.jpg',
     ...Object.values(SCENES).flatMap((scene) => [
       scene.background,
       // Places (isPlace: true, e.g. "Your House") have no sprite — they're
@@ -1713,6 +1721,10 @@ async function boot() {
     // closes this window itself (mirrors fightCampMember's shape).
     if (effect.ysraAttack) {
       fightYsra();
+      return;
+    }
+    if (effect.morrowvaneAttack) {
+      fightMorrowvane();
       return;
     }
     if (effect.ysraRefuseGull) {
@@ -3903,6 +3915,29 @@ async function boot() {
   // world npc, fight her alone, mark her defeated on victory — a fled fight
   // just cools her down for 2s, same as a fled Bramblekin). Deferred a tick
   // so the dialog that triggered it closes first.
+  // ---- Morrowvane, the Eclipsed (Temple of Aeluna, Level 3, 2026-10-15) ----
+  // The temple's sub-boss. He `proximityTalk`s (c3d.js), so stepping into his
+  // chamber opens this locked challenge; the only answer is to fight. The
+  // thing that took the temple stays unnamed here, as it does everywhere else.
+  function buildMorrowvaneDialog() {
+    return {
+      line: 'Another ember, come down the long stair. I was High Dawnguard of Aeluna. I kept her flame when the others knelt, and when the dark came for me, I knelt too. There is no dawn down here, little ember. Only the eclipse, and me.',
+      responses: ['Draw your weapon.'],
+      responseEffects: [{ morrowvaneAttack: true }],
+      lockDialog: true,
+    };
+  }
+  // Same shape as fightYsra: deferred a tick so the dialog closes first; a win
+  // is permanent (checkpoint), a flee cools him down and his challenge re-arms
+  // once the player leaves his chamber (world.js proximityTalk hysteresis).
+  function fightMorrowvane() {
+    const live = world.npcs.find((n) => n.id === 'morrowvane');
+    setTimeout(() => startBattle(['morrowvane'], (result) => {
+      if (result === 'victory' && live) { live.defeated = true; saveGame({ checkpoint: true }); }
+      else if (result === 'fled' && live) { live.pause = 2; }
+    }), 0);
+  }
+
   function fightYsra() {
     const live = world.npcs.find((n) => n.id === 'ysra_nineshells');
     setTimeout(() => startBattle(['ysra_nineshells'], (result) => {
@@ -3977,6 +4012,7 @@ async function boot() {
     else if (npc.id === 'toby_farrow') dialog = buildTobyDialog();
     else if (npc.id === 'lily_farrow') dialog = buildLilyDialog();
     else if (npc.id === 'ysra_nineshells') dialog = buildYsraDialog();
+    else if (npc.id === 'morrowvane') dialog = buildMorrowvaneDialog();
     else if (npc.id === 'lakewarden') dialog = buildLakewardenDialog();
     else if (npc.id === 'mateo_avellaneda') dialog = buildMateoDialog();
     else if (npc.id === 'bramblekin_chief') dialog = buildChiefDialog();

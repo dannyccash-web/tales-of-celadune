@@ -69,6 +69,14 @@ export default {
 
   level: 1, // first level of the temple dungeon — drives the HUD's level indicator
 
+  // Every fight on this level uses its own backdrop (2026-10-15).
+  battleBackground: 'assets/images/C3B1_Battle_Background.jpg',
+
+  // Wall torches painted into the art get a live flame (2026-10-15). Points
+  // were found by scanning the art for bright warm blobs, then checked by eye;
+  // candles and lanterns on furniture are left alone. y is the flame's base.
+  fires: [ { x: 281, y: 3395, scale: 0.9 } ],
+
   obstacles: [
     { x: 0, y: 0, w: 960, h: 80 },
     { x: 1000, y: 0, w: 920, h: 60 },
@@ -689,5 +697,67 @@ export default {
   battles: [],
   ambushes: [],
   exits: [],
-  npcs: [],
+  npcs: [
+  // Gloamkin (2026-10-15): the temple's corrupted elves — roaming `creature`
+  // enemies (same AI as the cave spiders). Groups with a `pack` fight together:
+  // striking one pulls the whole group into one battle. Every group sits
+  // 800px+ from the spawn/stairs so arriving is always safe. Positions and
+  // patrols were picked per room and checked against this level's collision.
+    {
+      id: 'moonwretch_l1_1', name: 'Gloamkin Moonwretch', creature: true, enemyId: 'gloamkin_moonwretch',
+      sprite: 'assets/images/gloamkin_moonwretch_overhead.png',
+      portrait: 'assets/images/gloamkin_moonwretch.png',
+      x: 1971, y: 343, speed: 40, chaseSpeed: 150, aggroRange: 380, giveUpRange: 700, startsHome: false,
+      patrol: [ { x: 1971, y: 343 }, { x: 1971, y: 463 }, { x: 1926, y: 232 } ],
+    },
+    {
+      id: 'moonwretch_l1_2', name: 'Gloamkin Moonwretch', creature: true, enemyId: 'gloamkin_moonwretch',
+      sprite: 'assets/images/gloamkin_moonwretch_overhead.png',
+      portrait: 'assets/images/gloamkin_moonwretch.png',
+      x: 2000, y: 3286, speed: 40, chaseSpeed: 150, aggroRange: 380, giveUpRange: 700, startsHome: false,
+      patrol: [ { x: 2000, y: 3286 }, { x: 1954, y: 3175 }, { x: 2000, y: 3406 } ],
+    },
+    {
+      id: 'moonwretch_l1_3', name: 'Gloamkin Moonwretch', creature: true, enemyId: 'gloamkin_moonwretch', pack: 'temple1_g3',
+      sprite: 'assets/images/gloamkin_moonwretch_overhead.png',
+      portrait: 'assets/images/gloamkin_moonwretch.png',
+      x: 3429, y: 571, speed: 40, chaseSpeed: 150, aggroRange: 380, giveUpRange: 700, startsHome: false,
+      patrol: [ { x: 3429, y: 571 }, { x: 3513, y: 656 }, { x: 3474, y: 461 } ],
+    },
+    {
+      id: 'moonwretch_l1_4', name: 'Gloamkin Moonwretch', creature: true, enemyId: 'gloamkin_moonwretch', pack: 'temple1_g3',
+      sprite: 'assets/images/gloamkin_moonwretch_overhead.png',
+      portrait: 'assets/images/gloamkin_moonwretch.png',
+      x: 3509, y: 571, speed: 40, chaseSpeed: 150, aggroRange: 380, giveUpRange: 700, startsHome: false,
+      patrol: [ { x: 3509, y: 571 }, { x: 3629, y: 571 }, { x: 3463, y: 682 } ],
+    },
+    {
+      id: 'moonwretch_l1_5', name: 'Gloamkin Moonwretch', creature: true, enemyId: 'gloamkin_moonwretch', pack: 'temple1_g4',
+      sprite: 'assets/images/gloamkin_moonwretch_overhead.png',
+      portrait: 'assets/images/gloamkin_moonwretch.png',
+      x: 3486, y: 3371, speed: 40, chaseSpeed: 150, aggroRange: 380, giveUpRange: 700, startsHome: false,
+      patrol: [ { x: 3486, y: 3371 }, { x: 3597, y: 3417 }, { x: 3532, y: 3482 } ],
+    },
+    {
+      id: 'moonwretch_l1_6', name: 'Gloamkin Moonwretch', creature: true, enemyId: 'gloamkin_moonwretch', pack: 'temple1_g4',
+      sprite: 'assets/images/gloamkin_moonwretch_overhead.png',
+      portrait: 'assets/images/gloamkin_moonwretch.png',
+      x: 3566, y: 3371, speed: 40, chaseSpeed: 150, aggroRange: 380, giveUpRange: 700, startsHome: false,
+      patrol: [ { x: 3566, y: 3371 }, { x: 3651, y: 3456 }, { x: 3455, y: 3326 } ],
+    },
+    {
+      id: 'sentinel_l1_1', name: 'Gloamkin Sentinel', creature: true, enemyId: 'gloamkin_sentinel',
+      sprite: 'assets/images/gloamkin_sentinel_overhead.png',
+      portrait: 'assets/images/gloamkin_sentinel.png',
+      x: 371, y: 1486, speed: 30, chaseSpeed: 120, aggroRange: 320, giveUpRange: 600, startsHome: false,
+      patrol: [ { x: 371, y: 1486 }, { x: 456, y: 1401 }, { x: 251, y: 1486 } ],
+    },
+    {
+      id: 'sentinel_l1_2', name: 'Gloamkin Sentinel', creature: true, enemyId: 'gloamkin_sentinel',
+      sprite: 'assets/images/gloamkin_sentinel_overhead.png',
+      portrait: 'assets/images/gloamkin_sentinel.png',
+      x: 3600, y: 1429, speed: 30, chaseSpeed: 120, aggroRange: 320, giveUpRange: 600, startsHome: false,
+      patrol: [ { x: 3600, y: 1429 }, { x: 3554, y: 1318 }, { x: 3515, y: 1513 } ],
+    },
+  ],
 };

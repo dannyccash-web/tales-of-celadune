@@ -81,6 +81,14 @@ export default {
 
   level: 3, // third and (for now) final level of the temple dungeon
 
+  // Every fight on this level uses its own backdrop (2026-10-15).
+  battleBackground: 'assets/images/C3B3_Battle_Background.jpg',
+
+  // Wall torches painted into the art get a live flame (2026-10-15). Points
+  // were found by scanning the art for bright warm blobs, then checked by eye;
+  // candles and lanterns on furniture are left alone. y is the flame's base.
+  fires: [ { x: 3821, y: 1837, scale: 0.9 }, { x: 3783, y: 1292, scale: 0.9 }, { x: 2879, y: 978, scale: 0.9 }, { x: 2304, y: 240, scale: 0.9 }, { x: 3349, y: 291, scale: 0.9 }, { x: 3753, y: 294, scale: 0.9 }, { x: 862, y: 286, scale: 0.9 }, { x: 3125, y: 2690, scale: 0.9 }, { x: 384, y: 2689, scale: 0.9 }, { x: 135, y: 2176, scale: 0.9 }, { x: 273, y: 485, scale: 0.9 }, { x: 360, y: 1216, scale: 0.9 } ],
+
   obstacles: [
     { x: 0, y: 0, w: 4000, h: 20 },
     { x: 0, y: 20, w: 2160, h: 20 },
@@ -1143,5 +1151,108 @@ export default {
   battles: [],
   ambushes: [],
   exits: [],
-  npcs: [],
+  npcs: [
+  // Gloamkin (2026-10-15): the temple's corrupted elves — roaming `creature`
+  // enemies (same AI as the cave spiders). Groups with a `pack` fight together:
+  // striking one pulls the whole group into one battle. Every group sits
+  // 800px+ from the spawn/stairs so arriving is always safe. Positions and
+  // patrols were picked per room and checked against this level's collision.
+    {
+      id: 'moonwretch_l3_1', name: 'Gloamkin Moonwretch', creature: true, enemyId: 'gloamkin_moonwretch', pack: 'temple3_g1',
+      sprite: 'assets/images/gloamkin_moonwretch_overhead.png',
+      portrait: 'assets/images/gloamkin_moonwretch.png',
+      x: 514, y: 486, speed: 40, chaseSpeed: 150, aggroRange: 380, giveUpRange: 700, startsHome: false,
+      patrol: [ { x: 514, y: 486 }, { x: 625, y: 440 }, { x: 468, y: 375 } ],
+    },
+    {
+      id: 'sentinel_l3_1', name: 'Gloamkin Sentinel', creature: true, enemyId: 'gloamkin_sentinel', pack: 'temple3_g1',
+      sprite: 'assets/images/gloamkin_sentinel_overhead.png',
+      portrait: 'assets/images/gloamkin_sentinel.png',
+      x: 594, y: 486, speed: 30, chaseSpeed: 120, aggroRange: 320, giveUpRange: 600, startsHome: false,
+      patrol: [ { x: 594, y: 486 }, { x: 640, y: 597 }, { x: 679, y: 401 } ],
+    },
+    {
+      id: 'moonwretch_l3_2', name: 'Gloamkin Moonwretch', creature: true, enemyId: 'gloamkin_moonwretch', pack: 'temple3_g2',
+      sprite: 'assets/images/gloamkin_moonwretch_overhead.png',
+      portrait: 'assets/images/gloamkin_moonwretch.png',
+      x: 3629, y: 3429, speed: 40, chaseSpeed: 150, aggroRange: 380, giveUpRange: 700, startsHome: false,
+      patrol: [ { x: 3629, y: 3429 }, { x: 3674, y: 3539 }, { x: 3583, y: 3539 } ],
+    },
+    {
+      id: 'sentinel_l3_2', name: 'Gloamkin Sentinel', creature: true, enemyId: 'gloamkin_sentinel', pack: 'temple3_g2',
+      sprite: 'assets/images/gloamkin_sentinel_overhead.png',
+      portrait: 'assets/images/gloamkin_sentinel.png',
+      x: 3709, y: 3429, speed: 30, chaseSpeed: 120, aggroRange: 320, giveUpRange: 600, startsHome: false,
+      patrol: [ { x: 3709, y: 3429 }, { x: 3589, y: 3429 }, { x: 3793, y: 3344 } ],
+    },
+    {
+      id: 'moonwretch_l3_3', name: 'Gloamkin Moonwretch', creature: true, enemyId: 'gloamkin_moonwretch', pack: 'temple3_g3',
+      sprite: 'assets/images/gloamkin_moonwretch_overhead.png',
+      portrait: 'assets/images/gloamkin_moonwretch.png',
+      x: 2000, y: 2000, speed: 40, chaseSpeed: 150, aggroRange: 380, giveUpRange: 700, startsHome: false,
+      patrol: [ { x: 2000, y: 2000 }, { x: 2046, y: 1889 }, { x: 2000, y: 2120 } ],
+    },
+    {
+      id: 'sentinel_l3_3', name: 'Gloamkin Sentinel', creature: true, enemyId: 'gloamkin_sentinel', pack: 'temple3_g3',
+      sprite: 'assets/images/gloamkin_sentinel_overhead.png',
+      portrait: 'assets/images/gloamkin_sentinel.png',
+      x: 2080, y: 2000, speed: 30, chaseSpeed: 120, aggroRange: 320, giveUpRange: 600, startsHome: false,
+      patrol: [ { x: 2080, y: 2000 }, { x: 2034, y: 2111 }, { x: 2165, y: 2085 } ],
+    },
+    {
+      id: 'moonwretch_l3_4', name: 'Gloamkin Moonwretch', creature: true, enemyId: 'gloamkin_moonwretch', pack: 'temple3_g4',
+      sprite: 'assets/images/gloamkin_moonwretch_overhead.png',
+      portrait: 'assets/images/gloamkin_moonwretch.png',
+      x: 583, y: 1600, speed: 40, chaseSpeed: 150, aggroRange: 380, giveUpRange: 700, startsHome: false,
+      patrol: [ { x: 583, y: 1600 }, { x: 629, y: 1489 }, { x: 629, y: 1711 } ],
+    },
+    {
+      id: 'moonwretch_l3_5', name: 'Gloamkin Moonwretch', creature: true, enemyId: 'gloamkin_moonwretch', pack: 'temple3_g4',
+      sprite: 'assets/images/gloamkin_moonwretch_overhead.png',
+      portrait: 'assets/images/gloamkin_moonwretch.png',
+      x: 663, y: 1600, speed: 40, chaseSpeed: 150, aggroRange: 380, giveUpRange: 700, startsHome: false,
+      patrol: [ { x: 663, y: 1600 }, { x: 748, y: 1515 }, { x: 617, y: 1489 } ],
+    },
+    {
+      id: 'moonwretch_l3_6', name: 'Gloamkin Moonwretch', creature: true, enemyId: 'gloamkin_moonwretch',
+      sprite: 'assets/images/gloamkin_moonwretch_overhead.png',
+      portrait: 'assets/images/gloamkin_moonwretch.png',
+      x: 1629, y: 486, speed: 40, chaseSpeed: 150, aggroRange: 380, giveUpRange: 700, startsHome: false,
+      patrol: [ { x: 1629, y: 486 }, { x: 1674, y: 597 }, { x: 1544, y: 571 } ],
+    },
+    {
+      id: 'sentinel_l3_4', name: 'Gloamkin Sentinel', creature: true, enemyId: 'gloamkin_sentinel',
+      sprite: 'assets/images/gloamkin_sentinel_overhead.png',
+      portrait: 'assets/images/gloamkin_sentinel.png',
+      x: 2657, y: 3486, speed: 30, chaseSpeed: 120, aggroRange: 320, giveUpRange: 600, startsHome: false,
+      patrol: [ { x: 2657, y: 3486 }, { x: 2777, y: 3486 }, { x: 2703, y: 3375 } ],
+    },
+    {
+      id: 'sentinel_l3_5', name: 'Gloamkin Sentinel', creature: true, enemyId: 'gloamkin_sentinel',
+      sprite: 'assets/images/gloamkin_sentinel_overhead.png',
+      portrait: 'assets/images/gloamkin_sentinel.png',
+      x: 3600, y: 1971, speed: 30, chaseSpeed: 120, aggroRange: 320, giveUpRange: 600, startsHome: false,
+      patrol: [ { x: 3600, y: 1971 }, { x: 3489, y: 2017 }, { x: 3600, y: 1851 } ],
+    },
+    {
+      id: 'sentinel_l3_6', name: 'Gloamkin Sentinel', creature: true, enemyId: 'gloamkin_sentinel',
+      sprite: 'assets/images/gloamkin_sentinel_overhead.png',
+      portrait: 'assets/images/gloamkin_sentinel.png',
+      x: 1371, y: 1314, speed: 30, chaseSpeed: 120, aggroRange: 320, giveUpRange: 600, startsHome: false,
+      patrol: [ { x: 1371, y: 1314 }, { x: 1491, y: 1314 }, { x: 1399, y: 1381 } ],
+    },
+    // Morrowvane, the Eclipsed — the temple's sub-boss (2026-10-15). Paces the
+    // star-compass chamber in the south-west corner. Not a `creature`: he
+    // `proximityTalk`s instead, so walking into his chamber opens his locked
+    // challenge (main.js buildMorrowvaneDialog) and the only answer is to fight.
+    // Fleeing re-arms the challenge once you leave past 1.6x talkRange.
+    {
+      id: 'morrowvane', name: 'Morrowvane', role: 'THE ECLIPSED',
+      sprite: 'assets/images/Morrowvane_the_Eclipsed_overhead.png',
+      portrait: 'assets/images/Morrowvane_the_Eclipsed.png',
+      x: 1000, y: 3430, speed: 22, startsHome: false,
+      proximityTalk: true, talkRange: 420,
+      patrol: [ { x: 1000, y: 3430 }, { x: 1000, y: 3340 }, { x: 966, y: 3513 } ],
+    },
+  ],
 };
