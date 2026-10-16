@@ -309,9 +309,9 @@ export default {
   ambushes: [],
 
   // ---- NPCs (2026-10-16) ----
-  // Eleven of the twelve characters Danny had painted. The twelfth, Dame
-  // Elspeth Varrick (the wounded knight hiding at the secluded camp by the
-  // river), has no art in assets/images yet, so she is not placed.
+  // Twelve characters: the barricade garrison, the stranded camp, and Dame
+  // Elspeth Varrick hiding at the secluded camp by the river (added once her
+  // art arrived, 2026-10-16).
   // Voices are in audio.js's DIALOGUE_SFX. Every position was checked against
   // the real collision: standable with the 36px collider and reachable from
   // spawn. Guards face west (rotation PI/2), toward anyone coming up the road.
@@ -495,6 +495,26 @@ export default {
       chatter: [
         { q: 'Let me see the letter.', a: 'It is addressed to the Warden of the Eastern Road and grants me passage on urgent matters of estate. The captain informs me there is no Warden of the Eastern Road anymore. There is only her. I find that answer unacceptable.' },
         { q: 'What urgent matters?', a: 'My estate. My lands. My rents, which are going uncollected while I stand in a field with tradespeople. You may laugh. Everyone else does.' },
+      ],
+    },
+    // ---- The secluded camp by the river ----
+    {
+      id: 'elspeth_varrick', name: 'Dame Elspeth Varrick', role: 'KNIGHT OF THE CROWN',
+      sprite: 'assets/images/dame_elspeth_varrick_overhead.png',
+      portrait: 'assets/images/dame_elspeth_varrick.png',
+      // A survivor of the king's search party, hiding wounded beside her tent.
+      // Says the north was all cold and that they never once saw the wizard;
+      // that is as close to the twist as anything in B4 gets.
+      x: 930, y: 2180, speed: 0, startsHome: false, rotation: Math.PI / 2,
+      dialog: {
+        line: 'Easy. Easy. I’m not going to hurt you, and I’d ask you to return the favor. Are you from the barricade? No? Good. Then you didn’t see me.',
+        responses: ['Leave.'],
+      },
+      chatter: [
+        { q: 'Who are you?', a: 'Dame Elspeth Varrick, Knight of the Crown. One of the knights the king sent north after his daughter. There were twenty of us when we rode out. I’m what came back.' },
+        { q: 'What happened up there?', a: 'Cold like you wouldn’t believe, past the cliffs. Ice on the inside of our helms. We climbed for days and never saw the wizard. Not once. Not a fire, not a footprint. Only the cold, worse the closer we got, and then something in the ice I still can’t put a name to.' },
+        { q: 'Why are you hiding?', a: 'Because the captain at that barricade would have to report me, and the king would want to know why I’m alive when nineteen good knights aren’t. I don’t have an answer for him yet. When I do, I’ll walk into Kingsreach myself.' },
+        { q: 'Your wounds look bad.', a: 'They’re healing. Slowly. The river’s cold and clean, and nobody comes this way. Don’t fuss. Just don’t tell anyone I’m here.' },
       ],
     },
   ],

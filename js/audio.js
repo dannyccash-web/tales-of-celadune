@@ -175,6 +175,8 @@ export const DIALOGUE_SFX = {
   mei_huang: 'assets/audio/freesound_community-girl-chucklewav-14669.mp3',
   tesfaye_lark: 'assets/audio/u_9kvcihzjc7-squashwo-gua-plants-vs-zombies-hmm-383643.mp3',
   vikram_ashvale: 'assets/audio/mrstokes302-hmmm-sound-male-sfx-mrstokes302-420028.mp3',
+  // Elspeth is wounded, so the pained female grunt (Mara Vellorne's) fits her.
+  elspeth_varrick: 'assets/audio/phatphrogstudio-rpg-female-attack-grunt-no-ai-481720.mp3',
 };
 
 // ---- Volume controls (wired to the Menu > Audio sliders) ----
