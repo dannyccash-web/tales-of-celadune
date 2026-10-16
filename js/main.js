@@ -17,6 +17,7 @@ import sceneC3 from './data/c3.js';
 import sceneC3B from './data/c3b.js';
 import sceneC3C from './data/c3c.js';
 import sceneC3D from './data/c3d.js';
+import sceneB4 from './data/b4.js';
 import { World } from './world.js';
 import * as ui from './ui.js';
 import * as audio from './audio.js';
@@ -424,7 +425,7 @@ function loadImages(sources, onProgress) {
 // Every scene in the game, keyed by the ids that exits point at. Adding a
 // scene = write its data file, import it, and register it here — the
 // transition system below handles everything else.
-const SCENES = { D1: sceneD1, D1B: sceneD1B, D2: sceneD2, D3: sceneD3, D4: sceneD4, D4B: sceneD4B, C4: sceneC4, C1: sceneC1, C1B: sceneC1B, C1C: sceneC1C, C1D: sceneC1D, C2: sceneC2, C3: sceneC3, C3B: sceneC3B, C3C: sceneC3C, C3D: sceneC3D };
+const SCENES = { D1: sceneD1, D1B: sceneD1B, D2: sceneD2, D3: sceneD3, D4: sceneD4, D4B: sceneD4B, C4: sceneC4, C1: sceneC1, C1B: sceneC1B, C1C: sceneC1C, C1D: sceneC1D, C2: sceneC2, C3: sceneC3, C3B: sceneC3B, C3C: sceneC3C, C3D: sceneC3D, B4: sceneB4 };
 
 async function boot() {
   // Preload assets for EVERY registered scene up front — scene switches are
@@ -2317,6 +2318,23 @@ async function boot() {
   // (2026-09-25) — the fee is a one-time toll, not a per-crossing charge.
   const LAKEWARDEN_RETURN_MAINLAND = 'Back on my dock again. No charge this time, traveller — I said I’d take you across, and a Lakewarden’s word is the one thing that water hasn’t worn down yet. Climb aboard when you’re ready. Mind yourself in there, same as before.';
 
+  // ---- Captain Abena Stoneward (B4, 2026-10-16) ----
+  // Her ordinary lines + chatter come from b4.js. While the player carries
+  // King Aldric's royal summons (Mara Vellorne's, from C4) she gets one more
+  // option: she reads the seal and points them at the castle. No quest state
+  // changes here; the visit_the_king turn-in still belongs to the castle.
+  const ABENA_SUMMONS_LINE = 'That is the king\u2019s own seal. So you are expected, then. Go west to Kingsreach and up to the castle, and show that at the gate. And keep it close. There are people in that camp who would pay a great deal for a piece of paper that gets them past a soldier.';
+  function buildAbenaDialog(npc) {
+    const d = withChatter(npc.dialog, npc);
+    if (!inventory.some((it) => it.id === 'royal_summons')) return d;
+    const responses = [...d.responses];
+    const effects = d.responseEffects ? [...d.responseEffects] : responses.map(() => null);
+    const at = Math.max(0, responses.length - 1);
+    responses.splice(at, 0, 'Show her the royal summons.');
+    effects.splice(at, 0, { followUp: ABENA_SUMMONS_LINE });
+    return { ...d, responses, responseEffects: effects };
+  }
+
   function buildLakewardenDialog() {
     // Still poling over to fetch the player (2026-10-10) — finish that first.
     if (ferry) {
@@ -4014,6 +4032,7 @@ async function boot() {
     else if (npc.id === 'ysra_nineshells') dialog = buildYsraDialog();
     else if (npc.id === 'morrowvane') dialog = buildMorrowvaneDialog();
     else if (npc.id === 'lakewarden') dialog = buildLakewardenDialog();
+    else if (npc.id === 'abena_stoneward') dialog = buildAbenaDialog(npc);
     else if (npc.id === 'mateo_avellaneda') dialog = buildMateoDialog();
     else if (npc.id === 'bramblekin_chief') dialog = buildChiefDialog();
     else if (npc.bramblekin) dialog = buildBramblekinDialog(npc);

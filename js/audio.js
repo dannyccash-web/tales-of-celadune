@@ -159,6 +159,22 @@ export const DIALOGUE_SFX = {
   // suits a man about to explain chestnuts to you. Swapped off pacomoya-eh
   // (Skitter's) the same day at Danny's request. No one else in C3 uses it.
   mateo_avellaneda: 'assets/audio/mrstokes302-hmmm-sound-male-sfx-mrstokes302-420028.mp3',
+
+  // B4 the King's Road (2026-10-16) — the barricade garrison and the stranded
+  // camp, from the existing pool. Lupe gets the long sigh (Mirelle's) because
+  // she is the most exasperated person on the map; Arjun avoids huh-102688,
+  // which made Tovan read as a child.
+  abena_stoneward: 'assets/audio/freesound_community-woman-sigh-101931.mp3',
+  dae_hyun_kestrel: 'assets/audio/mrstokes302-hmmm-sound-male-sfx-mrstokes302-420028.mp3',
+  arjun_talwar: 'assets/audio/u_9kvcihzjc7-squashwo-gua-plants-vs-zombies-hmm-383643.mp3',
+  brigid_fallow: 'assets/audio/u_xg7ssi08yr-female-ah-ha-389835.mp3',
+  anjali_brookstead: 'assets/audio/freesound_community-mmm-hmm-36292.mp3',
+  kaveh_sandoran: 'assets/audio/universfield-muffled-reaction-242214.mp3',
+  lupe_carreno: 'assets/audio/freesound_community-long-sigh-104609.mp3',
+  tomas_dalisay: 'assets/audio/pacomoya-eh-13143.mp3',
+  mei_huang: 'assets/audio/freesound_community-girl-chucklewav-14669.mp3',
+  tesfaye_lark: 'assets/audio/u_9kvcihzjc7-squashwo-gua-plants-vs-zombies-hmm-383643.mp3',
+  vikram_ashvale: 'assets/audio/mrstokes302-hmmm-sound-male-sfx-mrstokes302-420028.mp3',
 };
 
 // ---- Volume controls (wired to the Menu > Audio sliders) ----

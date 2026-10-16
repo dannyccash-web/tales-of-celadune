@@ -15,7 +15,7 @@ ROOT=os.path.abspath(os.path.join(os.path.dirname(__file__),'..'))
 U=os.path.join(ROOT,'assets','images')+'/'
 S=5         # mask resolution (world px per mask cell)
 FC=30       # flow-field cell (world px)
-RIVERS={'C4','D4'}
+RIVERS={'C4','D4','B4'}
 # Scenes whose OPEN SEA rolls in as waves (2026-10-13, Danny): every water
 # component touching the map's WEST edge becomes 'wave' water — vertical lines
 # drifting east toward the shore. Other components in those scenes (ponds,
