@@ -41,10 +41,9 @@
 //               `right` exit, taken verbatim as that file instructed. The art's
 //               trail meets the left edge across y1120-1320, comfortably wider,
 //               so the band sits inside the natural opening with room to spare.
-//   top  -> B3  x998-1082 — STUBBED (B3 Town isn't built, so the frame loop
-//               shows the "isn't ready yet" toast). **Give B3's future `bottom`
-//               exit this band verbatim.** The art's gap in the treeline is
-//               x1000-1080; the apron was carved one cell wider each side
+//   top  -> B3  x998-1082 — LIVE since 2026-10-17 (Kingsreach). B3's bottom
+//               band is its own run, x1018-1101; settleArrival covers it.
+//               The art's gap in the treeline is x1000-1080; the apron was carved one cell wider each side
 //               (x960-1120) so the band is a comfortable 84px rather than a
 //               fiddly 44px of centre travel.
 //   right -> none. The lake fills the east edge and drains off it into the
