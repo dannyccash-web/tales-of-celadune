@@ -24,8 +24,11 @@
 //   right  -> B4  y1344-1561 (the king's road east to the barricade).
 //   bottom -> C3  x1018-1101 (the trail south into Hallowmere; C3's band is
 //                 x998-1082, settleArrival covers the 20px offset).
-//   left   -> B2  y1354-1481 (the high street west to the castle) — STUB.
-//   left   -> B2  y227-262   (the north-west cliff road) — STUB.
+//   left   -> B2  y1354-1481 (the high street west to the castle; live since
+//                 2026-10-17, B2's right band is y1318-1441).
+//   The north-west cliff road (y~227-262 at the left edge) is a DEAD END: B2
+//   has only cliff and trees there, so its last 40px are pinned shut (the
+//   'edge pin' obstacle at the top of the list) and it has no exit.
 //   No top exit (cliff).
 //
 // FAST TRAVEL: a town, so it carries `travel` (Fountain Square, north of the
@@ -55,6 +58,7 @@ export default {
   spawn: { x: 1500, y: 1450 },
   travel: { name: 'Kingsreach', x: 1205, y: 1075 },
   obstacles: [
+    { x: 0, y: 200, w: 40, h: 100 }, // edge pin: the NW cliff road dead-ends here (B2 has no road to meet it)
     { x: 0, y: 0, w: 3000, h: 200 },
     { x: 0, y: 200, w: 20, h: 10 },
     { x: 190, y: 200, w: 2810, h: 10 },
@@ -601,6 +605,5 @@ export default {
     { edge: 'right', yMin: 1344, yMax: 1561, to: 'B4', note: 'the king’s road east to the barricade' },
     { edge: 'bottom', xMin: 1018, xMax: 1101, to: 'C3', note: 'the trail south into Hallowmere Forest' },
     { edge: 'left', yMin: 1354, yMax: 1481, to: 'B2', note: 'the high street west to the King’s Castle' },
-    { edge: 'left', yMin: 227, yMax: 262, to: 'B2', note: 'the north-west cliff road' },
   ],
 };
