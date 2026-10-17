@@ -20,6 +20,7 @@ import sceneC3D from './data/c3d.js';
 import sceneB4 from './data/b4.js';
 import sceneB3 from './data/b3.js';
 import sceneB2 from './data/b2.js';
+import sceneB1 from './data/b1.js';
 import { World } from './world.js';
 import * as ui from './ui.js';
 import * as audio from './audio.js';
@@ -427,7 +428,7 @@ function loadImages(sources, onProgress) {
 // Every scene in the game, keyed by the ids that exits point at. Adding a
 // scene = write its data file, import it, and register it here — the
 // transition system below handles everything else.
-const SCENES = { D1: sceneD1, D1B: sceneD1B, D2: sceneD2, D3: sceneD3, D4: sceneD4, D4B: sceneD4B, C4: sceneC4, C1: sceneC1, C1B: sceneC1B, C1C: sceneC1C, C1D: sceneC1D, C2: sceneC2, C3: sceneC3, C3B: sceneC3B, C3C: sceneC3C, C3D: sceneC3D, B4: sceneB4, B3: sceneB3, B2: sceneB2 };
+const SCENES = { D1: sceneD1, D1B: sceneD1B, D2: sceneD2, D3: sceneD3, D4: sceneD4, D4B: sceneD4B, C4: sceneC4, C1: sceneC1, C1B: sceneC1B, C1C: sceneC1C, C1D: sceneC1D, C2: sceneC2, C3: sceneC3, C3B: sceneC3B, C3C: sceneC3C, C3D: sceneC3D, B4: sceneB4, B3: sceneB3, B2: sceneB2, B1: sceneB1 };
 
 async function boot() {
   // Preload assets for EVERY registered scene up front — scene switches are
@@ -770,7 +771,19 @@ async function boot() {
   }
 
   function switchScene(exit) {
-    const { x: px, y: py, rotation } = world.player;
+    let { x: px, y: py, rotation } = world.player;
+    // `toBand: [min, max]` on an exit (2026-10-17, B1<->B2): the neighbour's
+    // matching band, when the two scenes' roads meet the shared edge at
+    // different heights. The crossing point is mapped proportionally from
+    // this exit's band onto that one, so the player arrives on the road
+    // instead of being slid to the nearest corner of it by settleArrival.
+    if (Array.isArray(exit.toBand)) {
+      const horiz = exit.edge === 'left' || exit.edge === 'right';
+      const lo = horiz ? exit.yMin : exit.xMin, hi = horiz ? exit.yMax : exit.xMax;
+      const t = Math.min(1, Math.max(0, ((horiz ? py : px) - lo) / Math.max(1, hi - lo)));
+      const v = Math.round(exit.toBand[0] + t * (exit.toBand[1] - exit.toBand[0]));
+      if (horiz) py = v; else px = v;
+    }
     enterScene(exit.to);
     // Re-arm the Bramblekin toll on every fresh arrival into D4 (sentries back
     // on post, camp resealed).

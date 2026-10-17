@@ -20,7 +20,7 @@ RIVERS={'C4','D4','B4'}
 # component touching the map's WEST edge becomes 'wave' water — vertical lines
 # drifting east toward the shore. Other components in those scenes (ponds,
 # pools) stay still water.
-SEAS={'C1','D1'}
+SEAS={'C1','D1','B1'}
 def load(sid):
     # Scene data modules are plain ES modules; let node print them as JSON.
     js=f"import('{ROOT}/js/data/{sid.lower()}.js').then(m=>process.stdout.write(JSON.stringify(m.default)))"

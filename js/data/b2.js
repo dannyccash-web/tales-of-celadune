@@ -1,5 +1,5 @@
 // Scene B2 — THE KING'S CASTLE (overworld row B, column 2 — WEST of B3
-// Kingsreach, EAST of B1 Grassland, SOUTH of A2 the Mountains, NORTH of C2).
+// Kingsreach, EAST of B1 Stonewick, SOUTH of A2 the Mountains, NORTH of C2).
 // Built 2026-10-17. World coordinates: 3000x3000. Origin top-left.
 //
 // King Aldric's castle. A square curtain wall with round towers at the
@@ -24,7 +24,9 @@
 // EXITS (each = this map's own collider-centre run at that edge):
 //   right  -> B3  y1318-1441 (B3's left band is y1354-1481; settleArrival
 //                 lines arrivals up).
-//   left   -> B1  y1218-1511 — STUB (B1 isn't built; toast).
+//   left   -> B1  y1218-1511 (Stonewick, live since 2026-10-17; B1's road
+//                 meets its right edge higher, y1018-1211 — `toBand` maps the
+//                 crossing point proportionally onto B1's road).
 //   top    -> A2  x1458-1561 — STUB (A2 isn't built; toast).
 //   No bottom exit (forest; C2 has no top exit either).
 // The left edge is pinned shut (a 30px strip) everywhere except the road
@@ -735,7 +737,7 @@ export default {
 
   exits: [
     { edge: 'right', yMin: 1318, yMax: 1441, to: 'B3', note: 'the cobbled road east into Kingsreach' },
-    { edge: 'left', yMin: 1218, yMax: 1511, to: 'B1', note: 'the road west to the grasslands' },
+    { edge: 'left', yMin: 1218, yMax: 1511, toBand: [1018, 1211], to: 'B1', note: 'the road west to Stonewick' },
     { edge: 'top', xMin: 1458, xMax: 1561, to: 'A2', note: 'the road north into the mountains' },
   ],
 };

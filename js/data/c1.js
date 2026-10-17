@@ -674,9 +674,9 @@ export default {
   ambushes: [],
 
   // South back to D1 (band matches D1's existing top exit exactly — see the
-  // header comment). North toward B1 and east toward C2 reach the edges but
-  // aren't built yet — the frame loop shows the "isn't ready yet" toast for
-  // those. Bands re-measured 2026-09-02 against the new art's actual open
+  // header comment). North goes to B1 Stonewick (live since 2026-10-17; B1's
+  // bottom band is x1294-1522, settleArrival lines arrivals up) and east to
+  // C2. Bands re-measured 2026-09-02 against the new art's actual open
   // ground at each edge (aprons carved a little wider than the natural gaps
   // for a safe margin).
   exits: [
