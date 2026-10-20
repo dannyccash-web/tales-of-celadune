@@ -77,6 +77,8 @@ function decodeWater(id) {
 }
 
 export class World {
+  // main.js sets this to luckChance() (0.10 per Luck point); scales ranged chest gold.
+  static goldLuck = () => 0;
   constructor(canvas, scene, images) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
@@ -156,8 +158,10 @@ export class World {
       locked: !!c.locked,
       // gold can be a fixed number or a {min,max} range rolled once at world
       // build (persisted via the save snapshot, so it doesn't reroll on revisit).
+      // Luck (2026-10-20): a ranged roll is scaled x(1 + 0.10*Luck), the same
+      // rule as enemy gold; a fixed amount is left as designed.
       gold: (c.gold && typeof c.gold === 'object')
-        ? Math.floor(Math.random() * (c.gold.max - c.gold.min + 1)) + c.gold.min
+        ? Math.round((Math.floor(Math.random() * (c.gold.max - c.gold.min + 1)) + c.gold.min) * (1 + World.goldLuck()))
         : (c.gold || 0),
       items: (c.items || []).map((it) => ({ ...it })),
       emptied: false,

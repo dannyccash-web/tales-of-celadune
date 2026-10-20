@@ -1773,3 +1773,14 @@ First B-row scene. `js/data/b4.js`, `assets/images/B4_Background.jpg` (3000x3000
 - **Water animation regenerated** (`python3 tools/gen_water.py C1 C3 C4 D1 D2 D4 B4 B2 B1`; every other scene byte-identical). Sea waves now hug the new hull; the hatch is not picked up as water.
 - Fishing spot (518,2751) unchanged and still in range (nearest shore 104px).
 - **Verified:** `_verify_c1.mjs` (gitignored) against the real World: spawn, all three exits, every interactable, every door and NPC point, the C1C return point, the deck/gangway/beach probes reachable, hatch/masts/rails/sails/palms blocked, 600s NPC sim with no stalls. Headless-Chromium run of the real game: walked from the dock across the gangway onto the deck, Below Deck → C1C → Top Deck returns to (512,1450), beach renders, no console errors (only the missing favicon).
+
+## Luck applies to every non-combat chance roll (2026-10-20)
+
+Danny asked for Luck to apply to the sea fishing spots too, and to every other non-combat percentage roll. Audit of every `Math.random` in the game: the only non-combat chance rolls are fishing, enemy loot/gold, and ranged chest gold. Rule everywhere is **+10% per Luck point** (`luckChance()` in main.js, whose comment now lists all of them). Combat rolls (to-hit, damage, initiative, enchant procs, summons) still never use Luck.
+
+- **Freshwater fishing:** the old boot is now **5% + 10 points per Luck (cap 40%)**, no longer a flat 15%. Moonscale unchanged (10% + 10/pt of the remainder, cap 70%). Luck 1 is exactly the old odds (boot 15%, Moonscale 17%); Luck 2 = boot 25%, Moonscale ~22.5%.
+- **Saltwater fishing (C1, D1):** `fishingCatch` entries can carry **`luckBonus`** (+points per Luck, optional `luckCap`, default 70). A lucky entry's `weight` is its percent at Luck 0; the other entries share what's left in proportion to their weights. Sailback = weight 15, luckBonus 10, so **Luck 1 = 75/25 (Danny's original odds), Luck 2 = 65/35**.
+- **Enemy loot and gold:** already luck-scaled (+10 points per item chance, gold x1.1 per point), unchanged.
+- **Chest gold rolled from a `{min,max}` range** is now scaled x(1 + 0.10*Luck) like enemy gold (`World.goldLuck`, set by main.js; rolled once when the scene's World is built, then saved). Fixed amounts (a chest's set gold, coin glints, quest rewards) are designed values, not chance rolls, and are left alone.
+- Luck currently tops out at 2 in-game (start 1, +1 from the D3 well).
+- Verified: 200k-roll simulation of the real `rollCatch` at Luck 0-3 for both tables, chest-gold averages at Luck 0-2 against real `World`s, sentinel-guarded syntax sweep, and a headless-Chromium boot of the real game with no console errors.

@@ -182,9 +182,18 @@ function equipmentBonus(field) {
 // PERCENTAGE-CHANCE mechanics (fishing catch odds, battle loot). See luckChance().
 function effectiveAttack() { return stats.attack + equipmentBonus('attackBonus'); }
 function effectiveDefense() { return stats.defense + equipmentBonus('defenseBonus'); }
-// Luck as a probability bonus: +10% (0.10) per point, applied to non-combat
-// chances — the Moonscale catch (rollCatch) and enemy gold/loot (computeBattleRewards).
+// Luck as a probability bonus: +10% (0.10) per point, applied to EVERY
+// non-combat chance (2026-10-20, Danny — audited):
+//   - fishing: rare catches (boot, Moonscale Trout, Crimson Sailback) get +10
+//     percentage points per Luck point (rollCatch);
+//   - enemy loot: +10 points per Luck point on every item's drop chance, and
+//     enemy gold x(1 + 0.10*Luck) (computeBattleRewards);
+//   - chest gold rolled from a {min,max} range: x(1 + 0.10*Luck) (World.goldLuck).
+// Fixed amounts (a chest's set gold, hidden coin glints, quest rewards) aren't
+// chance rolls and stay as designed. Combat rolls (to-hit, damage, initiative,
+// enchant procs) never use Luck.
 function luckChance() { return stats.luck * 0.10; }
+World.goldLuck = luckChance;
 // Speed including gear (leather boots' speedBonus, 2026-07-26). Capped at 3
 // (the movement/initiative curves top out there). Drives BOTH overworld
 // movement (moveMultForSpeed) and battle initiative (playerInitiativeChance).
@@ -4997,22 +5006,43 @@ async function boot() {
   // playthrough, about half of players never saw one. Now the boot is rolled
   // FIRST at a flat BOOT_CHANCE that Luck never touches; Luck only trades
   // ordinary fish for the Moonscale Trout.
+  // Reworked again 2026-10-20 (Danny: Luck should raise the odds of EVERY rare
+  // catch, boots included). The boot is still rolled first, but now at
+  // 5% + 10 points per Luck point (capped 40%), so a starting Luck-1 player
+  // sees exactly the old 15% and each extra point adds 10.
   //   Luck 1: boot 15%, Moonscale 17%, trout ~43%, bluegill ~26%
-  //   Luck 2: boot 15%, Moonscale ~26%, trout ~37%, bluegill ~22%
-  const BOOT_CHANCE = 15; // percent per cast, independent of Luck
+  //   Luck 2: boot 25%, Moonscale ~22.5%, trout ~33%, bluegill ~20%
+  const BOOT_BASE = 5, BOOT_CAP = 40;   // percent at Luck 0, and the ceiling
+  const MOON_BASE = 10, MOON_CAP = 70;
+  function luckPoints() { return luckChance() * 100; } // +10 percentage points per Luck
   function rollCatch() {
-    // A scene can carry its own weighted catch table (2026-10-11: the sea
-    // spots in C1/D1 — sea bass 75%, crimson sailback 25%). It replaces the
-    // freshwater table entirely: no boot, no Moonscale, no Luck.
+    // A scene can carry its own catch table (2026-10-11: the sea spots in
+    // C1/D1). It replaces the freshwater table entirely. Entries with a
+    // `luckBonus` are rare catches: their `weight` is the percent chance at
+    // Luck 0 and each Luck point adds `luckBonus` percentage points (capped
+    // at `luckCap`, default 70); the other entries share whatever is left in
+    // proportion to their weights (2026-10-20).
     const table = world.scene.fishingCatch;
     if (table && table.length) {
-      const total = table.reduce((s, e) => s + e.weight, 0);
+      const lp = luckChance() * 10; // Luck points
+      const rare = table.filter((e) => e.luckBonus);
+      const common = table.filter((e) => !e.luckBonus);
+      const pct = new Map();
+      let rareTotal = 0;
+      for (const e of rare) { const p = Math.min(e.luckCap ?? 70, e.weight + lp * e.luckBonus); pct.set(e, p); rareTotal += p; }
+      if (rareTotal > 95) { const k = 95 / rareTotal; for (const e of rare) pct.set(e, pct.get(e) * k); rareTotal = 95; }
+      if (rare.length) {
+        const cw = common.reduce((s, e) => s + e.weight, 0) || 1;
+        for (const e of common) pct.set(e, (100 - rareTotal) * e.weight / cw);
+      } else for (const e of table) pct.set(e, e.weight);
+      const total = table.reduce((s, e) => s + pct.get(e), 0);
       let r = Math.random() * total;
-      for (const e of table) { if ((r -= e.weight) < 0) return e.id; }
+      for (const e of table) { if ((r -= pct.get(e)) < 0) return e.id; }
       return table[table.length - 1].id;
     }
-    if (Math.random() * 100 < BOOT_CHANCE) return 'old_boot';
-    const moon = Math.min(70, 10 + luckChance() * 100); // luckChance()*100 = luck*10 percentage points
+    const boot = Math.min(BOOT_CAP, BOOT_BASE + luckPoints());
+    if (Math.random() * 100 < boot) return 'old_boot';
+    const moon = Math.min(MOON_CAP, MOON_BASE + luckPoints());
     if (Math.random() * 100 < moon) return 'rare_fish';
     return Math.random() * 80 < 50 ? 'trout' : 'bluegill';
   }
