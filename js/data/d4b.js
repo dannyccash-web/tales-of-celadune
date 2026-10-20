@@ -351,6 +351,7 @@ export default {
       x: 2226, y: 1399,
       label: 'Metallic ore',
       reward: { item: 'metallic_ore', qty: 1, catch: true },
+      sparkle: true, // occasional glint until collected (2026-10-20)
       message: 'You pried a chunk of metallic ore loose from the rock.',
     },
   ],

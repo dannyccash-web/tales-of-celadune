@@ -437,6 +437,10 @@ function loadImages(sources, onProgress) {
 // Every scene in the game, keyed by the ids that exits point at. Adding a
 // scene = write its data file, import it, and register it here — the
 // transition system below handles everything else.
+// Scenes that exist but aren't finished yet (2026-10-20, Danny): walking into
+// one gets the usual "isn't ready yet" toast, and they never appear in fast
+// travel. Remove an id from this set to open that scene up.
+const LOCKED_SCENES = new Set(['B1', 'B2', 'B3', 'B4']);
 const SCENES = { D1: sceneD1, D1B: sceneD1B, D2: sceneD2, D3: sceneD3, D4: sceneD4, D4B: sceneD4B, C4: sceneC4, C1: sceneC1, C1B: sceneC1B, C1C: sceneC1C, C1D: sceneC1D, C2: sceneC2, C3: sceneC3, C3B: sceneC3B, C3C: sceneC3C, C3D: sceneC3D, B4: sceneB4, B3: sceneB3, B2: sceneB2, B1: sceneB1 };
 
 async function boot() {
@@ -560,7 +564,7 @@ async function boot() {
   let fastTraveling = false; // true for the whole fade-out / swap / fade-in
   function refreshTravelPanel() {
     ui.updateTravelPanel(Object.keys(SCENES)
-      .filter((id) => SCENES[id].travel && visitedTowns.has(id))
+      .filter((id) => SCENES[id].travel && visitedTowns.has(id) && !LOCKED_SCENES.has(id))
       .map((id) => ({ id, name: SCENES[id].travel.name, here: id === currentSceneId })));
   }
   function applyWorldFlags(w, f) {
@@ -960,7 +964,7 @@ async function boot() {
         inventory: inventory.map((e) => ({ ...e })),
         equipment: { ...equipment },
         quests: quests.map((q) => ({ ...q })),
-        flags: { campQuestDone, campHostile, campTollTier, gafferHappy, thrumhornFed, orrisRescued, wellCoinThrown, wellDrinks, vegetableDeliveredToTavern, calderToldStory, calderToldDangers, maraMet, maraToldTruth, lilyGullThanked, magicRevealed, maraHollowmastRescued, lockboxAcceptedFrom, lockboxGivenTo , ferrySide, lakewardenPaid, visitedTowns: [...visitedTowns] },
+        flags: { campQuestDone, campHostile, campTollTier, gafferHappy, thrumhornFed, orrisRescued, orrisDeparted, wellCoinThrown, wellDrinks, vegetableDeliveredToTavern, calderToldStory, calderToldDangers, maraMet, maraToldTruth, lilyGullThanked, magicRevealed, maraHollowmastRescued, lockboxAcceptedFrom, lockboxGivenTo , ferrySide, lakewardenPaid, visitedTowns: [...visitedTowns] },
         caveReturn, // where to exit to if saved inside a cave/dungeon
         worlds: snapshotWorlds(),
       };
@@ -1052,7 +1056,7 @@ async function boot() {
     quests.length = 0;
     campTollPaid = false; campEntered = false; campQuestDone = false;
     campHostile = false; campEntryGate = null; campTollTier = 0;
-    gafferHappy = false; thrumhornFed = false; orrisRescued = false; wellCoinThrown = false; wellDrinks = 0; vegetableDeliveredToTavern = false;
+    gafferHappy = false; thrumhornFed = false; orrisRescued = false; orrisDeparted = false; orrisLeaving = false; wellCoinThrown = false; wellDrinks = 0; vegetableDeliveredToTavern = false;
     ferrySide = 'mainland'; // the C3 raft starts moored on the near shore
     lakewardenPaid = false;
     calderToldStory = false; calderToldDangers = false; maraMet = false; maraToldTruth = null;
@@ -1092,7 +1096,7 @@ async function boot() {
     const f = data.flags || {};
     campQuestDone = !!f.campQuestDone; campHostile = !!f.campHostile;
     campTollTier = f.campTollTier || 0;
-    gafferHappy = !!f.gafferHappy; thrumhornFed = !!f.thrumhornFed; orrisRescued = !!f.orrisRescued; wellCoinThrown = !!f.wellCoinThrown;
+    gafferHappy = !!f.gafferHappy; thrumhornFed = !!f.thrumhornFed; orrisRescued = !!f.orrisRescued; orrisDeparted = !!f.orrisDeparted; orrisLeaving = false; wellCoinThrown = !!f.wellCoinThrown;
     ferrySide = f.ferrySide === 'island' ? 'island' : 'mainland';
     lakewardenPaid = !!f.lakewardenPaid;
     wellDrinks = f.wellDrinks || 0;
@@ -1174,7 +1178,7 @@ async function boot() {
   // so it writes both save slots, same as switchScene/enterCave.
   function fastTravel(id) {
     const dest = SCENES[id]?.travel;
-    if (fastTraveling || !dest || !visitedTowns.has(id) || id === currentSceneId) return;
+    if (fastTraveling || !dest || !visitedTowns.has(id) || id === currentSceneId || LOCKED_SCENES.has(id)) return;
     // Mid-crossing on the Lakewarden's raft: the cutscene owns the player.
     if (ferry && !ferry.empty) {
       ui.closeAllPanels();
@@ -1332,6 +1336,8 @@ async function boot() {
   // matches how the world's `defeated`/`collected` flags reset per World).
   let gafferHappy = false;
   let orrisRescued = false; // C2's highwaymen have been beaten and Orris freed (2026-09-18)
+  let orrisDeparted = false; // he's enchanted one weapon and left for Kingsreach (2026-10-20) — persisted
+  let orrisLeaving = false;  // set by applyEnchant; he goes the moment that dialog closes
   let thrumhornFed = false; // C2's thrumhorn has been fed corn (2026-09-16) — persisted like gafferHappy
 
   // Calder Rusk's conversation progress (2026-07-25): he only offers his
@@ -2338,6 +2344,7 @@ async function boot() {
   const LAKEWARDEN_WARNING = 'You want to go where I have spent my whole charge keeping people out of. That is your business once you are past this dock, not mine. But you will hear this first, because I will only say it once. What overran that temple never left it — it only went quiet, and quiet things get patient with enough years to practice. Keep to the stone. Do not go below. And when you want off that island, come back to this dock and call for me — I will not come looking for you. Now. I do not pole a raft across open water for strangers out of the goodness of my heart, not at my age. Fifty gold, and I will take you across. Not a copper less.';
   const LAKEWARDEN_ISLAND = 'The stones are that way. Mind what I told you. I will be here when you want off — I am always here.';
   const LAKEWARDEN_FARE = 50;
+  const LAKEWARDEN_UNWORTHY = 'No. Only the worthy may cross to that island, and I have seen nothing yet to tell me you are one of them. Do not take it hard. Most who stand where you are standing are not, and most of them are still alive because of it.';
   // Shown on the mainland side once LAKEWARDEN_FARE has already been paid once
   // (2026-09-25) — the fee is a one-time toll, not a per-crossing charge.
   const LAKEWARDEN_RETURN_MAINLAND = 'Back on my dock again. No charge this time, traveller — I said I’d take you across, and a Lakewarden’s word is the one thing that water hasn’t worn down yet. Climb aboard when you’re ready. Mind yourself in there, same as before.';
@@ -2371,17 +2378,14 @@ async function boot() {
         responseEffects: [{ lakewardenFerry: true }, null],
       };
     }
-    if (lakewardenPaid) {
-      return {
-        line: LAKEWARDEN_RETURN_MAINLAND,
-        responses: ['Take me across.', 'What stands across the water?', 'Leave.'],
-        responseEffects: [{ lakewardenFerry: true }, { followUp: LAKEWARDEN_TEMPLE }, null],
-      };
-    }
+    // The temple isn't finished (2026-10-20, Danny), so he won't take anyone
+    // across yet: asking gets "only the worthy". The fare/warning path
+    // (lakewardenFerryOffer -> lakewardenPayFerry) is left in place, unused —
+    // point the first response back at { lakewardenFerryOffer: true } to reopen it.
     return {
       line: LAKEWARDEN_GREETING,
       responses: ['Will you take me across?', 'What stands across the water?', 'Leave.'],
-      responseEffects: [{ lakewardenFerryOffer: true }, { followUp: LAKEWARDEN_TEMPLE }, null],
+      responseEffects: [{ followUp: LAKEWARDEN_UNWORTHY }, { followUp: LAKEWARDEN_TEMPLE }, null],
     };
   }
 
@@ -2408,7 +2412,18 @@ async function boot() {
     o._talkArmed = false;
     o.portrait = ORRIS_PORTRAIT_SAFE;
   }
-  function revealOrrisIfRescued() { if (orrisRescued) revealOrris(); }
+  function revealOrrisIfRescued() {
+    if (orrisRescued) revealOrris();
+    if (orrisDeparted) hideOrris();
+  }
+  // Gone for good once he's enchanted something (he's moving on to Kingsreach).
+  // `hidden` = not drawn, not talkable, no collision, not moving.
+  function hideOrris() {
+    const o = orrisNpc();
+    if (!o) return;
+    o.hidden = true;
+    o.proximityTalk = false;
+  }
 
   function startOrrisAmbush() {
     const o = orrisNpc();
@@ -2560,6 +2575,8 @@ async function boot() {
     spider_fang: 'He handles the fang with tongs, at arm\u2019s length, narrating what will happen to him if he is careless. He is not careless. The blade comes back with a wet green line down it that will not wipe off.',
   };
 
+  const ORRIS_FAREWELL = 'And that, I\u2019m afraid, is all the bench work this road will get out of me. My things are packed, and I have stood out here waiting to be robbed again for quite long enough. I am going on to Kingsreach. If you have more steel that wants waking, come and find me there. I\u2019ll have a proper bench by then, and a door that locks.';
+
   function applyEnchant(weaponId, reagentId) {
     const ench = ENCHANTS[reagentId];
     const enchantedId = `${weaponId}_${ench.id}`;
@@ -2572,7 +2589,10 @@ async function boot() {
     if (wasEquipped) equipItem(enchantedId);
     audio.sfx(audio.SFX.magic);
     ui.showReceivedItem(def); // the standard received-item reveal
-    ui.updateDialogContent({ line: ORRIS_RESULT_LINES[reagentId], responses: ['Leave.'] });
+    ui.updateDialogContent({ line: `${ORRIS_RESULT_LINES[reagentId]} ${ORRIS_FAREWELL}`, responses: ['Leave.'] });
+    // He leaves C2 the moment this dialog closes (frame loop) — once per game.
+    orrisDeparted = true;
+    orrisLeaving = true;
     refreshItemsUi();
     refreshStatsPanel();
     requestAutosave();
@@ -5192,6 +5212,7 @@ async function boot() {
     // still plays while the player steps on and off the raft. One frame of
     // camera lag against the new position is imperceptible at 60fps.
     if (!modalLock) maybeCallFerry();
+    if (orrisLeaving && !ui.isDialogOpen()) { orrisLeaving = false; hideOrris(); requestAutosave(); }
     if (!(ferry?.empty && modalLock)) updateFerry(dt); // a fetch pauses with the world; a ride never has a modal open
     world.render();
 
@@ -5203,7 +5224,7 @@ async function boot() {
     if (world.pendingExit) {
       const exit = world.pendingExit;
       world.pendingExit = null;
-      if (SCENES[exit.to]) {
+      if (SCENES[exit.to] && !LOCKED_SCENES.has(exit.to)) {
         switchScene(exit);
       } else if (now - lastEdgeMessage > 3000) {
         ui.toast('The path continues on, but that part of the world isn’t ready yet.');

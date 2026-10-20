@@ -991,6 +991,46 @@ export class World {
     ctx.restore();
   }
 
+  // A brief cluster of star-shaped glints every couple of seconds over a
+  // `sparkle: true` interactable, so a pickup catches the eye. Drawn on the
+  // label canvas (above the vignette AND the dark-cave overlay) so it reads
+  // even in a pitch-dark cave. Each burst picks new spots near the object.
+  drawSparkle(it) {
+    const ctx = this.labelCtx;
+    if (!ctx || !ctx.save) return;
+    const PERIOD = 2.4, LIT = 0.9;
+    const seed = (it.x * 7 + it.y * 13) % 97 / 97;  // stagger different objects
+    const tt = this.time / PERIOD + seed;
+    const cycle = Math.floor(tt);
+    const f = (tt - cycle) * PERIOD;                  // seconds into this cycle
+    if (f > LIT) return;
+    const rnd = (n) => { const v = Math.sin((cycle + 1) * 12.9898 + n * 78.233 + it.x) * 43758.5453; return v - Math.floor(v); };
+    const sx = it.x - this.cameraX, sy = it.y - this.cameraY;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < 3; i++) {
+      const start = i * 0.18, life = 0.5;
+      const p = (f - start) / life;
+      if (p < 0 || p > 1) continue;
+      const a = Math.sin(p * Math.PI);                 // fade in, then out
+      const x = sx + (rnd(i) - 0.5) * 40, y = sy + (rnd(i + 5) - 0.5) * 30;
+      const r = (7 + rnd(i + 9) * 7) * (0.6 + 0.4 * a);
+      const g = ctx.createRadialGradient(x, y, 0, x, y, r * 1.6);
+      g.addColorStop(0, `rgba(255,255,240,${0.9 * a})`);
+      g.addColorStop(0.35, `rgba(255,225,150,${0.45 * a})`);
+      g.addColorStop(1, 'rgba(255,200,100,0)');
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(x, y, r * 1.6, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = `rgba(255,255,235,${a})`;          // four-point star
+      ctx.beginPath();
+      const w = r * 0.16;
+      ctx.moveTo(x, y - r * 1.4); ctx.lineTo(x + w, y - w); ctx.lineTo(x + r * 1.4, y); ctx.lineTo(x + w, y + w);
+      ctx.lineTo(x, y + r * 1.4); ctx.lineTo(x - w, y + w); ctx.lineTo(x - r * 1.4, y); ctx.lineTo(x - w, y - w);
+      ctx.closePath(); ctx.fill();
+    }
+    ctx.restore();
+  }
+
   drawLabel(text, x, y) {
     const ctx = this.labelCtx;
     ctx.save();
@@ -1406,6 +1446,10 @@ export class World {
 
     // Fishing ripples where the bait was cast
     if (this.fishing) this.drawRipples();
+
+    // Occasional glints on `sparkle: true` interactables (2026-10-20, the
+    // metallic ore in the caves) until they're collected.
+    for (const it of this.interactables) if (it.sparkle && !it.collected) this.drawSparkle(it);
 
     // Interaction labels (NPC names, buildings, interactables, chests, fishing)
     // are hidden while a modal overlay (dialog/panel/battle/game-over/…) is up,
