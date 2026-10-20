@@ -190,7 +190,7 @@ export default {
 
   interactables: [
     // Ladder back up to the top deck. Returns the player to a FIXED point on
-    // C1 (X437 Y1229 — C1's own overworld space, not doubled) via `exitTo`,
+    // C1 (X512 Y1450 since the 2026-10-20 ship redraw — C1 overworld space) via `exitTo`,
     // not wherever they entered from — see the header comment and
     // main.js's exitCave(overridePos).
     {
@@ -198,7 +198,7 @@ export default {
       x: 1490, y: 1340,
       range: 100,
       caveExit: true,
-      exitTo: { x: 437, y: 1229 },
+      exitTo: { x: 512, y: 1450 }, // beside the cargo hatch on C1's redrawn ship (2026-10-20)
       label: 'Top Deck',
     },
     // Ladder down to the bilge/bottom deck (C1D), one level further down the
