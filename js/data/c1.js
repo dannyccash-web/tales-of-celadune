@@ -506,6 +506,20 @@ export default {
     { x: 775, y: 2650, w: 300, h: 25 },
     { x: 725, y: 2675, w: 350, h: 100 },
     { x: 750, y: 2775, w: 325, h: 25 },
+    // --- new art 2026-10-22: collision delta for the re-rendered background ---
+    { x: 1050, y: 25, w: 75, h: 25, note: 'new art 2026-10-22' },
+    { x: 1025, y: 50, w: 100, h: 75, note: 'new art 2026-10-22' },
+    { x: 1175, y: 500, w: 100, h: 50, note: 'new art 2026-10-22' },
+    { x: 1175, y: 550, w: 25, h: 25, note: 'new art 2026-10-22' },
+    { x: 1625, y: 625, w: 125, h: 25, note: 'new art 2026-10-22' },
+    { x: 1600, y: 650, w: 150, h: 25, note: 'new art 2026-10-22' },
+    { x: 1550, y: 675, w: 100, h: 25, note: 'new art 2026-10-22' },
+    { x: 1550, y: 700, w: 50, h: 125, note: 'new art 2026-10-22' },
+    { x: 1550, y: 825, w: 25, h: 50, note: 'new art 2026-10-22' },
+    { x: 1550, y: 875, w: 50, h: 25, note: 'new art 2026-10-22' },
+    { x: 1075, y: 2800, w: 200, h: 100, note: 'new art 2026-10-22' },
+    { x: 1125, y: 2900, w: 150, h: 25, note: 'new art 2026-10-22' },
+    { x: 1150, y: 2925, w: 75, h: 25, note: 'new art 2026-10-22' },
   ],
 
   // Proximity labels. Every home below has its own "X's House"/business-name
@@ -539,7 +553,7 @@ export default {
     { label: 'Perrin’s Cookhouse', x: 2024, y: 1476, r: 190, door: { x: 2024, y: 1521 } },
     { label: 'The Farrows’ House', x: 1646, y: 1866, r: 180, door: { x: 1646, y: 1911 } },
     { label: 'Wynne’s House', x: 1929, y: 864, r: 180, door: { x: 1929, y: 909 } },
-    { label: 'Hollowmast House', x: 1604, y: 710, r: 180, door: { x: 1604, y: 755 } },
+    { label: 'Hollowmast House', x: 1548, y: 710, r: 180, door: { x: 1548, y: 755 } },
     { label: 'Senna’s House', x: 1964, y: 662, r: 170, door: { x: 1964, y: 707 } },
     { label: 'Aldous’s House', x: 2276, y: 670, r: 170, door: { x: 2276, y: 715 } },
     { label: 'Nils’s House', x: 2222, y: 1011, r: 170, door: { x: 2222, y: 1056 } },
@@ -560,10 +574,13 @@ export default {
   // Cade's — leaving Perrin's Cookhouse (already has its own cook-fire feel),
   // Wynne's, Senna's, Aldous's, and Isolde's bare.
   smoke: [
-    { x: 1259, y: 1091, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.0 },
-    { x: 1844, y: 1261, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.25 },
-    { x: 2228, y: 815, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.5 },
-    { x: 1934, y: 459, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.75 },
+    // 2026-10-22: re-placed on the chimneys of the re-rendered background (Aldous's and the Farrows' houses now have one too).
+    { x: 1261, y: 1147, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.0 },
+    { x: 1852, y: 1288, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.17 },
+    { x: 2223, y: 848, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.33 },
+    { x: 1938, y: 493, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.5 },
+    { x: 2283, y: 497, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.67 },
+    { x: 1785, y: 1843, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.83 },
   ],
 
   // Ambient water ripple (2026-09-09, Danny) — a persistent, larger ripple
@@ -840,7 +857,7 @@ export default {
       // 2026-09-03 round 3) — `approach` gives them a real walkable step-out
       // point nearby instead (world.js already prefers approach over door for
       // all actual walking; door alone still governs interaction range).
-      home: { door: { x: 1604, y: 755 }, approach: { x: 1462, y: 722 }, interior: 'assets/images/fishing_village_home_interior.jpg' },
+      home: { door: { x: 1548, y: 755 }, approach: { x: 1462, y: 722 }, interior: 'assets/images/fishing_village_home_interior.jpg' },
       routine: [
         { do: 'wait', s: 7 },
         { do: 'goto', x: 1446, y: 588 },
@@ -881,7 +898,7 @@ export default {
       sprite: 'assets/images/mara_hollowmast_overhead.png',
       portrait: 'assets/images/mara_hollowmast_2.png',
       speed: 36, startsHome: true,
-      home: { door: { x: 1604, y: 755 }, approach: { x: 1462, y: 722 }, interior: 'assets/images/fishing_village_home_interior.jpg' },
+      home: { door: { x: 1548, y: 755 }, approach: { x: 1462, y: 722 }, interior: 'assets/images/fishing_village_home_interior.jpg' },
       routine: [
         { do: 'wait', s: 40 },
         { do: 'leaveHome' },

@@ -431,7 +431,7 @@ export default {
     // No standalone 'Shipwreck' proximity label here (2026-07-28): the wreck is
     // interactable (search it), so its single label rides on that interactable
     // below — one label per thing, shown exactly when you can press space.
-    { label: 'Calder’s Hut', x: 2250, y: 548, r: 281 },
+    { label: 'Calder’s Hut', x: 2262, y: 598, r: 281 },
   ],
 
   entrances: [],
@@ -564,7 +564,7 @@ export default {
       startsHome: false,
       patrol: [
         { x: 693, y: 1964 },
-        { x: 786, y: 2026 },
+        { x: 766, y: 2023 },
         { x: 614, y: 2043 },
       ],
     },
@@ -587,7 +587,7 @@ export default {
       portrait: 'assets/images/calder_rusk.png',
       startsHome: true,
       home: {
-        door: { x: 2249, y: 569 }, // the hut's doorway (Danny, 2026-07-24)
+        door: { x: 2262, y: 620 }, // the hut's doorway (2026-10-22: moved to the re-rendered hut's door; was 2249,569)
         interior: 'assets/images/beach_hut_interior.jpg',
       },
       // Calder's dialogue is STATE-BUILT in main.js (buildCalderDialog), not

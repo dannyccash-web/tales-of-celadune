@@ -1097,9 +1097,22 @@ export default {
   // Bram's tavern + Sorcha's smithy have no chimney square in the background,
   // so they get none (source coords are the detected chimney, not roof center).
   smoke: [
-    { x: 1206, y: 585, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.0 },
-    { x: 1169, y: 1031, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.5 },
-    { x: 1194, y: 1873, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 1.0 },
+    // 2026-10-22: re-rendered background — the 3 vendor chimneys moved slightly, and
+    // 10 villager houses now have chimneys too (Alden, Amara, Petra, Faris, Marisol,
+    // Ingrith, Osric, Jory, Darius, Adaline), so they smoke as well.
+    { x: 1215, y: 593, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.0 },
+    { x: 1192, y: 1025, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.08 },
+    { x: 1209, y: 1873, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.15 },
+    { x: 1535, y: 457, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.23 },
+    { x: 576, y: 1228, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.31 },
+    { x: 1666, y: 750, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.38 },
+    { x: 1710, y: 1222, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.46 },
+    { x: 2393, y: 820, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.54 },
+    { x: 1900, y: 488, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.62 },
+    { x: 456, y: 453, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.69 },
+    { x: 2008, y: 786, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.77 },
+    { x: 551, y: 1705, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.85 },
+    { x: 1995, y: 2288, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.92 },
   ],
 
   // EAST back to the D3 Farm (band matches D3's west exit so walking off either

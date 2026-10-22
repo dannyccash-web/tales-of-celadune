@@ -117,6 +117,13 @@ export default {
     { x: 1925, y: 2675, w: 1075, h: 25, note: 'auto: collision delta from annotated overlay, 2026-09-13' },
     { x: 0, y: 2700, w: 3000, h: 300, note: 'auto: collision delta from annotated overlay, 2026-09-13' },
     { x: 1641, y: 2006, w: 195, h: 156, npcOnly: true, note: 'NPC-only guard: keeps NPCs out of the pen/silo/barn pocket' },
+    // --- new art 2026-10-22: collision delta for the re-rendered background ---
+    { x: 1200, y: 375, w: 875, h: 25, note: 'new art 2026-10-22' },
+    { x: 1200, y: 400, w: 725, h: 25, note: 'new art 2026-10-22' },
+    { x: 2050, y: 400, w: 25, h: 25, note: 'new art 2026-10-22' },
+    { x: 1200, y: 425, w: 875, h: 25, note: 'new art 2026-10-22' },
+    { x: 1375, y: 2550, w: 75, h: 50, note: 'new art 2026-10-22' },
+    { x: 1375, y: 2600, w: 125, h: 100, note: 'new art 2026-10-22' },
   ],
 
   // Building labels: drawn on the canvas when the player is within `r` of (x, y).
