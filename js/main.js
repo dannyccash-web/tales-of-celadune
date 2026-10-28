@@ -561,6 +561,23 @@ async function boot() {
   // in the save. Declared up here, before enterScene's first call at boot, to
   // avoid a TDZ (the magicRevealed lesson, 2026-09-11).
   const visitedTowns = new Set();
+  // ---- LOW-FI TEST (2026-10-28, experimental) ----
+  // A "low fi test" start-screen button runs a throwaway session in D3 with
+  // test art, the village theme and one retro blip for every dialogue voice.
+  // Never saves, so a real save is untouched. Everything lives in
+  // assets/lowfi/ plus the lines tagged LOWFI: revert the commit to remove.
+  let lowFi = false;
+  const LOWFI = {
+    background: 'assets/lowfi/D3_Background_lowfi.jpg',
+    portraits: {
+      mirelle: 'assets/lowfi/Mirelle_Portrait_lowfi.png',
+      tuckwell: 'assets/lowfi/Tuckwell_Portrait_lowfi.png',
+      brenna: 'assets/lowfi/Brenna_Portrait_lowfi.png',
+      gaffer: 'assets/lowfi/Gaffer_Portrait_lowfi.png',
+    },
+    music: 'assets/lowfi/Village_Theme.mp3',
+    voice: 'assets/lowfi/SFX_RetroMultiplev1.wav',
+  };
   let fastTraveling = false; // true for the whole fade-out / swap / fade-in
   function refreshTravelPanel() {
     ui.updateTravelPanel(Object.keys(SCENES)
@@ -955,6 +972,7 @@ async function boot() {
   // `checkpoint: true` also writes the death-respawn slot — used by scene
   // entry and battle victories only. Everything else writes the live save.
   function saveGame({ checkpoint = false } = {}) {
+    if (lowFi) return; // LOWFI: a test run must never overwrite the real save
     try {
       const data = {
         v: SAVE_VERSION,
@@ -1070,7 +1088,7 @@ async function boot() {
     pendingWorldFlags = null;
     // Drop the old death checkpoint too — startNewGame writes a fresh pair
     // immediately, but a stale one must never outlive an erase (2026-09-20).
-    try { localStorage.removeItem(CHECKPOINT_KEY); } catch { /* storage blocked */ }
+    if (!lowFi) { try { localStorage.removeItem(CHECKPOINT_KEY); } catch { /* storage blocked */ } } // LOWFI: leave the real save alone
     enterScene('D3');
     world.player.x = world.scene.spawn.x;
     world.player.y = world.scene.spawn.y;
@@ -1236,6 +1254,7 @@ async function boot() {
   // begin/continue and on cave enter/exit so the ambience always matches
   // the scene.
   function sceneMusicTrack(sceneId) {
+    if (lowFi) return LOWFI.music; // LOWFI
     const key = SCENES[sceneId]?.music;
     return (key && audio.TRACKS[key]) || audio.TRACKS.overworld;
   }
@@ -1261,6 +1280,7 @@ async function boot() {
 
   const btnContinue = document.getElementById('btn-continue');
   const btnNewGame = document.getElementById('btn-new-game');
+  const btnLowFi = document.getElementById('btn-lowfi'); // LOWFI
   const btnConfirmNew = document.getElementById('btn-confirm-newgame');
   const btnCancelNew = document.getElementById('btn-cancel-newgame');
   const confirmOverlay = document.getElementById('newgame-confirm');
@@ -1275,12 +1295,12 @@ async function boot() {
   let startSel = 0;
   function startButtonSet() {
     if (!confirmOverlay.classList.contains('hidden')) return [btnConfirmNew, btnCancelNew];
-    return hasSave() ? [btnNewGame, btnContinue] : [btnNewGame]; // Continue hidden from nav w/o a save
+    return hasSave() ? [btnNewGame, btnContinue, btnLowFi] : [btnNewGame, btnLowFi]; // Continue hidden from nav w/o a save (LOWFI: + test button)
   }
   function renderStartSelection() {
     const set = startButtonSet();
     startSel = Math.max(0, Math.min(startSel, set.length - 1));
-    for (const b of [btnNewGame, btnContinue, btnConfirmNew, btnCancelNew]) b.classList.remove('selected');
+    for (const b of [btnNewGame, btnContinue, btnLowFi, btnConfirmNew, btnCancelNew]) b.classList.remove('selected');
     set[startSel]?.classList.add('selected');
   }
   function moveStartSelection(dir) {
@@ -1291,6 +1311,20 @@ async function boot() {
   function activateStartSelection() { startButtonSet()[startSel]?.click(); }
 
   btnContinue.addEventListener('click', () => { if (hasSave()) continueGame(); });
+  // LOWFI: swap D3's background + the four D3 portraits, point every dialogue
+  // voice at the retro blip, then start a fresh, unsaved run in D3.
+  async function startLowFi() {
+    if (state.started || lowFi) return;
+    lowFi = true;
+    if (!images[LOWFI.background]) Object.assign(images, await loadImages([LOWFI.background]));
+    sceneD3.background = LOWFI.background;
+    for (const npc of sceneD3.npcs) if (LOWFI.portraits[npc.id]) npc.portrait = LOWFI.portraits[npc.id];
+    for (const k of Object.keys(audio.DIALOGUE_SFX)) audio.DIALOGUE_SFX[k] = LOWFI.voice;
+    resetToNewGame();
+    beginPlay();
+    ui.toast('Low-fi test: progress is not saved.');
+  }
+  btnLowFi.addEventListener('click', startLowFi);
   btnNewGame.addEventListener('click', () => {
     if (hasSave()) { confirmOverlay.classList.remove('hidden'); startSel = 1; renderStartSelection(); } // default to the safe Cancel
     else startNewGame();
@@ -1329,6 +1363,7 @@ async function boot() {
     pendingDefeatCallback = null;
     deathFading = false;      // clear the fade lock (hideGameOver also clears the black overlay)
     ui.hideGameOver();
+    if (lowFi) { respawnAfterDefeat(); return; } // LOWFI: never load the real save into a test run
     if (!loadGame(CHECKPOINT_KEY) && !loadGame()) respawnAfterDefeat();
   }
 

@@ -1805,3 +1805,16 @@ Danny replaced all eight C/D overworld backgrounds. **Same layouts** (no global 
 - **D4's cave mouth is gone from the new art** — the path now ends at a rock wall. The "Old Cave" interactable is unchanged (end of the path), so D4 <-> D4B still works; flagged to Danny.
 - **Water animation regenerated** for C1 C3 C4 D1 D2 D4 (B1/B2/B4 kept byte-identical; B2's entry was restored from the previous file because a re-run only differed by float noise).
 - **Verified:** sentinel-guarded `.mjs` syntax sweep; real-World headless BFS (36px collider) for all 8 scenes against both the old and new data — no regressions (the only failures are pre-existing by-design ones: C3's island temple door and the Lakewarden standing on water); 900s NPC sims for C1 and D3 identical to before (worst idle = the 5s cap); headless-Chromium run of the real game entering all 8 scenes, no console errors beyond the missing favicon.
+
+## EXPERIMENT: "low fi test" start button (2026-10-28) — likely to be reverted
+
+Danny wanted to try a lower-fidelity look on D3 without committing to it. A **"low fi test"** button on the start screen (after Continue, reachable by arrow keys) starts a fresh, throwaway run in D3 with:
+
+- `assets/lowfi/D3_Background_lowfi.jpg` (Danny's 2576px test render, nearest-neighbour upscaled to 3000 so the existing collision lines up; same layout as the real D3, checked side by side),
+- low-fi portraits for Mirelle, Tuckwell, Brenna and Gaffer (`assets/lowfi/*_Portrait_lowfi.png`; overhead sprites unchanged),
+- `assets/lowfi/Village_Theme.mp3` as the music for the whole session (every scene, since `sceneMusicTrack` short-circuits),
+- `assets/lowfi/SFX_RetroMultiplev1.wav` for EVERY dialogue voice (and fed-animal sounds), by overwriting all `audio.DIALOGUE_SFX` values for the session.
+
+**It never saves:** `saveGame` returns early when `lowFi`, `resetToNewGame` skips deleting the checkpoint, and death respawns at D3's spawn instead of loading the real save. Reloading the page ends the test (all the swaps are in-memory mutations of `sceneD3`/`DIALOGUE_SFX`). Verified headless: a seeded real save was byte-identical after a test run, including after a `pagehide`.
+
+**To remove it:** `git revert` this commit. Everything is in `assets/lowfi/`, one button in `index.html`, and the lines tagged `LOWFI` in `js/main.js`.
