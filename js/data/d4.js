@@ -513,6 +513,8 @@ export default {
     { x: 780, y: 2440, w: 20, h: 20 },
     { x: 680, y: 2460, w: 40, h: 20 },
     { x: 760, y: 2460, w: 40, h: 20 },
+    // --- new art 2026-10-30: collision delta for the re-rendered background ---
+    { x: 525, y: 1100, w: 50, h: 125, note: 'new art 2026-10-30' },
   ],
 
   // Proximity labels (same system as D3's building labels). The cave mouth's

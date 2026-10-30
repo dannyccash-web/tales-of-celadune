@@ -32,10 +32,21 @@ export default {
   spawn: { x: 2875, y: 1063 },
 
   obstacles: [
-    { x: 1656, y: 0, w: 1344, h: 31 },
-    { x: 1719, y: 31, w: 1281, h: 31 },
-    { x: 1750, y: 63, w: 1250, h: 31 },
-    { x: 1813, y: 94, w: 1187, h: 31 },
+    { x: 1825, y: 0, w: 25, h: 31 },
+    { x: 1925, y: 0, w: 150, h: 31 },
+    { x: 2150, y: 0, w: 850, h: 31 },
+    { x: 1825, y: 31, w: 25, h: 31 },
+    { x: 1925, y: 31, w: 150, h: 31 },
+    { x: 2150, y: 31, w: 850, h: 31 },
+    { x: 1825, y: 63, w: 25, h: 31 },
+    { x: 1925, y: 63, w: 150, h: 31 },
+    { x: 2150, y: 63, w: 850, h: 31 },
+    { x: 1813, y: 100, w: 37, h: 25 },
+    { x: 1925, y: 100, w: 150, h: 25 },
+    { x: 2150, y: 100, w: 850, h: 25 },
+    { x: 1825, y: 94, w: 25, h: 6 },
+    { x: 1925, y: 94, w: 150, h: 6 },
+    { x: 2150, y: 94, w: 850, h: 6 },
     { x: 1687, y: 187, w: 1, h: 1 },
     { x: 0, y: 350, w: 1000, h: 25 },
     { x: 1050, y: 350, w: 275, h: 25 },
@@ -302,8 +313,11 @@ export default {
     { x: 0, y: 0, w: 1350, h: 25, note: 'auto: collision delta from annotated overlay, 2026-09-13' },
     { x: 0, y: 25, w: 1325, h: 25, note: 'auto: collision delta from annotated overlay, 2026-09-13' },
     { x: 0, y: 50, w: 1300, h: 25, note: 'auto: collision delta from annotated overlay, 2026-09-13' },
-    { x: 0, y: 75, w: 1325, h: 275, note: 'auto: collision delta from annotated overlay, 2026-09-13' },
-    { x: 1875, y: 125, w: 1125, h: 25, note: 'auto: collision delta from annotated overlay, 2026-09-13' },
+    { x: 0, y: 175, w: 1325, h: 175, note: 'auto: collision delta from annotated overlay, 2026-09-13' },
+    { x: 0, y: 75, w: 825, h: 100, note: 'auto: collision delta from annotated overlay, 2026-09-13' },
+    { x: 975, y: 75, w: 350, h: 100, note: 'auto: collision delta from annotated overlay, 2026-09-13' },
+    { x: 1925, y: 125, w: 150, h: 25, note: 'auto: collision delta from annotated overlay, 2026-09-13' },
+    { x: 2150, y: 125, w: 850, h: 25, note: 'auto: collision delta from annotated overlay, 2026-09-13' },
     { x: 1900, y: 150, w: 1100, h: 25, note: 'auto: collision delta from annotated overlay, 2026-09-13' },
     { x: 1950, y: 200, w: 1050, h: 50, note: 'auto: collision delta from annotated overlay, 2026-09-13' },
     { x: 2200, y: 250, w: 800, h: 25, note: 'auto: collision delta from annotated overlay, 2026-09-13' },
@@ -419,11 +433,13 @@ export default {
     { x: 800, y: 1575, w: 25, h: 25, note: 'Danny markup 2026-09-21' },
     { x: 550, y: 1575, w: 25, h: 25, note: 'Danny markup 2026-09-21' },
     { x: 2400, y: 1950, w: 75, h: 25, note: 'Danny markup 2026-09-21' },
-    { x: 2375, y: 1975, w: 100, h: 50, note: 'Danny markup 2026-09-21' },
-    { x: 2400, y: 2025, w: 75, h: 25, note: 'Danny markup 2026-09-21' },
+    { x: 2375, y: 1975, w: 25, h: 50, note: 'Danny markup 2026-09-21' },
     { x: 925, y: 2075, w: 25, h: 125, note: 'Danny markup 2026-09-21' },
     { x: 2475, y: 2150, w: 75, h: 75, note: 'Danny markup 2026-09-21' },
     { x: 937, y: 2200, w: 1, h: 25, note: 'Danny markup 2026-09-21' },
+    // --- new art 2026-10-30: collision delta for the re-rendered background ---
+    { x: 1500, y: 2275, w: 50, h: 50, note: 'new art 2026-10-30' },
+    // new art 2026-10-30: opened (art removed the obstacle): x1650-1825 y0-100; x1850-1925 y0-150; x2075-2150 y0-150; x825-975 y75-175; x2400-2500 y1975-2050
   ],
 
   // Proximity label (same system as D3's building labels / D4's cave label).
@@ -431,7 +447,7 @@ export default {
     // No standalone 'Shipwreck' proximity label here (2026-07-28): the wreck is
     // interactable (search it), so its single label rides on that interactable
     // below — one label per thing, shown exactly when you can press space.
-    { label: 'Calder’s Hut', x: 2262, y: 598, r: 281 },
+    { label: 'Calder’s Hut', x: 2297, y: 598, r: 281 },
   ],
 
   entrances: [],
@@ -447,19 +463,19 @@ export default {
       x: 851, y: 1250, w: 125, h: 125,
       label: 'Something glints in the sand',
       reward: { gold: 5 },
-    },
+   },
     {
       id: 'shiny-wreck-sand-2',
       x: 620, y: 1680, w: 125, h: 125,
       label: 'A few coins, half-buried in the sand',
       reward: { gold: 5 },
-    },
+   },
     {
       id: 'shiny-wreck-sand-3',
       x: 900, y: 1650, w: 125, h: 125,
       label: 'Coins glint near the hull',
       reward: { gold: 5 },
-    },
+   },
     // Searching the wreck of the Gull's Regret (2026-07-25). Interactable from a
     // wide 250px radius around this point on the hull; `boat: true` is intercepted
     // in main.js's interact() -> searchBoat(), which grants gold + a health potion
@@ -472,7 +488,7 @@ export default {
       label: 'Shipwreck', // single label for the wreck (2026-07-28) — was a
                           // separate 'Shipwreck' building label + 'Search the wreck'
       emptyMessage: 'You’ve picked the old wreck clean.',
-    },
+   },
     // Cave entrance (2026-07-26) — interact to enter the D1B cave. `cave` names
     // the target sub-scene; main.js's enterCave() captures the player's exact
     // position so the cave's exit returns them right here.
@@ -482,7 +498,7 @@ export default {
       range: 141,
       cave: 'D1B',
       label: 'Hidden Cave',
-    },
+   },
   ],
 
   battles: [],
@@ -538,7 +554,7 @@ export default {
         { id: 'health_potion', qty: 1 },
         { id: 'leather_boots', qty: 1 },
       ],
-    },
+   },
   ],
 
   // ---- NPCs ----
@@ -567,7 +583,7 @@ export default {
         { x: 766, y: 2023 },
         { x: 614, y: 2043 },
       ],
-    },
+   },
     {
       id: 'cragclaw_2', name: 'Cragclaw', creature: true, enemyId: 'cragclaw',
       sprite: 'assets/images/cragclaw_overhead.png',
@@ -579,7 +595,7 @@ export default {
         { x: 1170, y: 1354 },
         { x: 999, y: 1369 },
       ],
-    },
+   },
     {
       id: 'calder_rusk',
       name: 'Calder Rusk',
@@ -587,15 +603,15 @@ export default {
       portrait: 'assets/images/calder_rusk.png',
       startsHome: true,
       home: {
-        door: { x: 2262, y: 620 }, // the hut's doorway (2026-10-22: moved to the re-rendered hut's door; was 2249,569)
+        door: { x: 2297, y: 622 }, // the hut's doorway (2026-10-30: moved onto the newest hut's doorway; was 2262,620)
         interior: 'assets/images/beach_hut_interior.jpg',
-      },
+     },
       // Calder's dialogue is STATE-BUILT in main.js (buildCalderDialog), not
       // static here (2026-07-25): the backstory + dangers branches gate a
       // keepsake quest that only appears once both are heard, and the quest has
       // active / turn-in / completed states. Routed via openNpcDialog's
       // calder_rusk branch, like Gaffer/the Chief.
-    },
+   },
   ],
 
   // East back to the D2 Village (band matches D2's west exit, y640-720, so

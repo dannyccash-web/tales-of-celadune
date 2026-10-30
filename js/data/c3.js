@@ -236,7 +236,6 @@ export default {
     { x: 1280, y: 1400, w: 800, h: 40 },
     { x: 2720, y: 1400, w: 280, h: 40 },
     { x: 2220, y: 1420, w: 60, h: 60 },
-    { x: 2540, y: 1420, w: 20, h: 20 },
     { x: 1320, y: 1440, w: 780, h: 20 },
     { x: 2740, y: 1440, w: 260, h: 20 },
     { x: 1340, y: 1460, w: 780, h: 40 },
@@ -468,21 +467,24 @@ export default {
     { x: 540, y: 1320, w: 540, h: 20 },
     { x: 0, y: 1340, w: 440, h: 20 },
     { x: 540, y: 1340, w: 600, h: 40 },
-    { x: 2480, y: 1340, w: 40, h: 20 },
+    { x: 2480, y: 1340, w: 40, h: 10 },
     { x: 2640, y: 1340, w: 20, h: 20 },
     { x: 0, y: 1360, w: 460, h: 40 },
-    { x: 2460, y: 1360, w: 100, h: 20 },
+    { x: 2460, y: 1360, w: 15, h: 20 },
     { x: 560, y: 1380, w: 580, h: 20 },
-    { x: 2440, y: 1380, w: 140, h: 40 },
+    { x: 2440, y: 1380, w: 35, h: 40 },
+    { x: 2575, y: 1380, w: 5, h: 40 },
     { x: 0, y: 1400, w: 480, h: 40 },
     { x: 560, y: 1400, w: 600, h: 20 },
     { x: 2700, y: 1400, w: 20, h: 20 },
     { x: 580, y: 1420, w: 580, h: 20 },
-    { x: 2420, y: 1420, w: 120, h: 20 },
+    { x: 2420, y: 1425, w: 80, h: 15 },
+    { x: 2420, y: 1420, w: 55, h: 5 },
     { x: 2680, y: 1420, w: 40, h: 20 },
     { x: 0, y: 1440, w: 500, h: 20 },
     { x: 600, y: 1440, w: 560, h: 20 },
-    { x: 2420, y: 1440, w: 140, h: 20 },
+    { x: 2420, y: 1450, w: 140, h: 10 },
+    { x: 2420, y: 1440, w: 80, h: 10 },
     { x: 2680, y: 1440, w: 60, h: 20 },
     { x: 0, y: 1460, w: 520, h: 40 },
     { x: 620, y: 1460, w: 560, h: 20 },
@@ -622,6 +624,10 @@ export default {
     // road: the left band is now the terrain's own run, y1118-1283.
     { x: 940, y: 0, w: 40, h: 120 },
     { x: 1100, y: 0, w: 60, h: 120 },
+    // --- new art 2026-10-30: collision delta for the re-rendered background ---
+    { x: 2925, y: 700, w: 25, h: 125, note: 'new art 2026-10-30' },
+    { x: 2900, y: 875, w: 50, h: 50, note: 'new art 2026-10-30' },
+    // new art 2026-10-30: opened (art removed the obstacle): x2500-2575 y1350-1450; x2475-2500 y1350-1425
   ],
 
   // Landmark proximity labels, doorless so they use their own radius `r`.
@@ -651,21 +657,21 @@ export default {
       label: 'A fallen chestnut',
       reward: { item: 'chestnut', qty: 1 },
       message: 'You pick up a chestnut.',
-    },
+   },
     {
       id: 'c3_chestnut_2',
       x: 760, y: 345, w: 125, h: 125,
       label: 'A fallen chestnut',
       reward: { item: 'chestnut', qty: 1 },
       message: 'You pick up a chestnut.',
-    },
+   },
     {
       id: 'c3_chestnut_3',
       x: 640, y: 775, w: 125, h: 125,
       label: 'A fallen chestnut',
       reward: { item: 'chestnut', qty: 1 },
       message: 'You pick up a chestnut.',
-    },
+   },
     {
       id: 'cave_c3_entrance',
       x: 2561, y: 2750,
@@ -673,7 +679,7 @@ export default {
       cave: 'D4B',
       enterAt: { x: 146, y: 63 },
       label: 'Hollow Cave',
-    },
+   },
     // The temple's door (2026-09-24): sits just outside the west edge of the
     // dome/stairwell's stamped-solid collision disc (2960,1240 r300 — see the
     // collision header comment), on a walkable pocket of plaza flagstone
@@ -687,7 +693,7 @@ export default {
       range: 150,
       cave: 'C3B',
       label: 'Temple of Aeluna',
-    },
+   },
   ],
 
   // ---- Static scenery (2026-09-20) ----
@@ -740,7 +746,7 @@ export default {
       x: 700, y: 1740, speed: 30, chaseSpeed: 150, aggroRange: 420, giveUpRange: 620,
       startsHome: false,
       patrol: [ { x: 700, y: 1740 }, { x: 860, y: 1880 }, { x: 780, y: 1900 } ],
-    },
+   },
     {
       id: 'thornback_c3_2', name: 'Thornback Boar', creature: true, enemyId: 'thornback_boar',
       sprite: 'assets/images/thornback_boar_overhead.png',
@@ -749,7 +755,7 @@ export default {
       x: 880, y: 2060, speed: 30, chaseSpeed: 150, aggroRange: 420, giveUpRange: 620,
       startsHome: false,
       patrol: [ { x: 880, y: 2060 }, { x: 1040, y: 2120 }, { x: 980, y: 2180 } ],
-    },
+   },
     {
       id: 'thornback_c3_3', name: 'Thornback Boar', creature: true, enemyId: 'thornback_boar',
       sprite: 'assets/images/thornback_boar_overhead.png',
@@ -758,7 +764,7 @@ export default {
       x: 980, y: 2280, speed: 30, chaseSpeed: 150, aggroRange: 420, giveUpRange: 620,
       startsHome: false,
       patrol: [ { x: 980, y: 2280 }, { x: 940, y: 2420 }, { x: 900, y: 2520 } ],
-    },
+   },
     {
       id: 'lakewarden', name: 'The Lakewarden', role: '',
       sprite: 'assets/images/the_lakewarden_overhead.png',
@@ -770,7 +776,7 @@ export default {
       // as Calder Rusk, whose inline dialog moved out of d1.js for the same
       // reason. Nothing inline here, deliberately — two copies of a character's
       // lines is how they drift apart.
-    },
+   },
     // ---- Mateo Avellaneda (2026-10-10) ----
     // Wanders the upper-left clearing (x330-1000, y280-820) talking about
     // chestnuts to anyone who stands still. His four patrol points are 94px+
@@ -788,7 +794,7 @@ export default {
         { x: 700, y: 660 },
         { x: 520, y: 650 },
       ],
-    },
+   },
   ],
   // Locked chest at the foot of the glade, past the boars (2026-10-12, Danny).
   chests: [

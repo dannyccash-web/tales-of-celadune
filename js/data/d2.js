@@ -1062,6 +1062,8 @@ export default {
     {x: 1923, y: 2875, w: 124, h: 125},
     {x: 1798, y: 2923, w: 124, h: 77},
     {x: 1423, y: 2923, w: 374, h: 77},
+    // --- new art 2026-10-30: collision delta for the re-rendered background ---
+    { x: 1350, y: 2675, w: 75, h: 50, note: 'new art 2026-10-30' },
   ],
 
   // Building/business labels (proximity-revealed like D3). Positioned over
@@ -1097,22 +1099,15 @@ export default {
   // Bram's tavern + Sorcha's smithy have no chimney square in the background,
   // so they get none (source coords are the detected chimney, not roof center).
   smoke: [
-    // 2026-10-22: re-rendered background — the 3 vendor chimneys moved slightly, and
-    // 10 villager houses now have chimneys too (Alden, Amara, Petra, Faris, Marisol,
-    // Ingrith, Osric, Jory, Darius, Adaline), so they smoke as well.
-    { x: 1215, y: 593, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.0 },
-    { x: 1192, y: 1025, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.08 },
-    { x: 1209, y: 1873, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.15 },
-    { x: 1535, y: 457, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.23 },
-    { x: 576, y: 1228, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.31 },
-    { x: 1666, y: 750, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.38 },
-    { x: 1710, y: 1222, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.46 },
-    { x: 2393, y: 820, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.54 },
-    { x: 1900, y: 488, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.62 },
-    { x: 456, y: 453, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.69 },
-    { x: 2008, y: 786, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.77 },
-    { x: 551, y: 1705, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.85 },
-    { x: 1995, y: 2288, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.92 },
+    // 2026-10-30: newest background — the 3 vendor chimneys moved a little, and only
+    // TWO villager houses still have a chimney in the art: Darius's (roof stack) and
+    // Jory's (a stone stack against its west wall). The other eight
+    // villager plumes were removed.
+    { x: 1214, y: 566, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.0 },
+    { x: 1176, y: 1030, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.08 },
+    { x: 1199, y: 1872, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.15 },
+    { x: 1908, y: 815, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.77 },
+    { x: 543, y: 1700, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.85 },
   ],
 
   // EAST back to the D3 Farm (band matches D3's west exit so walking off either

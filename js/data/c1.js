@@ -464,18 +464,23 @@ export default {
     { x: 2000, y: 2850, w: 1000, h: 25 },
     { x: 0, y: 2875, w: 1000, h: 25 },
     { x: 1600, y: 2875, w: 125, h: 25 },
-    { x: 1975, y: 2875, w: 1025, h: 25 },
+    { x: 2125, y: 2875, w: 875, h: 25 },
     { x: 0, y: 2900, w: 1025, h: 25 },
     { x: 1050, y: 2900, w: 75, h: 25 },
     { x: 1550, y: 2900, w: 200, h: 25 },
-    { x: 1925, y: 2900, w: 1075, h: 25 },
+    { x: 1925, y: 2900, w: 25, h: 25 },
+    { x: 2125, y: 2900, w: 875, h: 25 },
     { x: 0, y: 2925, w: 1150, h: 25 },
-    { x: 1225, y: 2925, w: 75, h: 25 },
-    { x: 1550, y: 2925, w: 225, h: 50 },
-    { x: 1875, y: 2925, w: 1125, h: 50 },
-    { x: 0, y: 2950, w: 1325, h: 25 },
-    { x: 0, y: 2975, w: 1350, h: 25 },
-    { x: 1550, y: 2975, w: 1450, h: 25 },
+    { x: 1275, y: 2925, w: 25, h: 25 },
+    { x: 1550, y: 2925, w: 150, h: 50 },
+    { x: 1875, y: 2925, w: 75, h: 50 },
+    { x: 2125, y: 2925, w: 875, h: 50 },
+    { x: 0, y: 2950, w: 1150, h: 25 },
+    { x: 1275, y: 2950, w: 50, h: 25 },
+    { x: 0, y: 2975, w: 1150, h: 25 },
+    { x: 1275, y: 2975, w: 75, h: 25 },
+    { x: 1550, y: 2975, w: 400, h: 25 },
+    { x: 2125, y: 2975, w: 875, h: 25 },
     // 2026-10-20 (Danny): new C1_Background.jpg with a redrawn, wider Maiden's Grace.
     // Ship + water rebuilt (open midship deck between sails 2 and 3, mast bases,
     // cargo hatch and rope coil blocked; gangway open to the dock), and the beach
@@ -517,9 +522,12 @@ export default {
     { x: 1550, y: 700, w: 50, h: 125, note: 'new art 2026-10-22' },
     { x: 1550, y: 825, w: 25, h: 50, note: 'new art 2026-10-22' },
     { x: 1550, y: 875, w: 50, h: 25, note: 'new art 2026-10-22' },
-    { x: 1075, y: 2800, w: 200, h: 100, note: 'new art 2026-10-22' },
-    { x: 1125, y: 2900, w: 150, h: 25, note: 'new art 2026-10-22' },
-    { x: 1150, y: 2925, w: 75, h: 25, note: 'new art 2026-10-22' },
+    { x: 1075, y: 2800, w: 200, h: 25, note: 'new art 2026-10-22' },
+    { x: 1075, y: 2825, w: 75, h: 75, note: 'new art 2026-10-22' },
+    { x: 1125, y: 2900, w: 25, h: 25, note: 'new art 2026-10-22' },
+    // --- new art 2026-10-30: collision delta for the re-rendered background ---
+    { x: 600, y: 2600, w: 100, h: 275, note: 'new art 2026-10-30' },
+    // new art 2026-10-30: opened (art removed the obstacle): x1150-1275 y2825-3000; x1950-2125 y2875-3000; x1700-1775 y2925-2975
   ],
 
   // Proximity labels. Every home below has its own "X's House"/business-name
@@ -574,13 +582,13 @@ export default {
   // Cade's — leaving Perrin's Cookhouse (already has its own cook-fire feel),
   // Wynne's, Senna's, Aldous's, and Isolde's bare.
   smoke: [
-    // 2026-10-22: re-placed on the chimneys of the re-rendered background (Aldous's and the Farrows' houses now have one too).
-    { x: 1261, y: 1147, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.0 },
-    { x: 1852, y: 1288, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.17 },
-    { x: 2223, y: 848, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.33 },
-    { x: 1938, y: 493, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.5 },
-    { x: 2283, y: 497, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.67 },
-    { x: 1785, y: 1843, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.83 },
+    // 2026-10-30: re-placed again on the chimneys of the newest background (all six moved 10-50px; same six houses).
+    { x: 1254, y: 1095, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.0 },
+    { x: 1847, y: 1258, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.17 },
+    { x: 2226, y: 811, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.33 },
+    { x: 1931, y: 454, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.5 },
+    { x: 2281, y: 471, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.67 },
+    { x: 1778, y: 1805, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.83 },
   ],
 
   // Ambient water ripple (2026-09-09, Danny) — a persistent, larger ripple
@@ -608,35 +616,35 @@ export default {
       label: 'A Feather',
       message: 'A single grey-and-white feather, caught in the grass.',
       reward: { item: 'feather', qty: 1 },
-    },
+   },
     {
       id: 'c1_feather_2',
       x: 1417, y: 480,
       label: 'A Feather',
       message: 'Another feather, a little further along.',
       reward: { item: 'feather', qty: 1 },
-    },
+   },
     {
       id: 'c1_feather_3',
       x: 1552, y: 403,
       label: 'A Feather',
       message: 'A few more feathers here, like something struggled.',
       reward: { item: 'feather', qty: 1 },
-    },
+   },
     {
       id: 'c1_feather_4',
       x: 1783, y: 427,
       label: 'A Feather',
       message: 'More feathers, leading east along the rocky ground.',
       reward: { item: 'feather', qty: 1 },
-    },
+   },
     {
       id: 'c1_feather_5',
       x: 2048, y: 431,
       label: 'A Feather',
       message: 'One last feather, right at the mouth of a dark, narrow crack in the rock.',
       reward: { item: 'feather', qty: 1 },
-    },
+   },
     // Cave entrance (2026-09-10) — interact to enter the C1B cave, the same
     // way D1's cave_d1b_entrance works. Sits right at the old "Tidepool Cove"
     // landmark spot (now removed, see the buildings comment above); the
@@ -649,7 +657,7 @@ export default {
       range: 141,
       cave: 'C1B',
       label: 'Hidden Cave',
-    },
+   },
     // Below Deck (2026-09-11, Danny) — the derelict Maiden's Grace's cargo
     // hold (see js/data/c1c.js), the game's first multi-level dungeon.
     // Sits right on the ship's own hull art (10px from open deck, same
@@ -667,7 +675,7 @@ export default {
       range: 140,
       cave: 'C1C',
       label: 'Below Deck',
-    },
+   },
   ],
 
   // Fishing spot removed 2026-09-03 (Danny) — it sat right where Cade and
@@ -675,9 +683,11 @@ export default {
   // New spot added 2026-09-09 (Danny) — the west shoreline below the
   // Maiden's Grace, verified walkable sand right at the waterline.
   fishingSpots: [
-    // 2026-10-12 (Danny): out in the surf south of the Maiden's Grace. On the
-    // water; nearest standable shore ~105px away, inside FISH_SPOT_RANGE (281).
-    { x: 518, y: 2751 },
+    // 2026-10-12 (Danny): out in the surf south of the Maiden's Grace.
+    // 2026-10-30: the newest art widens the surf band here (now blocked to x700),
+    // so the spot moved east from 518 to 595, onto the surf line; nearest
+    // standable sand ~162px away, inside FISH_SPOT_RANGE (281).
+    { x: 595, y: 2751 },
   ],
   // Saltwater catch table (2026-10-11, Danny): every cast here lands a sea
   // bass (75%) or a crimson sailback (25%) at Luck 1 — no boot, no Moonscale.
@@ -736,7 +746,7 @@ export default {
         { do: 'wait', s: 6 },
         { do: 'goHome' },
       ],
-    },
+   },
     {
       id: 'roderick_vane', name: 'Roderick Vane', role: 'DOCKMASTER',
       // Vendor (2026-09-13, Danny) — his warehouse already used the general
@@ -777,7 +787,7 @@ export default {
         { do: 'wait', s: 6 },
         { do: 'goHome' },
       ],
-    },
+   },
     {
       id: 'wynne_ashcombe', name: 'Wynne Ashcombe', role: 'SHRINE-KEEPER',
       sprite: 'assets/images/wynne_ashcombe_overhead.png',
@@ -792,7 +802,7 @@ export default {
         { do: 'wait', s: 65 },
         { do: 'leaveHome' },
       ],
-    },
+   },
     {
       id: 'toby_farrow', name: 'Toby Farrow', role: 'FISHERMAN',
       sprite: 'assets/images/toby_farrow_overhead.png',
@@ -811,7 +821,7 @@ export default {
         { do: 'wait', s: 60 },
         { do: 'leaveHome' },
       ],
-    },
+   },
     {
       id: 'lily_farrow', name: 'Lily Farrow', role: '',
       sprite: 'assets/images/lily_farrow_overhead.png',
@@ -846,7 +856,7 @@ export default {
         { do: 'wait', s: 30 },
         { do: 'leaveHome' },
       ],
-    },
+   },
     {
       id: 'garrick_hollowmast', name: 'Garrick Hollowmast', role: '',
       sprite: 'assets/images/garrick_hollowmast_overhead.png',
@@ -885,8 +895,8 @@ export default {
           { followUp: '“It’s my wife — Mara. Sails with the Maiden’s Grace.” He rubs a hand over his face. “Ship limped into port a few days back crawling with miremen, hull to hold, and nobody’s heard a word from her or the rest of the crew since. I don’t know if she’s alive down there.” He’s quiet a moment, ashamed. “I should’ve gone in after her myself — I do security when the ships come in, it’s half my job. But Harbormaster Roderick Vane’s forbidden any of us from setting foot on that wreck, crew’s kin or not. Says he won’t lose more townsfolk to it. Doesn’t make it any easier to stand here and do nothing.” He looks at you, something desperate in it. “If you’re the sort who goes looking for trouble… please. Just see if she’s alive down there.”' },
           null,
         ],
-      },
-    },
+     },
+   },
     {
       // Hidden until rescued from the Maiden's Grace's flooded hold (C1D,
       // 2026-09-12) - reuses `.defeated` purely as a presence gate (world.js:
@@ -912,7 +922,7 @@ export default {
       chatter: [
         { q: 'How are you settling in?', a: 'Better than I’ve any right to, honestly. Garrick fusses more than he used to — I let him. After what happened out there, I don’t mind being fussed over.' },
       ],
-    },
+   },
     {
       id: 'senna_brineholt', name: 'Senna Brineholt', role: '',
       sprite: 'assets/images/senna_brineholt_overhead.png',
@@ -937,7 +947,7 @@ export default {
         { q: 'Where did your coin come from?', a: 'Enterprise, traveler. Just enterprise. …Ask Garrick if you want a longer story. Mine’s shorter, and I intend to keep it that way.' },
         { q: 'Anything I should be careful of around here at night?', effect: { sennaDrownweftMention: true } },
       ],
-    },
+   },
     {
       id: 'nils_cutwater', name: 'Nils Cutwater', role: '',
       sprite: 'assets/images/nils_cutwater_overhead.png',
@@ -959,7 +969,7 @@ export default {
         { q: 'Rough work?', a: 'Better than idle hands. Idle hands remember too much.' },
         { q: 'Where does your hemp come from?', a: 'A cart up from Millmere, inland past the grassland, when the road’s quiet enough to send one. Lately it isn’t. I’m splicing old line I’d have burned a year ago.' },
       ],
-    },
+   },
     {
       id: 'aldous_marrow', name: 'Aldous Marrow', role: '',
       sprite: 'assets/images/aldous_marrow_overhead.png',
@@ -991,7 +1001,7 @@ export default {
         // sea-magic rituals.
         { q: 'Anything I should keep an eye out for around here?', a: 'Aye — mind that cave mouth up past the point. Locals call her the Drownweft of the Hollow Tide: a sea hag who prowls by night and steals from anyone careless enough to leave a door unlatched, and they say she works dark rituals down there to draw power straight up out of the sea. I’d leave well enough alone, if I were you.' },
       ],
-    },
+   },
     {
       id: 'skitter_nabbins', name: 'Skitter Nabbins', role: 'RATCATCHER',
       sprite: 'assets/images/skitter_nabbins_overhead.png',
@@ -1010,7 +1020,7 @@ export default {
       chatter: [
         { q: 'How’d you end up here?', a: 'Wandered in chasing a rat that chased a chicken that chased — well, it’s a long story, and the short of it is Tidewrack decided to keep me. Fair trade, I think. Rats for a roof.' },
       ],
-    },
+   },
     // Tidefolk — have real houses now (2026-09-03 round 2) and go home
     // occasionally like any other villager (a plain leaveHome/goto/goHome
     // routine, same pattern as everyone else in this file — were a
@@ -1038,7 +1048,7 @@ export default {
       chatter: [
         { q: 'What is Tidefolk?', a: 'An old blood, older than this village. We keep to the water more than most — old habit, older than memory, if I’m honest with you.' },
       ],
-    },
+   },
     {
       id: 'cade_fathom', name: 'Cade Fathom', role: 'DIVER',
       sprite: 'assets/images/cade_fathom_overhead.png',
@@ -1061,7 +1071,7 @@ export default {
       chatter: [
         { q: 'Could you dive the wreck?', a: 'Faster than any of Roderick’s rope-and-lantern crews, I’d wager — if he’d ever let me near it. Someday, maybe. When there’s a reason worth the risk.' },
       ],
-    },
+   },
 
     // ---- Miremen guarding the Maiden's Grace (2026-09-02, moved onto the
     // ship 2026-09-02 round 2) ----
@@ -1083,7 +1093,7 @@ export default {
       // cargo hatch and the starboard rail.
       x: 512, y: 1300, speed: 35, chaseSpeed: 140, aggroRange: 300, giveUpRange: 700, startsHome: false,
       patrol: [ { x: 512, y: 1300 }, { x: 512, y: 1560 } ],
-    },
+   },
     {
       id: 'mireman_c1_2', name: 'Mireman', role: '',
       creature: true, enemyId: 'mireman', pack: 'ship_miremen',
@@ -1097,6 +1107,6 @@ export default {
       // Re-placed 2026-10-20 for the redrawn ship: aft of the hatch, between
       // the rope coil and the mizzen mast.
       patrol: [ { x: 337, y: 1600 }, { x: 337, y: 1740 } ],
-    },
+   },
   ],
 };

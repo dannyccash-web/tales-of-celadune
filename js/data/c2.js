@@ -298,7 +298,7 @@ export default {
     { x: 1120, y: 1060, w: 100, h: 20 },
     { x: 1440, y: 1060, w: 60, h: 20 },
     { x: 2040, y: 1060, w: 200, h: 20 },
-    { x: 2300, y: 1060, w: 40, h: 40 },
+    { x: 2300, y: 1060, w: 40, h: 15 },
     { x: 2420, y: 1060, w: 240, h: 40 },
     { x: 2880, y: 1060, w: 120, h: 20 },
     { x: 0, y: 1080, w: 260, h: 20 },
@@ -310,7 +310,6 @@ export default {
     { x: 580, y: 1100, w: 220, h: 40 },
     { x: 1040, y: 1100, w: 40, h: 60 },
     { x: 2020, y: 1100, w: 200, h: 20 },
-    { x: 2300, y: 1100, w: 20, h: 20 },
     { x: 2440, y: 1100, w: 200, h: 40 },
     { x: 1980, y: 1120, w: 200, h: 20 },
     { x: 2680, y: 1120, w: 60, h: 20 },
@@ -666,6 +665,7 @@ export default {
     // narrower are handled by main.js's settleArrival() on scene entry.
     { x: 1180, y: 2880, w: 88, h: 120 },
     { x: 1421, y: 2880, w: 90, h: 120 },
+    // new art 2026-10-30: opened (art removed the obstacle): x2300-2350 y1075-1125
   ],
 
   // Landmark proximity labels (doorless, so they use their own radius `r`).
@@ -769,12 +769,12 @@ export default {
       dialog: {
         line: 'Bent axle, bent nerves, and a bent opinion of the open road. But the tools still work, friend, and that is the main thing.',
         responses: ['Leave.'],
-      },
+     },
       chatter: [
         { q: 'What is it you do, exactly?', a: 'Bindings, mostly. You take a thing with a nature to it — a heart, a fang, a lump of ore — and you argue with a weapon until it agrees to behave the same way. It is less mystical than it sounds and more arguing than anyone admits.' },
         { q: 'Why travel alone out here?', a: 'Because a cart with two people in it is a cart worth stopping, and a cart with one skinny man in it is usually not worth the walk. That theory has now been tested. The theory lost.' },
       ],
-    },
+   },
     {
       id: 'tovan', name: 'Tovan Reedwalker', role: 'HERDER',
       sprite: 'assets/images/tovan_reedwalker_overhead.png',
@@ -793,12 +793,12 @@ export default {
       dialog: {
         line: 'Three of them came out of the grass before dawn. We heard it happen. There was nothing to be done in the dark but hold on to the one that ran the right way.',
         responses: ['Leave.'],
-      },
+     },
       chatter: [
         { q: 'What is a thrumhorn?', a: 'Herd beast. Slow, warm, stubborn as a stuck cart — and worth more than everything else we own put together. That hum they make when they are content, that is where the name comes from. You will hear it if you stand close enough.' },
         { q: 'Why camp out here at all?', a: 'The Windmarch grass is good and nobody charges us for it. That was the whole of the plan. Nobody mentioned what else grazes out here.' },
       ],
-    },
+   },
     {
       id: 'nera', name: 'Nera Reedwalker', role: 'HERDER',
       // Basic road stock, per Danny. `gold` is her purse for buying the
@@ -819,13 +819,13 @@ export default {
       dialog: {
         line: 'You will want to keep moving, but if you are buying, I am selling. Road food, mostly. It is what we have left to trade.',
         responses: ['Leave.'],
-      },
+     },
       chatter: [
         { q: 'Are you all right out here?', a: 'We are alive and one of the herd is alive. Ask me again in a week and I might have a better answer for you.' },
         { q: 'Where were you headed?', a: 'East, and then north, and then wherever the grass is. That was before. Now we are headed nowhere until Tovan stops staring at that ridge.' },
         { q: 'Is there a town near here?', a: 'Millmere, down the south road — mill, tavern, a smith who will mend anything you can carry in. West along the road, Tidewrack, if you like your bread with sand in it. We trade at both when we have anything worth trading.' },
       ],
-    },
+   },
     {
       id: 'thrumhorn', name: 'Thrumhorn', role: '',
       sprite: 'assets/images/thrumhorn_overhead.png',
@@ -839,7 +839,7 @@ export default {
         { x: 1250, y: 2070 },
         { x: 1110, y: 2050 },
       ],
-    },
+   },
 
     // ---- The three thornback boars (2026-09-16, Danny) ----
     // Roaming `creature` NPCs in the open ground north of the road, below the
@@ -875,7 +875,7 @@ export default {
         { x: 679, y: 448 },
         { x: 315, y: 463 },
       ],
-    },
+   },
     {
       id: 'thornback_2', name: 'Thornback Boar', creature: true, enemyId: 'thornback_boar',
       sprite: 'assets/images/thornback_boar_overhead.png',
@@ -887,7 +887,7 @@ export default {
         { x: 973, y: 700 },
         { x: 660, y: 680 },
       ],
-    },
+   },
     {
       id: 'thornback_3', name: 'Thornback Boar', creature: true, enemyId: 'thornback_boar',
       sprite: 'assets/images/thornback_boar_overhead.png',
@@ -899,7 +899,7 @@ export default {
         { x: 1041, y: 493 },
         { x: 1234, y: 732 },
       ],
-    },
+   },
   ],
 
   exits: [
