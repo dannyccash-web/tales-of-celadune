@@ -8,7 +8,8 @@ export default {
   vegetable_delivery: {
     id: 'vegetable_delivery',
     name: 'Vegetable Delivery',
-    description: 'Carry a crate of vegetables from Mirelle to the tavern in the village.',
+    // Description is rewritten per leg by main.js's syncMirelleQuestText().
+    description: 'Carry a crate of vegetables from Mirelle’s farm to the tavern in Millmere.',
   },
   // The Maiden's Grace's lockbox (C1, 2026-09-13) — replaces the earlier
   // c1_salvage/c1_memorial pair (Roderick's cargo-cataloguing quest and

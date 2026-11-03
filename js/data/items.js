@@ -146,7 +146,7 @@ const ITEMS = {
     id: 'vegetable_crate',
     name: 'Crate of Vegetables',
     image: 'assets/images/Vegetable_Crate.png',
-    description: 'A crate of fresh vegetables, bound for the tavern in the village.',
+    description: 'A crate of fresh vegetables from Mirelle’s farm, bound for a tavern.',
     questItem: true,
   },
   // The Maiden's Grace's lockbox (C1D, 2026-09-13) — found beside the

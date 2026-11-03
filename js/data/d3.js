@@ -341,63 +341,12 @@ export default {
         { do: 'goto', x: 1488, y: 1561 },
         { do: 'goHome' },
       ],
-      // Quest test case for the item + quest systems: agreeing hands over a
-      // quest item (grantItem), starts the quest (startQuest — see
-      // js/data/quests.js), and keeps the dialog open for a thank-you line
-      // instead of closing — see ui.js's chooseResponse()/updateDialogContent().
+      // Dialogue is state-built in main.js's buildMirelleDialog (2026-11-03):
+      // a three-leg vegetable run (Millmere -> Tidewrack -> Kingsreach), with
+      // a pay-or-lie choice after each leg. `dialog` is only a fallback.
       dialog: {
-        line: 'Oh, hello there, traveler. I’ve more vegetables than I know what to do with this week — would you carry a crate over to the tavern in Millmere for me?',
-        responses: [
-          'I’ll take them to the tavern.',
-          'Not right now.',
-        ],
-        responseEffects: [
-          {
-            grantItem: 'vegetable_crate',
-            qty: 1,
-            startQuest: 'vegetable_delivery',
-            thankYou: 'Bless you, dear. Mind the road — the tavern keeper will be glad to see these.',
-          },
-          null,
-        ],
-      },
-      // Once the vegetable_delivery quest exists, main.js's resolveNpcDialog()
-      // swaps in the matching status variant here instead of the offer above
-      // — so asking again doesn't hand over a second crate. No 'completed'
-      // variant yet since there's no tavern scene to actually turn the quest
-      // in at; add one once that scene exists.
-      dialogByQuestStatus: {
-        vegetable_delivery: {
-          // Before the crate reaches the tavern (readyToComplete condition in
-          // main.js's QUEST_READY is false).
-          active: {
-            line: 'Any luck getting those vegetables to the tavern yet? The keeper’s probably wondering where I’ve gotten to.',
-            responses: [
-              'Not yet — I’ll get there.',
-              'Leave.',
-            ],
-          },
-          // Once Bram's taken the crate + paid (vegetableDeliveredToTavern) the
-          // player can hand the coin over honestly or pocket it and lie — either
-          // way completes the quest (see main.js giveMirelleGold/lieToMirelle).
-          readyToComplete: {
-            line: 'Back already! And in one piece. Did that old tavern keeper settle up for the vegetables, then?',
-            responses: [
-              'He did. Here’s your five gold.',
-              'Afraid not — he never paid a copper.',
-              'Leave.',
-            ],
-            responseEffects: [
-              { giveMirelleGold: true },
-              { lieToMirelle: true },
-              null,
-            ],
-          },
-          completed: {
-            line: 'Those vegetables you ran to the tavern — half of Millmere has had the stew by now. Thank you again, dear.',
-            responses: ['Leave.'],
-          },
-        },
+        line: 'Oh, hello there, traveler.',
+        responses: ['Leave.'],
       },
     },
     {

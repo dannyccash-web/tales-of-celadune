@@ -705,6 +705,12 @@ async function boot() {
   // quest's `readyToComplete` condition — Mirelle then offers to be paid back
   // (or lied to). Session-scoped, never reset (quest progress, not per-scene).
   let vegetableDeliveredToTavern = false;
+  // Mirelle's run became three legs (2026-11-03): which tavern the current
+  // crate is for (1 Millmere, 2 Tidewrack, 3 Kingsreach), and how it ended
+  // ('honest' after paying her all three times, 'lied' the moment the player
+  // pockets a payment). Old saves load as leg 1 / no outcome.
+  let mirelleStage = 1;
+  let mirelleOutcome = null;
 
   // The two stationary gate sentries step to their gate's `aside` spot when the
   // toll's paid (so the player passes freely) and back to their post on a fresh
@@ -964,7 +970,7 @@ async function boot() {
         inventory: inventory.map((e) => ({ ...e })),
         equipment: { ...equipment },
         quests: quests.map((q) => ({ ...q })),
-        flags: { campQuestDone, campHostile, campTollTier, gafferHappy, thrumhornFed, orrisRescued, orrisDeparted, wellCoinThrown, wellDrinks, vegetableDeliveredToTavern, calderToldStory, calderToldDangers, maraMet, maraToldTruth, lilyGullThanked, magicRevealed, maraHollowmastRescued, lockboxAcceptedFrom, lockboxGivenTo , ferrySide, lakewardenPaid, visitedTowns: [...visitedTowns] },
+        flags: { campQuestDone, campHostile, campTollTier, gafferHappy, thrumhornFed, orrisRescued, orrisDeparted, wellCoinThrown, wellDrinks, vegetableDeliveredToTavern, mirelleStage, mirelleOutcome, calderToldStory, calderToldDangers, maraMet, maraToldTruth, lilyGullThanked, magicRevealed, maraHollowmastRescued, lockboxAcceptedFrom, lockboxGivenTo , ferrySide, lakewardenPaid, visitedTowns: [...visitedTowns] },
         caveReturn, // where to exit to if saved inside a cave/dungeon
         worlds: snapshotWorlds(),
       };
@@ -1044,7 +1050,7 @@ async function boot() {
     ui.setMagicBarVisible(magicRevealed);
     refreshStatsPanel();
     refreshItemsUi();
-    ui.updateQuestsPanel(quests, QUESTS);
+    syncMirelleQuestText(); // also redraws the quest panel
   }
 
   // Wipe every bit of run state back to a pristine start and drop the player at
@@ -1056,7 +1062,7 @@ async function boot() {
     quests.length = 0;
     campTollPaid = false; campEntered = false; campQuestDone = false;
     campHostile = false; campEntryGate = null; campTollTier = 0;
-    gafferHappy = false; thrumhornFed = false; orrisRescued = false; orrisDeparted = false; orrisLeaving = false; wellCoinThrown = false; wellDrinks = 0; vegetableDeliveredToTavern = false;
+    gafferHappy = false; thrumhornFed = false; orrisRescued = false; orrisDeparted = false; orrisLeaving = false; wellCoinThrown = false; wellDrinks = 0; vegetableDeliveredToTavern = false; mirelleStage = 1; mirelleOutcome = null;
     ferrySide = 'mainland'; // the C3 raft starts moored on the near shore
     lakewardenPaid = false;
     calderToldStory = false; calderToldDangers = false; maraMet = false; maraToldTruth = null;
@@ -1115,6 +1121,8 @@ async function boot() {
     }
     caveReturn = data.caveReturn || null;
     vegetableDeliveredToTavern = !!f.vegetableDeliveredToTavern;
+    mirelleStage = [1, 2, 3].includes(f.mirelleStage) ? f.mirelleStage : 1;
+    mirelleOutcome = f.mirelleOutcome || null;
     // Visited towns. Saves from before fast travel existed have no list, so
     // backfill from the per-scene world snapshot, which has an entry for every
     // scene the player has ever entered (see snapshotWorlds' seeding).
@@ -1867,30 +1875,72 @@ async function boot() {
       });
       return true;
     }
-    // Hand Mirelle's crate to Bram at the tavern: he takes it, pays 5 gold for
-    // her, and asks the player to carry the coin back to her. Marks the quest
-    // ready to turn in at Mirelle (readyToComplete). One-time (the response
-    // only appears while the player holds the crate + the quest is active).
-    if (effect.deliverVegetables) {
-      removeItem('vegetable_crate', 1, true);
-      ui.showGaveItem(ITEMS.vegetable_crate);
-      addGold(5);
-      vegetableDeliveredToTavern = true;
-      requestAutosave(); // persist delivery (crate was already removed above)
-      ui.updateDialogContent({
-        line: 'Mirelle’s crate — been waiting on these! Here, five gold for her trouble. See it finds its way back to her, won’t you? Good lass, that one.',
-        responses: ['Leave.'],
-      });
+    // Mirelle's vegetable run (reworked 2026-11-03) — see MIRELLE_RUNS.
+    if (effect.mirelleMenu) { ui.updateDialogContent(buildMirelleDialog()); return true; }
+    if (effect.mirelleTakeCrate) {
+      const run = MIRELLE_RUNS[mirelleStage - 1];
+      addItem('vegetable_crate', 1);
+      ui.showReceivedItem(ITEMS.vegetable_crate);
+      startQuest('vegetable_delivery'); // no-op after the first leg
+      syncMirelleQuestText();
+      ui.updateDialogContent({ line: run.thanks, responses: ['Leave.'] });
       return true;
     }
-    // Turn-in at Mirelle: hand over the tavern's 5 gold honestly...
+    if (effect.mirelleDecline) {
+      ui.updateDialogContent({ line: 'Whenever you’re ready, dear. The crate will keep a day or two.', responses: ['Leave.'] });
+      return true;
+    }
+    // At the tavern: the keeper takes the crate and pays Mirelle's share to
+    // the player, to carry back to her.
+    if (effect.deliverVegetables) {
+      const run = MIRELLE_RUNS[mirelleStage - 1];
+      removeItem('vegetable_crate', 1, true);
+      ui.showGaveItem(ITEMS.vegetable_crate);
+      addGold(run.pay);
+      vegetableDeliveredToTavern = true;
+      requestAutosave(); // persist the delivery flag (set after the mutators above)
+      ui.updateDialogContent({ line: run.keeperLine, responses: ['Leave.'] });
+      return true;
+    }
+    // Back at Mirelle: hand the coin over honestly...
     if (effect.giveMirelleGold) {
-      spendGold(5);
+      const run = MIRELLE_RUNS[mirelleStage - 1];
+      if (stats.gold < run.pay) {
+        audio.sfx(audio.SFX.denied);
+        ui.updateDialogContent({
+          line: `(You count out your purse. You’ve spent some of it, and you’re ${run.pay - stats.gold} gold short of what the tavern paid.)`,
+          responses: ['Go back.', 'Leave.'], responseEffects: [{ mirelleMenu: true }, null],
+        });
+        return true;
+      }
+      spendGold(run.pay);
+      vegetableDeliveredToTavern = false;
+      if (mirelleStage < MIRELLE_RUNS.length) {
+        mirelleStage += 1;
+        syncMirelleQuestText();
+        requestAutosave();
+        const next = MIRELLE_RUNS[mirelleStage - 1];
+        ui.updateDialogContent({
+          line: run.honestLine,
+          responses: [next.acceptLabel, 'Not right now.'],
+          responseEffects: [{ mirelleTakeCrate: true }, { mirelleDecline: true }],
+        });
+        return true;
+      }
+      mirelleOutcome = 'honest';
+      addItem('vitality_potion', 1);
+      ui.showReceivedItem(ITEMS.vitality_potion);
       completeQuest('vegetable_delivery');
-      ui.updateDialogContent({
-        line: 'You didn’t have to — but bless you for it. Honest folk are rarer than good weather these days. Safe travels, dear.',
-        responses: ['Leave.'],
-      });
+      ui.updateDialogContent({ line: run.honestLine, responses: ['Leave.'] });
+      return true;
+    }
+    // ...or pocket it and claim the tavern never paid. Ends the run for good.
+    if (effect.lieToMirelle) {
+      const run = MIRELLE_RUNS[mirelleStage - 1];
+      vegetableDeliveredToTavern = false;
+      mirelleOutcome = 'lied';
+      completeQuest('vegetable_delivery');
+      ui.updateDialogContent({ line: run.lieLine, responses: ['Leave.'] });
       return true;
     }
     // Hand Darius the Moonscale Trout: he pays 20 gold (double its market
@@ -3213,15 +3263,8 @@ async function boot() {
     }
     const responses = ['Buy', 'Sell', 'Leave.'];
     const responseEffects = [{ shop: 'buy' }, { shop: 'sell' }, null];
-    // Bram's vegetable-crate turn-in: only while the player is carrying
-    // Mirelle's crate and the quest is still active (and not yet delivered).
-    if (npc.id === 'bram'
-        && questStatus('vegetable_delivery') === 'active'
-        && !vegetableDeliveredToTavern
-        && inventory.some((it) => it.id === 'vegetable_crate')) {
-      responses.unshift('Deliver Mirelle’s crate of vegetables.');
-      responseEffects.unshift({ deliverVegetables: true });
-    }
+    // (Bram's crate delivery is added for every tavern keeper by
+    // withVegDelivery in openNpcDialog, 2026-11-03.)
     // Sorcha's smithing quest (2026-08-03): "Can you make weapons?" now offers a
     // fetch quest for ore; once active and holding ore, a turn-in; once done the
     // longsword just shows in her Buy stock (questStock, above).
@@ -3662,6 +3705,115 @@ async function boot() {
     };
   }
 
+  // ---- Mirelle's vegetable run (D3, reworked 2026-11-03, Danny) ----
+  // Three legs: a crate to the tavern in Millmere, then (if she was paid)
+  // Tidewrack, then Kingsreach. After each delivery the keeper pays the
+  // player; back at the farm the player either hands it over (next leg, or a
+  // vitality potion after the third) or lies that the tavern never paid,
+  // which ends the quest on the spot. All under the one `vegetable_delivery`
+  // quest id so old saves carry over. `keeper` is the npc id who accepts the
+  // crate (withVegDelivery adds the response to their dialogue).
+  // ⚠️ Kingsreach has no tavern keeper yet (B3 has no NPCs and is locked):
+  // set leg 3's `keeper` to their npc id when one exists. Until then the
+  // third crate can be taken but not delivered.
+  const MIRELLE_RUNS = [
+    {
+      keeper: 'bram', pay: 5,
+      thanks: 'Bless you, dear. Mind the road. Bram at the tavern will be glad to see these.',
+      quest: 'Carry a crate of vegetables from Mirelle’s farm to the tavern in Millmere.',
+      waitLine: 'Any luck getting those vegetables to the tavern in Millmere? Bram will be wondering where I’ve got to.',
+      askLine: 'Back already, and in one piece! Did Bram settle up for the vegetables, then?',
+      payLabel: 'He did. Here’s your 5 gold.', lieLabel: '(Lie) He never paid a copper.',
+      keeperLine: 'Mirelle’s crate. Been waiting on these! Here, five gold for her trouble. See it finds its way back to her, won’t you? Good lass, that one.',
+      honestLine: 'Every coin of it. Bless you, dear. Honest folk are rarer than good weather these days. And that gives me an idea. Perrin runs the cookhouse down in Tidewrack Harbor, and since that ship drifted in, the whole town’s been scraping by on next to nothing. Would you carry him a crate? He’ll pay what he can.',
+      lieLine: 'Not a copper? Bram? He’s poured for this family for twenty years. I’d have trusted him with the deed to the farm. That was our seed money for spring, dear. I don’t know how we’ll manage now. No more crates, not if this is how they do business. Thank you for carrying them all the same.',
+    },
+    {
+      keeper: 'perrin_alders', pay: 8,
+      quest: 'Carry a crate of Mirelle’s vegetables to Perrin’s cookhouse, the tavern in Tidewrack Harbor.',
+      offerLine: 'Perrin’s cookhouse in Tidewrack is still waiting on a crate, if you’re willing. It’s a fair walk, I know.',
+      acceptLabel: 'I’ll take a crate to Tidewrack.',
+      thanks: 'You’re a dear. Perrin’s cookhouse is right on the harbor; follow the smell of stew.',
+      waitLine: 'That crate won’t walk itself to Tidewrack, dear. Perrin’s cookhouse, right on the harbor.',
+      askLine: 'You’re back from Tidewrack! How is Perrin keeping? Did he pay for the crate?',
+      payLabel: 'He did. Here’s your 8 gold.', lieLabel: '(Lie) He couldn’t pay a copper.',
+      keeperLine: 'Vegetables? Real ones, from a farm, not a shipwreck? Oh, Mirelle, you saint. This’ll stretch the stew another week. Here, eight gold. It’s more than I can spare and less than she’s owed. Get it back to her, would you?',
+      honestLine: 'Eight gold, from a town that hasn’t got two coins to rub together. You’re a treasure. One more, if you’ll have it, and then I’ll stop asking. The tavern in Kingsreach has been after my squash all season, and city folk pay city prices. It’s a long road north. Will you take one last crate?',
+      lieLine: 'Nothing? Not even from Perrin? I sent that crate as much for those poor folk as for us. That’s two crates of seed and a season’s hope gone, and money the farm can’t do without. I should have known. No more deliveries. I’m sorry I dragged you into it.',
+    },
+    {
+      keeper: null, pay: 12,
+      quest: 'Carry a crate of Mirelle’s vegetables to the tavern in Kingsreach.',
+      offerLine: 'The tavern in Kingsreach is still waiting on that last crate, if your legs are up to it.',
+      acceptLabel: 'I’ll take the last crate to Kingsreach.',
+      thanks: 'Mind the road north, dear. Kingsreach is under the castle walls, and the tavern there knows my name.',
+      waitLine: 'Kingsreach is a long road, I know. The tavern there is expecting that crate.',
+      askLine: 'All the way to Kingsreach and back! Did the tavern pay what they owed?',
+      payLabel: 'They did. Here’s your 12 gold.', lieLabel: '(Lie) They never paid a copper.',
+      keeperLine: 'Mirelle’s crate, all the way from the farm! Finest squash in the realm, that woman grows. Twelve gold, as agreed. See she gets every coin.',
+      honestLine: 'Twelve gold, every coin of it, and from Kingsreach of all places. Oh, dear. The roof gets mended before the snow, and there’s seed for spring besides. I don’t know how to thank you. Here, take this. A vitality potion. My mother brewed a handful before she passed, and I’ve been saving the last one for someone who deserved it. That’s you.',
+      lieLine: 'Nothing? After all that road? The roof needs mending before the snow, and that was going to be it. A city tavern. I should have known better than to trust one. That’s the end of it, then. The farm will just have to make do.',
+    },
+  ];
+
+  function syncMirelleQuestText() {
+    const run = MIRELLE_RUNS[mirelleStage - 1];
+    if (run && QUESTS.vegetable_delivery) QUESTS.vegetable_delivery.description = run.quest;
+    ui.updateQuestsPanel(quests, QUESTS);
+  }
+
+  function buildMirelleDialog() {
+    const status = questStatus('vegetable_delivery');
+    const run = MIRELLE_RUNS[mirelleStage - 1];
+    if (status === 'completed') {
+      if (mirelleOutcome === 'honest') {
+        return { line: 'Three taverns and three honest payments. The roof’s mended and there’s seed in the shed for spring, all thanks to you. You’re always welcome at this farm, dear.', responses: ['Leave.'] };
+      }
+      if (mirelleOutcome === 'lied') {
+        return { line: 'Oh. Hello, traveler. We’re feeding our own from here on. No more crates for taverns that won’t pay. We’ll manage. We always do.', responses: ['Leave.'] };
+      }
+      // Saves that finished the old one-leg version.
+      return { line: 'Those vegetables you ran to the tavern — half of Millmere has had the stew by now. Thank you again, dear.', responses: ['Leave.'] };
+    }
+    if (status === 'none') {
+      return {
+        line: 'Oh, hello there, traveler. I’ve more vegetables than I know what to do with this week. Would you carry a crate over to the tavern in Millmere for me?',
+        responses: ['I’ll take them to the tavern.', 'Not right now.'],
+        responseEffects: [{ mirelleTakeCrate: true }, null],
+      };
+    }
+    if (vegetableDeliveredToTavern) {
+      return {
+        line: run.askLine,
+        responses: [run.payLabel, run.lieLabel, 'Leave.'],
+        responseEffects: [{ giveMirelleGold: true }, { lieToMirelle: true }, null],
+      };
+    }
+    if (inventory.some((it) => it.id === 'vegetable_crate')) {
+      return { line: run.waitLine, responses: ['Not yet. I’ll get there.', 'Leave.'] };
+    }
+    // Paid her for the last leg but turned the next crate down: re-offer it.
+    return {
+      line: run.offerLine,
+      responses: [run.acceptLabel, 'Not right now.'],
+      responseEffects: [{ mirelleTakeCrate: true }, { mirelleDecline: true }],
+    };
+  }
+  // Adds "Deliver Mirelle's crate" to the current leg's tavern keeper.
+  // A shop vendor only takes it behind the counter (Bram used to work that way).
+  function withVegDelivery(dialog, npc) {
+    const run = MIRELLE_RUNS[mirelleStage - 1];
+    if (!run || !run.keeper || run.keeper !== npc.id) return dialog;
+    if (questStatus('vegetable_delivery') !== 'active' || vegetableDeliveredToTavern) return dialog;
+    if (!inventory.some((it) => it.id === 'vegetable_crate')) return dialog;
+    if (npc.vendor && npc.home && !npc.atHome) return dialog;
+    const responses = [...dialog.responses];
+    const effects = responses.map((_, i) => dialog.responseEffects?.[i] ?? null);
+    responses.unshift('Deliver Mirelle’s crate of vegetables.');
+    effects.unshift({ deliverVegetables: true });
+    return { ...dialog, responses, responseEffects: effects };
+  }
+
   // ---- Tidewrack Harbor, C1 (2026-09-02) ----
   // Perrin's main quest (reworked 2026-10-11, Danny): he wants to lift the
   // harbour's spirits with his famous stew, and needs 1 Cragclaw Eggs + 1
@@ -4060,7 +4212,8 @@ async function boot() {
     if (npc.id === 'edras_holloweye') { openEdrasDialog(npc); return; }
     if (npc.id === 'vozhik') { openVozhikDialog(npc); return; }
     let dialog;
-    if (npc.id === 'gaffer') dialog = buildGafferDialog(npc);
+    if (npc.id === 'mirelle') dialog = buildMirelleDialog();
+    else if (npc.id === 'gaffer') dialog = buildGafferDialog(npc);
     else if (npc.id === 'tovan') dialog = buildTovanDialog();
     else if (npc.id === 'thrumhorn') dialog = buildThrumhornDialog();
     else if (npc.id === 'orris_fenwick') dialog = buildOrrisDialog();
@@ -4082,6 +4235,7 @@ async function boot() {
     else if (npc.bramblekin) dialog = buildBramblekinDialog(npc);
     else if (npc.vendor) dialog = buildVendorDialog(npc); // adds its own chatter
     else dialog = withBlessing(withChatter(resolveNpcDialog(npc, isQuestReady), npc), npc);
+    dialog = withVegDelivery(dialog, npc);
     // Any Bramblekin (guards or Chief) parley shows the camp backdrop (2026-07-22).
     const background = (npc.bramblekin || npc.id === 'bramblekin_chief') ? BRAMBLEKIN_BG : npc.background;
     // `lockDialog` rides on the built dialog (Orris's ambush) — ui.js reads it
