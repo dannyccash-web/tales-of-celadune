@@ -1052,8 +1052,9 @@ export class World {
 
   // A brief cluster of star-shaped glints every couple of seconds over a
   // `sparkle: true` interactable, so a pickup catches the eye. Drawn on the
-  // label canvas (above the vignette AND the dark-cave overlay) so it reads
-  // even in a pitch-dark cave. Each burst picks new spots near the object.
+  // label canvas (above the vignette AND the dark-cave overlay). Only drawn
+  // while the player has a torch equipped (see render()). Each burst picks
+  // new spots near the object.
   drawSparkle(it) {
     const ctx = this.labelCtx;
     if (!ctx || !ctx.save) return;
@@ -1506,9 +1507,16 @@ export class World {
     // Fishing ripples where the bait was cast
     if (this.fishing) this.drawRipples();
 
-    // Occasional glints on `sparkle: true` interactables (2026-10-20, the
-    // metallic ore in the caves) until they're collected.
-    for (const it of this.interactables) if (it.sparkle && !it.collected) this.drawSparkle(it);
+    // Occasional glints on ore (any `sparkle: true` interactable, plus any
+    // pickup that grants metallic_ore) until it's collected. Since 2026-11-04
+    // they only glint while the player carries a torch (main.js sets
+    // playerTorch): torchlight is what catches the metal in a dark cave.
+    if (this.playerTorch) {
+      for (const it of this.interactables) {
+        if (it.collected) continue;
+        if (it.sparkle || (it.reward && it.reward.item === 'metallic_ore')) this.drawSparkle(it);
+      }
+    }
 
     // Interaction labels (NPC names, buildings, interactables, chests, fishing)
     // are hidden while a modal overlay (dialog/panel/battle/game-over/…) is up,

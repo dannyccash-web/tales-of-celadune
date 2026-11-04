@@ -2009,14 +2009,13 @@ async function boot() {
       return true;
     }
     if (effect.orrisFightNow) { startOrrisAmbush(); return true; }
-    // Enchanting, reworked 2026-09-20 into reagent -> explain -> weapon ->
+    // Enchanting, simplified 2026-11-04 to weapon -> reagent -> explain +
     // confirm (Danny). Every menu is rebuilt from live inventory at the moment
     // it opens, so a step can never offer something the player no longer has.
     if (effect.orrisMenu) { ui.updateDialogContent(buildOrrisDialog()); return true; }
-    if (effect.orrisReagent) { ui.updateDialogContent(orrisExplainMenu(effect.orrisReagent)); return true; }
-    if (effect.orrisProceed) { ui.updateDialogContent(orrisWeaponMenu(effect.orrisProceed)); return true; }
-    if (effect.orrisConfirm) {
-      ui.updateDialogContent(orrisConfirmMenu(effect.orrisConfirm.weaponId, effect.orrisConfirm.reagentId));
+    if (effect.orrisWeapon) { ui.updateDialogContent(orrisReagentMenu(effect.orrisWeapon)); return true; }
+    if (effect.orrisPick) {
+      ui.updateDialogContent(orrisExplainMenu(effect.orrisPick.weaponId, effect.orrisPick.reagentId));
       return true;
     }
     if (effect.orrisEnchant) {
@@ -2521,7 +2520,7 @@ async function boot() {
   // add the variant, and re-equip if the plain one was in hand.
   //
   // The chosen weapon + reagent ride INSIDE the response effects through the
-  // whole conversation ({ orrisConfirm: { weaponId, reagentId } } and so on)
+  // whole conversation ({ orrisPick: { weaponId, reagentId } } and so on)
   // rather than in a module-level "pending" holder, so backing out of a menu
   // or walking away mid-flow can't leave a half-made selection lying around.
 
@@ -2532,22 +2531,23 @@ async function boot() {
     return Object.values(ENCHANTS).filter((e) => inventory.some((it) => it.id === e.reagentId));
   }
 
-  // The conversation runs REAGENT -> EXPLAIN -> WEAPON -> CONFIRM (reworked
-  // 2026-09-20, Danny). He opens by offering the work and asking what the
-  // player is carrying; the first menu is the reagents themselves, listed only
-  // if they're actually in the bag. Picking one gets an excited explanation of
-  // what it would do and a yes/no; yes opens the weapon list; picking a weapon
-  // gets one last are-you-sure before anything is consumed. Every menu is
-  // rebuilt from live inventory when it opens, so nothing stale can be offered.
+  // The conversation runs WEAPON -> REAGENT -> EXPLAIN + CONFIRM -> done
+  // (simplified 2026-11-04, Danny). He opens by asking what you'd like
+  // enchanted; the first menu is the plain weapons in the bag (isEnchantable —
+  // nothing already enchanted or carrying another modifier). Picking one asks
+  // what to bind into it, listing only the reagents actually held. Picking a
+  // reagent gets a plain-spoken explanation of what the weapon will do (snare,
+  // poison — no numbers) and a yes/no. Yes enchants it, and he leaves for
+  // Kingsreach. Every menu is rebuilt from live inventory when it opens.
   function buildOrrisDialog() {
     if (!orrisRescued) return buildOrrisAmbushDialog();
-    const reagents = reagentsHeld();
+    const weapons = enchantableWeaponsHeld();
     const hasRock = inventory.some((it) => it.id === 'mysterious_rock');
     const responses = [];
     const effects = [];
-    for (const e of reagents) {
-      responses.push(`Show him the ${ITEMS[e.reagentId].name}.`);
-      effects.push({ orrisReagent: e.reagentId });
+    for (const w of weapons) {
+      responses.push(`My ${w.name}.`);
+      effects.push({ orrisWeapon: w.id });
     }
     // Lily Farrow's rock is NOT a reagent (2026-09-19) — it's a lead. Orris can
     // tell it matters and cannot tell why, and points the player at Kingsreach.
@@ -2557,60 +2557,42 @@ async function boot() {
     }
     responses.push('Leave.');
     effects.push(null);
-    const line = (reagents.length || hasRock)
-      ? 'There he is. Listen \u2014 I have no coin, I said so and I meant it, but I have hands and forty years of ruining things until they worked. Binding is what I am for. Give me something with a nature in it and I will put that nature into a weapon and you will keep it. So. What are you carrying? Show me everything, I am not proud.'
-      : 'The offer stands and it will keep standing \u2014 I owe you a debt I cannot pay in coin, on account of having none. But a blade is only the argument; I need something to argue WITH. A rootweaver\u2019s heart. A spider\u2019s fang. Something with a nature strong enough to lend. Bring me one and the work is yours, free and gladly.';
+    const line = weapons.length
+      ? 'There he is. I have no coin — I said so and I meant it — but binding is what I am for, and I owe you. So: what would you like enchanted?'
+      : 'The offer stands, and it will keep standing. But I need a blade to work on — something plain and honest that only knows how to be sharp. Bring me one and the work is yours, free and gladly.';
     return { line, responses, responseEffects: effects };
   }
 
-  // Step 2 — what that reagent would DO. The effect text is ENCHANTS[].blurb,
-  // the same string the item tooltips use, so the pitch can never drift from
-  // the mechanic. He is thrilled about it; that is the whole character.
-  const ORRIS_PITCH = {
-    rootweaver_heart: 'His whole face changes. A rootweaver\u2019s heart \u2014 still wet, you absolute menace. Do you know what this is? It is a thing that grew by taking. Bind that to a blade and the blade learns the habit.',
-    spider_fang: 'He holds it up to the light by the very end of it, delighted and sensible about it at the same time. Oh, that is a good one. Still charged, see the bead at the tip? Bind this to a weapon and the weapon starts biting the way the spider did.',
-  };
-
-  function orrisExplainMenu(reagentId) {
-    const ench = ENCHANTS[reagentId];
-    return {
-      line: `${ORRIS_PITCH[reagentId]} ${ench.blurb} Shall I do it?`,
-      responses: ['Do it.', 'Not yet.'],
-      responseEffects: [{ orrisProceed: reagentId }, { orrisMenu: true }],
-    };
-  }
-
-  // Step 3 — the weapon. A weapon qualifies only if it does nothing but damage
-  // (items.js's isEnchantable — Mara's Cutlass is out, its bonusDamageVs
-  // disqualifies it). Holding none is a dead end he explains rather than an
-  // empty list.
-  function orrisWeaponMenu(reagentId) {
-    const weapons = enchantableWeaponsHeld();
-    if (!weapons.length) {
+  // Step 2 — what to bind into the chosen weapon. Only reagents in the bag.
+  function orrisReagentMenu(weaponId) {
+    const wName = ITEMS[weaponId].name;
+    const reagents = reagentsHeld();
+    if (!reagents.length) {
       return {
-        line: 'He puts his hands out for the weapon and you have nothing to put in them. Ah. Bring me a plain one, then \u2014 something honest, that only knows how to be sharp. I cannot bind a new nature onto a blade that already has opinions of its own.',
+        line: `The ${wName}. Good, honest steel. But I need something to bind INTO it — a thing with a nature strong enough to lend. A rootweaver’s heart. A spider’s fang. Bring me one of those and come back.`,
         responses: ['Go back.', 'Leave.'],
         responseEffects: [{ orrisMenu: true }, null],
       };
     }
     return {
-      line: `Right. Lay them out. Which one is going to be interesting?`,
-      responses: [...weapons.map((w) => w.name), 'Never mind.'],
-      responseEffects: [...weapons.map((w) => ({ orrisConfirm: { weaponId: w.id, reagentId } })), { orrisMenu: true }],
+      line: `The ${wName}. Good, honest steel. And what shall I bind into it?`,
+      responses: [...reagents.map((e) => `The ${ITEMS[e.reagentId].name}.`), 'Never mind.'],
+      responseEffects: [...reagents.map((e) => ({ orrisPick: { weaponId, reagentId: e.reagentId } })), { orrisMenu: true }],
     };
   }
 
-  // Step 4 — the last word before anything is consumed. Both the weapon and
-  // the reagent are spent by applyEnchant, so this is the point of no return
-  // and he says so.
-  function orrisConfirmMenu(weaponId, reagentId) {
-    const ench = ENCHANTS[reagentId];
-    const name = `${ench.prefix} ${ITEMS[weaponId].name}`;
-    const article = /^[aeiou]/i.test(name) ? 'an' : 'a'; // "an Ensnaring Dagger" / "a Venomous Dagger"
+  // Step 3 — what it will do, in his words (no numbers), and a yes/no. Both the
+  // weapon and the reagent are spent by applyEnchant.
+  const ORRIS_EXPLAIN = {
+    rootweaver_heart: (w) => `A rootweaver’s heart — oh, you absolute menace. That thing grew by taking hold, and it will teach the habit to your ${w}. Now and then, when you land a blow, roots will burst out of the ground and snare whatever you hit, and it will lose its next move fighting them off. The heart is spent in the binding. Shall I?`,
+    spider_fang: (w) => `A spider’s fang, and still charged — see the bead on the tip? Bind it into your ${w} and every so often a cut will leave poison in the wound, and it keeps eating at the creature, turn after turn, until it drops. Some things will not take poison at all — wood and root just shrug it off. The fang is spent in the binding. Shall I?`,
+  };
+
+  function orrisExplainMenu(weaponId, reagentId) {
     return {
-      line: `The ${ITEMS[weaponId].name}, then, and the ${ITEMS[reagentId].name} into it. You will get back ${article} ${name} and you will not get back either of the things you gave me \u2014 there is no unpicking this afterwards, not by me and not by anyone. Say the word and I will start.`,
-      responses: ['Do it.', 'Wait \u2014 let me think.'],
-      responseEffects: [{ orrisEnchant: { weaponId, reagentId } }, { orrisMenu: true }],
+      line: ORRIS_EXPLAIN[reagentId](ITEMS[weaponId].name),
+      responses: ['Do it.', 'Not yet.'],
+      responseEffects: [{ orrisEnchant: { weaponId, reagentId } }, { orrisWeapon: weaponId }],
     };
   }
 
@@ -2619,13 +2601,9 @@ async function boot() {
   // first time, so anything else that needs to name it should use this.
   const ORRIS_ROCK_LINE = 'He goes quiet, which he does not do. He holds it up, turns it, and holds it up again. \u201cWhere did you \u2014 no. No, do not tell me on the road.\u201d He gives it back with both hands, the way you hand back something that is not yours. \u201cI have bound hearts and fangs and ore and once, memorably, a tooth. I cannot read this at all, and I can tell you it is very rare indeed, and those two facts sitting together are keeping me up tonight. Take it to Kingsreach \u2014 the city under the castle walls. There are people there who read things for a living. Do not sell it to the first one who offers.\u201d';
 
-  // What he says while he works.
-  const ORRIS_RESULT_LINES = {
-    rootweaver_heart: 'He splits the heart with a thumbnail and it bleeds sap that moves against the grain of the world. Half an hour of muttering later he hands the weapon back, and something in the steel wants to grow.',
-    spider_fang: 'He handles the fang with tongs, at arm\u2019s length, narrating what will happen to him if he is careless. He is not careless. The blade comes back with a wet green line down it that will not wipe off.',
-  };
-
-  const ORRIS_FAREWELL = 'And that, I\u2019m afraid, is all the bench work this road will get out of me. My things are packed, and I have stood out here waiting to be robbed again for quite long enough. I am going on to Kingsreach. If you have more steel that wants waking, come and find me there. I\u2019ll have a proper bench by then, and a door that locks.';
+  // His brief send-off once the work is done (2026-11-04): he leaves C2 for
+  // Kingsreach the moment this dialog closes.
+  const ORRIS_FAREWELL = 'There. Mind the edge \u2014 it remembers now. That is my bench work done for this road: I am off to Kingsreach. Come find me there if you want anything else enchanted.';
 
   function applyEnchant(weaponId, reagentId) {
     const ench = ENCHANTS[reagentId];
@@ -2639,7 +2617,7 @@ async function boot() {
     if (wasEquipped) equipItem(enchantedId);
     audio.sfx(audio.SFX.magic);
     ui.showReceivedItem(def); // the standard received-item reveal
-    ui.updateDialogContent({ line: `${ORRIS_RESULT_LINES[reagentId]} ${ORRIS_FAREWELL}`, responses: ['Leave.'] });
+    ui.updateDialogContent({ line: ORRIS_FAREWELL, responses: ['Leave.'] });
     // He leaves C2 the moment this dialog closes (frame loop) — once per game.
     orrisDeparted = true;
     orrisLeaving = true;

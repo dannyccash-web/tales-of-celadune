@@ -299,6 +299,20 @@ export default {
     { x: 2969, y: 2906, w: 31, h: 31 },
     { x: 0, y: 2938, w: 2625, h: 31 },
     { x: 0, y: 2969, w: 2656, h: 31 },
+    // New D4B art 2026-11-04: same cave layout, recoloured; adds round boulders on the floors and a stone fire pit under Edras fire (blocked here).
+    { x: 377, y: 2549, w: 64, h: 64, note: 'boulder' },
+    { x: 470, y: 2538, w: 64, h: 64, note: 'boulder' },
+    { x: 331, y: 2336, w: 52, h: 52, note: 'boulder' },
+    { x: 703, y: 2328, w: 56, h: 56, note: 'boulder' },
+    { x: 309, y: 2751, w: 48, h: 48, note: 'boulder' },
+    { x: 517, y: 2792, w: 48, h: 48, note: 'boulder' },
+    { x: 1201, y: 2633, w: 52, h: 52, note: 'boulder' },
+    { x: 2413, y: 1857, w: 56, h: 56, note: 'boulder' },
+    { x: 2385, y: 1940, w: 40, h: 40, note: 'boulder' },
+    { x: 2744, y: 1906, w: 48, h: 48, note: 'boulder' },
+    { x: 2074, y: 2551, w: 52, h: 52, note: 'boulder' },
+    { x: 2000, y: 2409, w: 36, h: 36, note: 'boulder' },
+    { x: 2512, y: 372, w: 88, h: 86, note: 'Edras fire pit' },
   ],
 
   // Proximity label for the way out (same system as D1B's Cave Exit), riding on
@@ -383,8 +397,9 @@ export default {
       id: 'cave_spider_1', name: 'Cave Spider', creature: true, enemyId: 'cave_spider',
       sprite: 'assets/images/cave_spider_overhead.png',
       portrait: 'assets/images/cave_spider.png',
-      x: 483, y: 2551, speed: 34, chaseSpeed: 140, aggroRange: 625, startsHome: false,
-      patrol: [ { x: 483, y: 2551 }, { x: 593, y: 2551 }, { x: 483, y: 2661 } ],
+      // moved 2026-11-04: the new art puts a boulder on the old start point (483,2551)
+      x: 620, y: 2480, speed: 34, chaseSpeed: 140, aggroRange: 625, startsHome: false,
+      patrol: [ { x: 620, y: 2480 }, { x: 730, y: 2480 }, { x: 620, y: 2590 } ],
     },
     {
       id: 'cave_spider_2', name: 'Cave Spider', creature: true, enemyId: 'cave_spider',
