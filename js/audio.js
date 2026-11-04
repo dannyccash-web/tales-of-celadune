@@ -219,6 +219,41 @@ export function setWalking(active) {
   }
 }
 
+// Ambient water loops (2026-11-04, Danny): a river and an ocean bed that sit
+// under the music. main.js calls setAmbient every frame with a 0-1 loudness for
+// each (from the player's distance to the nearest river / open sea); this eases
+// toward it so walking or changing scenes never jumps. Rides the Effects
+// slider. A loop only plays while it's audible.
+export const AMBIENT = {
+  river: { src: 'assets/audio/nils_vega-river-sounds-547976.mp3', weight: 0.55 },
+  sea: { src: 'assets/audio/u_0lndlt5pdf-ocean-waves-562776.mp3', weight: 0.6 },
+};
+const ambient = {}; // key -> { el, level }
+export function setAmbient(levels, dt = 1 / 60) {
+  if (typeof Audio === 'undefined') return;
+  const k = Math.min(1, dt * 2.5); // ~0.4s to settle
+  for (const [key, def] of Object.entries(AMBIENT)) {
+    const target = Math.max(0, Math.min(1, levels[key] || 0));
+    let a = ambient[key];
+    if (!a) {
+      if (target <= 0) continue;
+      a = ambient[key] = { el: new Audio(def.src), level: 0 };
+      a.el.loop = true;
+    }
+    a.level += (target - a.level) * k;
+    if (Math.abs(target - a.level) < 0.002) a.level = target;
+    const vol = Math.max(0, Math.min(1, a.level * def.weight * sfxVolume));
+    a.el.volume = vol;
+    if (vol > 0.001) { if (a.el.paused) a.el.play().catch(() => {}); }
+    else if (!a.el.paused) a.el.pause();
+  }
+}
+export function ambientLevels() {
+  const out = {};
+  for (const [key, a] of Object.entries(ambient)) out[key] = { level: a.level, volume: a.el.volume, playing: !a.el.paused };
+  return out;
+}
+
 // One-shot sound effect, independent of the soundtrack. No-op outside the
 // browser so game logic stays testable headless in node. `weight` is the
 // sound's relative volume (0-1); actual output is weight * sfxVolume.

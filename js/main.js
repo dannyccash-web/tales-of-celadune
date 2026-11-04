@@ -5324,6 +5324,16 @@ async function boot() {
   let last = performance.now();
   let lastEdgeMessage = 0;
 
+  // Loudness 0-1 for a water ambience at distance d (world px): full within
+  // ~150px, easing down to a quiet bed (15%) by ~1200px, silent if the scene
+  // has none of that water.
+  function ambientLevel(d) {
+    if (!Number.isFinite(d)) return 0;
+    const NEAR = 150, FAR = 1200, BED = 0.15;
+    const t = Math.max(0, Math.min(1, (d - NEAR) / (FAR - NEAR)));
+    return BED + (1 - BED) * (1 - t * t * (3 - 2 * t));
+  }
+
   function frame(now) {
     const dt = Math.min((now - last) / 1000, 0.05);
     last = now;
@@ -5371,6 +5381,14 @@ async function boot() {
     world.render();
 
     audio.setWalking((!locked && world.player.moving) || !!ferry?.walking);
+    // River / ocean ambience (2026-11-04): louder near the water, a quiet bed
+    // anywhere else in a scene that has it. Fades out for battles, the death
+    // screen and the start screen.
+    {
+      const silent = !state.started || ui.isBattleOpen() || ui.isVictoryOpen() || ui.isGameOverOpen() || deathFading;
+      const wd = world.waterDistances(world.player.x, world.player.y);
+      audio.setAmbient(silent ? {} : { river: ambientLevel(wd.river), sea: ambientLevel(wd.sea) }, dt);
+    }
 
     // Scene exits: crossing an edge with a matching exit either walks the
     // player straight into the adjacent scene (registered in SCENES) or,

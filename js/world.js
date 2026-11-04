@@ -73,10 +73,50 @@ function decodeWater(id) {
     }
     return { lvl, pts, minX, minY, maxX, maxY };
   });
-  return (WATER_CACHE[id] = { n, cell: w.cell, f, mask, shores });
+  // Ambient sound (2026-11-04): distance (world px) from every cell to the
+  // nearest river cell (river scenes) and nearest sea cell (kind 2). Other
+  // still water — ponds, lakes, the moat — makes no sound.
+  const near = (pick) => {
+    const d = new Float32Array(n * n).fill(Infinity);
+    const q = [];
+    for (let i = 0; i < n * n; i++) if (pick(mask[i])) { d[i] = 0; q.push(i); }
+    if (!q.length) return null;
+    // Chamfer pass (8-neighbour, two sweeps) — exact enough for a volume curve.
+    const D = Math.SQRT2;
+    for (let pass = 0; pass < 2; pass++) {
+      const fwd = pass === 0;
+      for (let k = 0; k < n * n; k++) {
+        const i = fwd ? k : n * n - 1 - k, x = i % n, y = (i / n) | 0;
+        const nb = fwd ? [[-1, 0, 1], [0, -1, 1], [-1, -1, D], [1, -1, D]] : [[1, 0, 1], [0, 1, 1], [1, 1, D], [-1, 1, D]];
+        for (const [dx, dy, c] of nb) {
+          const nx = x + dx, ny = y + dy;
+          if (nx < 0 || ny < 0 || nx >= n || ny >= n) continue;
+          const v = d[ny * n + nx] + c;
+          if (v < d[i]) d[i] = v;
+        }
+      }
+    }
+    for (let i = 0; i < d.length; i++) d[i] *= w.cell;
+    return d;
+  };
+  const riverDist = w.river ? near((m) => m > 0) : null;
+  const seaDist = near((m) => m === 2);
+  return (WATER_CACHE[id] = { n, cell: w.cell, f, mask, shores, riverDist, seaDist });
 }
 
 export class World {
+  // Distance in world px from (x, y) to the nearest river and the nearest open
+  // sea in this scene (Infinity where the scene has none). Drives the
+  // river/ocean ambience volume in main.js.
+  waterDistances(x, y) {
+    const wd = this.water;
+    if (!wd) return { river: Infinity, sea: Infinity };
+    const cx = Math.max(0, Math.min(wd.n - 1, Math.floor(x / wd.cell)));
+    const cy = Math.max(0, Math.min(wd.n - 1, Math.floor(y / wd.cell)));
+    const i = cy * wd.n + cx;
+    return { river: wd.riverDist ? wd.riverDist[i] : Infinity, sea: wd.seaDist ? wd.seaDist[i] : Infinity };
+  }
+
   // main.js sets this to luckChance() (0.10 per Luck point); scales ranged chest gold.
   static goldLuck = () => 0;
   constructor(canvas, scene, images) {
