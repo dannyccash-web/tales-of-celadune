@@ -2025,12 +2025,16 @@ async function boot() {
     // The rock is a LEAD, not a reagent: his marvelling line is unchanged, and
     // as of 2026-09-20 it also starts the Kingsreach quest (once — startQuest
     // no-ops on a quest the player already has).
-    if (effect.orrisRock) {
+    // effect.orrisRock is the weapon id the player picked in step 2 (or null
+    // when offered on the no-weapon screen); Go back returns to that menu,
+    // which no longer lists the rock now that the quest exists.
+    if ('orrisRock' in effect) {
       startQuest('kingsreach_rock');
+      const back = effect.orrisRock ? { orrisWeapon: effect.orrisRock } : { orrisMenu: true };
       ui.updateDialogContent({
         line: ORRIS_ROCK_LINE,
         responses: ['Go back.', 'Leave.'],
-        responseEffects: [{ orrisMenu: true }, null],
+        responseEffects: [back, null],
       });
       return true;
     }
@@ -2542,42 +2546,53 @@ async function boot() {
   function buildOrrisDialog() {
     if (!orrisRescued) return buildOrrisAmbushDialog();
     const weapons = enchantableWeaponsHeld();
-    const hasRock = inventory.some((it) => it.id === 'mysterious_rock');
     const responses = [];
     const effects = [];
     for (const w of weapons) {
       responses.push(`My ${w.name}.`);
       effects.push({ orrisWeapon: w.id });
     }
-    // Lily Farrow's rock is NOT a reagent (2026-09-19) — it's a lead. Orris can
-    // tell it matters and cannot tell why, and points the player at Kingsreach.
-    if (hasRock) {
+    // No plain weapon means step 2 can't be reached, so the rock (normally a
+    // step-2 option) is offered here instead — otherwise a player carrying it
+    // without a plain weapon could never get the Kingsreach quest.
+    if (!weapons.length && orrisRockOffered()) {
       responses.push('Show him the strange rock.');
-      effects.push({ orrisRock: true });
+      effects.push({ orrisRock: null });
     }
     responses.push('Leave.');
     effects.push(null);
     const line = weapons.length
-      ? 'There he is. I have no coin — I said so and I meant it — but binding is what I am for, and I owe you. So: what would you like enchanted?'
-      : 'The offer stands, and it will keep standing. But I need a blade to work on — something plain and honest that only knows how to be sharp. Bring me one and the work is yours, free and gladly.';
+      ? 'There he is. I have no coin \u2014 I said so and I meant it \u2014 but binding is what I am for, and I owe you. So: what would you like enchanted?'
+      : 'The offer stands, and it will keep standing. But I need a blade to work on \u2014 something plain and honest that only knows how to be sharp. Bring me one and the work is yours, free and gladly.';
     return { line, responses, responseEffects: effects };
   }
 
-  // Step 2 — what to bind into the chosen weapon. Only reagents in the bag.
+  // Lily Farrow's rock is NOT a reagent (2026-09-19) — it's a lead. It sits in
+  // the step-2 list (2026-11-04, Danny) while the player carries it and hasn't
+  // yet been given the Kingsreach quest; once the quest exists it drops off.
+  function orrisRockOffered() {
+    return inventory.some((it) => it.id === 'mysterious_rock') && questStatus('kingsreach_rock') === 'none';
+  }
+
+  // Step 2 — what to bind into the chosen weapon. Only reagents in the bag,
+  // plus the strange rock (see orrisRockOffered).
   function orrisReagentMenu(weaponId) {
     const wName = ITEMS[weaponId].name;
     const reagents = reagentsHeld();
+    const rock = orrisRockOffered();
+    const rockResp = rock ? ['The strange rock.'] : [];
+    const rockFx = rock ? [{ orrisRock: weaponId }] : [];
     if (!reagents.length) {
       return {
-        line: `The ${wName}. Good, honest steel. But I need something to bind INTO it — a thing with a nature strong enough to lend. A rootweaver’s heart. A spider’s fang. Bring me one of those and come back.`,
-        responses: ['Go back.', 'Leave.'],
-        responseEffects: [{ orrisMenu: true }, null],
+        line: `The ${wName}. Good, honest steel. But I need something to bind INTO it \u2014 a thing with a nature strong enough to lend. A rootweaver\u2019s heart. A spider\u2019s fang. Bring me one of those and come back.`,
+        responses: [...rockResp, 'Go back.', 'Leave.'],
+        responseEffects: [...rockFx, { orrisMenu: true }, null],
       };
     }
     return {
       line: `The ${wName}. Good, honest steel. And what shall I bind into it?`,
-      responses: [...reagents.map((e) => `The ${ITEMS[e.reagentId].name}.`), 'Never mind.'],
-      responseEffects: [...reagents.map((e) => ({ orrisPick: { weaponId, reagentId: e.reagentId } })), { orrisMenu: true }],
+      responses: [...reagents.map((e) => `The ${ITEMS[e.reagentId].name}.`), ...rockResp, 'Never mind.'],
+      responseEffects: [...reagents.map((e) => ({ orrisPick: { weaponId, reagentId: e.reagentId } })), ...rockFx, { orrisMenu: true }],
     };
   }
 
