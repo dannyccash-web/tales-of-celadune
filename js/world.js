@@ -79,7 +79,7 @@ function decodeWater(id) {
   const near = (pick) => {
     const d = new Float32Array(n * n).fill(Infinity);
     const q = [];
-    for (let i = 0; i < n * n; i++) if (pick(mask[i])) { d[i] = 0; q.push(i); }
+    for (let i = 0; i < n * n; i++) if (pick(mask[i], i)) { d[i] = 0; q.push(i); }
     if (!q.length) return null;
     // Chamfer pass (8-neighbour, two sweeps) — exact enough for a volume curve.
     const D = Math.SQRT2;
@@ -99,7 +99,26 @@ function decodeWater(id) {
     for (let i = 0; i < d.length; i++) d[i] *= w.cell;
     return d;
   };
-  const riverDist = w.river ? near((m) => m > 0) : null;
+  // `river: 'largest'` (C3) limits the sound to the biggest body of water.
+  let riverPick = (m) => m > 0;
+  if (w.river === 'largest') {
+    const lab = new Int32Array(n * n); let best = 0, bestSize = 0, L = 0;
+    for (let i = 0; i < n * n; i++) {
+      if (!mask[i] || lab[i]) continue;
+      L += 1; let size = 0; const q = [i]; lab[i] = L;
+      while (q.length) {
+        const j = q.pop(); size += 1;
+        const x = j % n, y = (j / n) | 0;
+        for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+          const nx = x + dx, ny = y + dy, k = ny * n + nx;
+          if (nx >= 0 && ny >= 0 && nx < n && ny < n && mask[k] && !lab[k]) { lab[k] = L; q.push(k); }
+        }
+      }
+      if (size > bestSize) { bestSize = size; best = L; }
+    }
+    riverPick = (m, i) => lab[i] === best;
+  }
+  const riverDist = w.river ? near(riverPick) : null;
   const seaDist = near((m) => m === 2);
   return (WATER_CACHE[id] = { n, cell: w.cell, f, mask, shores, riverDist, seaDist });
 }
