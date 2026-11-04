@@ -625,7 +625,7 @@ export default {
   // more dangerous woods — not built yet (stubbed -> "isn't ready" toast).
   exits: [
     { edge: 'bottom', xMin: 1468, xMax: 1582, to: 'D4', note: 'path south back into the D4 woods' },
-    { edge: 'top', xMin: 1293, xMax: 1432, to: 'B4', note: 'path north into deeper woods' },
+    { edge: 'top', xMin: 1293, xMax: 1432, to: 'B4', toBand: [1360, 1418], note: 'path north into deeper woods; toBand lands you in B4\u2019s clear column (2026-11-04)' },
   ],
 
   npcs: [

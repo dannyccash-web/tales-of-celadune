@@ -507,7 +507,7 @@ export default {
   ],
 
   exits: [
-    { edge: 'bottom', xMin: 1338, xMax: 1441, to: 'C4', note: 'the road south into the C4 woods' },
+    { edge: 'bottom', xMin: 1338, xMax: 1441, to: 'C4', toBand: [1345, 1425], note: 'the road south into the C4 woods; toBand lands you in C4\u2019s clear column (2026-11-04)' },
     { edge: 'left', yMin: 1358, yMax: 1601, to: 'B3', note: 'the king’s road west to Kingsreach' },
   ],
 };

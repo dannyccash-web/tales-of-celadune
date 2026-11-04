@@ -88,6 +88,11 @@ function refreshItemsUi() {
 // and before the game has started); until then this is a no-op.
 let autosaveHook = null;
 function requestAutosave() { if (autosaveHook) autosaveHook(); }
+// Receiving a quest also writes the death checkpoint (2026-11-04, Danny), not
+// just the live save. Installed in boot() next to autosaveHook; it rides the
+// same debounce, so whatever the quest-giving dialog effect hands over with it
+// (Mirelle's crate, etc.) is already in the bag when the checkpoint is written.
+let questSaveHook = null;
 
 // Death outside a fight (2026-09-20). checkBattleEnd() only runs from
 // runQueue/playerFlee, and damagePlayer never checked for death itself — so an
@@ -359,7 +364,7 @@ function startQuest(id) {
   ui.updateQuestsPanel(quests, QUESTS);
   ui.showQuestAdded(def.name);
   audio.sfx(audio.SFX.questAdded);
-  requestAutosave();
+  if (questSaveHook) questSaveHook(); else requestAutosave(); // checkpoint on quest received (2026-11-04)
 }
 
 // The one way a quest resolves to 'completed' (2026-07-10, first real user:
@@ -440,7 +445,7 @@ function loadImages(sources, onProgress) {
 // Scenes that exist but aren't finished yet (2026-10-20, Danny): walking into
 // one gets the usual "isn't ready yet" toast, and they never appear in fast
 // travel. Remove an id from this set to open that scene up.
-const LOCKED_SCENES = new Set(['B1', 'B2', 'B3', 'B4']);
+const LOCKED_SCENES = new Set(['B1', 'B2', 'B3']); // B4 opened 2026-11-04 (Danny)
 const SCENES = { D1: sceneD1, D1B: sceneD1B, D2: sceneD2, D3: sceneD3, D4: sceneD4, D4B: sceneD4B, C4: sceneC4, C1: sceneC1, C1B: sceneC1B, C1C: sceneC1C, C1D: sceneC1D, C2: sceneC2, C3: sceneC3, C3B: sceneC3B, C3C: sceneC3C, C3D: sceneC3D, B4: sceneB4, B3: sceneB3, B2: sceneB2, B1: sceneB1 };
 
 async function boot() {
@@ -996,6 +1001,9 @@ async function boot() {
   //      resolved by then, so nothing half-applied is saved). Checkpointing a
   //      kill is what stops dying afterwards from undoing it — 2026-09-12,
   //      Danny: "once they're dead, they're gone for good."
+  //   4. Receiving a quest (startQuest -> questSaveHook) -> BOTH slots, via
+  //      the same debounce, so items handed over with it are captured too
+  //      (2026-11-04, Danny).
   // ---- Live autosave (2026-09-20) ----
   // `autosaveHook` had been deliberately left null since 2026-07-31, which made
   // all ~30 requestAutosave() calls scattered through the mutators no-ops:
@@ -1024,14 +1032,18 @@ async function boot() {
   let autosaveTimer = null;
   const AUTOSAVE_DEBOUNCE_MS = 350;
   function canAutosave() { return state.started && !battleState.active && !deathFading && !fastTraveling; }
+  // A quest pickup asks for a checkpoint; the flag rides the next debounced
+  // write (or the exit flush) and stays pending if a guard blocks it.
+  let checkpointPending = false;
   autosaveHook = () => {
     if (!canAutosave()) return;
     if (autosaveTimer != null) clearTimeout(autosaveTimer);
     autosaveTimer = setTimeout(() => {
       autosaveTimer = null;
-      if (canAutosave()) saveGame();
+      if (canAutosave()) { saveGame({ checkpoint: checkpointPending }); checkpointPending = false; }
     }, AUTOSAVE_DEBOUNCE_MS);
   };
+  questSaveHook = () => { checkpointPending = true; autosaveHook(); };
   // Closing the tab wrote NOTHING before this (there was no unload handler at
   // all), so even with the hook on, the last few seconds of a session would be
   // lost. `pagehide` is the reliable event — 'unload' never fires on iOS Safari
@@ -1040,7 +1052,7 @@ async function boot() {
   function saveOnExit() {
     if (autosaveTimer != null) { clearTimeout(autosaveTimer); autosaveTimer = null; }
     if (!canAutosave()) return; // never capture a half-resolved fight
-    saveGame();
+    saveGame({ checkpoint: checkpointPending }); checkpointPending = false;
   }
   window.addEventListener('pagehide', saveOnExit);
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') saveOnExit(); });
@@ -1056,6 +1068,7 @@ async function boot() {
   // Wipe every bit of run state back to a pristine start and drop the player at
   // the D3 spawn. Used by New Game (and as loadGame's fallback).
   function resetToNewGame() {
+    checkpointPending = false; // a pickup from the state being replaced must not checkpoint the new one
     Object.assign(stats, NEW_GAME_STATS);
     inventory.length = 0;
     for (const k of Object.keys(equipment)) equipment[k] = null;
@@ -1087,6 +1100,7 @@ async function boot() {
   // CHECKPOINT_KEY (what continueFromDeath reads). Returns false on a missing
   // or unrecognized save so the caller can fall back.
   function loadGame(key = SAVE_KEY) {
+    checkpointPending = false; // a pickup from the state being replaced must not checkpoint the new one
     let data;
     try { data = JSON.parse(localStorage.getItem(key)); } catch { data = null; }
     if (!data) return false;
