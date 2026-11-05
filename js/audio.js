@@ -177,6 +177,25 @@ export const DIALOGUE_SFX = {
   vikram_ashvale: 'assets/audio/mrstokes302-hmmm-sound-male-sfx-mrstokes302-420028.mp3',
   // Elspeth is wounded, so the pained female grunt (Mara Vellorne's) fits her.
   elspeth_varrick: 'assets/audio/phatphrogstudio-rpg-female-attack-grunt-no-ai-481720.mp3',
+  // Kingsreach (B3, 2026-11-05) — from the existing pool, split by gender.
+  harlan_brewick: 'assets/audio/mrstokes302-hmmm-sound-male-sfx-mrstokes302-420028.mp3',
+  nkemi_vesper: 'assets/audio/freesound_community-mmm-hmm-36292.mp3',
+  yasmin_darrowel: 'assets/audio/u_xg7ssi08yr-female-ah-ha-389835.mp3',
+  wendell_quillfeather: 'assets/audio/u_9kvcihzjc7-squashwo-gua-plants-vs-zombies-hmm-383643.mp3',
+  ines_calderra: 'assets/audio/freesound_community-girl-chucklewav-14669.mp3',
+  durgan_coldforge: 'assets/audio/u_9kvcihzjc7-squashwo-gua-plants-vs-zombies-hmm-383643.mp3',
+  edmund_fairlock: 'assets/audio/pacomoya-eh-13143.mp3',
+  cuthbert_hollis: 'assets/audio/universfield-muffled-reaction-242214.mp3',
+  galen_thorne: 'assets/audio/mrstokes302-hmmm-sound-male-sfx-mrstokes302-420028.mp3',
+  rowena_ashgrove: 'assets/audio/phatphrogstudio-rpg-female-attack-grunt-no-ai-481720.mp3',
+  maudlin_pryce: 'assets/audio/freesound_community-girl-chucklewav-14669.mp3',
+  lio_shen: 'assets/audio/freesound_community-huh-102688.mp3',
+  linh_varrowmere: 'assets/audio/freesound_community-mmm-hmm-36292.mp3',
+  devika_ranawat: 'assets/audio/freesound_community-woman-sigh-101931.mp3',
+  tavita_rua: 'assets/audio/universfield-muffled-reaction-242214.mp3',
+  pip_kettlethorn: 'assets/audio/freesound_community-goblin-cackle-87566.mp3',
+  nerys_brinewell: 'assets/audio/u_xg7ssi08yr-female-ah-ha-389835.mp3',
+  oriel_tallhorn: 'assets/audio/freesound_community-long-sigh-104609.mp3',
 };
 
 // ---- Volume controls (wired to the Menu > Audio sliders) ----

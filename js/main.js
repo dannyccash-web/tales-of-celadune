@@ -2023,6 +2023,15 @@ async function boot() {
       return true;
     }
     if (effect.orrisFightNow) { startOrrisAmbush(); return true; }
+    // Edmund Fairlock closes Roderick's `kingsreach_counting_house` (2026-11-05).
+    if (effect.edmundSettle) {
+      if (questStatus('kingsreach_counting_house') === 'active') {
+        completeQuest('kingsreach_counting_house');
+        addGold(EDMUND_FINDERS_FEE);
+      }
+      ui.updateDialogContent({ line: EDMUND_SETTLE_LINE, responses: ['Leave.'] });
+      return true;
+    }
     // Enchanting, simplified 2026-11-04 to weapon -> reagent -> explain +
     // confirm (Danny). Every menu is rebuilt from live inventory at the moment
     // it opens, so a step can never offer something the player no longer has.
@@ -2046,7 +2055,7 @@ async function boot() {
       startQuest('kingsreach_rock');
       const back = effect.orrisRock ? { orrisWeapon: effect.orrisRock } : { orrisMenu: true };
       ui.updateDialogContent({
-        line: ORRIS_ROCK_LINE,
+        line: currentSceneId === 'B3' ? ORRIS_ROCK_LINE_CITY : ORRIS_ROCK_LINE,
         responses: ['Go back.', 'Leave.'],
         responseEffects: [back, null],
       });
@@ -2466,6 +2475,21 @@ async function boot() {
   const ORRIS_PORTRAIT_AMBUSH = 'assets/images/orris_fenwick_1.png';
   const ORRIS_PORTRAIT_SAFE = 'assets/images/orris_fenwick_2.png';
 
+  // ---- Edmund Fairlock, the counting house (B3, 2026-11-05) ----
+  // His ordinary dialog + chatter, with one extra opening response while
+  // Roderick Vane's `kingsreach_counting_house` is active.
+  const EDMUND_FINDERS_FEE = 10;
+  const EDMUND_SETTLE_LINE = 'The Maiden\u2019s Grace lockbox? Recovered? Oh, that is a whole column I can close. Let me just... yes. Here. The Crown pays a finder\u2019s fee on recovered goods, and for once I actually have the coin to pay it. (Gained ' + EDMUND_FINDERS_FEE + ' gold.)';
+  function buildEdmundDialog(npc) {
+    const base = withChatter(resolveNpcDialog(npc, isQuestReady), npc);
+    if (questStatus('kingsreach_counting_house') !== 'active') return base;
+    return {
+      ...base,
+      responses: ['Roderick Vane sends word: the lockbox is settled.', ...base.responses],
+      responseEffects: [{ edmundSettle: true }, ...(base.responseEffects || base.responses.map(() => null))],
+    };
+  }
+
   function orrisNpc() { return world.npcs.find((n) => n.id === 'orris_fenwick'); }
 
   // Reveal him as an ordinary NPC: visible, second portrait, no longer
@@ -2575,6 +2599,12 @@ async function boot() {
     }
     responses.push('Leave.');
     effects.push(null);
+    if (currentSceneId === 'B3') {
+      const cityLine = weapons.length
+        ? 'You found me! Welcome to the workshop. Still not a coin to my name, but the bench is set up and the work is free for you, always. So: what would you like enchanted?'
+        : 'You found me! The bench is set up and the work is free for you, always. Bring me something plain and honest that only knows how to be sharp, and we\u2019ll see what it can learn.';
+      return { line: cityLine, responses, responseEffects: effects };
+    }
     const line = weapons.length
       ? 'There he is. I have no coin \u2014 I said so and I meant it \u2014 but binding is what I am for, and I owe you. So: what would you like enchanted?'
       : 'The offer stands, and it will keep standing. But I need a blade to work on \u2014 something plain and honest that only knows how to be sharp. Bring me one and the work is yours, free and gladly.';
@@ -2630,6 +2660,11 @@ async function boot() {
   // first time, so anything else that needs to name it should use this.
   const ORRIS_ROCK_LINE = 'He goes quiet, which he does not do. He holds it up, turns it, and holds it up again. \u201cWhere did you \u2014 no. No, do not tell me on the road.\u201d He gives it back with both hands, the way you hand back something that is not yours. \u201cI have bound hearts and fangs and ore and once, memorably, a tooth. I cannot read this at all, and I can tell you it is very rare indeed, and those two facts sitting together are keeping me up tonight. Take it to Kingsreach \u2014 the city under the castle walls. There are people there who read things for a living. Do not sell it to the first one who offers.\u201d';
 
+  // In his Kingsreach workshop (2026-11-05) the rock line points across the
+  // street instead of up the road — this re-homes the `kingsreach_rock` hook.
+  const ORRIS_ROCK_LINE_CITY = 'He goes quiet, which he does not do. He holds it up, turns it, and holds it up again. \u201cWhere did you \u2014 no. Don\u2019t tell me.\u201d He gives it back with both hands, the way you hand back something that is not yours. \u201cI have bound hearts and fangs and ore and once, memorably, a tooth. I cannot read this at all. It is very rare indeed, and those two facts sitting together are going to keep me up tonight. There are people in this city who read things for a living. Start with old Quillfeather, along the high street. Do not sell it to the first one who offers.\u201d';
+  const ORRIS_CITY_DONE = 'There. Mind the edge \u2014 it remembers now. The bench is here whenever you have something worth binding.';
+
   // His brief send-off once the work is done (2026-11-04): he leaves C2 for
   // Kingsreach the moment this dialog closes.
   const ORRIS_FAREWELL = 'There. Mind the edge \u2014 it remembers now. That is my bench work done for this road: I am off to Kingsreach. Come find me there if you want anything else enchanted.';
@@ -2646,10 +2681,15 @@ async function boot() {
     if (wasEquipped) equipItem(enchantedId);
     audio.sfx(audio.SFX.magic);
     ui.showReceivedItem(def); // the standard received-item reveal
-    ui.updateDialogContent({ line: ORRIS_FAREWELL, responses: ['Leave.'] });
-    // He leaves C2 the moment this dialog closes (frame loop) — once per game.
-    orrisDeparted = true;
-    orrisLeaving = true;
+    if (currentSceneId === 'B3') {
+      // Already moved to Kingsreach: he stays at his bench (2026-11-05).
+      ui.updateDialogContent({ line: ORRIS_CITY_DONE, responses: ['Leave.'] });
+    } else {
+      ui.updateDialogContent({ line: ORRIS_FAREWELL, responses: ['Leave.'] });
+      // He leaves C2 the moment this dialog closes (frame loop) — once per game.
+      orrisDeparted = true;
+      orrisLeaving = true;
+    }
     refreshItemsUi();
     refreshStatsPanel();
     requestAutosave();
@@ -3749,14 +3789,14 @@ async function boot() {
       lieLine: 'Nothing? Not even from Perrin? I sent that crate as much for those poor folk as for us. That’s two crates of seed and a season’s hope gone, and money the farm can’t do without. I should have known. No more deliveries. I’m sorry I dragged you into it.',
     },
     {
-      keeper: null, pay: 12,
+      keeper: 'harlan_brewick', pay: 12, // Harlan Brewick, the Gilded Tankard (B3, 2026-11-05)
       quest: 'Carry a crate of Mirelle’s vegetables to the tavern in Kingsreach.',
       offerLine: 'The tavern in Kingsreach is still waiting on that last crate, if your legs are up to it.',
       acceptLabel: 'I’ll take the last crate to Kingsreach.',
       thanks: 'Mind the road north, dear. Kingsreach is under the castle walls, and the tavern there knows my name.',
       waitLine: 'Kingsreach is a long road, I know. The tavern there is expecting that crate.',
       askLine: 'All the way to Kingsreach and back! Did the tavern pay what they owed?',
-      payLabel: 'They did. Here’s your 12 gold.', lieLabel: '(Lie) They never paid a copper.',
+      payLabel: 'He did. Here’s your 12 gold.', lieLabel: '(Lie) He never paid a copper.',
       keeperLine: 'Mirelle’s crate, all the way from the farm! Finest squash in the realm, that woman grows. Twelve gold, as agreed. See she gets every coin.',
       honestLine: 'Twelve gold, every coin of it, and from Kingsreach of all places. Oh, dear. The roof gets mended before the snow, and there’s seed for spring besides. I don’t know how to thank you. Here, take this. A vitality potion. My mother brewed a handful before she passed, and I’ve been saving the last one for someone who deserved it. That’s you.',
       lieLine: 'Nothing? After all that road? The roof needs mending before the snow, and that was going to be it. A city tavern. I should have known better than to trust one. That’s the end of it, then. The farm will just have to make do.',
@@ -4223,7 +4263,8 @@ async function boot() {
     else if (npc.id === 'gaffer') dialog = buildGafferDialog(npc);
     else if (npc.id === 'tovan') dialog = buildTovanDialog();
     else if (npc.id === 'thrumhorn') dialog = buildThrumhornDialog();
-    else if (npc.id === 'orris_fenwick') dialog = buildOrrisDialog();
+    else if (npc.id === 'orris_fenwick' || npc.id === 'orris_kingsreach') dialog = buildOrrisDialog();
+    else if (npc.id === 'edmund_fairlock') dialog = buildEdmundDialog(npc);
     else if (npc.id === 'cinder') dialog = buildCinderDialog();
     else if (npc.id === 'mara_vellorne') dialog = buildMaraDialog();
     else if (npc.id === 'calder_rusk') dialog = buildCalderDialog(npc);
@@ -5133,6 +5174,13 @@ async function boot() {
 
     const homeNpc = world.homeNpcNearDoor();
     if (homeNpc) {
+      // Orris's Kingsreach workshop (2026-11-05) stays shut until he has
+      // actually left C2 for the city — otherwise he'd be in two places.
+      if (homeNpc.id === 'orris_kingsreach' && !orrisDeparted) {
+        audio.sfx(audio.SFX.denied);
+        ui.toast('The workshop is shut. A note on the door reads: \u201cGone down the Windmarch road. Back when the road lets me. \u2014 O. Fenwick\u201d');
+        return;
+      }
       if (homeNpc.atHome) {
         audio.sfx(audio.SFX.door); // player steps inside
         world.interior = images[homeNpc.home.interior];
