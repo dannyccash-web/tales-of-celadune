@@ -891,7 +891,7 @@ export default {
   ],
 
   // ---- Tidewrack NPCs (2026-09-02, repositioned for the new art) ----
-  // 12 villagers (9 human, 1 reformed Bramblekin, 2 Tidefolk — see CLAUDE.md's
+  // 12 villagers (9 human, 1 Rootkin (Skitter; named 2026-11-05), 2 Tidefolk — see CLAUDE.md's
   // confirmed roster) + a 2-strong mireman `pack` guarding the ship itself
   // (moved onto the ship's deck, near its cargo hatch, per Danny — was
   // patrolling the dock walkway). Homes' doors are all pre-verified walkable

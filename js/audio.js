@@ -15,6 +15,8 @@ export const TRACKS = {
   // D2 Millmere (2026-09-11, Danny) — its own daytime village theme instead
   // of the generic overworld track.
   d2: 'assets/audio/Pastoral Morning.mp3',
+  // B3 Kingsreach (2026-11-05, Danny).
+  b3: 'assets/audio/Market near the Castle.mp3',
 };
 
 export const SFX = {
@@ -184,7 +186,7 @@ export const DIALOGUE_SFX = {
   wendell_quillfeather: 'assets/audio/u_9kvcihzjc7-squashwo-gua-plants-vs-zombies-hmm-383643.mp3',
   ines_calderra: 'assets/audio/freesound_community-girl-chucklewav-14669.mp3',
   durgan_coldforge: 'assets/audio/u_9kvcihzjc7-squashwo-gua-plants-vs-zombies-hmm-383643.mp3',
-  edmund_fairlock: 'assets/audio/pacomoya-eh-13143.mp3',
+  edmund_fairlock: 'assets/audio/u_9kvcihzjc7-squashwo-gua-plants-vs-zombies-hmm-383643.mp3',
   cuthbert_hollis: 'assets/audio/universfield-muffled-reaction-242214.mp3',
   galen_thorne: 'assets/audio/mrstokes302-hmmm-sound-male-sfx-mrstokes302-420028.mp3',
   rowena_ashgrove: 'assets/audio/phatphrogstudio-rpg-female-attack-grunt-no-ai-481720.mp3',
@@ -193,7 +195,7 @@ export const DIALOGUE_SFX = {
   linh_varrowmere: 'assets/audio/freesound_community-mmm-hmm-36292.mp3',
   devika_ranawat: 'assets/audio/freesound_community-woman-sigh-101931.mp3',
   tavita_rua: 'assets/audio/universfield-muffled-reaction-242214.mp3',
-  pip_kettlethorn: 'assets/audio/freesound_community-goblin-cackle-87566.mp3',
+  pip_kettlethorn: 'assets/audio/pacomoya-eh-13143.mp3', // Rootkin, like Skitter (his clip)
   nerys_brinewell: 'assets/audio/u_xg7ssi08yr-female-ah-ha-389835.mp3',
   oriel_tallhorn: 'assets/audio/freesound_community-long-sigh-104609.mp3',
 };

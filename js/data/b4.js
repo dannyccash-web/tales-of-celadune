@@ -296,7 +296,8 @@ export default {
   ambushes: [],
 
   // ---- NPCs (2026-10-16) ----
-  // Twelve characters: the barricade garrison, the stranded camp, and Dame
+  // Ten characters (Arjun Talwar and Vikram Ashvale moved to Kingsreach, B3,
+  // 2026-11-05): the barricade garrison, the stranded camp, and Dame
   // Elspeth Varrick hiding at the secluded camp by the river (added once her
   // art arrived, 2026-10-16).
   // Voices are in audio.js's DIALOGUE_SFX. Every position was checked against
@@ -333,25 +334,6 @@ export default {
       chatter: [
         { q: 'How long have you been out here?', a: 'Nineteen days. I have counted every one of them, and every wagon in that camp, twice.' },
         { q: 'Has anyone tried to get past?', a: 'One fool tried to drive a cart through the stakes after dark. The stakes won. What is left of the cart is still out there, if you want firewood.' },
-      ],
-    },
-    {
-      id: 'arjun_talwar', name: 'Arjun Talwar', role: 'SOLDIER OF THE CROWN',
-      sprite: 'assets/images/arjun_talwar_overhead.png',
-      portrait: 'assets/images/arjun_talwar.png',
-      // Marches the road between the camp and the barricade.
-      x: 1980, y: 1480, speed: 45, startsHome: false,
-      patrol: [
-        { x: 1980, y: 1480 },
-        { x: 2400, y: 1500 },
-      ],
-      dialog: {
-        line: 'Halt! State your business! ...Sorry. The captain says I’m to challenge everyone. You’re not trying to go east, are you? Good. Carry on, then.',
-        responses: ['Leave.'],
-      },
-      chatter: [
-        { q: 'Is it always this quiet?', a: 'Quiet? I’ve heard more shouting in this camp than in my whole year of training. Most of it from the gentleman in the burgundy coat.' },
-        { q: 'What would you do if someone tried to get through?', a: 'Exactly what the captain told me to do. I’d go and get the captain.' },
       ],
     },
     {
@@ -452,7 +434,7 @@ export default {
       },
       chatter: [
         { q: 'How’s business?', a: 'Wonderful. Everyone in this camp has had a week to notice every hole in their clothes. I’ve sold more thread here than in a month on the road, and I still hate it.' },
-        { q: 'Heard anything worth knowing?', a: 'The lord in the burgundy coat has a letter he thinks will get him through. He has shown it to the captain six times. I’m waiting to see whether it works on the seventh.' },
+        { q: 'Heard anything worth knowing?', a: 'The lord in the burgundy coat showed the captain his letter six times. On the seventh he gave up and marched back to Kingsreach to shout at somebody more important.' },
       ],
     },
     {
@@ -467,21 +449,6 @@ export default {
       chatter: [
         { q: 'Will you play something?', a: 'I would, but the only song anyone asks for this week is the one about the princess, and I’ve played it until I hate it. Nobody knows how it ends yet. That’s the trouble with writing it now.' },
         { q: 'How did you end up here?', a: 'I was walking east to play a wedding. I assume the wedding went ahead without me. I hope the bride found someone who knows more than four songs.' },
-      ],
-    },
-    {
-      id: 'vikram_ashvale', name: 'Vikram Ashvale', role: 'MINOR LORD',
-      sprite: 'assets/images/vikram_ashvale_overhead.png',
-      portrait: 'assets/images/vikram_ashvale.png',
-      // Planted in front of the captain, facing her (east).
-      x: 2455, y: 1430, speed: 0, startsHome: false, rotation: -Math.PI / 2,
-      dialog: {
-        line: 'Do you know who I am? No, of course you do not. Neither, it seems, does that captain, which is why I have stood on this road for nine days holding a letter of passage from the Lord Chancellor himself.',
-        responses: ['Leave.'],
-      },
-      chatter: [
-        { q: 'Let me see the letter.', a: 'It is addressed to the Warden of the Eastern Road and grants me passage on urgent matters of estate. The captain informs me there is no Warden of the Eastern Road anymore. There is only her. I find that answer unacceptable.' },
-        { q: 'What urgent matters?', a: 'My estate. My lands. My rents, which are going uncollected while I stand in a field with tradespeople. You may laugh. Everyone else does.' },
       ],
     },
     // ---- The secluded camp by the river ----

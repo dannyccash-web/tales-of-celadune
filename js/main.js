@@ -566,6 +566,10 @@ async function boot() {
   // in the save. Declared up here, before enterScene's first call at boot, to
   // avoid a TDZ (the magicRevealed lesson, 2026-09-11).
   const visitedTowns = new Set();
+  // Arjun Talwar intercepts the player at Kingsreach's east gate only once
+  // (2026-11-05). Declared up here because enterScene (first called during
+  // boot) reads it. Persisted in the save flags.
+  let arjunMet = false;
   let fastTraveling = false; // true for the whole fade-out / swap / fade-in
   function refreshTravelPanel() {
     ui.updateTravelPanel(Object.keys(SCENES)
@@ -643,6 +647,8 @@ async function boot() {
     if (id === 'C3') applyFerrySide();
     // Lily's gull is gone from Ysra's cave if the player gave up on it (2026-10-10).
     if (id === 'C1B') applyGullSacrifice();
+    // Arjun only intercepts once; after that he just stands guard.
+    if (id === 'B3' && arjunMet) { const a = world.npcs.find((n) => n.id === 'arjun_talwar'); if (a) { a.chaseTalk = false; a._chasing = false; } }
     // Mara Hollowmast doesn't appear in town until rescued from C1D (2026-09-12)
     // - reuses `.defeated` purely as a presence gate (world.js: a defeated npc
     // "doesn't render, collide, aggro, or take interaction", exactly what
@@ -975,7 +981,7 @@ async function boot() {
         inventory: inventory.map((e) => ({ ...e })),
         equipment: { ...equipment },
         quests: quests.map((q) => ({ ...q })),
-        flags: { campQuestDone, campHostile, campTollTier, gafferHappy, thrumhornFed, orrisRescued, orrisDeparted, wellCoinThrown, wellDrinks, vegetableDeliveredToTavern, mirelleStage, mirelleOutcome, calderToldStory, calderToldDangers, maraMet, maraToldTruth, lilyGullThanked, magicRevealed, maraHollowmastRescued, lockboxAcceptedFrom, lockboxGivenTo , ferrySide, lakewardenPaid, visitedTowns: [...visitedTowns] },
+        flags: { campQuestDone, campHostile, campTollTier, gafferHappy, thrumhornFed, orrisRescued, orrisDeparted, wellCoinThrown, wellDrinks, vegetableDeliveredToTavern, mirelleStage, mirelleOutcome, calderToldStory, calderToldDangers, maraMet, maraToldTruth, lilyGullThanked, magicRevealed, maraHollowmastRescued, lockboxAcceptedFrom, lockboxGivenTo , ferrySide, lakewardenPaid, arjunMet, visitedTowns: [...visitedTowns] },
         caveReturn, // where to exit to if saved inside a cave/dungeon
         worlds: snapshotWorlds(),
       };
@@ -1082,6 +1088,7 @@ async function boot() {
     lilyGullThanked = false;
     magicRevealed = false;
     maraHollowmastRescued = false;
+    arjunMet = false;
     lockboxAcceptedFrom = null; lockboxGivenTo = null;
     caveReturn = null;
     visitedTowns.clear();
@@ -1126,6 +1133,7 @@ async function boot() {
     lilyGullThanked = !!f.lilyGullThanked;
     magicRevealed = !!f.magicRevealed;
     maraHollowmastRescued = !!f.maraHollowmastRescued;
+    arjunMet = !!f.arjunMet;
     lockboxAcceptedFrom = f.lockboxAcceptedFrom || null;
     lockboxGivenTo = f.lockboxGivenTo || null;
     // Saves from before 2026-10-12 that already handed Roderick the lockbox
@@ -2474,6 +2482,37 @@ async function boot() {
   // the live npc, so swapping `portrait` on the instance is all it takes.
   const ORRIS_PORTRAIT_AMBUSH = 'assets/images/orris_fenwick_1.png';
   const ORRIS_PORTRAIT_SAFE = 'assets/images/orris_fenwick_2.png';
+
+  // ---- Arjun Talwar, Kingsreach's east gate (B3, 2026-11-05) ----
+  // The first time the player comes near, he steps out and stops them (the
+  // chaseTalk contact in world.js opens this). Opening it once sets arjunMet
+  // and switches chaseTalk off, so after that he only stands guard and talks
+  // when spoken to. The royal summons adds its own line.
+  const ARJUN_KING = 'His daughter is gone. The court wizard took the princess out of the castle and vanished with her, and nobody has seen either of them since. The king sent twenty riders after them. Not one has come back. He hasn\u2019t left the keep since, and he hasn\u2019t opened its doors to anyone.';
+  const ARJUN_ALERT = 'Because nobody knows what the wizard will do next. If he could walk out of the castle with the princess, he could walk back in. So the roads are sealed, the gates are watched, and every stranger gets a long look. No offense meant. You\u2019re a stranger.';
+  const ARJUN_SUMMONS = 'That\u2019s the king\u2019s own seal. So you\u2019re expected, or somebody is. The castle\u2019s at the west end of the high street. Show that at the gate, and keep it out of sight until you do. There are people in this city who\u2019d trade a great deal for a paper that opens doors.';
+  const ARJUN_PASS = 'Then pass, and welcome to Kingsreach. Keep your blade sheathed inside the walls and we\u2019ll get along fine.';
+  function buildArjunDialog(npc) {
+    const first = !arjunMet;
+    if (first) {
+      arjunMet = true;
+      const live = world.npcs.find((n) => n.id === 'arjun_talwar');
+      if (live) { live.chaseTalk = false; live._chasing = false; }
+      requestAutosave();
+    }
+    const responses = ['Why is the king so upset?', 'Why are the guards on high alert?'];
+    const effects = [{ followUp: ARJUN_KING }, { followUp: ARJUN_ALERT }];
+    if (inventory.some((it) => it.id === 'royal_summons')) {
+      responses.push('Show him the royal summons.');
+      effects.push({ followUp: ARJUN_SUMMONS });
+    }
+    if (first) { responses.push('I\u2019m only passing through.'); effects.push({ followUp: ARJUN_PASS, noBack: true }); }
+    else { responses.push('Leave.'); effects.push(null); }
+    const line = first
+      ? 'Halt! State your business in Kingsreach. ...Sorry. Habit. They moved me off the King\u2019s Road to watch this gate, and my orders came with me: everyone gets stopped, everyone gets asked.'
+      : 'Still here, still watching the road. Go on through. The city\u2019s yours, as long as you behave in it.';
+    return { line, responses, responseEffects: effects };
+  }
 
   // ---- Edmund Fairlock, the counting house (B3, 2026-11-05) ----
   // His ordinary dialog + chatter, with one extra opening response while
@@ -4265,6 +4304,7 @@ async function boot() {
     else if (npc.id === 'thrumhorn') dialog = buildThrumhornDialog();
     else if (npc.id === 'orris_fenwick' || npc.id === 'orris_kingsreach') dialog = buildOrrisDialog();
     else if (npc.id === 'edmund_fairlock') dialog = buildEdmundDialog(npc);
+    else if (npc.id === 'arjun_talwar') dialog = buildArjunDialog(npc);
     else if (npc.id === 'cinder') dialog = buildCinderDialog();
     else if (npc.id === 'mara_vellorne') dialog = buildMaraDialog();
     else if (npc.id === 'calder_rusk') dialog = buildCalderDialog(npc);
