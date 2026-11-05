@@ -22,8 +22,8 @@
 // wizard took the princess. Nothing here may hint at the twist.
 //
 // EXITS (each = this map's own collider-centre run at that edge):
-//   right  -> B3  y1318-1441 (B3's left band is y1354-1481; settleArrival
-//                 lines arrivals up).
+//   right  -> B3  y1318-1441 (B3's left band is y1347-1541 since its
+//                 2026-11-05 rebuild; toBand maps the crossing onto it).
 //   left   -> B1  y1218-1511 (Stonewick, live since 2026-10-17; B1's road
 //                 meets its right edge higher, y1018-1211 — `toBand` maps the
 //                 crossing point proportionally onto B1's road).
@@ -736,7 +736,7 @@ export default {
   npcs: [],
 
   exits: [
-    { edge: 'right', yMin: 1318, yMax: 1441, to: 'B3', note: 'the cobbled road east into Kingsreach' },
+    { edge: 'right', yMin: 1318, yMax: 1441, toBand: [1347, 1541], to: 'B3', note: 'the cobbled road east into Kingsreach' },
     { edge: 'left', yMin: 1218, yMax: 1511, toBand: [1018, 1211], to: 'B1', note: 'the road west to Stonewick' },
     { edge: 'top', xMin: 1458, xMax: 1561, to: 'A2', note: 'the road north into the mountains' },
   ],

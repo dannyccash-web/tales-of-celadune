@@ -41,8 +41,9 @@
 //               `right` exit, taken verbatim as that file instructed. The art's
 //               trail meets the left edge across y1120-1320, comfortably wider,
 //               so the band sits inside the natural opening with room to spare.
-//   top  -> B3  x998-1082 — LIVE since 2026-10-17 (Kingsreach). B3's bottom
-//               band is its own run, x1018-1101; settleArrival covers it.
+//   top  -> B3  x998-1082 — Kingsreach (unlocked 2026-11-05). B3's south
+//               gate road meets the edge further east (its band x1098-1151),
+//               so this exit carries toBand: [1098, 1151].
 //               The art's gap in the treeline is x1000-1080; the apron was carved one cell wider each side
 //               (x960-1120) so the band is a comfortable 84px rather than a
 //               fiddly 44px of centre travel.
@@ -991,6 +992,6 @@ export default {
 
   exits: [
     { edge: 'left', yMin: 1118, yMax: 1283, to: 'C2', note: 'the forest trail west to the grassland' },
-    { edge: 'top', xMin: 998, xMax: 1082, to: 'B3', note: 'the trail north out of the woods' },
+    { edge: 'top', xMin: 998, xMax: 1082, toBand: [1098, 1151], to: 'B3', note: 'the trail north out of the woods' },
   ],
 };
