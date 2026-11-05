@@ -1930,8 +1930,8 @@ Danny reworked Mirelle's `vegetable_delivery` quest. **This supersedes the older
 **The Ithrel** (Old Aelunic, "heart-seed"): crystals Aeluna's priests set workings into before Aldermoor had a king. When the temple fell they scattered; a few ended up in staffs and rings, most are lost, so more can be hidden later. Spell names are an Old Aelunic word plus a plain one: **vael** = turn back, **nyth** = the deep tide. Nkemi Vesper (B3, the Violet Lantern) opens them, always for gold.
 
 **Spells are items** (`items.js`): `slot: 'spell'` (not in SLOT_CATEGORY, so they land in Inventory > Magic), `spell: true` (Remove disabled via the tile's `data-quest`; no price, so unsellable), `magicCost`, `spellEffect`. `equipment.spell` is the readied one; the battle Magic slot casts it (blank and skipped if none, grayed if MP is short). Learning auto-readies the new spell and fills MP; switch spells by equipping in the Magic tab.
-- **Vaelward** (Lily's stone, 60 gold, 2 MP, `icon_vaelward.svg`): sets `battleState.ward`; every enemy hit before the player's next turn deals its rolled damage to the attacker instead (the player takes nothing). Cleared at the start of the player's turn, in startBattle and endBattle. Misses still miss.
-- **Nythsurge** (Ysra's staff gem, 80 gold, 3 MP, `icon_nythsurge.svg`): 2-4 (`spellDamage`) to every living enemy.
+- **Vaelward** (Lily's stone, 60 gold, 2 MP, `vaelward.png`): sets `battleState.ward`; every enemy hit before the player's next turn deals its rolled damage to the attacker instead (the player takes nothing). Cleared at the start of the player's turn, in startBattle and endBattle. Misses still miss.
+- **Nythsurge** (Ysra's staff gem, 80 gold, 3 MP, `nythsurge.png`): 2-4 (`spellDamage`) to every living enemy.
 - `castSpell()` in main.js; enemy turns now end through `finishEnemyTurn(enemy, outcome)`, which also handles a reflection kill and holds ENEMY_TURN_DELAY_MS after a reflection so its line can be read (otherwise "Your Turn"/"Enemy’s Turn" overwrites it instantly).
 - Stats > Damage's Magic row shows the readied spell (`spellSummary()`); the battle card is `spellDetailCard()`.
 
@@ -1943,3 +1943,4 @@ Danny reworked Mirelle's `vegetable_delivery` quest. **This supersedes the older
 - **Wendell Quillfeather** gets "Can you read this stone?" while the player holds the rock and hasn't given it to Nkemi; he sends them to her. (Orris's city line already sends the player to Wendell.)
 
 **Verified** in headless Chrome against a local copy: both full dialogue flows (give, break, pay, leave B3 and return, ready), quest completion, equip/unequip of the staff, Nythsurge damaging all three foes, Vaelward reflecting every hit with no HP lost, the Magic tab and the Stats damage row, a reload with spells saved. No console errors (favicon only).
+- **Spell art (2026-11-05, later the same day):** Danny's painted `vaelward.png` / `nythsurge.png` (500×500, transparent) replaced the placeholder line icons in `items.js`. `icon_vaelward.svg` / `icon_nythsurge.svg` are still in assets/images but nothing references them.

@@ -635,7 +635,7 @@ const ITEMS = {
   vaelward: {
     id: 'vaelward',
     name: 'Vaelward',
-    image: 'assets/images/icon_vaelward.svg',
+    image: 'assets/images/vaelward.png',
     description: 'Old Aelunic vael, “turn back”, opened from Lily’s stone. For one round of enemy attacks, every blow that lands on you lands on whoever threw it instead.',
     questItem: false,
     slot: 'spell',
@@ -646,7 +646,7 @@ const ITEMS = {
   nythsurge: {
     id: 'nythsurge',
     name: 'Nythsurge',
-    image: 'assets/images/icon_nythsurge.svg',
+    image: 'assets/images/nythsurge.png',
     description: 'Old Aelunic nyth, “the deep tide”, freed from Ysra’s staff. A surge of freezing brine that strikes every foe at once.',
     questItem: false,
     slot: 'spell',
