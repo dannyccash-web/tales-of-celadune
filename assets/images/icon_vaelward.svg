@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Vaelward spell icon: a ward shield with a curved arrow turning back.
+       Gold matches the UI gold-bright color. Never put a double hyphen
+       inside an XML comment: it makes the SVG unparseable. -->
+  <path d="M50 8 L84 20 L84 46 C84 68 69 84 50 92 C31 84 16 68 16 46 L16 20 Z"
+        fill="none" stroke="#eed694" stroke-width="6" stroke-linejoin="round"/>
+  <path d="M64 58 C64 44 56 36 44 36 L34 36" fill="none" stroke="#eed694"
+        stroke-width="7" stroke-linecap="round"/>
+  <path d="M40 24 L27 36 L40 48 Z" fill="#eed694"/>
+</svg>

@@ -125,6 +125,10 @@ export const ENCHANTS = {
 };
 
 export function statLineFor(item) {
+  if (item.spell) {
+    const what = item.spellDamage ? `${item.spellDamage.min}-${item.spellDamage.max} DMG ALL` : 'REFLECT';
+    return `${what} · ${item.magicCost} MP`;
+  }
   if (item.damage != null) {
     const dmg = typeof item.damage === 'object' ? `${item.damage.min}-${item.damage.max}` : item.damage;
     // Surface a weapon's bonusDamageVs (e.g. Mara's Cutlass vs sea creatures)
@@ -600,7 +604,7 @@ const ITEMS = {
   // override, and the magicCost/cursed schema note above.
   staff: {
     id: 'staff',
-    name: 'Ysra’s Staff',
+    name: 'Ysra’s Cursed Staff',
     image: 'assets/images/ysras_staff.png',
     description: 'A length of black driftwood capped with a whorl of sea-glass, still humming faintly with whatever the Drownweft bound into it.',
     questItem: false,
@@ -616,6 +620,40 @@ const ITEMS = {
     image: 'assets/images/mysterious_rock.png',
     description: 'An ordinary-looking rock Lily swears is magic. She found it on the beach herself.',
     questItem: false,
+  },
+  // ---- SPELLS (2026-11-05) --------------------------------------------------
+  // Magic comes from Ithrel ("heart-seed" in Old Aelunic): crystals Aeluna's
+  // priests set workings into before Aldermoor had a king. Nkemi Vesper (B3)
+  // opens them for the player, for a price. A spell is a Magic-tab item
+  // (slot 'spell' is not in SLOT_CATEGORY, so categoryFor files it under
+  // magic). `spell: true` = never sold or discarded (no price; ui.js disables
+  // Remove). The one equipped to equipment.spell is what the battle Magic slot
+  // casts; magicCost is spent per cast. spellEffect: 'ward' (the next round of
+  // enemy hits turn back on the attacker) or 'surge' (spellDamage to every foe).
+  // Names = an Old Aelunic word + a plain one (Danny): vael "turn back",
+  // nyth "the deep tide".
+  vaelward: {
+    id: 'vaelward',
+    name: 'Vaelward',
+    image: 'assets/images/icon_vaelward.svg',
+    description: 'Old Aelunic vael, “turn back”, opened from Lily’s stone. For one round of enemy attacks, every blow that lands on you lands on whoever threw it instead.',
+    questItem: false,
+    slot: 'spell',
+    spell: true,
+    magicCost: 2,
+    spellEffect: 'ward',
+  },
+  nythsurge: {
+    id: 'nythsurge',
+    name: 'Nythsurge',
+    image: 'assets/images/icon_nythsurge.svg',
+    description: 'Old Aelunic nyth, “the deep tide”, freed from Ysra’s staff. A surge of freezing brine that strikes every foe at once.',
+    questItem: false,
+    slot: 'spell',
+    spell: true,
+    magicCost: 3,
+    spellEffect: 'surge',
+    spellDamage: { min: 2, max: 4 },
   },
 };
 

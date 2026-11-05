@@ -74,7 +74,8 @@ let magicRevealed = false;
 // slot — see js/data/items.js's schema comment.
 // 'item' (2026-07-10) is the battle Use slot — an Items-category consumable
 // equipped from the Items tab, consumed from the battle UI's Use diamond.
-const equipment = { head: null, clothing: null, feet: null, hands: null, mainhand: null, offhand: null, item: null };
+// 'spell' (2026-11-05): the spell the battle Magic slot casts (Magic tab).
+const equipment = { head: null, clothing: null, feet: null, hands: null, mainhand: null, offhand: null, item: null, spell: null };
 
 function refreshItemsUi() {
   ui.updateItemsPanel(inventory, ITEMS, equipment);
@@ -278,15 +279,22 @@ function damageSlotSummary(slot) {
   const damage = typeof def.damage === 'object' ? `${def.damage.min}-${def.damage.max}` : `${def.damage ?? 1}`;
   return { name: def.name, damage, effects: weaponEffectSummary(def) };
 }
+// The equipped spell (2026-11-05) for Stats > Damage's Magic row.
+function spellSummary() {
+  const def = equipment.spell && ITEMS[equipment.spell];
+  if (!def) return { name: 'No Spells Learned', damage: '0', effects: [] };
+  const damage = def.spellDamage ? `${def.spellDamage.min}-${def.spellDamage.max}` : '0';
+  const fx = [];
+  if (def.spellEffect === 'surge') fx.push('Strikes every foe at once');
+  if (def.spellEffect === 'ward') fx.push('For one round, enemy hits turn back on the attacker');
+  fx.push(`Costs ${def.magicCost} magic per cast`);
+  return { name: def.name, damage, effects: fx };
+}
 function refreshDamagePanel() {
   ui.updateDamagePanel({
     mainhand: damageSlotSummary('mainhand'),
     offhand: damageSlotSummary('offhand'),
-    // No spellcasting system exists yet (the battle Magic slot is a disabled
-    // placeholder — see showPlayerActions) — reported honestly rather than
-    // inventing a number, same spirit as the Magic inventory tab's "Nothing
-    // here yet." Revisit once real spells exist.
-    magic: { name: 'No Spells Learned', damage: '0', effects: [] },
+    magic: spellSummary(),
   });
 }
 
@@ -570,6 +578,11 @@ async function boot() {
   // (2026-11-05). Declared up here because enterScene (first called during
   // boot) reads it. Persisted in the save flags.
   let arjunMet = false;
+  // Nkemi Vesper's two Ithrel (2026-11-05). nkemiStone: 'none' | 'given'
+  // (she's studying it) | 'ready' (next B3 entry) | 'learned'. nkemiStaff:
+  // 'none' | 'broken' (gem freed, not yet paid for) | 'learned'.
+  let nkemiStone = 'none';
+  let nkemiStaff = 'none';
   let fastTraveling = false; // true for the whole fade-out / swap / fade-in
   function refreshTravelPanel() {
     ui.updateTravelPanel(Object.keys(SCENES)
@@ -648,6 +661,8 @@ async function boot() {
     // Lily's gull is gone from Ysra's cave if the player gave up on it (2026-10-10).
     if (id === 'C1B') applyGullSacrifice();
     // Arjun only intercepts once; after that he just stands guard.
+    // Nkemi has had time with Lily's stone once the player leaves and comes back.
+    if (id === 'B3' && nkemiStone === 'given') nkemiStone = 'ready';
     if (id === 'B3' && arjunMet) { const a = world.npcs.find((n) => n.id === 'arjun_talwar'); if (a) { a.chaseTalk = false; a._chasing = false; } }
     // Mara Hollowmast doesn't appear in town until rescued from C1D (2026-09-12)
     // - reuses `.defeated` purely as a presence gate (world.js: a defeated npc
@@ -981,7 +996,7 @@ async function boot() {
         inventory: inventory.map((e) => ({ ...e })),
         equipment: { ...equipment },
         quests: quests.map((q) => ({ ...q })),
-        flags: { campQuestDone, campHostile, campTollTier, gafferHappy, thrumhornFed, orrisRescued, orrisDeparted, wellCoinThrown, wellDrinks, vegetableDeliveredToTavern, mirelleStage, mirelleOutcome, calderToldStory, calderToldDangers, maraMet, maraToldTruth, lilyGullThanked, magicRevealed, maraHollowmastRescued, lockboxAcceptedFrom, lockboxGivenTo , ferrySide, lakewardenPaid, arjunMet, visitedTowns: [...visitedTowns] },
+        flags: { campQuestDone, campHostile, campTollTier, gafferHappy, thrumhornFed, orrisRescued, orrisDeparted, wellCoinThrown, wellDrinks, vegetableDeliveredToTavern, mirelleStage, mirelleOutcome, calderToldStory, calderToldDangers, maraMet, maraToldTruth, lilyGullThanked, magicRevealed, maraHollowmastRescued, lockboxAcceptedFrom, lockboxGivenTo , ferrySide, lakewardenPaid, arjunMet, nkemiStone, nkemiStaff, visitedTowns: [...visitedTowns] },
         caveReturn, // where to exit to if saved inside a cave/dungeon
         worlds: snapshotWorlds(),
       };
@@ -1089,6 +1104,7 @@ async function boot() {
     magicRevealed = false;
     maraHollowmastRescued = false;
     arjunMet = false;
+    nkemiStone = 'none'; nkemiStaff = 'none';
     lockboxAcceptedFrom = null; lockboxGivenTo = null;
     caveReturn = null;
     visitedTowns.clear();
@@ -1134,6 +1150,8 @@ async function boot() {
     magicRevealed = !!f.magicRevealed;
     maraHollowmastRescued = !!f.maraHollowmastRescued;
     arjunMet = !!f.arjunMet;
+    nkemiStone = f.nkemiStone || 'none';
+    nkemiStaff = f.nkemiStaff || 'none';
     lockboxAcceptedFrom = f.lockboxAcceptedFrom || null;
     lockboxGivenTo = f.lockboxGivenTo || null;
     // Saves from before 2026-10-12 that already handed Roderick the lockbox
@@ -1532,6 +1550,62 @@ async function boot() {
       return true;
     }
     if (effect.sorchaMenu) { ui.updateDialogContent(buildVendorDialog(npc)); return true; }
+    // ---- Nkemi Vesper (2026-11-05) ----
+    if (effect.nkemiMenu) { ui.updateDialogContent(buildVendorDialog(npc)); return true; }
+    const nkemiBack = { responses: ['Go back.', 'Leave.'], responseEffects: [{ nkemiMenu: true }, null] };
+    if (effect.nkemiStoneShow) {
+      ui.updateDialogContent({ line: NKEMI_STONE_AMAZED, responses: ['Give it to her.', 'I’d rather keep it.'], responseEffects: [{ nkemiStoneGive: true }, { nkemiStoneKeep: true }] });
+      return true;
+    }
+    if (effect.nkemiStoneKeep) { ui.updateDialogContent({ line: NKEMI_STONE_KEEP, ...nkemiBack }); return true; }
+    if (effect.nkemiStoneGive) {
+      removeItem('mysterious_rock', 1, true);
+      ui.showGaveItem(ITEMS.mysterious_rock);
+      nkemiStone = 'given';
+      // The rock has reached someone in Kingsreach who can read it.
+      if (questStatus('kingsreach_rock') === 'none') startQuest('kingsreach_rock');
+      completeQuest('kingsreach_rock');
+      requestAutosave();
+      ui.updateDialogContent({ line: NKEMI_STONE_TAKEN, responses: ['Leave.'] });
+      return true;
+    }
+    if (effect.nkemiStoneReady) {
+      ui.updateDialogContent({ line: NKEMI_STONE_READY, responses: [`Pay ${VAELWARD_PRICE} gold.`, 'Not yet.'], responseEffects: [{ nkemiBuy: 'vaelward' }, { nkemiMenu: true }] });
+      return true;
+    }
+    if (effect.nkemiStaffShow) {
+      ui.updateDialogContent({ line: NKEMI_STAFF_SHOW, responses: ['Break it.', 'Keep the staff.'], responseEffects: [{ nkemiStaffBreak: true }, { nkemiStaffKeep: true }] });
+      return true;
+    }
+    if (effect.nkemiStaffKeep) { ui.updateDialogContent({ line: NKEMI_STAFF_KEEP, ...nkemiBack }); return true; }
+    if (effect.nkemiStaffBreak) {
+      removeItem('staff', 1, true); // auto-unequips it
+      ui.showGaveItem(ITEMS.staff);
+      audio.sfx(audio.SFX.punch);
+      nkemiStaff = 'broken';
+      requestAutosave();
+      ui.updateDialogContent({ line: NKEMI_STAFF_BROKEN, responses: [`Pay ${NYTHSURGE_PRICE} gold.`, 'Not yet.'], responseEffects: [{ nkemiBuy: 'nythsurge' }, { nkemiMenu: true }] });
+      return true;
+    }
+    if (effect.nkemiStaffOffer) {
+      ui.updateDialogContent({ line: NKEMI_STAFF_OFFER, responses: [`Pay ${NYTHSURGE_PRICE} gold.`, 'Not yet.'], responseEffects: [{ nkemiBuy: 'nythsurge' }, { nkemiMenu: true }] });
+      return true;
+    }
+    if (effect.nkemiBuy) {
+      const id = effect.nkemiBuy;
+      const price = SPELL_PRICE[id];
+      if (stats.gold < price) {
+        audio.sfx(audio.SFX.denied);
+        ui.updateDialogContent({ line: `I don’t open these on credit. Come back with ${price} gold. (You’re ${price - stats.gold} gold short.)`, ...nkemiBack });
+        return true;
+      }
+      spendGold(price);
+      if (id === 'vaelward') nkemiStone = 'learned'; else nkemiStaff = 'learned';
+      learnSpell(id);
+      requestAutosave();
+      ui.updateDialogContent({ line: NKEMI_LEARNED[id], responses: ['Leave.'] });
+      return true;
+    }
     if (effect.sorchaAccept) {
       startQuest('sorcha_ore');
       ui.updateDialogContent({
@@ -3339,6 +3413,37 @@ async function boot() {
   // reveal used everywhere else in dialog (Buy = received, Sell = gave).
   function sellValue(def) { return Math.max(1, Math.floor((def?.price || 0) / 2)); }
 
+  // ---- Nkemi Vesper and the Ithrel (2026-11-05) ----
+  const VAELWARD_PRICE = 60;
+  const NYTHSURGE_PRICE = 80;
+  const WENDELL_ROCK_LINE = 'Oh, how marvellous. No, it isn’t writing, I’m sorry to say. I know every script in this shop and that is none of them. That’s older than letters. If anyone in Kingsreach can tell you what it is, it’s Nkemi Vesper at the Violet Lantern, just west of the square. Don’t let her frighten you. She does it to everyone.';
+  const NKEMI_STONE_AMAZED = 'Where did you find this? No, don’t tell me yet. Do you know what you’re holding? Neither do I, not entirely, and I can count on one hand the things I can say that about. This isn’t a stone. It’s been waiting to be one. Leave it with me. I need time with it, and quiet, and a few books nobody in this city knows I own. Come back later and I’ll tell you what it is.';
+  const NKEMI_STONE_KEEP = 'Then keep it close, and keep it dry. Don’t show it to anyone who smiles too quickly. The offer stands.';
+  const NKEMI_STONE_TAKEN = 'Thank you. I’ll take better care of it than whoever lost it did. Go on, go and do whatever it is you do. Come back once you’ve been away a while. These things don’t like being watched while they wake.';
+  const NKEMI_STONE_WAIT = 'Not yet. It’s still waking. Go and be somewhere else for a while. Staring at my door won’t make it faster. I’ve tried.';
+  const NKEMI_STONE_READY = `It’s an Ithrel. Old Aelunic for heart-seed. Before Aldermoor had a king, the priests of Aeluna learned to set a working into crystal, the way you’d press a flower in a book. When their temple fell, the Ithrel scattered. A few were set into staffs and rings by people who never understood them. Most are simply lost, in the ground and under the water. This one holds a ward. Vael, in the old tongue: turn back. Take it into yourself and any blow that lands on you lands on whoever threw it. Opening it for you will cost ${VAELWARD_PRICE} gold. The books weren’t cheap, and neither am I.`;
+  const NKEMI_STAFF_SHOW = 'Put that down. Slowly. On the counter, not near the lantern. That’s Drownweft work, and whoever has been carrying it knows it bites. See the sea-glass at the top? That isn’t glass. It’s an Ithrel, a heart-seed, and she bound her own working around it like a hook through a lip. The curse is in the binding, not the stone. Free it and the stone is clean. But there’s only one way to free it. The staff has to break.';
+  const NKEMI_STAFF_KEEP = 'Your choice, and your arm. Every swing of that thing takes a little more out of you than it gives back. Come and see me when you’ve had enough of it.';
+  const NKEMI_STAFF_BROKEN = `There. Hear that? The hum has stopped. That was the curse, and it’s gone. What’s left is Nyth, the deep tide: a surge of freezing brine that strikes everything in front of you at once. It’s yours if you want it, but setting it in you is slow, careful work. ${NYTHSURGE_PRICE} gold.`;
+  const NKEMI_STAFF_OFFER = `The Nyth-stone is still on my shelf, humming to itself like a kettle. ${NYTHSURGE_PRICE} gold and it’s yours.`;
+  const NKEMI_LEARNED = {
+    vaelward: 'Hold still. There. Feel that, like cold water under the skin? That’s the ward, and it’s yours now. It draws on the same well as any other magic, so mind your strength. A ward you can’t raise is just a nice idea. (Vaelward is ready in your Magic slot.)',
+    nythsurge: 'Breathe out. All the way. Good. The cold you feel is the deep tide settling in. It takes more out of you than a ward does, so don’t throw it at every rat in a cellar. (Nythsurge is ready in your Magic slot.)',
+  };
+  const SPELL_PRICE = { vaelward: VAELWARD_PRICE, nythsurge: NYTHSURGE_PRICE };
+
+  // Learn a spell: it goes into the Magic tab, is readied in the Magic slot,
+  // and the magic well fills (learning reveals the bar via addItem's magicCost check).
+  function learnSpell(id) {
+    addItem(id, 1, true);
+    equipItem(id);
+    stats.magic = stats.magicMax;
+    ui.updateHud(stats);
+    refreshStatsPanel();
+    ui.showReceivedItem(ITEMS[id]);
+    audio.sfx(audio.SFX.magic);
+  }
+
   function buildVendorDialog(npc) {
     // A vendor with a SHOP is only open behind their counter. A vendor with no
     // `home` at all (2026-09-16, the Reedwalkers) is a travelling trader who
@@ -3367,6 +3472,23 @@ async function boot() {
         responses.unshift('About that ore…');
         responseEffects.unshift({ followUp: 'Still empty-handed? A longsword won’t forge itself out of good intentions. Bring me some metallic ore — you’ll find it in the deep places, if you’ve the nerve.' });
       }
+    }
+    // Nkemi Vesper, the arcanist (2026-11-05): Lily's stone and Ysra's staff.
+    if (npc.id === 'nkemi_vesper') {
+      const has = (id) => inventory.some((it) => it.id === id);
+      const opts = [];
+      if (nkemiStone === 'none' && has('mysterious_rock')) opts.push(['Show her the strange stone.', { nkemiStoneShow: true }]);
+      if (nkemiStone === 'given') opts.push(['About the stone…', { followUp: NKEMI_STONE_WAIT }]);
+      if (nkemiStone === 'ready') opts.push(['Is the stone ready?', { nkemiStoneReady: true }]);
+      if (nkemiStaff === 'none' && has('staff')) opts.push(['Show her Ysra’s staff.', { nkemiStaffShow: true }]);
+      if (nkemiStaff === 'broken') opts.push(['About the gem from the staff…', { nkemiStaffOffer: true }]);
+      responses.unshift(...opts.map((o) => o[0]));
+      responseEffects.unshift(...opts.map((o) => o[1]));
+    }
+    // Wendell can't read the stone, but he knows who can.
+    if (npc.id === 'wendell_quillfeather' && nkemiStone === 'none' && inventory.some((it) => it.id === 'mysterious_rock')) {
+      responses.unshift('Can you read this stone?');
+      responseEffects.unshift({ followUp: WENDELL_ROCK_LINE });
     }
     // Small talk topics (npc.chatter) go just before "Leave."
     return withChatter({ line: npc.dialog.line, responses, responseEffects }, npc);
@@ -4426,6 +4548,7 @@ async function boot() {
     if (playing !== audio.TRACKS.battle) preBattleTrack = playing;
     audio.play(audio.TRACKS.battle);
     battleState.active = true;
+    battleState.ward = false;
     battleState.enemies = enemyIds.map((id, i) => {
       const def = ENEMIES[id];
       return {
@@ -4480,6 +4603,41 @@ async function boot() {
   // turn must re-show the action menu — see showPlayerActions()'s comment.
   // (Row is Main Hand / Off Hand / Magic / Item / Flee as of 2026-07-28 — Magic
   // is a blank, skipped placeholder until a spell system exists.)
+  // Cast the readied spell (2026-11-05). Spends its magic cost and the turn.
+  //  - ward (Vaelward): battleState.ward stays up until the start of the
+  //    player's next turn; every enemy hit in between turns back on the
+  //    attacker (resolveEnemyTurn).
+  //  - surge (Nythsurge): spellDamage to every living enemy.
+  function castSpell() {
+    const def = equipment.spell && ITEMS[equipment.spell];
+    if (!def || stats.magic < def.magicCost) {
+      ui.setBattleMessage(def ? 'Not enough magic for that.' : 'You know no spells yet.');
+      showPlayerActions(); // no-op action: re-arm the menu
+      return;
+    }
+    stats.magic = Math.max(0, stats.magic - def.magicCost);
+    ui.updateHud(stats);
+    audio.sfx(audio.SFX.magic);
+    if (def.spellEffect === 'ward') {
+      battleState.ward = true;
+      ui.setBattleMessage(`${def.name}! A pale ward rises around you.`);
+      advanceTurnAfter(ENEMY_TURN_DELAY_MS);
+      return;
+    }
+    const targets = aliveEnemies();
+    let total = 0;
+    for (const e of targets) {
+      const d = battle.rollDamage(def.spellDamage);
+      e.health = Math.max(0, e.health - d);
+      total += d;
+    }
+    ui.setBattleMessage(`${def.name}! Freezing brine crashes over every foe. +${total} damage done.`);
+    ui.renderBattleEnemies(battleState.enemies);
+    for (const e of targets) if (e.health > 0) ui.reactEnemyHit(e);
+    const died = handleEnemyDeaths();
+    advanceTurnAfter(died ? Math.max(DEATH_ANIM_MS, ENEMY_TURN_DELAY_MS) : ENEMY_TURN_DELAY_MS);
+  }
+
   function handleBattleAction(action) {
     if (action === 'mainhand' || action === 'offhand') {
       // Defensive guard (2026-09-10, magic-cost weapons) — showPlayerActions
@@ -4499,7 +4657,7 @@ async function boot() {
     // Magic is a placeholder for now (no spell system) — it's a disabled/blank
     // slot the UI already skips, but guard defensively so a stray select can't
     // strand the action menu (re-show it, spending no turn).
-    if (action === 'magic') { showPlayerActions(); return; }
+    if (action === 'magic') { castSpell(); return; }
     if (action === 'item') {
       // An offensive consumable (has useDamage) is aimed at an enemy, so it
       // enters targeting like a weapon; a restorative one (potion) is used on
@@ -4529,6 +4687,7 @@ async function boot() {
     }
     const current = battleState.order[battleState.turnPos];
     if (current.kind === 'player') {
+      battleState.ward = false; // Vaelward lasts one round of enemy attacks
       // Fire ticks at the start of the player's turn. If something burned, show
       // the burn line and pace the action menu after it (a burn can also win
       // the fight); otherwise go straight to the menu.
@@ -4597,20 +4756,24 @@ async function boot() {
         // Survived the venom — pause so the poison line reads, then it attacks.
         setTimeout(() => {
           if (!battleState.active) return;
-          const outcome = takeEnemyTurn(enemy);
-          ui.renderBattleEnemies(battleState.enemies);
-          if (outcome === 'attack') ui.enemyAttackAnim(enemy); // lunge (skipped on a summon turn)
-          battleState.turnPos += 1;
-          runQueue();
+          finishEnemyTurn(enemy, takeEnemyTurn(enemy));
         }, ENEMY_TURN_DELAY_MS);
         return;
       }
-      const outcome = takeEnemyTurn(enemy);
-      ui.renderBattleEnemies(battleState.enemies);
-      if (outcome === 'attack') ui.enemyAttackAnim(enemy); // lunge (skipped on a summon turn)
-      battleState.turnPos += 1;
-      runQueue();
+      finishEnemyTurn(enemy, takeEnemyTurn(enemy));
     }, ENEMY_TURN_DELAY_MS);
+  }
+
+  // After an enemy acts: redraw, lunge (not on a summon turn, and not if a
+  // Vaelward reflection just killed it), then hold for any death dissolve.
+  function finishEnemyTurn(enemy, outcome) {
+    ui.renderBattleEnemies(battleState.enemies);
+    if (outcome === 'attack' && enemy.health > 0) ui.enemyAttackAnim(enemy);
+    const died = handleEnemyDeaths();
+    const hold = died ? Math.max(DEATH_ANIM_MS, ENEMY_TURN_DELAY_MS) : (battleState.reflected ? ENEMY_TURN_DELAY_MS : 0);
+    battleState.reflected = false;
+    battleState.turnPos += 1;
+    if (hold) setTimeout(() => runQueue(), hold); else runQueue();
   }
 
   function equippedItemCount() {
@@ -4653,6 +4816,14 @@ async function boot() {
     if (def.magicCost) stats.push({ label: 'Magic Cost', value: `${def.magicCost}`, tone: 'neg' });
     return { name: def.name, desc: def.description || '', stats };
   }
+  // Detail card for the readied spell in the Magic slot.
+  function spellDetailCard(def) {
+    const stats = [];
+    if (def.spellDamage) stats.push({ label: 'Damage', value: `${def.spellDamage.min}-${def.spellDamage.max} all foes` });
+    if (def.spellEffect === 'ward') stats.push({ label: 'Effect', value: 'Reflect', tone: 'pos' });
+    stats.push({ label: 'Magic Cost', value: `${def.magicCost}`, tone: 'neg' });
+    return { name: def.name, desc: def.description || '', stats };
+  }
   // Detail card for the equipped consumable in the Item slot.
   function itemDetailCard(def, count) {
     const stats = [];
@@ -4670,6 +4841,7 @@ async function boot() {
     const offhand = equipment.offhand && ITEMS[equipment.offhand];
     const useItem = equipment.item && ITEMS[equipment.item];
     const useCount = equippedItemCount();
+    const spell = equipment.spell && ITEMS[equipment.spell];
     // A weapon with a magicCost (2026-09-10, Ysra's Staff) grays out like an
     // empty Use slot once the player can't pay it — checked generically so
     // any future magic-cost weapon (mainhand included) gets the same
@@ -4679,9 +4851,11 @@ async function boot() {
     ui.showBattleActions({
       mainhand: { image: mainhand?.image || 'assets/images/icon_fist.svg', glow: mainhand?.glow, disabled: mainhandNoMagic, detail: weaponDetailCard(mainhand) },
       offhand: { image: offhand?.image || 'assets/images/icon_fist.svg', glow: offhand?.glow, disabled: offhandNoMagic, detail: weaponDetailCard(offhand) },
-      // No magic system yet: a blank circle that's skipped when toggling
-      // (2026-07-28 — re-added to the row per Danny's mockup as a placeholder).
-      magic: { disabled: true },
+      // The readied spell (2026-11-05); blank and skipped if none is learned,
+      // grayed out when the player can't pay its magic cost.
+      magic: spell
+        ? { image: spell.image, disabled: stats.magic < spell.magicCost, detail: spellDetailCard(spell) }
+        : { disabled: true },
       item: useItem
         ? { image: useItem.image, disabled: useCount === 0, detail: itemDetailCard(useItem, useCount) }
         : { disabled: true },
@@ -4720,6 +4894,14 @@ async function boot() {
     const hit = battle.resolveAttack(enemy.attack, effectiveDefense());
     if (hit) {
       const dmg = battle.rollDamage(enemy.damage);
+      if (battleState.ward) {
+        // Vaelward: the blow turns back on whoever threw it.
+        enemy.health = Math.max(0, enemy.health - dmg);
+        battleState.reflected = true; // finishEnemyTurn holds so this line reads
+        audio.sfx(audio.SFX.magic);
+        ui.setBattleMessage(`The ${enemy.name} strikes your ward and the blow turns back on it. +${dmg} damage done.`);
+        return;
+      }
       const dealt = damagePlayer(dmg); // plays the player's hurt grunt; returns post-shield damage
       audio.sfx(audio.SFX.punch); // the impact, layered over the grunt
       ui.shakeScreen(); // player was hit — shake the whole battle scene
@@ -4929,6 +5111,7 @@ async function boot() {
 
   function endBattle(result) {
     battleState.active = false;
+    battleState.ward = false;
     pendingAttackSlot = null; pendingUseItem = false; // never leak an intent out of a fight
 
     const onEnd = battleState.onEnd;

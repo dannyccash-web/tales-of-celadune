@@ -1918,3 +1918,28 @@ Danny reworked Mirelle's `vegetable_delivery` quest. **This supersedes the older
 - **Routines rebuilt** (`~/w/npcs.py` on the device, not kept): vendors home 55-70% (staggered: different home waits, alternate ones start out), residents ~25% on 4-stop loops; home waits sized from each loop's A* walk time, then measured in a 4000s sim (vendors 54-68%, residents 20-28%). **Lesson: B3's lanes are narrow (many ~65-80px), so two NPCs meeting head-on in one deadlock forever.** The first pass, with wait spots in the lanes, froze four NPCs in the west lane (x~425-485, y1640-1720) for 1290s. The fix: (1) wait spots only in open places (55px+ clearance, and reachable from spawn through nothing narrower than 45px, i.e. the square, the high street, wide junctions and the NE cul-de-sac); (2) A* adds a heavy cost to cells under 40px clearance, so loops avoid lanes except an NPC's own walk to and from home; (3) every NPC gets its own point at a shared spot (jittered 35-60px), so two never fight over one target. Re-check with `_verify_b3_npcs.mjs` / `_verify_b3_long.mjs` (4000s) after any routine change.
 - **Pip's race: Rootkin.** Nothing in-game had named Skitter Nabbins's race (only a C1 comment and the roster sheet said "reformed Bramblekin"), so Danny's call: Skitter and Pip are **Rootkin**, small bark-skinned part-plant folk with twig growths for hair, distant kin of the rootweavers but civil and settled. Pip's chatter changed accordingly; his voice is now Skitter's clip (`pacomoya-eh`), and Edmund moved to the squash-hmm clip. c1.js's comment and the roster doc updated.
 
+
+## Magic: the Ithrel, Nkemi's two spells, and the Kingsreach threads (2026-11-05)
+
+**Kingsreach thread audit** (every mention of Kingsreach, after B3 went in):
+- Done: Mirelle's leg 3 (Harlan Brewick), the counting house (Edmund), Orris's workshop, Vikram moved in, and now `kingsreach_rock` (completes when the player gives Lily's stone to Nkemi).
+- **Still open: `visit_the_king`.** Mara, Abena, Arjun and Rowena all point at the castle, but the King lives in B2, which is locked and has no NPC art. Nothing in B3 can complete it.
+- Detail gap: Anjali (B4) says her inn is in Kingsreach, but Kingsreach's only inn is Harlan's tavern. Either Anjali's inn goes on the western side (B2/B1) or her line changes.
+- Flavor only, fine as is: Dame Elspeth "will walk into Kingsreach", Abena's "Kingsreach west along this road".
+
+**The Ithrel** (Old Aelunic, "heart-seed"): crystals Aeluna's priests set workings into before Aldermoor had a king. When the temple fell they scattered; a few ended up in staffs and rings, most are lost, so more can be hidden later. Spell names are an Old Aelunic word plus a plain one: **vael** = turn back, **nyth** = the deep tide. Nkemi Vesper (B3, the Violet Lantern) opens them, always for gold.
+
+**Spells are items** (`items.js`): `slot: 'spell'` (not in SLOT_CATEGORY, so they land in Inventory > Magic), `spell: true` (Remove disabled via the tile's `data-quest`; no price, so unsellable), `magicCost`, `spellEffect`. `equipment.spell` is the readied one; the battle Magic slot casts it (blank and skipped if none, grayed if MP is short). Learning auto-readies the new spell and fills MP; switch spells by equipping in the Magic tab.
+- **Vaelward** (Lily's stone, 60 gold, 2 MP, `icon_vaelward.svg`): sets `battleState.ward`; every enemy hit before the player's next turn deals its rolled damage to the attacker instead (the player takes nothing). Cleared at the start of the player's turn, in startBattle and endBattle. Misses still miss.
+- **Nythsurge** (Ysra's staff gem, 80 gold, 3 MP, `icon_nythsurge.svg`): 2-4 (`spellDamage`) to every living enemy.
+- `castSpell()` in main.js; enemy turns now end through `finishEnemyTurn(enemy, outcome)`, which also handles a reflection kill and holds ENEMY_TURN_DELAY_MS after a reflection so its line can be read (otherwise "Your Turn"/"Enemy’s Turn" overwrites it instantly).
+- Stats > Damage's Magic row shows the readied spell (`spellSummary()`); the battle card is `spellDetailCard()`.
+
+**Nkemi's dialogue** (branch in `buildVendorDialog`, only behind her counter; effects `nkemi*` in applyResponseEffect). Persisted flags `nkemiStone` ('none' / 'given' / 'ready' / 'learned') and `nkemiStaff` ('none' / 'broken' / 'learned').
+- Holding the mysterious rock: "Show her the strange stone." She's amazed, asks for it, says come back later. Give it (rock removed, GAVE reveal, `kingsreach_rock` completed even if never started) or keep it. It becomes **ready on the next entry into B3** (leave and come back); then she names the Ithrel and Vaelward and asks 60 gold.
+- Holding the staff (now named **Ysra’s Cursed Staff**): she recognises the gem, explains the curse is in the binding and the staff has to break. Break it (staff removed and unequipped, free) then pay 80 gold now or later ("About the gem from the staff…"), or keep the staff.
+- Short of gold: denied sound and how much is missing, with Go back/Leave.
+- New chatter "Do you sell magic?" hints she wants old things, with no location hints.
+- **Wendell Quillfeather** gets "Can you read this stone?" while the player holds the rock and hasn't given it to Nkemi; he sends them to her. (Orris's city line already sends the player to Wendell.)
+
+**Verified** in headless Chrome against a local copy: both full dialogue flows (give, break, pay, leave B3 and return, ready), quest completion, equip/unequip of the staff, Nythsurge damaging all three foes, Vaelward reflecting every hit with no HP lost, the Magic tab and the Stats damage row, a reload with spells saved. No console errors (favicon only).

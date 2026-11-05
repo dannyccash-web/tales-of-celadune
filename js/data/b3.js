@@ -707,6 +707,7 @@ export default {
         { q: 'Who are you?', a: 'A shopkeeper. You’d be surprised how far that answer gets me.' },
         { q: 'What is that lantern?', a: 'A light that only burns for people who mean what they say. It’s burning now. Interesting.' },
         { q: 'Have we met before?', a: 'Not yet. Ask me again some other time.' },
+        { q: 'Do you sell magic?', a: 'Not in bottles. Real magic is older than that, and it doesn’t sit on shelves. It turns up in odd places, in the hands of people who have no idea what they’re carrying. If something like that ever finds its way to you, bring it to me.' },
       ],
     },
     {

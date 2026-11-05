@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Nythsurge spell icon: a breaking wave over a frost star.
+       Gold matches the UI gold-bright color. Never put a double hyphen
+       inside an XML comment: it makes the SVG unparseable. -->
+  <path d="M10 64 C22 64 26 30 50 26 C70 23 82 36 80 50 C78 60 66 62 62 54 C59 47 66 42 70 46"
+        fill="none" stroke="#eed694" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M8 78 C20 70 30 86 42 78 C54 70 64 86 76 78 C82 74 88 76 92 78"
+        fill="none" stroke="#eed694" stroke-width="6" stroke-linecap="round"/>
+  <g stroke="#eed694" stroke-width="4" stroke-linecap="round">
+    <line x1="34" y1="44" x2="34" y2="62"/>
+    <line x1="26" y1="53" x2="42" y2="53"/>
+    <line x1="28" y1="47" x2="40" y2="59"/>
+    <line x1="40" y1="47" x2="28" y2="59"/>
+  </g>
+</svg>

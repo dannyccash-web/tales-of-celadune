@@ -1413,7 +1413,7 @@ function buildItemTile(entry, def, equipment) {
   tile.className = 'item-tile';
   tile.dataset.itemId = entry.id;
   tile.dataset.itemName = def.name;
-  tile.dataset.quest = def.questItem ? '1' : '';
+  tile.dataset.quest = (def.questItem || def.spell) ? '1' : ''; // spells can't be discarded either
   tile.dataset.slot = def.slot || '';
   tile.dataset.equipped = equipped ? '1' : '';
   // Consumables (heal / restoreMagic / vitality / arcana) get a dedicated "Use" popout
