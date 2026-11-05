@@ -826,8 +826,8 @@ export default {
     },
     {
       id: 'galen_thorne', name: 'Sir Galen Thorne', role: 'RETIRED KNIGHT',
-      sprite: 'assets/images/galen_thorne_overhead.png',
-      portrait: 'assets/images/galen_thorne.png',
+      sprite: 'assets/images/sir_galen_thorne_overhead.png',
+      portrait: 'assets/images/sir_galen_thorne.png',
       speed: 45, startsHome: true,
       home: { door: { x: 1990, y: 615 }, interior: 'assets/images/home_interior.jpg' },
       routine: [
