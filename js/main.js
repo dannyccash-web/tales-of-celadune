@@ -439,11 +439,22 @@ const KEYMAP = {
 function loadImages(sources, onProgress) {
   let loaded = 0;
   const total = sources.length;
+  // A single dropped request used to stop the whole game at the loading
+  // screen (2026-11-06, Danny hit it on a file that was fine on the server).
+  // Retry each image up to 3 more times, with a cache-busting query and a
+  // growing pause, before giving up. The map stays keyed by the plain src.
+  const RETRIES = 3;
   return Promise.all(sources.map((src) => new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => { loaded += 1; onProgress?.(loaded, total); resolve([src, img]); };
-    img.onerror = () => reject(new Error(`Failed to load ${src}`));
-    img.src = src;
+    const attempt = (n) => {
+      const img = new Image();
+      img.onload = () => { loaded += 1; onProgress?.(loaded, total); resolve([src, img]); };
+      img.onerror = () => {
+        if (n >= RETRIES) { reject(new Error(`Failed to load ${src}`)); return; }
+        setTimeout(() => attempt(n + 1), 400 * (n + 1));
+      };
+      img.src = n === 0 ? src : `${src}${src.includes('?') ? '&' : '?'}retry=${n}`;
+    };
+    attempt(0);
   }))).then(Object.fromEntries);
 }
 
