@@ -655,8 +655,9 @@ export default {
       // Kingsreach's food seller (2026-11-06, Danny): 1-3 of every everyday food,
       // and the game's 10th chestnut (qty 1, for Mateo). Left out on purpose:
       // the Moonscale Trout (Darius's rare catch), Perrin's stew (his reward)
-      // and the Cragclaw Eggs (a boss drop).
-      vendor: true, stock: [{ id: 'bread', qty: 3 }, { id: 'apple', qty: 3 }, { id: 'cabbage', qty: 2 }, { id: 'corn', qty: 2 }, { id: 'chestnut', qty: 1 }, { id: 'bluegill', qty: 2 }, { id: 'trout', qty: 2 }, { id: 'sea_bass', qty: 2 }, { id: 'crimson_sailback', qty: 1 }], gold: 50,
+      // and the Cragclaw Eggs (a boss drop); sea bass and crimson sailback too
+      // (2026-11-06, Danny), so Toby's and Perrin's quests still need fishing.
+      vendor: true, stock: [{ id: 'bread', qty: 3 }, { id: 'apple', qty: 3 }, { id: 'cabbage', qty: 2 }, { id: 'corn', qty: 2 }, { id: 'chestnut', qty: 1 }, { id: 'bluegill', qty: 2 }, { id: 'trout', qty: 2 }], gold: 50,
       awayLine: 'Just stretching my legs, friend. The Tankard’s on the north side of the square. Find me behind the bar and I’ll sort you out.',
       sprite: 'assets/images/harlan_brewick_overhead.png',
       portrait: 'assets/images/harlan_brewick.png',

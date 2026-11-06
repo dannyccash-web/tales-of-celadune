@@ -248,6 +248,9 @@ export function setWalking(active) {
 export const AMBIENT = {
   river: { src: 'assets/audio/nils_vega-river-sounds-547976.mp3', weight: 0.55 },
   sea: { src: 'assets/audio/u_0lndlt5pdf-ocean-waves-562776.mp3', weight: 0.6 },
+  // Fire crackle (2026-11-06): near any scene.fires flame. The file is a
+  // 90s seamless loop cut from Danny's 10-minute recording (was 19 MB).
+  fire: { src: 'assets/audio/soundreality-fire-crackling-528620.mp3', weight: 0.7 },
 };
 const ambient = {}; // key -> { el, level }
 export function setAmbient(levels, dt = 1 / 60) {

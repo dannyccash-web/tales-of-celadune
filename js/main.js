@@ -5646,6 +5646,15 @@ async function boot() {
     return BED + (1 - BED) * (1 - t * t * (3 - 2 * t));
   }
 
+  // Loudness 0-1 for the fire crackle: full within ~70px of a flame, gone by
+  // ~550px. No quiet bed, unlike water: a fire is only heard nearby.
+  function fireLevel(d) {
+    if (!Number.isFinite(d)) return 0;
+    const NEAR = 70, FAR = 550;
+    const t = Math.max(0, Math.min(1, (d - NEAR) / (FAR - NEAR)));
+    return 1 - t * t * (3 - 2 * t);
+  }
+
   function frame(now) {
     const dt = Math.min((now - last) / 1000, 0.05);
     last = now;
@@ -5699,7 +5708,8 @@ async function boot() {
     {
       const silent = !state.started || ui.isBattleOpen() || ui.isVictoryOpen() || ui.isGameOverOpen() || deathFading;
       const wd = world.waterDistances(world.player.x, world.player.y);
-      audio.setAmbient(silent ? {} : { river: ambientLevel(wd.river), sea: ambientLevel(wd.sea) }, dt);
+      const fd = world.fireDistance(world.player.x, world.player.y);
+      audio.setAmbient(silent ? {} : { river: ambientLevel(wd.river), sea: ambientLevel(wd.sea), fire: fireLevel(fd) }, dt);
     }
 
     // Scene exits: crossing an edge with a matching exit either walks the

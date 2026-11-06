@@ -127,6 +127,14 @@ export class World {
   // Distance in world px from (x, y) to the nearest river and the nearest open
   // sea in this scene (Infinity where the scene has none). Drives the
   // river/ocean ambience volume in main.js.
+  // Distance (px) from (x, y) to the nearest code-drawn fire in this scene
+  // (scene.fires), for the fire-crackle ambience (2026-11-06). Infinity if none.
+  fireDistance(x, y) {
+    let best = Infinity;
+    for (const f of this.fires) best = Math.min(best, Math.hypot(f.x - x, f.y - y));
+    return best;
+  }
+
   waterDistances(x, y) {
     const wd = this.water;
     if (!wd) return { river: Infinity, sea: Infinity };
