@@ -245,7 +245,7 @@ const ITEMS = {
     questItem: false,
     slot: 'item',
     arcana: 1,
-    price: 32,
+    price: 75,
   },
   // Chestnut (2026-10-10). Found on the ground in C3, C4 and D4, one in each
   // town's general store. Mateo Avellaneda (C3) wants ten; only nine exist so

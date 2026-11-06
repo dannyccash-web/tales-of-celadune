@@ -184,6 +184,8 @@ export function openDialog(npc, onClose, onResponse) {
   dialogState.onClose = onClose || null;
   dialogState.onResponse = onResponse || null;
   dialogState.locked = !!npc.lockDialog;
+  dialogState.used = new Set(); // responses picked this conversation
+  dialogState.markUsed = false;
 
   $('dialog-name').textContent = npc.name;
   $('dialog-role').textContent = npc.role || '';
@@ -266,6 +268,9 @@ function renderResponses(responses) {
   responses.forEach((text, i) => {
     const el = document.createElement('span');
     el.className = 'response';
+    // A menu shown again after a reply grays out what the player already asked
+    // (2026-11-06; see setDialogContentFilter). Still selectable.
+    if (dialogState.markUsed && text !== 'Leave.' && dialogState.used?.has(text)) el.classList.add('used');
     el.textContent = text;
     el.addEventListener('click', () => { dialogState.selected = i; chooseResponse(); });
     el.addEventListener('mouseenter', () => { dialogState.selected = i; refreshSelection(); });
@@ -305,6 +310,8 @@ function chooseResponse() {
   // Mid-line "Continue": advance to the next page rather than acting on a
   // response — the real options only live on the last page (see beginPagedLine).
   if (dialogState.paging) { dialogState.page += 1; showDialogPage(true); return; }
+  const picked = dialogState.npc?.dialog?.responses?.[dialogState.selected];
+  if (picked) dialogState.used?.add(picked);
   // Most responses are still placeholders that just close the dialog, but a
   // response can carry a real effect (e.g. Gaffer's bite, or Mirelle's
   // vegetable-crate quest) — the caller that opened the dialog decides what
@@ -324,7 +331,20 @@ function chooseResponse() {
 // taken. responseEffects defaults to none (a plain closing line). `contents`
 // is optional — pass it (a place's updated [{id,name}] list) to re-render
 // the Contents list; omitted for ordinary NPC dialog.
-export function updateDialogContent({ line, responses, responseEffects, contents }) {
+// main.js installs a filter that sees every content swap first (2026-11-06).
+// It may rewrite the content (a reply ending in just "Go back." / "Leave." is
+// shown with the full menu instead) or return null to swallow it (main uses
+// that to read what "Go back." would show without rendering it).
+let dialogContentFilter = null;
+export function setDialogContentFilter(fn) { dialogContentFilter = fn; }
+
+export function updateDialogContent(content) {
+  if (dialogContentFilter) {
+    content = dialogContentFilter(dialogState.npc, content);
+    if (!content) return;
+  }
+  const { line, responses, responseEffects, contents } = content;
+  dialogState.markUsed = !!content.markUsed;
   // Only replay the typewriter effect if the line actually changed — a
   // place's room refreshing after taking an item (2026-07-09 fix, Danny:
   // "the description text only needs to build in one time") passes back the
@@ -478,7 +498,7 @@ export function showItemInspect(description, statLine) {
     });
     txt.appendChild(wrap);
   }
-  revealBanner(2500);
+  revealBanner(3500); // a second longer than a plain toast (2026-11-06, Danny)
 }
 
 // Quest lifecycle events use the same banner, gold-styled as their own beat.

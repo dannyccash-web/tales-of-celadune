@@ -652,7 +652,11 @@ export default {
   npcs: [
     {
       id: 'harlan_brewick', name: 'Harlan Brewick', role: 'TAVERN KEEPER',
-      vendor: true, stock: [{ id: 'bread', qty: 4 }, { id: 'apple', qty: 2 }, { id: 'health_potion', qty: 2 }], gold: 50,
+      // Kingsreach's food seller (2026-11-06, Danny): 1-3 of every everyday food,
+      // and the game's 10th chestnut (qty 1, for Mateo). Left out on purpose:
+      // the Moonscale Trout (Darius's rare catch), Perrin's stew (his reward)
+      // and the Cragclaw Eggs (a boss drop).
+      vendor: true, stock: [{ id: 'bread', qty: 3 }, { id: 'apple', qty: 3 }, { id: 'cabbage', qty: 2 }, { id: 'corn', qty: 2 }, { id: 'chestnut', qty: 1 }, { id: 'bluegill', qty: 2 }, { id: 'trout', qty: 2 }, { id: 'sea_bass', qty: 2 }, { id: 'crimson_sailback', qty: 1 }], gold: 50,
       awayLine: 'Just stretching my legs, friend. The Tankard’s on the north side of the square. Find me behind the bar and I’ll sort you out.',
       sprite: 'assets/images/harlan_brewick_overhead.png',
       portrait: 'assets/images/harlan_brewick.png',
@@ -703,12 +707,9 @@ export default {
         { do: 'wait', s: 5 },
       ],
       dialog: { line: 'Ah. There you are. Come in, and close the door behind you. The lantern doesn’t like a draft. Look as long as you like. Most people leave with the thing they came for. A few leave with the thing they needed.', responses: ['Leave.'] },
-      chatter: [
-        { q: 'Who are you?', a: 'A shopkeeper. You’d be surprised how far that answer gets me.' },
-        { q: 'What is that lantern?', a: 'A light that only burns for people who mean what they say. It’s burning now. Interesting.' },
-        { q: 'Have we met before?', a: 'Not yet. Ask me again some other time.' },
-        { q: 'Do you sell magic?', a: 'Not in bottles. Real magic is older than that, and it doesn’t sit on shelves. It turns up in odd places, in the hands of people who have no idea what they’re carrying. If something like that ever finds its way to you, bring it to me.' },
-      ],
+      // No chatter (2026-11-06, Danny: her list ran off the page). Her menu is
+      // built in main.js's buildVendorDialog: Buy, Sell, the stone, the staff,
+      // the court wizard, Leave.
     },
     {
       id: 'yasmin_darrowel', name: 'Yasmin Darrowel', role: 'SHOPKEEPER',

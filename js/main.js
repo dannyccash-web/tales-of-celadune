@@ -1440,7 +1440,35 @@ async function boot() {
   // grantItem's thankYou). grantItem/feedGaffer/followUp return true so
   // ui.chooseResponse() keeps the dialog open instead of closing.
   function applyResponseEffect(npc, index) {
-    const effect = npc.dialog.responseEffects?.[index];
+    return runResponseEffect(npc, npc.dialog.responseEffects?.[index]);
+  }
+
+  // "Go back." / "Leave." endings show the whole menu instead (2026-11-06,
+  // Danny): when a reply's only options are exactly those two, the reply line
+  // stays and the options become what "Go back." would have shown, with the
+  // ones already asked this conversation grayed (ui.js .used). The target is
+  // either a stored snapshot ({goBack}) or a menu-rebuild effect (calderMenu,
+  // nkemiMenu, ...), which is run with its render captured instead of shown.
+  let captureContent = null;
+  ui.setDialogContentFilter((npc, content) => {
+    if (captureContent) { captureContent.content = content; return null; }
+    const r = content.responses;
+    if (r?.length === 2 && r[0] === 'Go back.' && r[1] === 'Leave.' && npc) {
+      const back = content.responseEffects?.[0];
+      let target = null;
+      if (back?.goBack) target = back.goBack;
+      else if (back) {
+        captureContent = {};
+        try { runResponseEffect(npc, back); } finally { target = captureContent.content; captureContent = null; }
+      }
+      if (target?.responses?.length) {
+        return { ...content, responses: target.responses, responseEffects: target.responseEffects || [], markUsed: true };
+      }
+    }
+    return content;
+  });
+
+  function runResponseEffect(npc, effect) {
     if (!effect) return;
     // "Go back." on a follow-up line — restore the dialog content the
     // follow-up replaced (captured below), so the player can revisit the
@@ -3418,6 +3446,10 @@ async function boot() {
   const NYTHSURGE_PRICE = 80;
   const WENDELL_ROCK_LINE = 'Oh, how marvellous. No, it isn’t writing, I’m sorry to say. I know every script in this shop and that is none of them. That’s older than letters. If anyone in Kingsreach can tell you what it is, it’s Nkemi Vesper at the Violet Lantern, just west of the square. Don’t let her frighten you. She does it to everyone.';
   const NKEMI_STONE_AMAZED = 'Where did you find this? No, don’t tell me yet. Do you know what you’re holding? Neither do I, not entirely, and I can count on one hand the things I can say that about. This isn’t a stone. It’s been waiting to be one. Leave it with me. I need time with it, and quiet, and a few books nobody in this city knows I own. Come back later and I’ll tell you what it is.';
+  // Nkemi and the court wizard studied together at the Collegium at Wyrmcrest
+  // (overworld A1, the School of Sorcery, northwest of the castle). She doubts
+  // the official story. Spoiler line: she must NOT know the truth, only doubt.
+  const NKEMI_WIZARD = 'I knew him before he was anybody’s court wizard. We were students together at the Collegium at Wyrmcrest, up in the mountains northwest of the castle. Seven years of cold stone floors and colder masters. He was the best of us, and the least interested in being told so. Now this whole city says he stole the king’s daughter. I don’t believe it. The man I knew wouldn’t take a book off a shelf without asking. Something happened up there, and nobody is asking what. So I am. I mean to find out what really happened.';
   const NKEMI_STONE_KEEP = 'Then keep it close, and keep it dry. Don’t show it to anyone who smiles too quickly. The offer stands.';
   const NKEMI_STONE_TAKEN = 'Thank you. I’ll take better care of it than whoever lost it did. Go on, go and do whatever it is you do. Come back once you’ve been away a while. These things don’t like being watched while they wake.';
   const NKEMI_STONE_WAIT = 'Not yet. It’s still waking. Go and be somewhere else for a while. Staring at my door won’t make it faster. I’ve tried.';
@@ -3482,8 +3514,10 @@ async function boot() {
       if (nkemiStone === 'ready') opts.push(['Is the stone ready?', { nkemiStoneReady: true }]);
       if (nkemiStaff === 'none' && has('staff')) opts.push(['Show her Ysra’s staff.', { nkemiStaffShow: true }]);
       if (nkemiStaff === 'broken') opts.push(['About the gem from the staff…', { nkemiStaffOffer: true }]);
-      responses.unshift(...opts.map((o) => o[0]));
-      responseEffects.unshift(...opts.map((o) => o[1]));
+      opts.push(['Ask about the court wizard.', { followUp: NKEMI_WIZARD }]);
+      // Buy, Sell, (stone), (staff), wizard, Leave (2026-11-06, Danny).
+      responses.splice(2, 0, ...opts.map((o) => o[0]));
+      responseEffects.splice(2, 0, ...opts.map((o) => o[1]));
     }
     // Wendell can't read the stone, but he knows who can.
     if (npc.id === 'wendell_quillfeather' && nkemiStone === 'none' && inventory.some((it) => it.id === 'mysterious_rock')) {

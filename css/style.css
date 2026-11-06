@@ -561,6 +561,10 @@ html, body {
   color: var(--text);
 }
 
+/* Already asked this conversation (2026-11-06): slightly grayed, still pickable. */
+#dialog-responses .response.used { color: #6e7074; }
+#dialog-responses .response.used.selected { color: #b9babc; }
+
 /* Item-received reveal: sits in the empty right side of the response box,
    under the portrait, sliding down + fading in when ui.showReceivedItem()
    plays it. Class removed/reflowed/re-added so it replays every time, same
