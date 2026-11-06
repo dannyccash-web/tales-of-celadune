@@ -126,4 +126,13 @@ export default {
     name: 'A Stone Without a Name',
     description: 'Orris Fenwick can bind almost anything to a blade, and cannot read the strange rock at all — which he says is the remarkable part. Take it north to Kingsreach, the city under the castle walls, and find someone who knows what it is.',
   },
+  // Durgan Coldforge (B3) forges the rest of his armor from your ore (2026-11-06).
+  coldforge_gauntlets: {
+    name: 'Ore for the Gauntlets',
+    description: 'Durgan Coldforge will forge Coldforge Gauntlets if you bring him 3 chunks of metallic ore.',
+  },
+  coldforge_brigandine: {
+    name: 'Ore for the Brigandine',
+    description: 'Durgan Coldforge will forge a Coldforge Brigandine if you bring him 3 more chunks of metallic ore.',
+  },
 };

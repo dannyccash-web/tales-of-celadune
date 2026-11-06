@@ -1589,6 +1589,27 @@ async function boot() {
       return true;
     }
     if (effect.sorchaMenu) { ui.updateDialogContent(buildVendorDialog(npc)); return true; }
+    // ---- Durgan Coldforge (2026-11-06) ----
+    if (effect.durganMenu) { ui.updateDialogContent(buildVendorDialog(npc)); return true; }
+    if (effect.durganOffer) {
+      const id = effect.durganOffer;
+      ui.updateDialogContent({ line: DURGAN_PIECES[id].offer, responses: ['I’ll bring you the ore.', 'Not now.'], responseEffects: [{ durganAccept: id }, { durganMenu: true }] });
+      return true;
+    }
+    if (effect.durganAccept) {
+      startQuest(effect.durganAccept);
+      ui.updateDialogContent({ line: 'Three. Not two. Go.', responses: ['Leave.'] });
+      return true;
+    }
+    if (effect.durganTurnIn) {
+      const id = effect.durganTurnIn;
+      removeItem('metallic_ore', DURGAN_ORE, true);
+      ui.showGaveItem(ITEMS.metallic_ore);
+      completeQuest(id); // unlocks the piece in his Buy stock (questStock)
+      requestAutosave();
+      ui.updateDialogContent({ line: DURGAN_PIECES[id].done, responses: ['Leave.'] });
+      return true;
+    }
     // ---- Nkemi Vesper (2026-11-05) ----
     if (effect.nkemiMenu) { ui.updateDialogContent(buildVendorDialog(npc)); return true; }
     const nkemiBack = { responses: ['Go back.', 'Leave.'], responseEffects: [{ nkemiMenu: true }, null] };
@@ -3452,6 +3473,34 @@ async function boot() {
   // reveal used everywhere else in dialog (Buy = received, Sell = gave).
   function sellValue(def) { return Math.max(1, Math.floor((def?.price || 0) / 2)); }
 
+  // ---- Durgan Coldforge's ore quests (2026-11-06) ----
+  // He stocks the Coldforge helm and boots; each other piece takes 3 metallic
+  // ore (gauntlets first, then the brigandine) and then joins his Buy stock via
+  // questStock. You still pay for the piece, the same as Sorcha's longsword.
+  const DURGAN_ORE = 3;
+  const DURGAN_PIECES = {
+    coldforge_gauntlets: {
+      ask: 'Could you make more Coldforge armor?',
+      offer: 'Helm and boots are on the rack. The rest of the set needs iron I don’t have. Mountain ore, the good stuff, from the deep places. Bring me three chunks and I’ll forge the gauntlets.',
+      done: 'Good iron. There. Gauntlets, on the rack. You still pay for them. Ore is not labour.',
+    },
+    coldforge_brigandine: {
+      ask: 'Could you forge the brigandine?',
+      offer: 'Gauntlets held up? Good. The brigandine takes more steel than both. Three more chunks of ore. Same as before.',
+      done: 'Heavy. Good. The brigandine is on the rack. That is the whole set. Wear it well.',
+    },
+  };
+  function durganOreOption(ore) {
+    for (const id of ['coldforge_gauntlets', 'coldforge_brigandine']) {
+      const st = questStatus(id);
+      if (st === 'completed') continue;
+      if (st === 'none') return [DURGAN_PIECES[id].ask, { durganOffer: id }];
+      if (ore >= DURGAN_ORE) return [`Here’s the ore. (${DURGAN_ORE} Metallic Ore)`, { durganTurnIn: id }];
+      return ['About the ore…', { followUp: `${DURGAN_ORE} chunks. You have ${ore}. The deep places have it. Caves. Old ruins. Look where the rock glints.` }];
+    }
+    return null;
+  }
+
   // ---- Nkemi Vesper and the Ithrel (2026-11-05) ----
   const VAELWARD_PRICE = 60;
   const NYTHSURGE_PRICE = 80;
@@ -3529,6 +3578,12 @@ async function boot() {
       // Buy, Sell, (stone), (staff), wizard, Leave (2026-11-06, Danny).
       responses.splice(2, 0, ...opts.map((o) => o[0]));
       responseEffects.splice(2, 0, ...opts.map((o) => o[1]));
+    }
+    // Durgan Coldforge: the rest of his armor needs ore (2026-11-06).
+    if (npc.id === 'durgan_coldforge') {
+      const ore = inventory.find((it) => it.id === 'metallic_ore')?.qty || 0;
+      const opt = durganOreOption(ore);
+      if (opt) { responses.splice(2, 0, opt[0]); responseEffects.splice(2, 0, opt[1]); }
     }
     // Wendell can't read the stone, but he knows who can.
     if (npc.id === 'wendell_quillfeather' && nkemiStone === 'none' && inventory.some((it) => it.id === 'mysterious_rock')) {
@@ -4594,6 +4649,7 @@ async function boot() {
     audio.play(audio.TRACKS.battle);
     battleState.active = true;
     battleState.ward = false;
+    ui.setWardGlow(false);
     battleState.enemies = enemyIds.map((id, i) => {
       const def = ENEMIES[id];
       return {
@@ -4662,9 +4718,10 @@ async function boot() {
     }
     stats.magic = Math.max(0, stats.magic - def.magicCost);
     ui.updateHud(stats);
-    audio.sfx(audio.SFX.magic);
+    audio.sfx(def.spellEffect === 'ward' ? audio.SFX.spellWind : audio.SFX.spellWater);
     if (def.spellEffect === 'ward') {
       battleState.ward = true;
+      ui.setWardGlow(true);
       ui.setBattleMessage(`${def.name}! A pale ward rises around you.`);
       advanceTurnAfter(ENEMY_TURN_DELAY_MS);
       return;
@@ -4679,6 +4736,7 @@ async function boot() {
     ui.setBattleMessage(`${def.name}! Freezing brine crashes over every foe. +${total} damage done.`);
     ui.renderBattleEnemies(battleState.enemies);
     for (const e of targets) if (e.health > 0) ui.reactEnemyHit(e);
+    ui.frostEnemies(targets); // icy overlay on every foe it struck
     const died = handleEnemyDeaths();
     advanceTurnAfter(died ? Math.max(DEATH_ANIM_MS, ENEMY_TURN_DELAY_MS) : ENEMY_TURN_DELAY_MS);
   }
@@ -4733,6 +4791,7 @@ async function boot() {
     const current = battleState.order[battleState.turnPos];
     if (current.kind === 'player') {
       battleState.ward = false; // Vaelward lasts one round of enemy attacks
+      ui.setWardGlow(false);
       // Fire ticks at the start of the player's turn. If something burned, show
       // the burn line and pace the action menu after it (a burn can also win
       // the fight); otherwise go straight to the menu.
@@ -4943,7 +5002,7 @@ async function boot() {
         // Vaelward: the blow turns back on whoever threw it.
         enemy.health = Math.max(0, enemy.health - dmg);
         battleState.reflected = true; // finishEnemyTurn holds so this line reads
-        audio.sfx(audio.SFX.magic);
+        audio.sfx(audio.SFX.spellWind);
         ui.setBattleMessage(`The ${enemy.name} strikes your ward and the blow turns back on it. +${dmg} damage done.`);
         return;
       }
@@ -5157,6 +5216,7 @@ async function boot() {
   function endBattle(result) {
     battleState.active = false;
     battleState.ward = false;
+    ui.setWardGlow(false);
     pendingAttackSlot = null; pendingUseItem = false; // never leak an intent out of a fight
 
     const onEnd = battleState.onEnd;

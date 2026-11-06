@@ -1926,6 +1926,11 @@ export function renderBattleEnemies(enemies) {
     portrait.alt = enemy.name;
     applyGlow(portrait, enemy.statusGlow || null);
 
+    // Still frozen from a Nythsurge a moment ago? Re-add the frost (the slot
+    // DOM is rebuilt on every render).
+    if (enemy.frostUntil && enemy.frostUntil > performance.now()) {
+      requestAnimationFrame(() => addFrost(slot, enemy));
+    }
     // Order matters for stacking: shadow (back) -> ring -> portrait (front).
     // The portrait is bottom-justified again (2026-07-31), so the ground shadow
     // + gold ring keep their fixed CSS baseline (top:640) — no per-image
@@ -1951,6 +1956,36 @@ function replayClass(el, cls) {
 }
 
 export function reactEnemyHit(enemy) { replayClass(slotFor(enemy), 'hit'); }
+
+// Nythsurge frost (2026-11-06): an icy layer cut to the portrait's own shape
+// (CSS mask of the same image), screen-blended so the art goes pale blue-white,
+// then thawing over FROST_MS. enemy.frostUntil lets a re-render pick it up again.
+const FROST_MS = 2600;
+export function frostEnemies(enemies) {
+  const until = performance.now() + FROST_MS;
+  for (const e of enemies) { e.frostUntil = until; const s = slotFor(e); if (s) addFrost(s, e); }
+}
+function addFrost(slot, enemy) {
+  const img = slot.querySelector('.enemy-portrait');
+  if (!img || slot.querySelector('.enemy-frost')) return;
+  const left = Math.max(0, enemy.frostUntil - performance.now());
+  if (!left) return;
+  const place = () => {
+    const f = document.createElement('div');
+    f.className = 'enemy-frost';
+    const url = `url("${img.getAttribute('src')}")`;
+    f.style.webkitMaskImage = url;
+    f.style.maskImage = url;
+    f.style.width = `${img.offsetWidth}px`;
+    f.style.height = `${img.offsetHeight}px`;
+    f.style.animationDuration = `${left}ms`;
+    slot.appendChild(f);
+  };
+  if (img.complete && img.offsetWidth) place(); else img.addEventListener('load', place, { once: true });
+}
+
+// Vaelward's screen-edge glow, on while the ward is up.
+export function setWardGlow(on) { $('ward-glow')?.classList.toggle('on', !!on); }
 export function enemyAttackAnim(enemy) { replayClass(slotFor(enemy), 'attacking'); }
 export function shakeScreen() { replayClass($('battle'), 'screen-shake'); }
 

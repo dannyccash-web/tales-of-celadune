@@ -46,6 +46,10 @@ export const SFX = {
   // future spells); miss = a whiffed swing; enemyDeath = an enemy dissolving.
   punch: 'assets/audio/universfield-punch-03-352040.mp3',
   magic: 'assets/audio/rescopicsound-elemental-magic-spell-impact-outgoing-228342.mp3',
+  // Spell sounds (2026-11-06): Vaelward on cast and on every blow it turns
+  // back; Nythsurge on cast.
+  spellWind: 'assets/audio/yodguard-wind-magic-1-378628.mp3',
+  spellWater: 'assets/audio/yodguard-water-magic-1-378619.mp3',
   miss: 'assets/audio/floraphonic-near-miss-swing-whoosh-16-233440.mp3',
   enemyDeath: 'assets/audio/freesound_community-reverb-89603.mp3',
 };

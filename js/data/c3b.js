@@ -1490,6 +1490,16 @@ export default {
   ],
 
   interactables: [
+    // Metallic ore for Durgan's Coldforge armor (2026-11-06): engine-checked
+    // standable and reachable from spawn; glints only with a torch out.
+    {
+      id: 'c3b_ore',
+      x: 2560, y: 260,
+      label: 'Metallic ore',
+      reward: { item: 'metallic_ore', qty: 1, catch: true },
+      sparkle: true,
+      message: 'You pried a chunk of metallic ore loose from the rock.',
+    },
     // Leave the temple back to C3's overworld. FIXED exitTo (2026-09-25), not the
     // generic captured-entry caveReturn every single-mouth cave otherwise uses —
     // this dungeon has THREE levels (C3B/C3C/C3D), and descending to a lower

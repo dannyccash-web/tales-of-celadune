@@ -2010,6 +2010,16 @@ export default {
   ],
 
   interactables: [
+    // Metallic ore for Durgan's Coldforge armor (2026-11-06): engine-checked
+    // standable and reachable from spawn; glints only with a torch out.
+    {
+      id: 'c3c_ore',
+      x: 2120, y: 250,
+      label: 'Metallic ore',
+      reward: { item: 'metallic_ore', qty: 1, catch: true },
+      sparkle: true,
+      message: 'You pried a chunk of metallic ore loose from the rock.',
+    },
     // Up to Level 1 (C3B) — matching coordinates to C3B's own down-stairs.
     {
       id: 'c3c_stairs_up',

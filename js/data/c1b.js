@@ -148,6 +148,16 @@ export default {
   ],
 
   interactables: [
+    // Metallic ore for Durgan's Coldforge armor (2026-11-06): engine-checked
+    // standable and reachable from spawn; glints only with a torch out.
+    {
+      id: 'c1b_ore',
+      x: 1150, y: 1340,
+      label: 'Metallic ore',
+      reward: { item: 'metallic_ore', qty: 1, catch: true },
+      sparkle: true,
+      message: 'You pried a chunk of metallic ore loose from the rock.',
+    },
     {
       id: 'cave_exit',
       x: 1561, y: 2960,

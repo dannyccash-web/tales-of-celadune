@@ -325,6 +325,16 @@ export default {
   // D4 they entered from (main.js's exitCave, via the `caveExit` flag). Placed
   // at the bottom-right entrance mouth, right beside the spawn (Danny).
   interactables: [
+    // Metallic ore for Durgan's Coldforge armor (2026-11-06): engine-checked
+    // standable and reachable from spawn; glints only with a torch out.
+    {
+      id: 'd4b_ore_2',
+      x: 385, y: 1580,
+      label: 'Metallic ore',
+      reward: { item: 'metallic_ore', qty: 1, catch: true },
+      sparkle: true,
+      message: 'You pried a chunk of metallic ore loose from the rock.',
+    },
     {
       id: 'cave_exit',
       x: 2861, y: 2980,
