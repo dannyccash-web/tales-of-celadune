@@ -572,6 +572,51 @@ const ITEMS = {
     defenseBonus: 1,
     price: 15,
   },
+  // ---- COLDFORGE ARMOR (2026-11-06) -------------------------------------------
+  // Durgan Coldforge's own make, sold at the Anvil & Aegis in Kingsreach (B3).
+  // A step up from leather, short of heavy plate: each piece doubles its
+  // leather counterpart's bonus. Blued, frost-etched steel over oxblood
+  // leather, stamped with his anvil-and-snowflake mark.
+  coldforge_helm: {
+    id: 'coldforge_helm',
+    name: 'Coldforge Helm',
+    image: 'assets/images/coldforge_helm.png',
+    description: 'An open-faced half-helm of blued steel, frost-etched across the brow, with an oxblood nape guard. Durgan’s anvil-and-snowflake mark sits above the eyes.',
+    questItem: false,
+    slot: 'head',
+    defenseBonus: 2,
+    price: 40,
+  },
+  coldforge_brigandine: {
+    id: 'coldforge_brigandine',
+    name: 'Coldforge Brigandine',
+    image: 'assets/images/coldforge_brigandine.png',
+    description: 'Oxblood leather riveted over small steel plates, with frost-etched shoulder guards. Far lighter than plate, and far more than leather.',
+    questItem: false,
+    slot: 'clothing',
+    defenseBonus: 2,
+    price: 55,
+  },
+  coldforge_gauntlets: {
+    id: 'coldforge_gauntlets',
+    name: 'Coldforge Gauntlets',
+    image: 'assets/images/coldforge_gauntlets.png',
+    description: 'Oxblood gloves under articulated steel, with flared, frost-etched cuffs. A blade sits in them like it was forged for your hand.',
+    questItem: false,
+    slot: 'hands',
+    attackBonus: 2,
+    price: 45,
+  },
+  coldforge_boots: {
+    id: 'coldforge_boots',
+    name: 'Coldforge Boots',
+    image: 'assets/images/coldforge_boots.png',
+    description: 'Tall, light boots of charcoal leather with frost-etched steel shins and thin, quick soles. Built for moving, not stomping.',
+    questItem: false,
+    slot: 'feet',
+    speedBonus: 2,
+    price: 40,
+  },
   // Lily Farrow's lost-gull quest (C1, 2026-09-10). Feathers are scattered
   // across the village as a trail of clues toward the cave the gull's holed
   // up in — a basic, low-value curio, not a quest item (nothing stops the

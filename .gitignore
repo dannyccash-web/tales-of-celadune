@@ -21,3 +21,4 @@ _*.mjs
 _sync*.tgz
 Claude outputs/
 _magic_preview.jpg
+_cf_preview.jpg

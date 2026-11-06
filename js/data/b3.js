@@ -797,7 +797,7 @@ export default {
     },
     {
       id: 'durgan_coldforge', name: 'Durgan Coldforge', role: 'ARMORER',
-      vendor: true, stock: [{ id: 'leather_hood', qty: 1 }, { id: 'leather_gloves', qty: 1 }, { id: 'leather_boots', qty: 1 }, { id: 'leather_armor', qty: 1 }, { id: 'small_shield', qty: 1 }], gold: 70,
+      vendor: true, stock: [{ id: 'leather_hood', qty: 1 }, { id: 'leather_gloves', qty: 1 }, { id: 'leather_boots', qty: 1 }, { id: 'leather_armor', qty: 1 }, { id: 'small_shield', qty: 1 }, { id: 'coldforge_helm', qty: 1 }, { id: 'coldforge_brigandine', qty: 1 }, { id: 'coldforge_gauntlets', qty: 1 }, { id: 'coldforge_boots', qty: 1 }], gold: 70,
       awayLine: 'Forge is by the east gate. I’m out. Come back.',
       sprite: 'assets/images/durgan_coldforge_overhead.png',
       portrait: 'assets/images/durgan_coldforge.png',
