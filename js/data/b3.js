@@ -40,7 +40,7 @@
 //                   y1384-1532 the high street (B2's y1398-1531)
 //                   y1958-2001 the middle lane (B2's y1968-2031)
 //                   y2468-2531 the southern lane (B2's y2458-2561)
-//                 B2 is still in LOCKED_SCENES, so all four toast.
+//                 Live since B2 was unlocked 2026-11-08.
 //   No top exit (wall, then forest).
 //
 // FAST TRAVEL: a town, so it carries `travel` (the square, between the oak

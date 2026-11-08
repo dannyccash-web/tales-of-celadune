@@ -464,7 +464,7 @@ function loadImages(sources, onProgress) {
 // Scenes that exist but aren't finished yet (2026-10-20, Danny): walking into
 // one gets the usual "isn't ready yet" toast, and they never appear in fast
 // travel. Remove an id from this set to open that scene up.
-const LOCKED_SCENES = new Set(['B1', 'B2']); // B4 opened 2026-11-04, B3 2026-11-05 (Danny)
+const LOCKED_SCENES = new Set(['B1']); // B4 opened 2026-11-04, B3 2026-11-05, B2 2026-11-08 (Danny)
 const SCENES = { D1: sceneD1, D1B: sceneD1B, D2: sceneD2, D3: sceneD3, D4: sceneD4, D4B: sceneD4B, C4: sceneC4, C1: sceneC1, C1B: sceneC1B, C1C: sceneC1C, C1D: sceneC1D, C2: sceneC2, C3: sceneC3, C3B: sceneC3B, C3C: sceneC3C, C3D: sceneC3D, B4: sceneB4, B3: sceneB3, B2: sceneB2, B1: sceneB1 };
 
 async function boot() {
