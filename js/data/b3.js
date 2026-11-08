@@ -32,11 +32,16 @@
 // switchScene maps the crossing proportionally onto the neighbour's band):
 //   right  -> B4  y1408-1501 (out of the east gate; B4's band y1358-1601).
 //   bottom -> C3  x1098-1151 (out of the south gate; C3's band x998-1082).
-//   left   -> B2  y1384-1531 (the high street west to the castle; B2's band
-//                 y1318-1441). B2 is still in LOCKED_SCENES, so it toasts.
-//   Three dirt lanes also run off the WEST edge (y~590-710, ~1920-2000,
-//   ~2420-2530); B2 has nothing to meet them, so their last 40px are blocked
-//   and they dead-end. No top exit (wall, then forest).
+//   left   -> B2, FOUR roads (2026-11-08, Danny's new B2 + B3 art: the two
+//                 towns now meet seamlessly along this edge, cobbles lined up
+//                 pixel for pixel). Each carries `toBand` onto B2's matching
+//                 right-edge run:
+//                   y648-681   the northern road (curves straight south here)
+//                   y1384-1532 the high street (B2's y1398-1531)
+//                   y1958-2001 the middle lane (B2's y1968-2031)
+//                   y2468-2531 the southern lane (B2's y2458-2561)
+//                 B2 is still in LOCKED_SCENES, so all four toast.
+//   No top exit (wall, then forest).
 //
 // FAST TRAVEL: a town, so it carries `travel` (the square, between the oak
 // and the counting house; 60px clear).
@@ -132,7 +137,6 @@ export default {
     { x: 110, y: 620, w: 420, h: 30 },
     { x: 660, y: 620, w: 90, h: 20 },
     { x: 840, y: 620, w: 1050, h: 10 },
-    { x: 0, y: 630, w: 30, h: 50 },
     { x: 830, y: 630, w: 1060, h: 20 },
     { x: 2030, y: 630, w: 970, h: 10 },
     { x: 640, y: 640, w: 120, h: 20 },
@@ -150,7 +154,6 @@ export default {
     { x: 620, y: 670, w: 140, h: 30 },
     { x: 820, y: 670, w: 1120, h: 10 },
     { x: 2040, y: 670, w: 360, h: 10 },
-    { x: 0, y: 680, w: 40, h: 40 },
     { x: 150, y: 680, w: 370, h: 20 },
     { x: 810, y: 680, w: 1140, h: 20 },
     { x: 2050, y: 680, w: 340, h: 10 },
@@ -442,7 +445,6 @@ export default {
     { x: 0, y: 1910, w: 80, h: 10 },
     { x: 510, y: 1910, w: 680, h: 10 },
     { x: 1990, y: 1910, w: 1010, h: 50 },
-    { x: 0, y: 1920, w: 40, h: 90 },
     { x: 530, y: 1920, w: 610, h: 10 },
     { x: 540, y: 1930, w: 600, h: 10 },
     { x: 1930, y: 1930, w: 10, h: 10 },
@@ -470,9 +472,6 @@ export default {
     { x: 1010, y: 2000, w: 60, h: 10 },
     { x: 1280, y: 2000, w: 230, h: 10 },
     { x: 1940, y: 2000, w: 1060, h: 20 },
-    { x: 0, y: 2010, w: 50, h: 10 },
-    { x: 120, y: 2010, w: 10, h: 10 },
-    { x: 200, y: 2010, w: 20, h: 10 },
     { x: 370, y: 2010, w: 110, h: 10 },
     { x: 650, y: 2010, w: 270, h: 10 },
     { x: 1010, y: 2010, w: 50, h: 10 },
@@ -587,7 +586,6 @@ export default {
     { x: 190, y: 2410, w: 100, h: 10 },
     { x: 580, y: 2410, w: 540, h: 10 },
     { x: 1710, y: 2410, w: 10, h: 10 },
-    { x: 0, y: 2420, w: 40, h: 110 },
     { x: 580, y: 2420, w: 530, h: 30 },
     { x: 1230, y: 2420, w: 550, h: 10 },
     { x: 1980, y: 2420, w: 1020, h: 20 },
@@ -612,9 +610,7 @@ export default {
     { x: 160, y: 2520, w: 150, h: 10 },
     { x: 450, y: 2520, w: 630, h: 10 },
     { x: 1200, y: 2520, w: 1800, h: 80 },
-    { x: 0, y: 2530, w: 410, h: 10 },
     { x: 420, y: 2530, w: 660, h: 10 },
-    { x: 0, y: 2540, w: 1080, h: 50 },
     { x: 0, y: 2590, w: 1070, h: 10 },
     { x: 0, y: 2600, w: 1080, h: 40 },
     { x: 1180, y: 2600, w: 1820, h: 140 },
@@ -631,6 +627,13 @@ export default {
     { x: 0, y: 2790, w: 1080, h: 210 },
     { x: 1180, y: 2810, w: 1820, h: 10 },
     { x: 1170, y: 2820, w: 1830, h: 180 },
+    // 2026-11-08: new B3 art — the three west lanes now run off the edge into B2 (re-emitted cells)
+    { x: 0, y: 700, w: 40, h: 20 },
+    { x: 0, y: 1920, w: 60, h: 20 },
+    { x: 0, y: 2420, w: 40, h: 30 },
+    { x: 120, y: 2530, w: 290, h: 10 },
+    { x: 120, y: 2540, w: 960, h: 10 },
+    { x: 0, y: 2550, w: 1080, h: 40 },
   ],
 
   // Doorless landmark labels (one-label rule: move each onto a real NPC or
@@ -1352,6 +1355,9 @@ export default {
   exits: [
     { edge: 'right', yMin: 1408, yMax: 1501, toBand: [1358, 1601], to: 'B4', note: 'out of the east gate, onto the king’s road' },
     { edge: 'bottom', xMin: 1098, xMax: 1151, toBand: [998, 1082], to: 'C3', note: 'out of the south gate, down into Hallowmere Forest' },
-    { edge: 'left', yMin: 1384, yMax: 1531, toBand: [1318, 1441], to: 'B2', note: 'the high street west to the King’s Castle' },
+    { edge: 'left', yMin: 648, yMax: 681, toBand: [648, 681], to: 'B2', note: 'the northern road west into the castle town' },
+    { edge: 'left', yMin: 1384, yMax: 1532, toBand: [1398, 1531], to: 'B2', note: 'the high street west to the King’s Castle' },
+    { edge: 'left', yMin: 1958, yMax: 2001, toBand: [1968, 2031], to: 'B2', note: 'the middle lane west into the castle town' },
+    { edge: 'left', yMin: 2468, yMax: 2531, toBand: [2458, 2561], to: 'B2', note: 'the southern lane west into the castle town' },
   ],
 };

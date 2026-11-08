@@ -22,7 +22,7 @@
 //
 // EXITS (each = this map's own collider-centre run at that edge):
 //   right  -> B2  y1018-1211. ART MISMATCH: B2's road meets its left edge
-//                 lower (B2's band y1218-1511), so both exits carry
+//                 lower (B2's band y1428-1541), so both exits carry
 //                 `toBand` (main.js switchScene): the crossing point is
 //                 mapped proportionally onto the other side's road.
 //   bottom -> C1  x1294-1522 (C1's top band x1350-1550; settleArrival).
@@ -776,7 +776,7 @@ export default {
   npcs: [],
 
   exits: [
-    { edge: 'right', yMin: 1018, yMax: 1211, toBand: [1218, 1511], to: 'B2', note: 'the high road east to the King’s Castle' },
+    { edge: 'right', yMin: 1018, yMax: 1211, toBand: [1428, 1541], to: 'B2', note: 'the high road east to the King’s Castle' },
     { edge: 'bottom', xMin: 1294, xMax: 1522, to: 'C1', note: 'the road south to Tidewrack Harbor' },
   ],
 };
