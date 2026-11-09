@@ -483,6 +483,10 @@ export class World {
     // sum of the two radii (both COLLIDER/2, so < COLLIDER).
     for (const b of [this.player, ...this.npcs]) {
       if (b === self || b.atHome || b.defeated || b.hidden) continue; // a hidden NPC has no body to bump into
+      // Unjam (2026-11-08): an NPC whose walk has stalled is briefly "ghosting"
+      // (see updateRoutine's goto watchdog) and passes through other NPCs. The
+      // player is never ghosted through, either way.
+      if (b !== this.player && self !== this.player && self && (self._ghost > 0 || b._ghost > 0)) continue;
       const dx = x - b.x, dy = y - b.y;
       if (dx * dx + dy * dy < COLLIDER * COLLIDER) {
         out.push({ id: b, cx: b.x, cy: b.y });
@@ -903,6 +907,7 @@ export class World {
     if (!npc.routine) return;
     npc.timer = 0;
     npc.routineIndex = (npc.routineIndex + 1) % npc.routine.length;
+    npc._gotoBest = undefined; npc._gotoNoProg = 0;
   }
 
   // Volume weight (0-0.9) for a door SFX based on how close the player is to
@@ -917,6 +922,12 @@ export class World {
 
   updateRoutine(npc, dt) {
     const step = npc.routine[npc.routineIndex];
+    if (npc._ghost > 0) {
+      npc._ghost -= dt;
+      // Don't stop ghosting while still overlapping someone, or both re-jam.
+      if (npc._ghost <= 0 && this.npcs.some((o) => o !== npc && !o.atHome && !o.defeated && !o.hidden
+          && Math.hypot(o.x - npc.x, o.y - npc.y) < COLLIDER)) npc._ghost = 0.3;
+    }
     switch (step.do) {
       case 'leaveHome': {
         audio.sfx(audio.SFX.door, this.doorVolume(npc.home.door));
@@ -944,9 +955,24 @@ export class World {
         if (npc.timer >= limit) this.advanceRoutine(npc);
         break;
       }
-      case 'goto':
-        if (this.walkToward(npc, step, dt)) this.advanceRoutine(npc);
+      case 'goto': {
+        if (this.walkToward(npc, step, dt)) { this.advanceRoutine(npc); break; }
+        // Progress watchdog (2026-11-08, like goHome's): in a narrow street a
+        // knot of NPCs walking opposite ways can hold each other forever (each
+        // inches sideways, so the stuck timer never fires). If this NPC hasn't
+        // got 2px closer to its waypoint in 4s while another NPC is within reach,
+        // it ghosts through other NPCs (not terrain, not the player) for 2.5s,
+        // then until it's clear of them.
+        const d = Math.hypot(step.x - npc.x, step.y - npc.y);
+        if (npc._gotoBest === undefined || d < npc._gotoBest - 2) { npc._gotoBest = d; npc._gotoNoProg = 0; }
+        else if ((npc._gotoNoProg = (npc._gotoNoProg || 0) + dt) > 4) {
+          npc._gotoNoProg = 0; npc._gotoBest = d;
+          // Only when another NPC is actually in the way; circling a corner alone isn't a jam.
+          if (this.npcs.some((o) => o !== npc && !o.atHome && !o.defeated && !o.hidden
+              && Math.hypot(o.x - npc.x, o.y - npc.y) < COLLIDER + 30)) npc._ghost = 2.5;
+        }
         break;
+      }
       case 'goHome': {
         // Walk to the walkout spot beside the door, then fade in. Arrival is
         // either within 20px, or a PROGRESS watchdog (2026-07-19): track the

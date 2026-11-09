@@ -29,8 +29,8 @@
 //   bottom -> C4  x1338-1441 (identical to c4.js's top band; it is also this
 //                 map's own collider-centre run at the bottom edge).
 //   left   -> B3  y1358-1601 (Kingsreach, unlocked 2026-11-05). The road
-//                 mouth's own run; B3's east-gate band is y1408-1501, so the
-//                 exit carries toBand: [1408, 1501] (B3's maps back).
+//                 mouth's own run; B3's east-gate band is y1408-1531, so the
+//                 exit carries toBand: [1408, 1531] (B3's maps back).
 //   No top (cliff) and no right (barricade) exit.
 //
 // COLLISION — auto-classified, no hand-painted walkable guide (2026-10-16):
@@ -475,6 +475,6 @@ export default {
 
   exits: [
     { edge: 'bottom', xMin: 1338, xMax: 1441, to: 'C4', toBand: [1345, 1425], note: 'the road south into the C4 woods; toBand lands you in C4\u2019s clear column (2026-11-04)' },
-    { edge: 'left', yMin: 1358, yMax: 1601, toBand: [1408, 1501], to: 'B3', note: 'the king’s road west to Kingsreach' },
+    { edge: 'left', yMin: 1358, yMax: 1601, toBand: [1408, 1531], to: 'B3', note: 'the king’s road west to Kingsreach' },
   ],
 };
