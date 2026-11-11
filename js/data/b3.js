@@ -729,12 +729,12 @@ export default {
   npcs: [
     {
       id: 'harlan_brewick', name: 'Harlan Brewick', role: 'TAVERN KEEPER',
-      // Kingsreach's food seller (2026-11-06, Danny): 1-3 of every everyday food,
-      // and the game's 10th chestnut (qty 1, for Mateo). Left out on purpose:
-      // the Moonscale Trout (Darius's rare catch), Perrin's stew (his reward)
-      // and the Cragclaw Eggs (a boss drop); sea bass and crimson sailback too
-      // (2026-11-06, Danny), so Toby's and Perrin's quests still need fishing.
-      vendor: true, stock: [{ id: 'bread', qty: 3 }, { id: 'apple', qty: 3 }, { id: 'cabbage', qty: 2 }, { id: 'corn', qty: 2 }, { id: 'chestnut', qty: 1 }, { id: 'bluegill', qty: 2 }, { id: 'trout', qty: 2 }], gold: 50,
+      // Kingsreach's grocer (2026-11-11, Danny): food only, 1-3 of each, no
+      // bread. The chestnut stays at 1 (the game's 10th, for Mateo). Left out on
+      // purpose, because quests hang on them: the egg (Kwame's pastry; Dame
+      // Eggatha lays the only one), sea bass + crimson sailback (Toby, Perrin),
+      // the Moonscale Trout (Darius), Perrin's stew and the Cragclaw Eggs.
+      vendor: true, stock: [{ id: 'apple', qty: 3 }, { id: 'carrot', qty: 3 }, { id: 'cabbage', qty: 2 }, { id: 'corn', qty: 2 }, { id: 'chestnut', qty: 1 }, { id: 'bluegill', qty: 2 }, { id: 'trout', qty: 1 }], gold: 50,
       awayLine: 'Just stretching my legs, friend. The Tankard’s on the north side of the square. Find me behind the bar and I’ll sort you out.',
       sprite: 'assets/images/harlan_brewick_overhead.png',
       portrait: 'assets/images/harlan_brewick.png',
@@ -759,7 +759,7 @@ export default {
         { do: 'goto', x: 1275, y: 985 },
         { do: 'goHome' },
       ],
-      dialog: { line: 'Welcome to the Gilded Tankard! Sit anywhere that isn’t sticky. What’ll it be?', responses: ['Leave.'] },
+      dialog: { line: 'Welcome to the Gilded Tankard! Sit anywhere that isn’t sticky. And if it’s fresh food you’re after, the larder’s open. Apples, carrots, the lot. What’ll it be?', responses: ['Leave.'] },
       chatter: [
         { q: 'Heard any news?', a: 'Only the news that never changes. The court wizard took the princess, the king shut the roads, and nobody in this city has sold a barrel to a stranger in a month. You’re the first new face through that door since the frost came down off the peaks.' },
         { q: 'How’s business?', a: 'Thin. The road east is barred, the road north is iced, and my best customers are soldiers who drink on credit. There’s a farmer down south who sends me squash, bless her. Without it the stew would be mostly hope.' },
@@ -804,7 +804,9 @@ export default {
     },
     {
       id: 'yasmin_darrowel', name: 'Yasmin Darrowel', role: 'SHOPKEEPER',
-      vendor: true, stock: [{ id: 'fishing_bait', qty: 3 }, { id: 'lockpicks', qty: 2 }, { id: 'torch', qty: 1 }, { id: 'corn', qty: 2 }, { id: 'cabbage', qty: 1 }, { id: 'bread', qty: 2 }], gold: 45,
+      // General goods (2026-11-11, Danny): no food, nothing magical, no
+      // weapons or armour (Durgan and Nkemi cover those).
+      vendor: true, stock: [{ id: 'fishing_bait', qty: 3 }, { id: 'lockpicks', qty: 2 }, { id: 'torch', qty: 1 }, { id: 'health_potion', qty: 2 }, { id: 'fishing_rod', qty: 1 }], gold: 45,
       awayLine: 'My shop’s on the high street, just east of the square. Catch me behind the counter. I don’t haggle in the road. Well, I do, but I don’t enjoy it.',
       sprite: 'assets/images/yasmin_darrowel_overhead.png',
       portrait: 'assets/images/yasmin_darrowel.png',
@@ -833,7 +835,7 @@ export default {
         { do: 'goto', x: 2305, y: 1435 },
         { do: 'goHome' },
       ],
-      dialog: { line: 'Darrowel’s Sundries! Bait, bread, locks, picks for the locks, and a fair price on all of it, if you count fair the way I do. Browse all you like.', responses: ['Leave.'] },
+      dialog: { line: 'Darrowel’s Sundries! Bait, rods, torches, locks, picks for the locks, a potion for the road, and a fair price on all of it, if you count fair the way I do. Browse all you like.', responses: ['Leave.'] },
       chatter: [
         { q: 'How’s trade?', a: 'Since the king sealed the roads? I sell to the same thirty people and they all owe me money. I have the ledger to prove it.' },
         { q: 'Who owes you the most?', a: 'The castle guard, as a body. Rowena Ashgrove, as a person. Don’t tell her I said so. Actually, do.' },

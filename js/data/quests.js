@@ -102,6 +102,12 @@ export default {
   // Wire the completion to whoever ends up reading it there.
   // Mateo Avellaneda (C3, 2026-10-10). State-built dialogue in main.js
   // (buildMateoDialog). Turn in ten chestnuts for an Arcana Potion.
+  // Kwame's pastry for Adaline (D2, 2026-11-11).
+  kwame_pastry: {
+    id: 'kwame_pastry',
+    name: 'A Pastry for Adaline',
+    description: 'Kwame the baker of Millmere is sweet on Adaline Beaumont and wants to bake her his famous honey-cream pastry, but he has no eggs. Bring him an egg, then carry the pastry to Adaline.',
+  },
   mateo_chestnuts: {
     id: 'mateo_chestnuts',
     name: 'Ten Chestnuts for Mateo',

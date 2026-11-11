@@ -260,12 +260,32 @@ const ITEMS = {
     heal: 1,
     price: 1,
   },
-  // Egg (2026-11-11): Dame Eggatha (B3) lays one for every chestnut she's fed.
+  // Carrot (2026-11-11): sold by Harlan Brewick, Kingsreach's grocer.
+  carrot: {
+    id: 'carrot',
+    name: 'Carrot',
+    image: 'assets/images/carrot.png',
+    description: 'A fat orange carrot, still with a bit of earth on it. Crunchy, sweet and good for you. Restores a little health.',
+    questItem: false,
+    slot: 'item',
+    heal: 1,
+    price: 2,
+  },
+  // Kwame's honey-cream pastry (2026-11-11): baked with Dame Eggatha's egg and
+  // carried to Adaline Beaumont (quest kwame_pastry). Can't be eaten or sold.
+  kwame_pastry: {
+    id: 'kwame_pastry',
+    name: 'Kwame’s Honey-Cream Pastry',
+    image: 'assets/images/pastry.png',
+    description: 'Kwame’s famous honey-cream pastry, still warm and smelling of butter and honey. It is for Adaline Beaumont, and it would be a crime to eat it.',
+    questItem: true,
+  },
+  // Egg (2026-11-11): Dame Eggatha (B3) lays exactly one, for a chestnut.
   egg: {
     id: 'egg',
     name: 'Egg',
     image: 'assets/images/egg.png',
-    description: 'A warm brown egg, laid by Dame Eggatha in exchange for a chestnut and handed over with enormous dignity. Restores a little health.',
+    description: 'A warm brown egg, laid by Dame Eggatha in exchange for a chestnut and handed over with enormous dignity. She will not be laying another. Restores a little health.',
     questItem: false,
     slot: 'item',
     heal: 2,

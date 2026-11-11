@@ -1591,6 +1591,33 @@ async function boot() {
       return true;
     }
     if (effect.sorchaMenu) { ui.updateDialogContent(buildVendorDialog(npc)); return true; }
+    // ---- Kwame's pastry for Adaline (D2, 2026-11-11) ----
+    if (effect.kwameMenu) { ui.updateDialogContent(buildVendorDialog(npc)); return true; }
+    if (effect.kwameOffer) {
+      ui.updateDialogContent({ line: KWAME_OFFER, responses: ['I’ll find you an egg.', 'Not right now.'], responseEffects: [{ kwameAccept: true }, { kwameMenu: true }] });
+      return true;
+    }
+    if (effect.kwameAccept) {
+      startQuest('kwame_pastry');
+      ui.updateDialogContent({ line: KWAME_ACCEPT, responses: ['Leave.'] });
+      return true;
+    }
+    if (effect.kwameTurnIn) {
+      removeItem('egg', 1, true);
+      addItem('kwame_pastry', 1, true);
+      ui.showReceivedItem(ITEMS.kwame_pastry); // the reveal shows what you're now carrying
+      requestAutosave();
+      ui.updateDialogContent({ line: KWAME_BAKED, responses: ['I’ll take it to her.'] });
+      return true;
+    }
+    if (effect.adalinePastry) {
+      removeItem('kwame_pastry', 1, true);
+      ui.showGaveItem(ITEMS.kwame_pastry);
+      completeQuest('kwame_pastry');
+      requestAutosave();
+      ui.updateDialogContent({ line: ADALINE_DELIGHTED, responses: ['Leave.'] });
+      return true;
+    }
     // ---- Durgan Coldforge (2026-11-06) ----
     if (effect.durganMenu) { ui.updateDialogContent(buildVendorDialog(npc)); return true; }
     if (effect.durganOffer) {
@@ -2176,7 +2203,7 @@ async function boot() {
       const C = CHICKENS[id];
       let line;
       if (id === 'dame_eggatha') {
-        line = eggathaFed ? C.feedAgain : C.feedFirst;
+        line = C.feedFirst; // only ever reached once: after that she refuses (eggathaDone)
         eggathaFed = true;
         addItem('egg', 1, true);
         ui.showReceivedItem(ITEMS.egg);
@@ -2187,6 +2214,12 @@ async function boot() {
       }
       requestAutosave();
       ui.updateDialogContent({ line, responses: [C.options[0][0], C.options[1][0], 'Leave.'], responseEffects: [{ followUp: C.options[0][1] }, { followUp: C.options[1][1] }, null] });
+      return true;
+    }
+    // Dame Eggatha lays ONE egg, ever (2026-11-11, Danny). Offer her another
+    // chestnut and she declines it; the chestnut stays in your bag.
+    if (effect.eggathaDone) {
+      ui.updateDialogContent({ line: CHICKENS.dame_eggatha.done, responses: ['Leave.'] });
       return true;
     }
     if (effect.noChestnut) {
@@ -3595,6 +3628,19 @@ async function boot() {
         responseEffects.unshift({ followUp: 'Still empty-handed? A longsword won’t forge itself out of good intentions. Bring me some metallic ore — you’ll find it in the deep places, if you’ve the nerve.' });
       }
     }
+    // Kwame's pastry for Adaline (2026-11-11, Danny). Offer, nudge, egg
+    // turn-in (he bakes it and hands it over), then "take it to her".
+    if (npc.id === 'kwame') {
+      const st = questStatus('kwame_pastry');
+      const has = (id) => inventory.some((it) => it.id === id);
+      let opt = null;
+      if (st === 'none') opt = ['You seem distracted.', { kwameOffer: true }];
+      else if (st === 'active' && has('kwame_pastry')) opt = ['About the pastry…', { followUp: KWAME_GO_ON }];
+      else if (st === 'active' && has('egg')) opt = ['I’ve brought you an egg.', { kwameTurnIn: true }];
+      else if (st === 'active') opt = ['About that egg…', { followUp: KWAME_WAITING }];
+      if (opt) { responses.unshift(opt[0]); responseEffects.unshift(opt[1]); }
+      if (st === 'completed') return withChatter({ line: KWAME_AFTER, responses, responseEffects }, npc);
+    }
     // Nkemi Vesper, the arcanist (2026-11-05): Lily's stone and Ysra's staff.
     if (npc.id === 'nkemi_vesper') {
       const has = (id) => inventory.some((it) => it.id === id);
@@ -4047,9 +4093,9 @@ async function boot() {
   // Sir Clucksworth (rooster) and Dame Eggatha (hen), each in a pen. Same
   // shape as Gaffer/Cinder/the thrumhorn: two flavor options, a feed option
   // that's ALWAYS on the list (denied sound + a line without a chestnut), and
-  // Leave. Each eats a chestnut; Eggatha lays an egg for every one. The
-  // persisted clucksworthFed / eggathaFed flags only change their greeting
-  // and feeding lines.
+  // Leave. Each eats a chestnut. Eggatha lays ONE egg, the first time only
+  // (2026-11-11, Danny); after that she turns chestnuts down. The persisted
+  // clucksworthFed / eggathaFed flags drive that and their greetings.
   const CHICKENS = {
     sir_clucksworth: {
       line: 'A rooster of tremendous self-regard is patrolling his side of the fence. He stops, plants himself square in front of you, puffs up to roughly twice his size and fixes you with one furious orange eye. This is his pen. This is his garden. Going by his posture, this is also his town, and the king is here on sufferance.',
@@ -4072,7 +4118,7 @@ async function boot() {
       ],
       feed: 'Offer her a chestnut.',
       feedFirst: 'You hold out the chestnut. Dame Eggatha inspects it from three angles, decides it will do, and accepts it with a single delicate peck. She eats it in small, ladylike bites. Then she rises, turns round twice, settles, makes a long, strained, deeply dignified noise that neither of you will ever mention again, and stands up. There is an egg. She nudges it to your side of the fence with her beak, warm and perfect, and looks away as though the whole business were beneath her.',
-      feedAgain: 'Dame Eggatha accepts the chestnut, eats it and goes about her business with the brisk efficiency of a professional. A minute later there is an egg on your side of the fence, and she is pretending not to know how it got there.',
+      done: 'Dame Eggatha looks at the chestnut. She looks at you. Then she turns her back with tremendous finality and settles onto her nest. One egg. She has made her contribution to this town, and she does not intend to repeat herself.',
       noChestnut: 'You come up empty-handed. Dame Eggatha looks at your hands, then at you, then settles very firmly onto her nest with the air of a bank closing its doors for the day.',
     },
   };
@@ -4083,7 +4129,8 @@ async function boot() {
     return {
       line: fed ? C.lineFed : C.line,
       responses: [C.options[0][0], C.options[1][0], C.feed, 'Leave.'],
-      responseEffects: [{ followUp: C.options[0][1] }, { followUp: C.options[1][1] }, hasChestnut ? { feedChicken: id } : { noChestnut: id }, null],
+      responseEffects: [{ followUp: C.options[0][1] }, { followUp: C.options[1][1] },
+        !hasChestnut ? { noChestnut: id } : (id === 'dame_eggatha' && eggathaFed) ? { eggathaDone: true } : { feedChicken: id }, null],
     };
   }
 
@@ -4183,6 +4230,31 @@ async function boot() {
   }
   // Adds "Deliver Mirelle's crate" to the current leg's tavern keeper.
   // A shop vendor only takes it behind the counter (Bram used to work that way).
+  // ---- Kwame's pastry for Adaline (D2, 2026-11-11, Danny) ----
+  // Adaline Beaumont (the seamstress) is sweet on Kwame the baker and doesn't
+  // know if he feels the same. He does: he wants to give her his famous
+  // pastry but has no eggs. Bring him an egg (Dame Eggatha in Kingsreach lays
+  // the only one), he bakes it and hands it to you, you take it to Adaline.
+  // Quest `kwame_pastry`; the pastry is a quest item, so "baked" is just
+  // "carrying it". No reward beyond the scene, per the brief.
+  const KWAME_OFFER = 'Distracted? Me? No. Well. Yes. It’s Adaline — Adaline Beaumont, the seamstress. She walks past the bakery every morning, and every morning I mean to say something and every morning I say “good bread today” like a fool. I had it all planned. My honey-cream pastry, the one folk come from Tidewrack for. I’d hand it to her and the pastry would say what I can’t. Only I’m out of eggs. Not one in the village. Can’t make it without an egg, and I can’t make it with a substitute, not for her.';
+  const KWAME_ACCEPT = 'You would? Bless you. One egg, that’s all it needs. I’ll keep the oven hot.';
+  const KWAME_WAITING = 'No egg yet? I keep telling myself it’s for the best, that she’d only laugh. Then she walks past the window and I’m back to wishing I had one.';
+  const KWAME_BAKED = 'An egg! A real one! Give me a moment. Don’t go anywhere. … There. Honey-cream, still warm, the best I’ve ever made. I can’t give it to her myself, my hands are shaking just thinking about it. Would you take it to her? Don’t tell her I said any of this. Actually, do. No, don’t. Just give it to her.';
+  const KWAME_GO_ON = 'Go on, take it to her before it cools! She’ll be at home or out walking past the bakery. Mostly walking past the bakery.';
+  const KWAME_AFTER = 'She came by this morning. Didn’t buy a thing. Just stood at the counter and talked for an hour while the second batch burned. Best morning of my life.';
+  const ADALINE_DELIGHTED = 'For me? From Kwame? Oh. Oh, it’s his honey-cream, he never makes this for anyone, the whole village begs and he never… It’s still warm. He made it this morning. For me. I have to sit down. No, I have to stand up, I have to go to the bakery, I have to — is my hair all right? Don’t answer that. Thank you. Thank you a thousand times. Now get out of my way, I’ve somewhere to be.';
+  function withPastryDelivery(dialog, npc) {
+    if (npc.id !== 'adaline') return dialog;
+    if (questStatus('kwame_pastry') === 'completed') return { ...dialog, line: 'Every morning now he saves me the first one out of the oven. I am going to have to let out every dress I own, and I could not care less.' };
+    if (questStatus('kwame_pastry') !== 'active' || !inventory.some((it) => it.id === 'kwame_pastry')) return dialog;
+    const responses = [...dialog.responses];
+    const effects = responses.map((_, i) => dialog.responseEffects?.[i] ?? null);
+    responses.unshift('Kwame asked me to give you this.');
+    effects.unshift({ adalinePastry: true });
+    return { ...dialog, responses, responseEffects: effects };
+  }
+
   function withVegDelivery(dialog, npc) {
     const run = MIRELLE_RUNS[mirelleStage - 1];
     if (!run || !run.keeper || run.keeper !== npc.id) return dialog;
@@ -4621,6 +4693,7 @@ async function boot() {
     else if (npc.vendor) dialog = buildVendorDialog(npc); // adds its own chatter
     else dialog = withBlessing(withChatter(resolveNpcDialog(npc, isQuestReady), npc), npc);
     dialog = withVegDelivery(dialog, npc);
+    dialog = withPastryDelivery(dialog, npc);
     // Any Bramblekin (guards or Chief) parley shows the camp backdrop (2026-07-22).
     const background = (npc.bramblekin || npc.id === 'bramblekin_chief') ? BRAMBLEKIN_BG : npc.background;
     // `lockDialog` rides on the built dialog (Orris's ambush) — ui.js reads it
