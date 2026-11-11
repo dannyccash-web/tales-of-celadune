@@ -260,6 +260,17 @@ const ITEMS = {
     heal: 1,
     price: 1,
   },
+  // Egg (2026-11-11): Dame Eggatha (B3) lays one for every chestnut she's fed.
+  egg: {
+    id: 'egg',
+    name: 'Egg',
+    image: 'assets/images/egg.png',
+    description: 'A warm brown egg, laid by Dame Eggatha in exchange for a chestnut and handed over with enormous dignity. Restores a little health.',
+    questItem: false,
+    slot: 'item',
+    heal: 2,
+    price: 4,
+  },
   // Animal treats (2026-10-12, Danny). Each animal wants its own: the
   // thrumhorn corn, Gaffer a cabbage, Cinder an apple. Both are edible too.
   cabbage: {

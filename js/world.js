@@ -385,11 +385,13 @@ export class World {
 
   nearestNpcInRange() {
     let best = null;
-    let bestDist = INTERACT_RANGE;
+    let bestDist = Infinity;
     for (const npc of this.npcs) {
       if (npc.atHome || npc.defeated || npc.creature || npc.hidden) continue; // creatures attack, not talk; hidden ones aren't there yet
       const d = Math.hypot(npc.x - this.player.x, npc.y - this.player.y);
-      if (d < bestDist) { best = npc; bestDist = d; }
+      // `reach` (2026-11-11): an npc can be talked to from further than
+      // INTERACT_RANGE, e.g. B3's chickens, spoken to over their pen fence.
+      if (d < (npc.reach || INTERACT_RANGE) && d < bestDist) { best = npc; bestDist = d; }
     }
     return best;
   }

@@ -82,6 +82,10 @@ export const DIALOGUE_SFX = {
   tovan: 'assets/audio/mrstokes302-hmmm-sound-male-sfx-mrstokes302-420028.mp3',
   nera: 'assets/audio/u_xg7ssi08yr-female-ah-ha-389835.mp3',
   thrumhorn: 'assets/audio/thrumhorn_sound.mp3',
+  // Kingsreach's chickens (2026-11-11). Also played now and then while the
+  // player is near them (main.js chickenCalls, half volume at most).
+  sir_clucksworth: 'assets/audio/dragon-studio-rooster-crowing-364473.mp3',
+  dame_eggatha: 'assets/audio/digitalstore07-chicken-430403.mp3',
 
   // D2 village (2026-07-16). Three male + three female "hmm/reaction" clips
   // (Danny's picks), spread ~3 apiece across the 9 men and 9 women so the

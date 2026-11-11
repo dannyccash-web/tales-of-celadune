@@ -1007,7 +1007,7 @@ async function boot() {
         inventory: inventory.map((e) => ({ ...e })),
         equipment: { ...equipment },
         quests: quests.map((q) => ({ ...q })),
-        flags: { campQuestDone, campHostile, campTollTier, gafferHappy, thrumhornFed, orrisRescued, orrisDeparted, wellCoinThrown, wellDrinks, vegetableDeliveredToTavern, mirelleStage, mirelleOutcome, calderToldStory, calderToldDangers, maraMet, maraToldTruth, lilyGullThanked, magicRevealed, maraHollowmastRescued, lockboxAcceptedFrom, lockboxGivenTo , ferrySide, lakewardenPaid, arjunMet, nkemiStone, nkemiStaff, visitedTowns: [...visitedTowns] },
+        flags: { campQuestDone, campHostile, campTollTier, gafferHappy, thrumhornFed, clucksworthFed, eggathaFed, orrisRescued, orrisDeparted, wellCoinThrown, wellDrinks, vegetableDeliveredToTavern, mirelleStage, mirelleOutcome, calderToldStory, calderToldDangers, maraMet, maraToldTruth, lilyGullThanked, magicRevealed, maraHollowmastRescued, lockboxAcceptedFrom, lockboxGivenTo , ferrySide, lakewardenPaid, arjunMet, nkemiStone, nkemiStaff, visitedTowns: [...visitedTowns] },
         caveReturn, // where to exit to if saved inside a cave/dungeon
         worlds: snapshotWorlds(),
       };
@@ -1107,7 +1107,7 @@ async function boot() {
     quests.length = 0;
     campTollPaid = false; campEntered = false; campQuestDone = false;
     campHostile = false; campEntryGate = null; campTollTier = 0;
-    gafferHappy = false; thrumhornFed = false; orrisRescued = false; orrisDeparted = false; orrisLeaving = false; wellCoinThrown = false; wellDrinks = 0; vegetableDeliveredToTavern = false; mirelleStage = 1; mirelleOutcome = null;
+    gafferHappy = false; thrumhornFed = false; clucksworthFed = false; eggathaFed = false; orrisRescued = false; orrisDeparted = false; orrisLeaving = false; wellCoinThrown = false; wellDrinks = 0; vegetableDeliveredToTavern = false; mirelleStage = 1; mirelleOutcome = null;
     ferrySide = 'mainland'; // the C3 raft starts moored on the near shore
     lakewardenPaid = false;
     calderToldStory = false; calderToldDangers = false; maraMet = false; maraToldTruth = null;
@@ -1150,7 +1150,7 @@ async function boot() {
     const f = data.flags || {};
     campQuestDone = !!f.campQuestDone; campHostile = !!f.campHostile;
     campTollTier = f.campTollTier || 0;
-    gafferHappy = !!f.gafferHappy; thrumhornFed = !!f.thrumhornFed; orrisRescued = !!f.orrisRescued; orrisDeparted = !!f.orrisDeparted; orrisLeaving = false; wellCoinThrown = !!f.wellCoinThrown;
+    gafferHappy = !!f.gafferHappy; thrumhornFed = !!f.thrumhornFed; clucksworthFed = !!f.clucksworthFed; eggathaFed = !!f.eggathaFed; orrisRescued = !!f.orrisRescued; orrisDeparted = !!f.orrisDeparted; orrisLeaving = false; wellCoinThrown = !!f.wellCoinThrown;
     ferrySide = f.ferrySide === 'island' ? 'island' : 'mainland';
     lakewardenPaid = !!f.lakewardenPaid;
     wellDrinks = f.wellDrinks || 0;
@@ -1398,6 +1398,8 @@ async function boot() {
   let orrisDeparted = false; // he's enchanted one weapon and left for Kingsreach (2026-10-20) — persisted
   let orrisLeaving = false;  // set by applyEnchant; he goes the moment that dialog closes
   let thrumhornFed = false; // C2's thrumhorn has been fed corn (2026-09-16) — persisted like gafferHappy
+  let clucksworthFed = false; // B3's rooster has had a chestnut (2026-11-11) — persisted; changes his greeting
+  let eggathaFed = false;     // B3's hen has had a chestnut (2026-11-11) — persisted; changes her greeting
 
   // Calder Rusk's conversation progress (2026-07-25): he only offers his
   // keepsake quest once the player has heard BOTH his backstory and his warning
@@ -2162,6 +2164,34 @@ async function boot() {
         line: 'Cinder sniffs your empty hand. Then your other hand. Then your pockets, your satchel and, to be thorough, your ear. Finding no apple anywhere, she lets out a long, heavy sigh through her nose — not cross, just quietly let down, which is somehow worse — and rests her chin on your shoulder anyway.',
         responses: ['Leave.'],
       });
+      return true;
+    }
+    // Kingsreach's chickens (2026-11-11): a chestnut each. Clucksworth crows
+    // about it; Eggatha lays an egg (the RECEIVED reveal shows the egg, since
+    // the reveal slot only holds one item).
+    if (effect.feedChicken) {
+      const id = effect.feedChicken;
+      removeItem('chestnut', 1);
+      audio.sfx(audio.DIALOGUE_SFX[id]); // fed animals make their sound
+      const C = CHICKENS[id];
+      let line;
+      if (id === 'dame_eggatha') {
+        line = eggathaFed ? C.feedAgain : C.feedFirst;
+        eggathaFed = true;
+        addItem('egg', 1, true);
+        ui.showReceivedItem(ITEMS.egg);
+      } else {
+        line = clucksworthFed ? C.feedAgain : C.feedFirst;
+        clucksworthFed = true;
+        ui.showGaveItem(ITEMS.chestnut);
+      }
+      requestAutosave();
+      ui.updateDialogContent({ line, responses: [C.options[0][0], C.options[1][0], 'Leave.'], responseEffects: [{ followUp: C.options[0][1] }, { followUp: C.options[1][1] }, null] });
+      return true;
+    }
+    if (effect.noChestnut) {
+      audio.sfx(audio.SFX.denied);
+      ui.updateDialogContent({ line: CHICKENS[effect.noChestnut].noChestnut, responses: ['Leave.'] });
       return true;
     }
     if (effect.orrisFightNow) { startOrrisAmbush(); return true; }
@@ -4013,6 +4043,50 @@ async function boot() {
     };
   }
 
+  // ---- Kingsreach's chickens (B3, 2026-11-11, Danny) ----
+  // Sir Clucksworth (rooster) and Dame Eggatha (hen), each in a pen. Same
+  // shape as Gaffer/Cinder/the thrumhorn: two flavor options, a feed option
+  // that's ALWAYS on the list (denied sound + a line without a chestnut), and
+  // Leave. Each eats a chestnut; Eggatha lays an egg for every one. The
+  // persisted clucksworthFed / eggathaFed flags only change their greeting
+  // and feeding lines.
+  const CHICKENS = {
+    sir_clucksworth: {
+      line: 'A rooster of tremendous self-regard is patrolling his side of the fence. He stops, plants himself square in front of you, puffs up to roughly twice his size and fixes you with one furious orange eye. This is his pen. This is his garden. Going by his posture, this is also his town, and the king is here on sufferance.',
+      lineFed: 'Sir Clucksworth spots you, remembers the chestnut, and recalculates. He still puffs himself up, out of habit, but he does it at you sideways now, which from a rooster is very nearly a bow.',
+      options: [
+        ['Salute him.', 'You give the rooster a crisp salute. Sir Clucksworth accepts it as no more than his due, and returns it in his own way: he throws back his head, flaps once and crows at you from a distance of about a foot. Your ears ring. Somewhere across the square a shutter bangs open and someone shouts something unrepeatable. He looks enormously pleased with himself.'],
+        ['Ask if he’s really a knight.', 'He tilts his head one way. He tilts it the other. Then he makes a slow, deliberate circuit of the pen, chest out, spurs flashing, pausing at each fence post as if inspecting the guard. When he arrives back in front of you he says nothing, because he is a rooster. But you get the strong impression the answer is yes, and that you ought to have known.'],
+      ],
+      feed: 'Offer him a chestnut.',
+      feedFirst: 'You hold the chestnut out over the fence. Sir Clucksworth regards it with deep suspicion, then with dawning respect, then snatches it from your fingers so fast you never see his head move. He drops it, pecks it twice to show it who’s in charge, swallows it in one heroic gulp and crows a victory loud enough to rattle the tavern windows. You have, it seems, been knighted. Or possibly he has knighted himself again. It’s hard to say.',
+      feedAgain: 'Sir Clucksworth takes the chestnut with the air of a lord accepting tribute, gulps it down and crows. Then he crows again, in case anyone missed the first one.',
+      noChestnut: 'You pat your pockets and come up with nothing. Sir Clucksworth watches the whole performance, unimpressed, then turns his back on you, fluffs his tail feathers pointedly in your direction and strolls off to inspect a pebble he finds more promising.',
+    },
+    dame_eggatha: {
+      line: 'A plump, immaculately groomed hen settles herself against the fence and looks you up and down, the way a duchess looks at a muddy boot. She clucks once, softly. It is not an invitation. It is a verdict.',
+      lineFed: 'Dame Eggatha sees you coming and makes a pleased, rolling sound deep in her throat, then glances pointedly at your pockets. She is fond of you. She is fonder of what you sometimes carry.',
+      options: [
+        ['Curtsy to her.', 'You attempt a curtsy. It is not a good curtsy. Dame Eggatha watches it with her head on one side, lets the silence stretch until it becomes painful, then gives one short cluck that conveys, quite clearly, that she has seen worse, though not recently, and never from anyone she respected.'],
+        ['Ask if she has any eggs.', 'At the word “eggs” Dame Eggatha draws herself up to her full height and gives you a look of such withering offence that you take a step back from the fence. Eggs are not handed out to strangers. Eggs are earned. She settles back down, very deliberately, and arranges her feathers like a lady closing a jewellery box. Though she does, you notice, give your pockets a long, thoughtful look.'],
+      ],
+      feed: 'Offer her a chestnut.',
+      feedFirst: 'You hold out the chestnut. Dame Eggatha inspects it from three angles, decides it will do, and accepts it with a single delicate peck. She eats it in small, ladylike bites. Then she rises, turns round twice, settles, makes a long, strained, deeply dignified noise that neither of you will ever mention again, and stands up. There is an egg. She nudges it to your side of the fence with her beak, warm and perfect, and looks away as though the whole business were beneath her.',
+      feedAgain: 'Dame Eggatha accepts the chestnut, eats it and goes about her business with the brisk efficiency of a professional. A minute later there is an egg on your side of the fence, and she is pretending not to know how it got there.',
+      noChestnut: 'You come up empty-handed. Dame Eggatha looks at your hands, then at you, then settles very firmly onto her nest with the air of a bank closing its doors for the day.',
+    },
+  };
+  function buildChickenDialog(id) {
+    const C = CHICKENS[id];
+    const fed = id === 'dame_eggatha' ? eggathaFed : clucksworthFed;
+    const hasChestnut = inventory.some((it) => it.id === 'chestnut');
+    return {
+      line: fed ? C.lineFed : C.line,
+      responses: [C.options[0][0], C.options[1][0], C.feed, 'Leave.'],
+      responseEffects: [{ followUp: C.options[0][1] }, { followUp: C.options[1][1] }, hasChestnut ? { feedChicken: id } : { noChestnut: id }, null],
+    };
+  }
+
   // ---- Mirelle's vegetable run (D3, reworked 2026-11-03, Danny) ----
   // Three legs: a crate to the tavern in Millmere, then (if she was paid)
   // Tidewrack, then Kingsreach. After each delivery the keeper pays the
@@ -4528,6 +4602,7 @@ async function boot() {
     else if (npc.id === 'edmund_fairlock') dialog = buildEdmundDialog(npc);
     else if (npc.id === 'arjun_talwar') dialog = buildArjunDialog(npc);
     else if (npc.id === 'cinder') dialog = buildCinderDialog();
+    else if (npc.id === 'sir_clucksworth' || npc.id === 'dame_eggatha') dialog = buildChickenDialog(npc.id);
     else if (npc.id === 'mara_vellorne') dialog = buildMaraDialog();
     else if (npc.id === 'calder_rusk') dialog = buildCalderDialog(npc);
     else if (npc.id === 'mara_hollowmast') dialog = buildMaraHollowmastDialog();
@@ -5726,6 +5801,31 @@ async function boot() {
     return 1 - t * t * (3 - 2 * t);
   }
 
+  // Animal calls (2026-11-11, Danny): an npc with `call: { every: [lo, hi],
+  // range }` plays its DIALOGUE_SFX every lo-hi seconds while the player is
+  // within `range`. Loudest (half the dialogue volume, which plays at 1.0)
+  // within ~150px, fading to nothing at `range`. Paused while any modal is
+  // open, so it never talks over a dialog or a battle. First used by B3's
+  // chickens.
+  function animalCalls(dt) {
+    for (const npc of world.npcs) {
+      if (!npc.call || npc.atHome || npc.defeated || npc.hidden) continue;
+      const src = audio.DIALOGUE_SFX[npc.id];
+      if (!src) continue;
+      const [lo, hi] = npc.call.every || [10, 20];
+      if (npc._callT == null) npc._callT = lo * 0.3 + Math.random() * hi; // stagger the first call
+      npc._callT -= dt;
+      if (npc._callT > 0) continue;
+      npc._callT = lo + Math.random() * (hi - lo);
+      const range = npc.call.range || 1000, NEAR = 150;
+      const d = Math.hypot(npc.x - world.player.x, npc.y - world.player.y);
+      if (d >= range) continue;
+      const t = Math.max(0, Math.min(1, (d - NEAR) / (range - NEAR)));
+      const w = 0.5 * (1 - t * t * (3 - 2 * t));
+      if (w > 0.02) audio.sfx(src, w);
+    }
+  }
+
   function frame(now) {
     const dt = Math.min((now - last) / 1000, 0.05);
     last = now;
@@ -5768,6 +5868,7 @@ async function boot() {
     // still plays while the player steps on and off the raft. One frame of
     // camera lag against the new position is imperceptible at 60fps.
     if (!modalLock) maybeCallFerry();
+    if (!modalLock) animalCalls(dt);
     if (orrisLeaving && !ui.isDialogOpen()) { orrisLeaving = false; hideOrris(); requestAutosave(); }
     if (!(ferry?.empty && modalLock)) updateFerry(dt); // a fetch pauses with the world; a ride never has a modal open
     world.render();
