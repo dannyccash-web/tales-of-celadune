@@ -29,10 +29,10 @@
 //              y1398-1531 the high street (B3's y1384-1532)
 //              y1968-2031 the middle lane (B3's y1898-2001)
 //              y2458-2561 the southern road past the fountain (B3's y2468-2581)
-//   left   -> B1  y1448-1541 (B1's road meets its right edge higher, y1018-1211;
-//                 both exits carry toBand). The other two west lanes
-//                 (y~632-705 and y~1880-1965) have nothing to meet them in B1,
-//                 so their last 40px are blocked and they dead-end.
+//   left   -> B1  three roads (2026-11-13: Danny's new B1 art meets all
+//                 three): y638-682, y1448-1542, y1888-1962, each with toBand
+//                 onto B1's matching road. The 40px edge pins that used to
+//                 dead-end the two lanes are gone.
 //   top    -> A2  x1418-1521 through the north gate — STUB (A2 isn't built; toast).
 //   No bottom exit (outer wall, then forest; C2 has no top exit either).
 // Every edge was checked: no reachable ground touches an edge outside a band.
@@ -113,7 +113,6 @@ export default {
     { x: 2240, y: 600, w: 760, h: 10 },
     { x: 1390, y: 610, w: 140, h: 10 },
     { x: 2260, y: 610, w: 740, h: 10 },
-    { x: 0, y: 620, w: 40, h: 80 },
     { x: 80, y: 620, w: 70, h: 10 },
     { x: 180, y: 620, w: 540, h: 10 },
     { x: 1270, y: 620, w: 340, h: 10 },
@@ -283,7 +282,6 @@ export default {
     { x: 450, y: 1830, w: 2090, h: 30 },
     { x: 0, y: 1860, w: 330, h: 10 },
     { x: 440, y: 1860, w: 2100, h: 50 },
-    { x: 0, y: 1870, w: 40, h: 110 },
     { x: 90, y: 1870, w: 190, h: 10 },
     { x: 450, y: 1910, w: 2090, h: 20 },
     { x: 2690, y: 1910, w: 310, h: 10 },
@@ -497,7 +495,9 @@ export default {
     { edge: 'right', yMin: 1398, yMax: 1531, toBand: [1384, 1532], to: 'B3', note: 'the high street east into Kingsreach' },
     { edge: 'right', yMin: 1968, yMax: 2031, toBand: [1898, 2001], to: 'B3', note: 'the middle lane east into Kingsreach' },
     { edge: 'right', yMin: 2458, yMax: 2561, toBand: [2468, 2581], to: 'B3', note: 'the southern road east into Kingsreach' },
-    { edge: 'left', yMin: 1448, yMax: 1541, toBand: [1018, 1211], to: 'B1', note: 'the road west to Stonewick' },
+    { edge: 'left', yMin: 638, yMax: 682, toBand: [655, 685], to: 'B1', note: 'the northern lane west to Stonewick' },
+    { edge: 'left', yMin: 1448, yMax: 1542, toBand: [1465, 1525], to: 'B1', note: 'the road west to Stonewick' },
+    { edge: 'left', yMin: 1888, yMax: 1962, toBand: [1895, 1945], to: 'B1', note: 'the southern lane west to Stonewick' },
     { edge: 'top', xMin: 1418, xMax: 1521, to: 'A2', note: 'the road north through the gate into the mountains' },
   ],
 };

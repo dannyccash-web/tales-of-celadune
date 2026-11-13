@@ -157,7 +157,7 @@ export default {
       x: 1490, y: 1340,
       range: 100,
       caveExit: true,
-      exitTo: { x: 512, y: 1450 }, // beside the cargo hatch on C1's redrawn ship (2026-10-20)
+      exitTo: { x: 525, y: 1450 }, // beside the cargo hatch on C1's redrawn ship (2026-10-20; x512 -> 525 on 2026-11-13: the 10-30 deck markup put 512 just inside the hatch rect)
       label: 'Top Deck',
     },
     // Ladder down to the bilge/bottom deck (C1D), one level further down the

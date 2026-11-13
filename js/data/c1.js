@@ -141,7 +141,7 @@ export default {
   spawn: { x: 1500, y: 2900 },
 
   obstacles: [
-    { x: 0, y: 0, w: 1300, h: 25 },
+    { x: 0, y: 0, w: 1225, h: 25 }, // split 2026-11-13: new C1 art moved the trail mouth west
     { x: 1475, y: 0, w: 1525, h: 25 },
     { x: 0, y: 25, w: 1050, h: 25 },
     { x: 1525, y: 25, w: 1475, h: 50 },
@@ -514,7 +514,6 @@ export default {
     { x: 600, y: 2600, w: 100, h: 275, note: 'new art 2026-10-30' },
     // new art 2026-10-30: opened (art removed the obstacle): x1150-1275 y2825-3000; x1950-2125 y2875-3000; x1700-1775 y2925-2975
     // --- Danny markup 2026-10-30: Danny's collision markup (blue = walkable, yellow = blocked), applied on 25px cells ---
-    { x: 1325, y: 25, w: 25, h: 50, note: 'Danny markup 2026-10-30' },
     { x: 1150, y: 50, w: 100, h: 50, note: 'Danny markup 2026-10-30' },
     { x: 1750, y: 75, w: 50, h: 25, note: 'Danny markup 2026-10-30' },
     { x: 1200, y: 100, w: 50, h: 25, note: 'Danny markup 2026-10-30' },
@@ -879,7 +878,7 @@ export default {
   // for a safe margin).
   exits: [
     { edge: 'bottom', xMin: 1375, xMax: 1625, to: 'D1', note: 'the coastal trail back down to the cove' },
-    { edge: 'top', xMin: 1350, xMax: 1550, to: 'B1', note: 'the trail climbs north past the old lighthouse' },
+    { edge: 'top', xMin: 1243, xMax: 1457, toBand: [1245, 1325], to: 'B1', note: 'the trail climbs north past the old lighthouse (moved west with the 2026-11-13 art, toBand onto B1’s south gate road)' },
     // Band NARROWED 2026-09-14 (C2 built): the declared 1130-1290 was wider
     // than C1's OWN walkable ground at this edge — an engine probe of the
     // real collider found the open run is only y1168-1257, so a player
