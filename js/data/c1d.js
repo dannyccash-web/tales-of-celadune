@@ -200,5 +200,20 @@ export default {
       x: 1496, y: 1400, speed: 35, chaseSpeed: 140, aggroRange: 300, giveUpRange: 700, startsHome: false,
       patrol: [ { x: 1496, y: 1400 }, { x: 1516, y: 1440 } ],
     },
+    // The Mireman King (2026-11-12, Danny) — the C-row mini-boss that took the
+    // ship. Lurks in the stern nook aft of the hatch, so he's optional: the
+    // lockbox, the chest and Mara at the bow never require fighting him.
+    // aggroRange 200 keeps the ladder (~283px away) clear. chaseSpeed 110 is
+    // SLOWER than the player's 130, so a player who isn't ready can walk away.
+    // Fight stats + summons in enemies.js (mireman_king). The art files are
+    // stand-ins (a recoloured mireman with a gold trident) until Danny's art.
+    {
+      id: 'mireman_king', name: 'Mireman King', role: '',
+      creature: true, enemyId: 'mireman_king', pack: 'mireman_king',
+      sprite: 'assets/images/mireman_king_overhead.png',
+      portrait: 'assets/images/mireman_king.png',
+      x: 1420, y: 2110, speed: 25, chaseSpeed: 110, aggroRange: 200, giveUpRange: 500, startsHome: false,
+      patrol: [ { x: 1420, y: 2110 }, { x: 1590, y: 2110 } ],
+    },
   ],
 };

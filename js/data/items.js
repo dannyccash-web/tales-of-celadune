@@ -226,11 +226,11 @@ const ITEMS = {
     id: 'vitality_potion',
     name: 'Vitality Potion',
     image: 'assets/images/Vitality_Potion.png',
-    description: 'A rare tonic said to fortify the body for good — permanently raises maximum health by 1.',
+    description: 'A rare tonic said to fortify the body for good — permanently raises maximum health by 1 and restores all of it.',
     questItem: false,
     slot: 'item',
     vitality: 1,
-    price: 32,
+    price: 40, // 2026-11-12 economy pass
   },
   // Arcana Potion (2026-10-10) — the magic twin of the Vitality Potion:
   // `arcana` permanently raises maximum magic by its amount (main.js's
@@ -241,11 +241,11 @@ const ITEMS = {
     id: 'arcana_potion',
     name: 'Arcana Potion',
     image: 'assets/images/arcana_potion.png',
-    description: 'A rare violet draught that deepens the well of the spirit — permanently raises maximum magic by 1.',
+    description: 'A rare violet draught that deepens the well of the spirit — permanently raises maximum magic by 1 and restores all of it.',
     questItem: false,
     slot: 'item',
     arcana: 1,
-    price: 75,
+    price: 90, // 2026-11-12 economy pass
   },
   // Chestnut (2026-10-10). Found on the ground in C3, C4 and D4, one in each
   // town's general store. Mateo Avellaneda (C3) wants ten; only nine exist so
@@ -575,7 +575,7 @@ const ITEMS = {
     questItem: false,
     slot: 'mainhand',
     damage: { min: 4, max: 7 },
-    bonusDamageVs: { ids: ['cragclaw', 'mireman', 'cragclaw_queen'], amount: 2, label: 'sea creatures' },
+    bonusDamageVs: { ids: ['cragclaw', 'mireman', 'cragclaw_queen', 'mireman_king'], amount: 2, label: 'sea creatures' },
     price: 55,
   },
   // Royal Summons (C4, 2026-08-02) — the king's sealed proclamation, stolen
@@ -616,7 +616,7 @@ const ITEMS = {
     questItem: false,
     slot: 'head',
     defenseBonus: 2,
-    price: 40,
+    price: 90, // 2026-11-12 economy pass
   },
   coldforge_brigandine: {
     id: 'coldforge_brigandine',
@@ -626,7 +626,7 @@ const ITEMS = {
     questItem: false,
     slot: 'clothing',
     defenseBonus: 2,
-    price: 55,
+    price: 130, // 2026-11-12 economy pass
   },
   coldforge_gauntlets: {
     id: 'coldforge_gauntlets',
@@ -636,7 +636,7 @@ const ITEMS = {
     questItem: false,
     slot: 'hands',
     attackBonus: 2,
-    price: 45,
+    price: 110, // 2026-11-12 economy pass
   },
   coldforge_boots: {
     id: 'coldforge_boots',
@@ -646,7 +646,7 @@ const ITEMS = {
     questItem: false,
     slot: 'feet',
     speedBonus: 2,
-    price: 40,
+    price: 85, // 2026-11-12 economy pass
   },
   // Lily Farrow's lost-gull quest (C1, 2026-09-10). Feathers are scattered
   // across the village as a trail of clues toward the cave the gull's holed

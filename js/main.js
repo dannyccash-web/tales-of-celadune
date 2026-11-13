@@ -501,6 +501,7 @@ async function boot() {
     'assets/images/rootweaver.png', // D4 rootweaver — an ambush enemy, not in a `battles` list
     'assets/images/cave_bat.png', // D4B cave bat — an ambush enemy, not in a `battles` list
     'assets/images/cave_spider.png', // D4B cave spider — a roaming creature enemy (aggro, not in `battles`)
+    'assets/images/mireman_king.png', // C1D Mireman King — roaming creature boss (aggro, not in `battles`)
     'assets/images/thornback_boar.png', // C2 thornback boars — roaming creature enemies (aggro, not in `battles`)
     'assets/images/highwayman_1.png', // C2's scripted ambush — started from code, in no `battles` list
     'assets/images/highwayman_2.png',
@@ -2330,6 +2331,7 @@ async function boot() {
       return true;
     }
     if (effect.tovanTurnIn) {
+      if (questStatus('c2_thornbacks') === 'none') startQuest('c2_thornbacks');
       addGold(15);
       addItem('health_potion', 1);
       completeQuest('c2_thornbacks');
@@ -2939,8 +2941,25 @@ async function boot() {
   // which persists per-World and in the save. So "are they dead yet" is just a
   // filter over the live world, with no counter to keep in sync and nothing
   // extra to store. Reuse this shape for any future "clear out the X" quest.
+  //
+  // FIXED 2026-11-12 (a playtester killed the boars and Tovan still said they
+  // were alive): C3's south-west glade has three thornback boars of its own
+  // (added 2026-10-12), identical to C2's, and the old count only looked at
+  // C2's live world. Kill the C3 three and Tovan kept saying "There are still
+  // 3 of them". The quest now counts thornback boars slain in C2 AND C3, read
+  // from snapshotWorlds() so scenes not built this session count too (their
+  // kills ride in the loaded save's per-scene data). Any three will do.
+  const THORNBACKS_NEEDED = 3;
+  function thornbacksSlain() {
+    const snap = snapshotWorlds();
+    let n = 0;
+    for (const id of ['C2', 'C3']) {
+      n += (snap[id]?.npcsDefeated || []).filter((nid) => nid.startsWith('thornback')).length;
+    }
+    return n;
+  }
   function thornbacksLeft() {
-    return world.npcs.filter((n) => n.enemyId === 'thornback_boar' && !n.defeated).length;
+    return Math.max(0, THORNBACKS_NEEDED - thornbacksSlain());
   }
 
   const THRUMHORN_PET_LINE = 'The thrumhorn leans its great warm head into your hands, closes its eyes, and hums until your teeth buzz. It leans further. It keeps leaning. You are, you realise, now the only thing holding up a very large animal, and it has no intention of discussing the matter.';
@@ -2966,6 +2985,15 @@ async function boot() {
         ? 'One of them is still up there. One is enough — it only takes one to finish what the others started.'
         : `There are still ${left} of them up in that grass, by my count. Do not go at them in the open if you can help it.`;
       return { line: tally, responses: ['Leave.'] };
+    }
+    if (left === 0) {
+      // The player cleared them before ever being asked: let them say so and
+      // turn in on the spot rather than accept-then-come-back-again.
+      return {
+        line: 'We had eleven thrumhorns coming down this road. We have one. Thornbacks took the rest, three of them, before dawn. Wait. You have blood on you that is not yours, and you came from the north. Were those our boars?',
+        responses: ['Three thornbacks. They\u2019re dead.', 'Leave.'],
+        responseEffects: [{ tovanTurnIn: true }, null],
+      };
     }
     return {
       line: 'We had eleven thrumhorns coming down this road. We have one. They came out of the open ground north of the road before dawn — thornbacks, three of them, big as carts and twice as stubborn. We heard the whole of it and could not do a thing in the dark but hold on to the one that ran the right way. They will be back for her. And anyone walking this road after dark is going the same way as my herd. I cannot pay you much. I can pay you what we have.',
@@ -3061,10 +3089,11 @@ async function boot() {
       // Permanent max-HP boost — the new capacity fills in immediately so the
       // player feels it (the HUD bar also widens: it scales with healthMax).
       removeItem(itemId, 1);
+      // Restores ALL health too (2026-11-12, Danny), not just the new point.
       stats.healthMax += def.vitality;
-      stats.health += def.vitality;
+      stats.health = stats.healthMax;
       ui.updateHud(stats);
-      return { ok: true, message: `You drink a ${def.name}. Maximum health increased by ${def.vitality}!` };
+      return { ok: true, message: `You drink a ${def.name}. Maximum health increased by ${def.vitality}, and you’re fully restored!` };
     }
     if (def.arcana) {
       // Permanent max-magic boost (2026-10-10, the Arcana Potion) — the magic
@@ -3074,10 +3103,10 @@ async function boot() {
       // player can't see would read as nothing happening.
       removeItem(itemId, 1);
       stats.magicMax += def.arcana;
-      stats.magic += def.arcana;
+      stats.magic = stats.magicMax; // restores ALL magic too (2026-11-12, Danny)
       if (!magicRevealed) { magicRevealed = true; ui.setMagicBarVisible(true); }
       ui.updateHud(stats);
-      return { ok: true, message: `You drink an ${def.name}. Maximum magic increased by ${def.arcana}!` };
+      return { ok: true, message: `You drink an ${def.name}. Maximum magic increased by ${def.arcana}, and your magic is fully restored!` };
     }
     return { ok: false, message: 'Nothing happens.' };
   }
@@ -3565,8 +3594,8 @@ async function boot() {
   }
 
   // ---- Nkemi Vesper and the Ithrel (2026-11-05) ----
-  const VAELWARD_PRICE = 60;
-  const NYTHSURGE_PRICE = 80;
+  const VAELWARD_PRICE = 90; // 60 -> 90 (2026-11-12 economy pass)
+  const NYTHSURGE_PRICE = 120; // 80 -> 120 (2026-11-12 economy pass)
   const WENDELL_ROCK_LINE = 'Oh, how marvellous. No, it isn’t writing, I’m sorry to say. I know every script in this shop and that is none of them. That’s older than letters. If anyone in Kingsreach can tell you what it is, it’s Nkemi Vesper at the Violet Lantern, just west of the square. Don’t let her frighten you. She does it to everyone.';
   const NKEMI_STONE_AMAZED = 'Where did you find this? No, don’t tell me yet. Do you know what you’re holding? Neither do I, not entirely, and I can count on one hand the things I can say that about. This isn’t a stone. It’s been waiting to be one. Leave it with me. I need time with it, and quiet, and a few books nobody in this city knows I own. Come back later and I’ll tell you what it is.';
   // Nkemi and the court wizard studied together at the Collegium at Wyrmcrest
@@ -5082,8 +5111,8 @@ async function boot() {
     if (def.fullHeal) stats.push({ label: 'Heals', value: 'Full', tone: 'pos' });
     if (def.heal) stats.push({ label: 'Heals', value: `${def.heal}`, tone: 'pos' });
     if (def.restoreMagic) stats.push({ label: 'Magic', value: `+${def.restoreMagic}`, tone: 'pos' });
-    if (def.vitality) stats.push({ label: 'Max Health', value: `+${def.vitality}`, tone: 'pos' });
-    if (def.arcana) stats.push({ label: 'Max Magic', value: `+${def.arcana}`, tone: 'pos' });
+    if (def.vitality) { stats.push({ label: 'Max Health', value: `+${def.vitality}`, tone: 'pos' }); stats.push({ label: 'Heals', value: 'Full', tone: 'pos' }); }
+    if (def.arcana) { stats.push({ label: 'Max Magic', value: `+${def.arcana}`, tone: 'pos' }); stats.push({ label: 'Magic', value: 'Full', tone: 'pos' }); }
     stats.push({ label: 'Held', value: `${count}` });
     return { name: def.name, desc: def.description || '', stats };
   }

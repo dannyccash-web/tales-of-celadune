@@ -17,8 +17,17 @@ export function rollD20(rng = Math.random) {
 // didn't say what breaks a tie; "defense wins ties" is a common tabletop
 // convention (e.g. AC-style defense) and avoids attacks feeling like a
 // coin-flip freebie on a tie.
+// HIT_BONUS (2026-11-12 balance pass): a flat accuracy bonus for whoever is
+// swinging, player and enemy alike. Bare d20-vs-d20 with near-equal stats hit
+// under 50% (attack 1 vs defense 2 was 43%), so most turns were whiffs and
+// fights read as a grind (playtesters found the Miremen 'hard to hit'). +4
+// puts an even match at ~66% and attack 1 vs defense 2 at ~62%. Because it
+// applies to both sides, win rates barely move (simulated); fights are just
+// ~30% shorter and fewer turns are wasted. Set to 0 to restore the old odds.
+export const HIT_BONUS = 4;
+
 export function resolveAttack(attackerScore, defenderScore, rng = Math.random) {
-  return rollD20(rng) + attackerScore > rollD20(rng) + defenderScore;
+  return rollD20(rng) + attackerScore + HIT_BONUS > rollD20(rng) + defenderScore;
 }
 
 // damage: a flat number, or a {min, max} range (inclusive) rolled here.

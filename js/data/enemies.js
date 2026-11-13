@@ -19,15 +19,16 @@ export default {
   // Tuned as a two-on-one the player is FORCED into with no chance to prepare:
   // individually softer than a thornback boar (6hp vs 8) so the pair is a real
   // fight without being a wall for a player who wandered in early.
+  // 2026-11-12 balance pass: atk 3->2, dmg 2-3 -> 1-3. C2 sits right above D2, so players walk into this FORCED fight early; at the old numbers a D-row player won ~15%.
   highwayman_a: {
     id: 'highwayman_a',
     name: 'Highwayman',
     portrait: 'assets/images/highwayman_1.png',
     health: 6,
-    attack: 3,
+    attack: 2,
     defense: 2,
     speed: 9,
-    damage: { min: 2, max: 3 },
+    damage: { min: 1, max: 3 },
     poisonable: true,
     background: 'assets/images/forest_background.jpg',
     // The spoils Danny specified are split across the pair, all at chance 1 so
@@ -35,15 +36,16 @@ export default {
     // a random encounter, and the shield in particular is the reward for it.
     drops: { gold: { min: 6, max: 11 }, loot: [{ id: 'short_sword' }, { id: 'health_potion' }] },
   },
+  // 2026-11-12 balance pass: atk 3->2, dmg 2-3 -> 1-3. C2 sits right above D2, so players walk into this FORCED fight early; at the old numbers a D-row player won ~15%.
   highwayman_b: {
     id: 'highwayman_b',
     name: 'Highwayman',
     portrait: 'assets/images/highwayman_2.png',
     health: 6,
-    attack: 3,
+    attack: 2,
     defense: 2,
     speed: 8,
-    damage: { min: 2, max: 3 },
+    damage: { min: 1, max: 3 },
     poisonable: true,
     background: 'assets/images/forest_background.jpg',
     drops: { gold: { min: 6, max: 11 }, loot: [{ id: 'small_shield' }] },
@@ -151,15 +153,16 @@ export default {
   // pushover at 5hp/atk2/def2 despite being the camp's named boss). New block
   // sits right between the Queen (12/3/3) and Ysra (15/4/3), matching Ysra's
   // attack/defense exactly and landing his damage between the two:
+  // 2026-11-12 balance pass: hp 14->13, dmg 3-6 -> 2-5, summons every 4th turn (was 3rd). He is met in the D row; at the old numbers a short-sword player in full leather won ~8%. Now ~31% (short sword) / ~85% (longsword); the favor quest stays the easy way past.
   bramblekin_chief: {
     id: 'bramblekin_chief',
     name: 'Bramblekin Chief',
     portrait: 'assets/images/Bramblekin_Chief.png',
-    health: 14,
+    health: 13,
     attack: 4,
     defense: 3,
     speed: 8,
-    damage: { min: 3, max: 6 },
+    damage: { min: 2, max: 5 },
     // He calls guards in mid-fight now (2026-09-23), same summon mechanic as
     // Ysra Nine-Shells (main.js's takeEnemyTurn/MAX_BATTLE_ENEMIES already
     // handle this generically — no engine change needed, just this field):
@@ -167,7 +170,7 @@ export default {
     // (if the roster has room under the existing 3-enemy cap). Pool of one
     // on purpose — it's always a rank-and-file guard coming to his aid, never
     // another Chief.
-    summon: { every: 3, pool: ['bramblekin'] },
+    summon: { every: 4, pool: ['bramblekin'] },
     background: 'assets/images/bramblekin_camp.jpg', // battle backdrop (2026-07-22)
     wood: true, // thorn/bramble body — flammable
     // Gold bumped 8-14 -> 12-20 to pay like the tougher fight this now is
@@ -205,15 +208,16 @@ export default {
   // (12hp, atk3/def3, no elemental weakness) so a fresh-off-the-beach player
   // CAN'T take her first try — she's a "come back fully geared + potion-stocked"
   // fight, not a wall you can never beat. Do NOT soften her much.
+  // 2026-11-12 balance pass: hp 12->13, dmg 2-4 -> 2-5. Simulated ~17% for a lightly geared D-row player, ~65% with armor+hood+shield, ~95% with a longsword: still a come-back-geared fight.
   cragclaw_queen: {
     id: 'cragclaw_queen',
     name: 'Cragclaw Queen',
     portrait: 'assets/images/queen_cragclaw.png',
-    health: 12,
+    health: 13,
     attack: 3,
     defense: 3,
     speed: 8,
-    damage: { min: 2, max: 4 },
+    damage: { min: 2, max: 5 },
     background: 'assets/images/beach_background.jpg', // battle backdrop (cragclaw kin -> beach, per Danny)
     poisonable: true,
     // No vitality-potion drop (2026-07-26, Danny): vitality is permanent, so its
@@ -227,18 +231,41 @@ export default {
   // when the player wanders too close (a hidden proximity ambush, exactly like
   // the D4 Rootweavers). Tougher than a cragclaw: a threatening early fight,
   // but not the Rootweaver's "flee-only" wall.
+  // 2026-11-12 balance pass: hp 5->4, def 2->1 (playtesters: 'hard to hit, harder than they should be'). The ship packs come in pairs and C1 is reachable straight from D1; a pair now beats an early-D player ~68% of the time (was ~47%).
   mireman: {
     id: 'mireman',
     name: 'Mireman',
     portrait: 'assets/images/mireman.png',
-    health: 5,
+    health: 4,
     attack: 1, // was 2 — softened 2026-09-11 (Danny: "a little too tough... make their attacks 1 point weaker" -- this LOWERS THE MIREMAN'S OWN hit chance against the player, not the player's chance to hit it)
-    defense: 2,
+    defense: 1,
     speed: 7,
     damage: { min: 1, max: 2 }, // was {1,3} then {0,2} -- Danny asked for 1-2 specifically (a landed hit still stings a little, never a true 0)
     background: 'assets/images/beach_background.jpg', // battle backdrop (2026-07-25)
     poisonable: true,
     drops: { gold: { min: 3, max: 7 }, loot: [{ id: 'health_potion', chance: 0.25 }, { id: 'fishing_bait', chance: 0.50 }] }, // bait added 2026-10-10
+  },
+
+  // Mireman King (C1D, the Maiden's Grace bottom deck, 2026-11-12) — the
+  // thing that sank the ship. A towering bog-sovereign with a gold trident,
+  // the C-row's other mini-boss alongside Ysra. Calls a Mireman up out of the
+  // bilge every 3rd turn he takes (the Ysra/Chief `summon` mechanic, capped by
+  // MAX_BATTLE_ENEMIES, so at most two join a fight). Simulated: ~50% for a
+  // C-row player with a longsword, armor, hood and shield (about Ysra's tier);
+  // ~5% with a short sword. Mara's Cutlass, which she hands over on this very
+  // deck, is +2 against him and his miremen (bonusDamageVs): ~70% with it.
+  mireman_king: {
+    id: 'mireman_king',
+    name: 'Mireman King',
+    portrait: 'assets/images/mireman_king.png',
+    health: 20,
+    attack: 4,
+    defense: 3,
+    speed: 8,
+    damage: { min: 2, max: 6 },
+    summon: { every: 3, pool: ['mireman'] },
+    poisonable: true,
+    drops: { gold: { min: 20, max: 30 }, loot: [{ id: 'health_potion', chance: 1, qty: 2 }, { id: 'magic_potion', chance: 0.5 }, { id: 'fishing_bait', chance: 1 }] },
   },
 
   // Rootweaver (D4 shortcut ambushes, 2026-07-11) — a deliberate "too tough
@@ -286,15 +313,16 @@ export default {
   // Loot: a fat purse (bigger than either existing boss's, befitting a proper
   // late-game fight) and Ysra's Staff — guaranteed, since it's the whole point
   // of the fight (see items.js — it's a valuable, CURSED off-hand weapon).
+  // 2026-11-12 balance pass: hp 15->19, dmg 2-5 -> 2-6. With a longsword she went down ~88% of the time in ~9 rounds, too easy for a named boss; now ~55% in ~10 rounds, using 2-3 potions.
   ysra_nineshells: {
     id: 'ysra_nineshells',
     name: 'Ysra Nine-Shells',
     portrait: 'assets/images/ysra_nineshells.png',
-    health: 15,
+    health: 19,
     attack: 4,
     defense: 3,
     speed: 10,
-    damage: { min: 2, max: 5 },
+    damage: { min: 2, max: 6 },
     summon: { every: 3, pool: ['cave_bat', 'blight_rat'] },
     background: 'assets/images/cave_background.jpg',
     drops: { gold: { min: 17, max: 26 }, loot: [{ id: 'staff', chance: 1 }] },
@@ -339,11 +367,12 @@ export default {
   // better plan (Venomous/Ensnaring weapons, a full potion belt). Calls a
   // Moonwretch out of the dark every 5th turn he takes (the Ysra/Chief summon
   // mechanic, capped by MAX_BATTLE_ENEMIES).
+  // 2026-11-12 balance pass: hp 21->25. With the hit-bonus change and full Coldforge he fell ~80% of the time; now ~64% with full Coldforge, ~38% with half.
   morrowvane: {
     id: 'morrowvane',
     name: 'Morrowvane, the Eclipsed',
     portrait: 'assets/images/Morrowvane_the_Eclipsed.png',
-    health: 21,
+    health: 25,
     attack: 5,
     defense: 3,
     speed: 9,
