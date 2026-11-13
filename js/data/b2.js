@@ -1,5 +1,5 @@
 // Scene B2 — THE KING'S CASTLE (overworld row B, column 2 — WEST of B3
-// Kingsreach, EAST of B1 Stonewick, SOUTH of A2 the Mountains, NORTH of C2).
+// Kingsreach, EAST of B1 West Kingsreach, SOUTH of A2 the Mountains, NORTH of C2).
 // Built 2026-10-17; REBUILT 2026-11-08 for Danny's new art (a completely new
 // layout — nothing below carries over from the old moated-castle version).
 // World coordinates: 3000x3000. Origin top-left.
@@ -495,9 +495,9 @@ export default {
     { edge: 'right', yMin: 1398, yMax: 1531, toBand: [1384, 1532], to: 'B3', note: 'the high street east into Kingsreach' },
     { edge: 'right', yMin: 1968, yMax: 2031, toBand: [1898, 2001], to: 'B3', note: 'the middle lane east into Kingsreach' },
     { edge: 'right', yMin: 2458, yMax: 2561, toBand: [2468, 2581], to: 'B3', note: 'the southern road east into Kingsreach' },
-    { edge: 'left', yMin: 638, yMax: 682, toBand: [655, 685], to: 'B1', note: 'the northern lane west to Stonewick' },
-    { edge: 'left', yMin: 1448, yMax: 1542, toBand: [1465, 1525], to: 'B1', note: 'the road west to Stonewick' },
-    { edge: 'left', yMin: 1888, yMax: 1962, toBand: [1895, 1945], to: 'B1', note: 'the southern lane west to Stonewick' },
+    { edge: 'left', yMin: 638, yMax: 682, toBand: [655, 685], to: 'B1', note: 'the northern lane west into West Kingsreach' },
+    { edge: 'left', yMin: 1448, yMax: 1542, toBand: [1465, 1525], to: 'B1', note: 'the road west into West Kingsreach' },
+    { edge: 'left', yMin: 1888, yMax: 1962, toBand: [1895, 1945], to: 'B1', note: 'the southern lane west into West Kingsreach' },
     { edge: 'top', xMin: 1418, xMax: 1521, to: 'A2', note: 'the road north through the gate into the mountains' },
   ],
 };

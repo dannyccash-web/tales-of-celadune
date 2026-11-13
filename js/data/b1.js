@@ -1,5 +1,11 @@
-// Scene B1 — STONEWICK (overworld row B, column 1 — WEST of B2 the King's
+// Scene B1 — WEST KINGSREACH (overworld row B, column 1 — WEST of B2 the King's
 // Castle, NORTH of C1 Tidewrack Harbor, SOUTH of A1 the School of Sorcery).
+//
+// KINGSREACH SPANS THREE AREAS (Danny, 2026-11-13): B1 (this, the west
+// quarter), B2 (the castle quarter) and B3 (the market, the original
+// 'Kingsreach'). All three play the Kingsreach track (`music: 'b3'`, 'Market
+// near the Castle'); audio.play() is a no-op for the track already playing,
+// so it runs unbroken across all of them.
 // World coordinates: 3000x3000. Origin top-left.
 //
 // REBUILT 2026-11-13 for Danny's new art (nothing in common with the
@@ -17,8 +23,9 @@
 // boulders south-east.
 //
 // NO NPCs YET: there was no character art for this town. Terrain, landmarks,
-// chimney smoke and fast travel only. The name STONEWICK is still a
-// placeholder of Claude's — rename freely (name, travel.name, the header).
+// chimney smoke and fast travel only. Was called 'Stonewick' (a placeholder)
+// until 2026-11-13. Its fast-travel stop is 'West Kingsreach' so it reads as
+// part of the city alongside B3's 'Kingsreach'.
 //
 // EXITS (each = this map's own collider-centre run at that edge; Danny drew
 // the roads to meet B2's three west roads, so all of them connect now):
@@ -39,12 +46,13 @@
 
 export default {
   id: 'B1',
-  name: 'Stonewick',
+  name: 'Kingsreach (West)',
   background: 'assets/images/B1_Background.jpg',
   width: 3000,
   height: 3000,
   spawn: { x: 1290, y: 1930 },
-  travel: { name: 'Stonewick', x: 1290, y: 1930 },
+  travel: { name: 'West Kingsreach', x: 1290, y: 1930 },
+  music: 'b3', // Kingsreach's track, shared with B2 and B3 (2026-11-13, Danny)
   obstacles: [
     { x: 0, y: 0, w: 3000, h: 490 },
     { x: 0, y: 490, w: 2550, h: 20 },
