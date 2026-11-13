@@ -244,7 +244,11 @@ function weaponDamage(slot = 'mainhand', targetId = null) {
   // her aboard the Maiden's Grace) - see items.js's bonusDamageVs and
   // buildMaraHollowmastDialog. No-ops for the unarmed flat-number fallback
   // (no `item`, so no bonusDamageVs to check).
-  if (item?.bonusDamageVs && targetId && item.bonusDamageVs.ids.includes(targetId)) {
+  // `tags` (2026-11-12, the Mireman King's Trident): match on an enemy catalog
+  // flag instead of a list of ids, e.g. tags: ['fire'] hits any enemy with
+  // `fire: true` in enemies.js. Either list can be empty.
+  const bv = item?.bonusDamageVs;
+  if (bv && targetId && ((bv.ids || []).includes(targetId) || (bv.tags || []).some((t) => ENEMIES[targetId]?.[t]))) {
     return { min: dmg.min + item.bonusDamageVs.amount, max: dmg.max + item.bonusDamageVs.amount };
   }
   return dmg;

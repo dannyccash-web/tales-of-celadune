@@ -584,6 +584,22 @@ const ITEMS = {
   // they resolve Mara's quest — a deliberate northward-pull hook toward the
   // King's Castle (B2). King Aldric of Aldermoor summoned Mara from distant
   // Vaelanor over a grave and urgent matter.
+  // The Mireman King's Trident (2026-11-12, Danny) — a guaranteed drop from
+  // the Mireman King (C1D). Same base damage as the longsword/cutlass tier,
+  // plus +3 against anything flagged `fire: true` in enemies.js (none yet;
+  // fire enemies are planned). `tags` on bonusDamageVs is read by main.js's
+  // weaponDamage. Not enchantable (bonusDamageVs takes it off the allow-list).
+  trident: {
+    id: 'trident',
+    name: 'Mireman King’s Trident',
+    image: 'assets/images/trident.png',
+    description: 'A gold trident pried from the Mireman King’s webbed grip, still slick with bilge-water and threaded with weed. The sea clings to it, and anything made of flame will shrink from its tines.',
+    questItem: false,
+    slot: 'mainhand',
+    damage: { min: 4, max: 7 },
+    bonusDamageVs: { tags: ['fire'], amount: 3, label: 'fire creatures' },
+    price: 70,
+  },
   royal_summons: {
     id: 'royal_summons',
     name: 'Royal Summons',

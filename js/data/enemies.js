@@ -9,6 +9,9 @@
 // {min, max} range rolled via battle.rollDamage() when a hit lands on the
 // player. speed drives this round's turn order (battle.turnOrder) alongside
 // the player's stats.speed.
+//
+// `fire: true` (planned, none yet) marks a fire creature: the Mireman King's
+// Trident (items.js) does +3 against it via bonusDamageVs.tags.
 export default {
   // ---- The two Highwaymen (C2 caravan-rest ambush, 2026-09-18) ----
   // Both are NAMED "Highwayman" on purpose (Danny) — the player never learns
@@ -265,7 +268,7 @@ export default {
     damage: { min: 2, max: 6 },
     summon: { every: 3, pool: ['mireman'] },
     poisonable: true,
-    drops: { gold: { min: 20, max: 30 }, loot: [{ id: 'health_potion', chance: 1, qty: 2 }, { id: 'magic_potion', chance: 0.5 }, { id: 'fishing_bait', chance: 1 }] },
+    drops: { gold: { min: 20, max: 30 }, loot: [{ id: 'trident', chance: 1 }, { id: 'health_potion', chance: 1, qty: 2 }, { id: 'magic_potion', chance: 0.5 }, { id: 'fishing_bait', chance: 1 }] },
   },
 
   // Rootweaver (D4 shortcut ambushes, 2026-07-11) — a deliberate "too tough
