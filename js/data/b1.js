@@ -23,9 +23,8 @@
 // boulders south-east.
 //
 // NO NPCs YET: there was no character art for this town. Terrain, landmarks,
-// chimney smoke and fast travel only. Was called 'Stonewick' (a placeholder)
-// until 2026-11-13. Its fast-travel stop is 'West Kingsreach' so it reads as
-// part of the city alongside B3's 'Kingsreach'.
+// and chimney smoke only. Was called 'Stonewick' (a placeholder) until
+// 2026-11-13. Not a fast-travel stop: Kingsreach has one, in B3.
 //
 // EXITS (each = this map's own collider-centre run at that edge; Danny drew
 // the roads to meet B2's three west roads, so all of them connect now):
@@ -51,7 +50,7 @@ export default {
   width: 3000,
   height: 3000,
   spawn: { x: 1290, y: 1930 },
-  travel: { name: 'West Kingsreach', x: 1290, y: 1930 },
+  // No `travel`: Kingsreach has ONE fast-travel stop, B3's (Danny, 2026-11-13).
   music: 'b3', // Kingsreach's track, shared with B2 and B3 (2026-11-13, Danny)
   obstacles: [
     { x: 0, y: 0, w: 3000, h: 490 },
