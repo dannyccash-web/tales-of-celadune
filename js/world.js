@@ -749,6 +749,14 @@ export class World {
 
       if (npc.pause > 0) { npc.pause -= dt; continue; }
 
+      // `watchPlayer: range` (2026-11-15, Lady Maelis in B1): a stationary NPC
+      // that turns to face the player whenever they're within range. Rotation
+      // 0 faces down (south), so the facing vector (dx, dy) maps to atan2(-dx, dy).
+      if (npc.watchPlayer && !npc.moving) {
+        const wdx = this.player.x - npc.x, wdy = this.player.y - npc.y;
+        if (Math.hypot(wdx, wdy) < npc.watchPlayer) npc.rotation = Math.atan2(-wdx, wdy);
+      }
+
       // Roaming creatures (cragclaws, 2026-07-25): mill about their patrol area
       // when calm, but CHARGE the player the moment they come within aggroRange
       // — racing in at chaseSpeed and, on contact, firing pendingAggro so
@@ -949,11 +957,14 @@ export class World {
       }
       case 'wait': {
         npc.timer += dt;
+        // `face` (radians, 0 = south, PI/2 = west) turns the NPC while it waits,
+        // e.g. B1's horses face the barn in their stalls (2026-11-15).
+        if (step.face != null) npc.rotation = step.face;
         // Cap how long an NPC stands still *in the open* at 5s (2026-07-17,
         // Danny) — a frozen figure out in the world reads as dead. Waits taken
         // while home (invisible, indoors) keep their full duration so the
         // town's staggered come-and-go rhythm is preserved.
-        const limit = npc.atHome ? step.s : Math.min(step.s, 5);
+        const limit = (npc.atHome || step.long) ? step.s : Math.min(step.s, 5); // `long` lifts the 5s open-world cap (horses in their stalls, Ambrose at the grave)
         if (npc.timer >= limit) this.advanceRoutine(npc);
         break;
       }

@@ -594,6 +594,12 @@ async function boot() {
   // (2026-11-05). Declared up here because enterScene (first called during
   // boot) reads it. Persisted in the save flags.
   let arjunMet = false;
+  // Corporal Ade Thornwick stops the player once at West Kingsreach's south
+  // gate (B1, 2026-11-15), same pattern as Arjun. Persisted.
+  let adeMet = false;
+  // Soraya Dawnveil's blessing at the High Temple (B1, 2026-11-15) is once per
+  // visit, like Elowen's. Not persisted; reset on every scene entry.
+  let sorayaBlessedThisVisit = false;
   // Nkemi Vesper's two Ithrel (2026-11-05). nkemiStone: 'none' | 'given'
   // (she's studying it) | 'ready' (next B3 entry) | 'learned'. nkemiStaff:
   // 'none' | 'broken' (gem freed, not yet paid for) | 'learned'.
@@ -661,6 +667,7 @@ async function boot() {
     currentSceneId = id;
     window.world = world; // debug handle follows the active scene
     elowenBlessedThisVisit = false; // per-visit blessing gate resets each scene entry (2026-07-31)
+    sorayaBlessedThisVisit = false;
     if (SCENES[id]?.travel) visitedTowns.add(id); // a town, once entered, is a fast-travel destination
     refreshTravelPanel(); // also moves the "You are here" marker
     if (fresh && pendingWorldFlags) applyWorldFlags(world, pendingWorldFlags[id]);
@@ -680,6 +687,7 @@ async function boot() {
     // Nkemi has had time with Lily's stone once the player leaves and comes back.
     if (id === 'B3' && nkemiStone === 'given') nkemiStone = 'ready';
     if (id === 'B3' && arjunMet) { const a = world.npcs.find((n) => n.id === 'arjun_talwar'); if (a) { a.chaseTalk = false; a._chasing = false; } }
+    if (id === 'B1' && adeMet) { const a = world.npcs.find((n) => n.id === 'ade_thornwick'); if (a) { a.chaseTalk = false; a._chasing = false; } }
     // Mara Hollowmast doesn't appear in town until rescued from C1D (2026-09-12)
     // - reuses `.defeated` purely as a presence gate (world.js: a defeated npc
     // "doesn't render, collide, aggro, or take interaction", exactly what
@@ -1012,7 +1020,7 @@ async function boot() {
         inventory: inventory.map((e) => ({ ...e })),
         equipment: { ...equipment },
         quests: quests.map((q) => ({ ...q })),
-        flags: { campQuestDone, campHostile, campTollTier, gafferHappy, thrumhornFed, clucksworthFed, eggathaFed, orrisRescued, orrisDeparted, wellCoinThrown, wellDrinks, vegetableDeliveredToTavern, mirelleStage, mirelleOutcome, calderToldStory, calderToldDangers, maraMet, maraToldTruth, lilyGullThanked, magicRevealed, maraHollowmastRescued, lockboxAcceptedFrom, lockboxGivenTo , ferrySide, lakewardenPaid, arjunMet, nkemiStone, nkemiStaff, visitedTowns: [...visitedTowns] },
+        flags: { campQuestDone, campHostile, campTollTier, gafferHappy, thrumhornFed, clucksworthFed, eggathaFed, orrisRescued, orrisDeparted, wellCoinThrown, wellDrinks, vegetableDeliveredToTavern, mirelleStage, mirelleOutcome, calderToldStory, calderToldDangers, maraMet, maraToldTruth, lilyGullThanked, magicRevealed, maraHollowmastRescued, lockboxAcceptedFrom, lockboxGivenTo , ferrySide, lakewardenPaid, arjunMet, adeMet, nkemiStone, nkemiStaff, visitedTowns: [...visitedTowns] },
         caveReturn, // where to exit to if saved inside a cave/dungeon
         worlds: snapshotWorlds(),
       };
@@ -1120,6 +1128,7 @@ async function boot() {
     magicRevealed = false;
     maraHollowmastRescued = false;
     arjunMet = false;
+    adeMet = false;
     nkemiStone = 'none'; nkemiStaff = 'none';
     lockboxAcceptedFrom = null; lockboxGivenTo = null;
     caveReturn = null;
@@ -1166,6 +1175,7 @@ async function boot() {
     magicRevealed = !!f.magicRevealed;
     maraHollowmastRescued = !!f.maraHollowmastRescued;
     arjunMet = !!f.arjunMet;
+    adeMet = !!f.adeMet;
     nkemiStone = f.nkemiStone || 'none';
     nkemiStaff = f.nkemiStaff || 'none';
     lockboxAcceptedFrom = f.lockboxAcceptedFrom || null;
@@ -1498,6 +1508,31 @@ async function boot() {
     // Temple blessing (2026-07-28): 1 gold for +1 HP. Keeps the dialog open with
     // a Go-back/Leave follow-up so the player can be blessed again. Free (and
     // skipped) if already at full health; blocked with the denied sound if broke.
+    if (effect.blessing && npc.id === 'soraya_dawnveil') {
+      // High Priestess Soraya (B1, 2026-11-15): 5 gold restores ALL health,
+      // once per visit. Same shape as Elowen's below.
+      const prev = { line: npc.dialog.line, responses: npc.dialog.responses, responseEffects: npc.dialog.responseEffects };
+      const backTo = { responses: ['Go back.', 'Leave.'], responseEffects: [{ goBack: prev }, null] };
+      const cleanedBack = { responses: ['Go back.', 'Leave.'], responseEffects: [{ goBack: stripBlessingOption(prev) }, null] };
+      if (sorayaBlessedThisVisit) {
+        ui.updateDialogContent({ line: 'Aeluna has heard your name once already today, child. She does not forget it between one hour and the next. Come back another day.', ...cleanedBack });
+        return true;
+      }
+      if (stats.health >= stats.healthMax) {
+        ui.updateDialogContent({ line: 'Soraya looks you over and shakes her head. You are whole, child. Keep your coin. The goddess mends what is broken, and you are not.', ...backTo });
+        return true;
+      }
+      if (stats.gold < SORAYA_BLESSING_COST) {
+        audio.sfx(audio.SFX.denied);
+        ui.updateDialogContent({ line: `The temple asks ${SORAYA_BLESSING_COST} gold for a full blessing, and you are short of it. The coin keeps the lamps lit. Come back when you can spare it.`, ...backTo });
+        return true;
+      }
+      spendGold(SORAYA_BLESSING_COST);
+      healPlayer(stats.healthMax - stats.health);
+      sorayaBlessedThisVisit = true;
+      ui.updateDialogContent({ line: 'Soraya lifts her staff and speaks a single word in the old tongue. Light pours down through the dome like the first hour of morning, and every hurt you carry is simply gone. (Health fully restored.)', ...cleanedBack });
+      return true;
+    }
     if (effect.blessing) {
       const prev = { line: npc.dialog.line, responses: npc.dialog.responses, responseEffects: npc.dialog.responseEffects };
       const backTo = { responses: ['Go back.', 'Leave.'], responseEffects: [{ goBack: prev }, null] };
@@ -2198,6 +2233,22 @@ async function boot() {
       });
       return true;
     }
+    // B1's horses (2026-11-15): a carrot or apple each time; GAVE reveal + snort.
+    if (effect.feedHorse) {
+      const H = HORSES[effect.feedHorse];
+      const treat = horseTreat();
+      if (!treat) { audio.sfx(audio.SFX.denied); ui.updateDialogContent({ line: H.none, responses: ['Leave.'] }); return true; }
+      removeItem(treat, 1);
+      audio.sfx(audio.DIALOGUE_SFX[effect.feedHorse]);
+      ui.showGaveItem(ITEMS[treat]);
+      ui.updateDialogContent({ line: H.fed(ITEMS[treat].name.toLowerCase()), responses: [H.options[0][0], H.options[1][0], 'Leave.'], responseEffects: [{ followUp: H.options[0][1] }, { followUp: H.options[1][1] }, null] });
+      return true;
+    }
+    if (effect.noHorseTreat) {
+      audio.sfx(audio.SFX.denied);
+      ui.updateDialogContent({ line: HORSES[effect.noHorseTreat].none, responses: ['Leave.'] });
+      return true;
+    }
     // Kingsreach's chickens (2026-11-11): a chestnut each. Clucksworth crows
     // about it; Eggatha lays an egg (the RECEIVED reveal shows the egg, since
     // the reveal slot only holds one item).
@@ -2714,6 +2765,37 @@ async function boot() {
     const line = first
       ? 'Halt! State your business in Kingsreach. ...Sorry. Habit. They moved me off the King\u2019s Road to watch this gate, and my orders came with me: everyone gets stopped, everyone gets asked.'
       : 'Still here, still watching the road. Go on through. The city\u2019s yours, as long as you behave in it.';
+    return { line, responses, responseEffects: effects };
+  }
+
+  // ---- Corporal Ade Thornwick, West Kingsreach's south gate (B1, 2026-11-15) ----
+  // Same shape as Arjun at the east gate: the first time the player comes near
+  // he steps up and stops them (chaseTalk); opening it once sets adeMet and
+  // switches chaseTalk off. He watches the coast road, since the Maiden's Grace
+  // came into Tidewrack crawling with miremen.
+  const ADE_CITY = 'The princess is gone. The court wizard took her out of the castle and vanished, and twenty riders the king sent after them never came back. Since then every gate in Kingsreach is doubled and every stranger gets a long look. Today, that’s you.';
+  const ADE_COAST = 'Because of what’s been coming up from the coast. A ship drifted into Tidewrack a while back with its crew gone and miremen in the hold. I’d rather ask a hundred honest travellers their business than wave through one thing that walked up out of the sea.';
+  const ADE_SUMMONS = 'The king’s seal. Well. That’s not something I see every day at this gate. The castle’s east of here, through the castle town. Keep that paper close and show it to the guard at the keep, nobody else.';
+  const ADE_PASS = 'Then go on through. West Kingsreach is quiet, mostly. Stables to the west, the forge up north, and the temple’s the blue dome. Stay out of the graveyard after dark. Ask anyone why.';
+  function buildAdeDialog(npc) {
+    const first = !adeMet;
+    if (first) {
+      adeMet = true;
+      const live = world.npcs.find((n) => n.id === 'ade_thornwick');
+      if (live) { live.chaseTalk = false; live._chasing = false; }
+      requestAutosave();
+    }
+    const responses = ['What’s happened in the city?', 'Why watch the coast road?'];
+    const effects = [{ followUp: ADE_CITY }, { followUp: ADE_COAST }];
+    if (inventory.some((it) => it.id === 'royal_summons')) {
+      responses.push('Show him the royal summons.');
+      effects.push({ followUp: ADE_SUMMONS });
+    }
+    if (first) { responses.push('Just passing through.'); effects.push({ followUp: ADE_PASS, noBack: true }); }
+    else { responses.push('Leave.'); effects.push(null); }
+    const line = first
+      ? 'Hold there. You came up the coast road? Then you’ll answer a question or two before you go any further. Corporal Thornwick, King’s Guard. Nothing personal, I stop everyone.'
+      : 'Still standing here, still watching that road. You’re fine to pass. You’ve got an honest face, for someone who walks into caves for a living.';
     return { line, responses, responseEffects: effects };
   }
 
@@ -3735,21 +3817,25 @@ async function boot() {
   // her quest turn-in screen (a reward choice, neither of those closers).
   const BLESSING_CLOSERS = ['Leave.', 'Not just now.'];
   const BLESSING_LABEL = 'Receive a blessing. (1 gold)';
+  const SORAYA_BLESSING_COST = 5;
+  const SORAYA_BLESSING_LABEL = `Receive Aeluna’s blessing. (${SORAYA_BLESSING_COST} gold)`;
   function withBlessing(dialog, npc) {
-    if (npc.id !== 'elowen' || !dialog.responses?.length) return dialog;
-    if (elowenBlessedThisVisit) return dialog; // already blessed this visit — no option until you return
+    const isSoraya = npc.id === 'soraya_dawnveil';
+    if ((npc.id !== 'elowen' && !isSoraya) || !dialog.responses?.length) return dialog;
+    if (isSoraya ? sorayaBlessedThisVisit : elowenBlessedThisVisit) return dialog; // already blessed this visit — no option until you return
     if (!BLESSING_CLOSERS.includes(dialog.responses[dialog.responses.length - 1])) return dialog;
     const responses = [...dialog.responses];
     const effects = dialog.responseEffects ? [...dialog.responseEffects] : responses.map(() => null);
     const at = Math.max(0, responses.length - 1);
-    responses.splice(at, 0, BLESSING_LABEL);
+    responses.splice(at, 0, isSoraya ? SORAYA_BLESSING_LABEL : BLESSING_LABEL);
     effects.splice(at, 0, { blessing: true });
     return { ...dialog, responses, responseEffects: effects };
   }
   // Return a copy of a dialog-content object with the blessing option removed —
   // used for the go-back menu after a blessing is spent this visit (2026-07-31).
   function stripBlessingOption(d) {
-    const idx = (d.responses || []).indexOf(BLESSING_LABEL);
+    let idx = (d.responses || []).indexOf(BLESSING_LABEL);
+    if (idx < 0) idx = (d.responses || []).indexOf(SORAYA_BLESSING_LABEL);
     if (idx < 0) return d;
     const responses = d.responses.slice();
     const responseEffects = (d.responseEffects || d.responses.map(() => null)).slice();
@@ -4164,6 +4250,56 @@ async function boot() {
       responses: [C.options[0][0], C.options[1][0], C.feed, 'Leave.'],
       responseEffects: [{ followUp: C.options[0][1] }, { followUp: C.options[1][1] },
         !hasChestnut ? { noChestnut: id } : (id === 'dame_eggatha' && eggathaFed) ? { eggathaDone: true } : { feedChicken: id }, null],
+    };
+  }
+
+  // ---- West Kingsreach's horses (B1, 2026-11-15) ----
+  // Baron (proud), Biscuit (the funny one, a thief) and Pewter (old and
+  // sleepy) live in the three stalls at Tamsin Brackenhorn's stables. Same
+  // shape as the chickens: two flavor options, a treat option that's ALWAYS on
+  // the list, Leave. A treat is a carrot or an apple (carrot first); feeding
+  // plays the horse snort. Session-only, nothing to persist.
+  const HORSE_TREATS = ['carrot', 'apple'];
+  const HORSES = {
+    baron: {
+      line: 'A tall chestnut stallion regards you down the full length of his nose. There’s a small brass crest on his bridle and a parade-ground stiffness to the way he holds himself, as if a band might strike up at any moment and he intends to be ready.',
+      options: [
+        ['Pat his neck.', 'You reach up and pat Baron’s neck. He permits it the way a duke permits a peasant to hold his hat: briefly, and without looking at you. Then he shifts one hoof a polite inch away, which you understand to mean that will be all.'],
+        ['Admire his bridle.', 'You admire the brass crest. Baron notices you noticing, lifts his head another inch and turns so the light catches it. Tamsin says he carried a knight of the realm for eleven years. He clearly hasn’t forgotten, and he’d rather you didn’t either.'],
+      ],
+      feed: 'Offer him a treat.',
+      fed: (t) => `Baron studies the ${t} for a long moment, as though it might be a trick. Then he takes it with great delicacy, chews slowly with his eyes half shut, and gives one short, approving snort. You are, provisionally, a person of quality.`,
+      none: 'You turn out your pockets. Nothing. Baron watches the whole performance without blinking, then turns his head and looks pointedly at the far wall of the stall, the way a lord looks away from a beggar.',
+    },
+    biscuit: {
+      line: 'A golden buckskin mare has her nose in your bag before you’ve said a word. There’s a straw hat in her mouth. It is not her hat. A little wooden tag on her halter says BISCUIT, as if she needed introducing.',
+      options: [
+        ['Ask whose hat that is.', 'Biscuit looks at you with enormous, innocent eyes and chews the hat a little more. Somewhere across the paddock Tamsin shouts “That’s the third one this week!” Biscuit does not take the hat out of her mouth. Biscuit has no idea what hat you could possibly mean.'],
+        ['Pat her nose.', 'You pat her nose. She leans in, delighted, and in the same smooth movement unbuckles the strap of your satchel with her lips. By the time you notice, she has a glove. You take the glove back. She takes the other glove. It goes on like this for some time.'],
+      ],
+      feed: 'Offer her a treat.',
+      fed: (t) => `The ${t} is gone before you’ve finished holding it out, and so, briefly, are two of your fingers. Biscuit crunches, sighs with pure happiness, then noses at your hand, your pocket, your other pocket, your ear and finally the top of your head, in case you were hiding more up there. You weren’t. She forgives you, mostly.`,
+      none: 'You’ve got nothing for her. Biscuit checks anyway: both pockets, your bag, your sleeve and, with tremendous thoroughness, your hair. Finding nothing, she drops the straw hat at your feet like a disappointed host returning a gift, and wanders off to look for someone with better pockets.',
+    },
+    pewter: {
+      line: 'An old dapple-gray mare dozes in her stall, lower lip hanging, one back hoof tipped up. She opens one eye at your approach, decides you’re harmless and leans her great soft head against your shoulder with a long contented breath.',
+      options: [
+        ['Scratch behind her ears.', 'You scratch behind her ears. Pewter’s eyes slide shut, her head grows heavier and heavier on your shoulder, and within a minute she is asleep standing up, snoring gently into your collar. You stay where you are. It seems rude to move.'],
+        ['Ask how old she is.', 'Pewter doesn’t answer, being a horse. But the grey round her eyes and the white in her mane say plenty. Tamsin will tell you she’s twenty-four, that she taught half the children in West Kingsreach to ride, and that she has never once been in a hurry about anything.'],
+      ],
+      feed: 'Offer her a treat.',
+      fed: (t) => `Pewter takes the ${t} very gently, with her soft whiskery lips, and eats it slowly, savouring every bite. When it’s gone she breathes warm air into your palm, as if to say thank you, and goes back to sleep on your shoulder.`,
+      none: 'You come up empty. Pewter doesn’t seem to mind at all. She sighs, rests her chin on your shoulder again and goes on dozing, as if you yourself were the treat.',
+    },
+  };
+  function horseTreat() { return HORSE_TREATS.find((id) => inventory.some((it) => it.id === id)) || null; }
+  function buildHorseDialog(id) {
+    const H = HORSES[id];
+    return {
+      line: H.line,
+      responses: [H.options[0][0], H.options[1][0], H.feed, 'Leave.'],
+      responseEffects: [{ followUp: H.options[0][1] }, { followUp: H.options[1][1] },
+        horseTreat() ? { feedHorse: id } : { noHorseTreat: id }, null],
     };
   }
 
@@ -4706,6 +4842,8 @@ async function boot() {
     else if (npc.id === 'orris_fenwick' || npc.id === 'orris_kingsreach') dialog = buildOrrisDialog();
     else if (npc.id === 'edmund_fairlock') dialog = buildEdmundDialog(npc);
     else if (npc.id === 'arjun_talwar') dialog = buildArjunDialog(npc);
+    else if (npc.id === 'ade_thornwick') dialog = buildAdeDialog(npc);
+    else if (HORSES[npc.id]) dialog = buildHorseDialog(npc.id);
     else if (npc.id === 'cinder') dialog = buildCinderDialog();
     else if (npc.id === 'sir_clucksworth' || npc.id === 'dame_eggatha') dialog = buildChickenDialog(npc.id);
     else if (npc.id === 'mara_vellorne') dialog = buildMaraDialog();

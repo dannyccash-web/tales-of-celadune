@@ -86,6 +86,19 @@ export const DIALOGUE_SFX = {
   // player is near them (main.js chickenCalls, half volume at most).
   sir_clucksworth: 'assets/audio/dragon-studio-rooster-crowing-364473.mp3',
   dame_eggatha: 'assets/audio/digitalstore07-chicken-430403.mp3',
+  // West Kingsreach (B1, 2026-11-15)
+  baron: 'assets/audio/dragon-studio-horse-snort-364469.mp3',
+  biscuit: 'assets/audio/dragon-studio-horse-snort-364469.mp3',
+  pewter: 'assets/audio/dragon-studio-horse-snort-364469.mp3',
+  tamsin_brackenhorn: 'assets/audio/u_xg7ssi08yr-female-ah-ha-389835.mp3',
+  morrick_stillstone: 'assets/audio/u_9kvcihzjc7-squashwo-gua-plants-vs-zombies-hmm-383643.mp3',
+  rodrigo_valdane: 'assets/audio/mrstokes302-hmmm-sound-male-sfx-mrstokes302-420028.mp3',
+  soraya_dawnveil: 'assets/audio/freesound_community-mmm-hmm-36292.mp3',
+  tobias_wren: 'assets/audio/freesound_community-huh-102688.mp3', // the youthful clip
+  agatha_pennyfold: 'assets/audio/freesound_community-girl-chucklewav-14669.mp3',
+  ambrose_lacey: 'assets/audio/mrstokes302-hmmm-sound-male-sfx-mrstokes302-420028.mp3',
+  ade_thornwick: 'assets/audio/universfield-muffled-reaction-242214.mp3',
+  maelis_graymantle: 'assets/audio/freesound_community-reverb-89603.mp3', // the ghostly enemy-death reverb
 
   // D2 village (2026-07-16). Three male + three female "hmm/reaction" clips
   // (Danny's picks), spread ~3 apiece across the 9 men and 9 women so the
