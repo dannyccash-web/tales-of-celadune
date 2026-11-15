@@ -2079,3 +2079,12 @@ Twelve NPCs from Danny's art (roster + prompts in the "West Kingsreach (B1) — 
 - **The king's counting house moved B3 → B1**, Edmund Fairlock with it: the blue-slate hall in the south-east (door 2360,2295, walkout 2360,2365, label "The Counting House"). Edmund walks to the temple road and the plaza and back (home ~45%). His `kingsreach_counting_house` turn-in is unchanged (`buildEdmundDialog`). B3's slate hall north of the square is now just a building; B3 has no counting-house label.
 - **Agatha Pennyfold moved** to make room: the orange-roofed shop with the striped awning on the south road (door 1860,2330, walkout 1860,2375, label "Pennyfold’s Curios" at 1860,2297).
 - **Verified:** `_verify_b1_npcs` (now also checks Cuthbert keeps circling: 36 points in 30 min, never more than 170px from the centre) ALL OK; `_verify_b3_npcs`, `_verify_b3_new`, `_verify_b2b3`, `_verify_chickens`, `_verify_b1_new` ALL OK. Headless Chromium: Pewter refuses an apple, Baron eats it, Biscuit eats a carrot, neighs at the volumes above, Edmund settles the counting-house quest in B1, Agatha's shop opens at her new door, Cuthbert talks on the circle; no console errors.
+
+## Project cleanup (2026-11-15)
+
+- **Every file in `assets/images` and `assets/audio` is used by the game** (checked against the code with comments stripped). Nothing was removed there except the empty `assets/images/_tmpcheck` folder and the two unused spell icons (`icon_vaelward.svg`, `icon_nythsurge.svg`, replaced by Danny's painted art on 2026-11-05).
+- Deleted from the project root: ~30 `_*.jpg` scratch previews/overlays, `_sync.tgz` (11MB), the throwaway scripts `_fix_pens.mjs`, `_probe_pens.mjs`, `_vq_tmp.mjs`, `_vq2_tmp.mjs`, and the obsolete verifiers `_verify_b1.mjs` (old Stonewick layout) and `_verify_b2.mjs` (old moat castle). Deleted the `Claude outputs/` working folder (125MB). The current `_verify_*.mjs` scripts stay (gitignored).
+- `.git`: removed ~195MB of `tmp_obj_*` / `tmp_pack_*` leftovers from interrupted git writes, then `git gc --prune=now`.
+- `cave_background.jpg` was 6688×3764 (26MB) but is only ever shown as a 1920×1080 battle backdrop: resized to 1920×1080, q90 (0.7MB), which also speeds up the loading screen.
+- `.gitignore` simplified: `_*.mjs`, `_*.jpg`, `_*.png`, `_sync*.tgz`, `Claude outputs/` cover all scratch files. **Keep new scratch files under those names** so they never get committed.
+- Kept on purpose: `docs/` (design PDF, roster sheet, the 07-22 evaluation, the 09-20 midpoint audit, the battle-feel notes), `tools/gen_water.py`, README.
