@@ -2236,17 +2236,20 @@ async function boot() {
     // B1's horses (2026-11-15): a carrot or apple each time; GAVE reveal + snort.
     if (effect.feedHorse) {
       const H = HORSES[effect.feedHorse];
-      const treat = horseTreat();
+      const treat = horseTreat(effect.feedHorse);
       if (!treat) { audio.sfx(audio.SFX.denied); ui.updateDialogContent({ line: H.none, responses: ['Leave.'] }); return true; }
       removeItem(treat, 1);
-      audio.sfx(audio.DIALOGUE_SFX[effect.feedHorse]);
+      audio.sfx(HORSE_SNORT);
       ui.showGaveItem(ITEMS[treat]);
       ui.updateDialogContent({ line: H.fed(ITEMS[treat].name.toLowerCase()), responses: [H.options[0][0], H.options[1][0], 'Leave.'], responseEffects: [{ followUp: H.options[0][1] }, { followUp: H.options[1][1] }, null] });
       return true;
     }
     if (effect.noHorseTreat) {
       audio.sfx(audio.SFX.denied);
-      ui.updateDialogContent({ line: HORSES[effect.noHorseTreat].none, responses: ['Leave.'] });
+      // Carrying another horse's treat gets a picky refusal (the treat is kept).
+      const H = HORSES[effect.noHorseTreat];
+      const other = HORSE_TREAT_IDS.find((t) => t !== H.treat && horseHas(t));
+      ui.updateDialogContent({ line: other ? H.wrong(ITEMS[other].name.toLowerCase()) : H.none, responses: ['Leave.'] });
       return true;
     }
     // Kingsreach's chickens (2026-11-11): a chestnut each. Clucksworth crows
@@ -4257,9 +4260,11 @@ async function boot() {
   // Baron (proud), Biscuit (the funny one, a thief) and Pewter (old and
   // sleepy) live in the three stalls at Tamsin Brackenhorn's stables. Same
   // shape as the chickens: two flavor options, a treat option that's ALWAYS on
-  // the list, Leave. A treat is a carrot or an apple (carrot first); feeding
-  // plays the horse snort. Session-only, nothing to persist.
-  const HORSE_TREATS = ['carrot', 'apple'];
+  // the list, Leave. Each horse eats ONE treat (2026-11-15, Danny): Baron an
+  // apple, Biscuit a carrot, Pewter soft bread (old teeth). Tamsin tells you
+  // which. Feeding plays the horse snort; talking plays the neigh
+  // (DIALOGUE_SFX), which also sounds around the stables (`call`).
+  const HORSE_SNORT = 'assets/audio/dragon-studio-horse-snort-364469.mp3';
   const HORSES = {
     baron: {
       line: 'A tall chestnut stallion regards you down the full length of his nose. There’s a small brass crest on his bridle and a parade-ground stiffness to the way he holds himself, as if a band might strike up at any moment and he intends to be ready.',
@@ -4267,7 +4272,8 @@ async function boot() {
         ['Pat his neck.', 'You reach up and pat Baron’s neck. He permits it the way a duke permits a peasant to hold his hat: briefly, and without looking at you. Then he shifts one hoof a polite inch away, which you understand to mean that will be all.'],
         ['Admire his bridle.', 'You admire the brass crest. Baron notices you noticing, lifts his head another inch and turns so the light catches it. Tamsin says he carried a knight of the realm for eleven years. He clearly hasn’t forgotten, and he’d rather you didn’t either.'],
       ],
-      feed: 'Offer him a treat.',
+      feed: 'Offer him a treat.', treat: 'apple',
+      wrong: (t) => `Baron sniffs the ${t}, lifts his lip in an expression of the most profound disappointment, and turns his head away. A horse of his standing eats apples. Everybody knows that.`,
       fed: (t) => `Baron studies the ${t} for a long moment, as though it might be a trick. Then he takes it with great delicacy, chews slowly with his eyes half shut, and gives one short, approving snort. You are, provisionally, a person of quality.`,
       none: 'You turn out your pockets. Nothing. Baron watches the whole performance without blinking, then turns his head and looks pointedly at the far wall of the stall, the way a lord looks away from a beggar.',
     },
@@ -4277,7 +4283,8 @@ async function boot() {
         ['Ask whose hat that is.', 'Biscuit looks at you with enormous, innocent eyes and chews the hat a little more. Somewhere across the paddock Tamsin shouts “That’s the third one this week!” Biscuit does not take the hat out of her mouth. Biscuit has no idea what hat you could possibly mean.'],
         ['Pat her nose.', 'You pat her nose. She leans in, delighted, and in the same smooth movement unbuckles the strap of your satchel with her lips. By the time you notice, she has a glove. You take the glove back. She takes the other glove. It goes on like this for some time.'],
       ],
-      feed: 'Offer her a treat.',
+      feed: 'Offer her a treat.', treat: 'carrot',
+      wrong: (t) => `Biscuit eats the ${t}. Then she spits it out, on your boots, with great ceremony, and looks at you as if you have personally betrayed her. Biscuit is a carrot horse. (She keeps the hat, though.)`,
       fed: (t) => `The ${t} is gone before you’ve finished holding it out, and so, briefly, are two of your fingers. Biscuit crunches, sighs with pure happiness, then noses at your hand, your pocket, your other pocket, your ear and finally the top of your head, in case you were hiding more up there. You weren’t. She forgives you, mostly.`,
       none: 'You’ve got nothing for her. Biscuit checks anyway: both pockets, your bag, your sleeve and, with tremendous thoroughness, your hair. Finding nothing, she drops the straw hat at your feet like a disappointed host returning a gift, and wanders off to look for someone with better pockets.',
     },
@@ -4287,19 +4294,22 @@ async function boot() {
         ['Scratch behind her ears.', 'You scratch behind her ears. Pewter’s eyes slide shut, her head grows heavier and heavier on your shoulder, and within a minute she is asleep standing up, snoring gently into your collar. You stay where you are. It seems rude to move.'],
         ['Ask how old she is.', 'Pewter doesn’t answer, being a horse. But the grey round her eyes and the white in her mane say plenty. Tamsin will tell you she’s twenty-four, that she taught half the children in West Kingsreach to ride, and that she has never once been in a hurry about anything.'],
       ],
-      feed: 'Offer her a treat.',
+      feed: 'Offer her a treat.', treat: 'bread',
+      wrong: (t) => `Pewter mouths the ${t} politely, then lets it fall. Her old teeth aren’t what they were. She noses hopefully at your bag instead, where something soft and baked might be hiding.`,
       fed: (t) => `Pewter takes the ${t} very gently, with her soft whiskery lips, and eats it slowly, savouring every bite. When it’s gone she breathes warm air into your palm, as if to say thank you, and goes back to sleep on your shoulder.`,
       none: 'You come up empty. Pewter doesn’t seem to mind at all. She sighs, rests her chin on your shoulder again and goes on dozing, as if you yourself were the treat.',
     },
   };
-  function horseTreat() { return HORSE_TREATS.find((id) => inventory.some((it) => it.id === id)) || null; }
+  const HORSE_TREAT_IDS = ['apple', 'carrot', 'bread'];
+  const horseHas = (id) => inventory.some((it) => it.id === id);
+  function horseTreat(id) { return horseHas(HORSES[id].treat) ? HORSES[id].treat : null; }
   function buildHorseDialog(id) {
     const H = HORSES[id];
     return {
       line: H.line,
       responses: [H.options[0][0], H.options[1][0], H.feed, 'Leave.'],
       responseEffects: [{ followUp: H.options[0][1] }, { followUp: H.options[1][1] },
-        horseTreat() ? { feedHorse: id } : { noHorseTreat: id }, null],
+        horseTreat(id) ? { feedHorse: id } : { noHorseTreat: id }, null],
     };
   }
 

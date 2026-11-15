@@ -87,9 +87,9 @@ export const DIALOGUE_SFX = {
   sir_clucksworth: 'assets/audio/dragon-studio-rooster-crowing-364473.mp3',
   dame_eggatha: 'assets/audio/digitalstore07-chicken-430403.mp3',
   // West Kingsreach (B1, 2026-11-15)
-  baron: 'assets/audio/dragon-studio-horse-snort-364469.mp3',
-  biscuit: 'assets/audio/dragon-studio-horse-snort-364469.mp3',
-  pewter: 'assets/audio/dragon-studio-horse-snort-364469.mp3',
+  baron: 'assets/audio/dragon-studio-horse-neigh-515279.mp3', // neigh on talk + around the stables (npc.call); feeding plays the snort
+  biscuit: 'assets/audio/dragon-studio-horse-neigh-515279.mp3',
+  pewter: 'assets/audio/dragon-studio-horse-neigh-515279.mp3',
   tamsin_brackenhorn: 'assets/audio/u_xg7ssi08yr-female-ah-ha-389835.mp3',
   morrick_stillstone: 'assets/audio/u_9kvcihzjc7-squashwo-gua-plants-vs-zombies-hmm-383643.mp3',
   rodrigo_valdane: 'assets/audio/mrstokes302-hmmm-sound-male-sfx-mrstokes302-420028.mp3',

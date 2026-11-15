@@ -480,7 +480,8 @@ export default {
     { label: 'The Forge', x: 2369, y: 552, r: 240 },
     { label: 'Stables', x: 665, y: 1775, r: 300 },
     { label: 'High Temple of Aeluna', x: 2585, y: 1400, r: 260 },
-    { label: 'Pennyfold’s Curios', x: 2360, y: 2262, r: 220 },
+    { label: 'Pennyfold’s Curios', x: 1860, y: 2297, r: 220 },
+    { label: 'The Counting House', x: 2360, y: 2262, r: 240 },
     { label: 'Morrick’s House', x: 1190, y: 1480, r: 200 },
     { label: 'Ambrose’s House', x: 1870, y: 1812, r: 200 },
   ],
@@ -507,7 +508,7 @@ export default {
   // wander the paddock and come back), Tamsin the stablemaster, Morrick the
   // gravekeeper, Rodrigo the weaponsmith (vendor, the Forge), High Priestess
   // Soraya and her acolyte Tobias (the High Temple, the blue dome), Agatha the
-  // curio dealer (vendor, the slate hall), Ambrose the widower, Corporal Ade at
+  // curio dealer (vendor, the orange shop on the south road), Ambrose the widower, Corporal Ade at
   // the south gate, and Lady Maelis in the west mausoleum. Routes were planned
   // on the collision (A*, legs <=250px, 22px clearance). Dialogue builders for
   // the horses, Ade and Soraya's blessing live in main.js.
@@ -516,7 +517,7 @@ export default {
       id: 'baron', name: 'Baron', role: 'STALLION',
       sprite: 'assets/images/baron_overhead.png',
       portrait: 'assets/images/baron.png',
-      x: 535, y: 1805, speed: 32, startsHome: false, rotation: Math.PI / 2,
+      x: 535, y: 1805, call: { every: [24, 48], range: 1000 }, speed: 32, startsHome: false, rotation: Math.PI / 2,
       routine: [
         { do: 'wait', s: 70, long: true, face: Math.PI / 2 },
         { do: 'goto', x: 612, y: 1805 },
@@ -533,7 +534,7 @@ export default {
       id: 'biscuit', name: 'Biscuit', role: 'MARE',
       sprite: 'assets/images/biscuit_overhead.png',
       portrait: 'assets/images/biscuit.png',
-      x: 535, y: 1890, speed: 32, startsHome: false, rotation: Math.PI / 2,
+      x: 535, y: 1890, call: { every: [24, 48], range: 1000 }, speed: 32, startsHome: false, rotation: Math.PI / 2,
       routine: [
         { do: 'wait', s: 50, long: true, face: Math.PI / 2 },
         { do: 'goto', x: 612, y: 1890 },
@@ -552,7 +553,7 @@ export default {
       id: 'pewter', name: 'Pewter', role: 'OLD MARE',
       sprite: 'assets/images/pewter_overhead.png',
       portrait: 'assets/images/pewter.png',
-      x: 535, y: 1970, speed: 32, startsHome: false, rotation: Math.PI / 2,
+      x: 535, y: 1970, call: { every: [24, 48], range: 1000 }, speed: 32, startsHome: false, rotation: Math.PI / 2,
       routine: [
         { do: 'wait', s: 95, long: true, face: Math.PI / 2 },
         { do: 'goto', x: 612, y: 1970 },
@@ -590,7 +591,7 @@ export default {
       ],
       dialog: { line: 'Mind where you step, and mind your pockets around the tan one. Tamsin Brackenhorn. These are my stables, and those three are my horses, whatever they’ll tell you.', responses: ['Leave.'] },
       chatter: [
-        { q: 'Tell me about the horses.', a: 'Baron’s the brown. Carried a knight for eleven years and has never let anyone forget it. Biscuit’s the tan, and she’s a thief: hats, gloves, apples, once a whole loaf off a baker’s cart. Pewter’s the grey. Twenty-four, sweet as summer, and asleep more than she’s awake. Bring them a carrot or an apple and you’ll be friends for life. Well, Biscuit will. Baron will think about it.' },
+        { q: 'Tell me about the horses.', a: 'Baron’s the brown. Carried a knight for eleven years and has never let anyone forget it. Biscuit’s the tan, and she’s a thief: hats, gloves, apples, once a whole loaf off a baker’s cart. Pewter’s the grey. Twenty-four, sweet as summer, and asleep more than she’s awake. And they’re fussy. Baron eats apples and nothing else, he thinks carrots are for peasants. Biscuit is a carrot horse through and through. Pewter’s teeth are going, so it’s soft bread for her. Get it right and you’ve a friend for life.' },
         { q: 'You’re a Hollowhorn?', a: 'From the high meadows, east past the King’s Road. Came down thirty years ago to sell a string of ponies and never went back. There’s a weaver over in the market quarter, Oriel Tallhorn, from my own valley. Her family’s on the far side of that barricade. So’s most of mine. We don’t talk about it much.' },
         { q: 'Business slow?', a: 'With the roads sealed? Nobody’s hiring a horse to go anywhere. I’ve got three eating their heads off and no riders. Still. Better here with me than out on the King’s Road.' },
       ],
@@ -739,15 +740,15 @@ export default {
       sprite: 'assets/images/agatha_pennyfold_overhead.png',
       portrait: 'assets/images/agatha_pennyfold.png',
       speed: 45, startsHome: true,
-      home: { door: { x: 2360, y: 2295 }, approach: { x: 2360, y: 2365 }, interior: 'assets/images/general_goods_interior.jpg' },
+      home: { door: { x: 1860, y: 2330 }, approach: { x: 1860, y: 2375 }, interior: 'assets/images/general_goods_interior.jpg' },
       routine: [
         { do: 'wait', s: 75 },
         { do: 'leaveHome' },
-        { do: 'goto', x: 2115, y: 2385 },
-        { do: 'goto', x: 2050, y: 2370 },
+        { do: 'goto', x: 1615, y: 2385 },
+        { do: 'goto', x: 1450, y: 2375 },
         { do: 'wait', s: 5 },
-        { do: 'goto', x: 2295, y: 2385 },
-        { do: 'goto', x: 2360, y: 2365 },
+        { do: 'goto', x: 1695, y: 2385 },
+        { do: 'goto', x: 1860, y: 2375 },
         { do: 'goHome' },
       ],
       dialog: { line: 'Well, don’t just stand in the door letting the warm out. Agatha Pennyfold. I buy, I sell, I don’t ask where things came from, and I always pay fair. Ish.', responses: ['Leave.'] },
@@ -755,6 +756,63 @@ export default {
         { q: 'What do you buy?', a: 'Anything that isn’t nailed down, and a few things that were. Old blades, odd stones, bits of monsters, the lot. My purse is deeper than any shopkeeper in Kingsreach, so if they turn you away, bring it to me.' },
         { q: 'What’s the strangest thing you’ve bought?', a: 'An old boot. A fisherman swore blind it once belonged to a duke. I paid him two coppers for it, mostly for the story. Then a collector from the castle town paid me twelve gold for it, for the very same story. I love this trade.' },
         { q: 'Any gossip?', a: 'Plenty, but it costs extra. Free sample: Tamsin’s tan mare has stolen four hats this month, one of them off the head of a magistrate. I bought it from her. The magistrate bought it back from me. Lovely week.' },
+      ],
+    },
+    {
+      // The king's counting house moved here from Kingsreach's market quarter
+      // (B3) on 2026-11-15 (Danny): the blue-slate hall in the south-east.
+      id: 'edmund_fairlock', name: 'Edmund Fairlock', role: 'CLERK',
+      sprite: 'assets/images/edmund_fairlock_overhead.png',
+      portrait: 'assets/images/edmund_fairlock.png',
+      speed: 45, startsHome: true,
+      home: { door: { x: 2360, y: 2295 }, approach: { x: 2360, y: 2365 }, interior: 'assets/images/home_interior.jpg' },
+      routine: [
+        { do: 'wait', s: 80 },
+        { do: 'leaveHome' },
+        { do: 'goto', x: 2545, y: 2385 },
+        { do: 'goto', x: 2765, y: 2345 },
+        { do: 'goto', x: 2785, y: 2105 },
+        { do: 'goto', x: 2715, y: 1915 },
+        { do: 'goto', x: 2465, y: 1915 },
+        { do: 'goto', x: 2395, y: 1825 },
+        { do: 'goto', x: 2595, y: 1675 },
+        { do: 'goto', x: 2600, y: 1650 },
+        { do: 'wait', s: 5 },
+        { do: 'goto', x: 2405, y: 1795 },
+        { do: 'goto', x: 2305, y: 1915 },
+        { do: 'goto', x: 2055, y: 1915 },
+        { do: 'goto', x: 1815, y: 1935 },
+        { do: 'goto', x: 1650, y: 1925 },
+        { do: 'wait', s: 5 },
+        { do: 'goto', x: 1415, y: 1975 },
+        { do: 'goto', x: 1295, y: 2165 },
+        { do: 'goto', x: 1335, y: 2375 },
+        { do: 'goto', x: 1585, y: 2375 },
+        { do: 'goto', x: 1825, y: 2395 },
+        { do: 'goto', x: 2065, y: 2385 },
+        { do: 'goto', x: 2315, y: 2385 },
+        { do: 'goto', x: 2360, y: 2365 },
+        { do: 'goHome' },
+      ],
+      dialog: { line: 'Yes? Sorry. Yes. The counting house is open, technically, though there’s very little to count. Do you have business with the Crown’s accounts?', responses: ['Leave.'] },
+      chatter: [
+        { q: 'What do you do here?', a: 'I record every coin owed to the Crown and every coin the Crown owes. Lately it’s all the second kind, which is not the kind I prefer.' },
+        { q: 'You seem nervous.', a: 'Forty-two. Sorry. I count when I’m nervous. There are forty-two tiles on the counting-house ceiling. I am fine.' },
+      ],
+    },
+    {
+      // Cuthbert moved from B3 on 2026-11-15 (Danny): no house any more, he just
+      // walks the ring of the roundabout north of the south gate, crying the
+      // news (patrol loops; 2-5s pause at each point).
+      id: 'cuthbert_hollis', name: 'Cuthbert Hollis', role: 'TOWN CRIER',
+      sprite: 'assets/images/cuthbert_hollis_overhead.png',
+      portrait: 'assets/images/cuthbert_hollis.png',
+      x: 1425, y: 1925, speed: 38, startsHome: false,
+      patrol: [{ x: 1425, y: 1925 }, { x: 1387, y: 2017 }, { x: 1295, y: 2055 }, { x: 1203, y: 2017 }, { x: 1165, y: 1925 }, { x: 1203, y: 1833 }, { x: 1295, y: 1795 }, { x: 1387, y: 1833 }],
+      dialog: { line: 'Hear ye, hear ye! By order of His Majesty King Aldric... oh. Just you. Hello. I’ve been shouting so long I forget to stop.', responses: ['Leave.'] },
+      chatter: [
+        { q: 'What’s the latest proclamation?', a: 'The same as yesterday’s, word for word. The court wizard has taken the princess. The roads are sealed by royal command. Any citizen with knowledge of the wizard’s whereabouts is to report to the castle. A reward is promised. I’m told to say promised very loudly.' },
+        { q: 'Has anyone claimed the reward?', a: 'Nobody claims it. Nobody even guesses. Wherever the wizard took her, nobody knows, or nobody’s saying.' },
       ],
     },
     {
