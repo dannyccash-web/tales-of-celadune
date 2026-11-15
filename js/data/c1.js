@@ -878,7 +878,7 @@ export default {
   // for a safe margin).
   exits: [
     { edge: 'bottom', xMin: 1375, xMax: 1625, to: 'D1', note: 'the coastal trail back down to the cove' },
-    { edge: 'top', xMin: 1243, xMax: 1457, toBand: [1245, 1325], to: 'B1', note: 'the trail climbs north past the old lighthouse (moved west with the 2026-11-13 art, toBand onto B1’s south gate road)' },
+    { edge: 'top', xMin: 1243, xMax: 1457, toBand: [1258, 1322], to: 'B1', note: 'the trail climbs north past the old lighthouse (moved west with the 2026-11-13 art, toBand onto B1’s south gate road)' },
     // Band NARROWED 2026-09-14 (C2 built): the declared 1130-1290 was wider
     // than C1's OWN walkable ground at this edge — an engine probe of the
     // real collider found the open run is only y1168-1257, so a player

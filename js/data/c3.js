@@ -992,6 +992,6 @@ export default {
 
   exits: [
     { edge: 'left', yMin: 1118, yMax: 1283, to: 'C2', note: 'the forest trail west to the grassland' },
-    { edge: 'top', xMin: 998, xMax: 1082, toBand: [1098, 1151], to: 'B3', note: 'the trail north out of the woods' },
+    { edge: 'top', xMin: 998, xMax: 1082, toBand: [1088, 1142], to: 'B3', note: 'the trail north out of the woods' },
   ],
 };
