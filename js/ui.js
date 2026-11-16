@@ -196,7 +196,11 @@ export function openDialog(npc, onClose, onResponse) {
   // still get the usual slide-in-from-the-right portrait.
   const portraitFrame = $('portrait-frame');
   const contentsFrame = $('dialog-contents');
-  if (npc.isPlace) {
+  if (npc.noPortrait) {
+    // Text-only windows (B1's headstones, 2026-11-16): no picture at all.
+    portraitFrame.classList.add('hidden');
+    contentsFrame.classList.add('hidden');
+  } else if (npc.isPlace) {
     portraitFrame.classList.add('hidden');
     contentsFrame.classList.remove('hidden');
     renderContentsList(npc.contents);

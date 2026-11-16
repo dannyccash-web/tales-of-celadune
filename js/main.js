@@ -4272,10 +4272,10 @@ async function boot() {
         ['Pat his neck.', 'You reach up and pat Baron’s neck. He permits it the way a duke permits a peasant to hold his hat: briefly, and without looking at you. Then he shifts one hoof a polite inch away, which you understand to mean that will be all.'],
         ['Admire his bridle.', 'You admire the brass crest. Baron notices you noticing, lifts his head another inch and turns so the light catches it. Tamsin says he carried a knight of the realm for eleven years. He clearly hasn’t forgotten, and he’d rather you didn’t either.'],
       ],
-      feed: 'Offer him a treat.', treat: 'apple',
+      feed: 'Give Baron an apple.', treat: 'apple',
       wrong: (t) => `Baron sniffs the ${t}, lifts his lip in an expression of the most profound disappointment, and turns his head away. A horse of his standing eats apples. Everybody knows that.`,
       fed: (t) => `Baron studies the ${t} for a long moment, as though it might be a trick. Then he takes it with great delicacy, chews slowly with his eyes half shut, and gives one short, approving snort. You are, provisionally, a person of quality.`,
-      none: 'You turn out your pockets. Nothing. Baron watches the whole performance without blinking, then turns his head and looks pointedly at the far wall of the stall, the way a lord looks away from a beggar.',
+      none: 'You turn out your pockets: no apple. Baron watches the whole performance without blinking, then turns his head and looks pointedly at the far wall of the stall, the way a lord looks away from a beggar.',
     },
     biscuit: {
       line: 'A golden buckskin mare has her nose in your bag before you’ve said a word. There’s a straw hat in her mouth. It is not her hat. A little wooden tag on her halter says BISCUIT, as if she needed introducing.',
@@ -4283,10 +4283,10 @@ async function boot() {
         ['Ask whose hat that is.', 'Biscuit looks at you with enormous, innocent eyes and chews the hat a little more. Somewhere across the paddock Tamsin shouts “That’s the third one this week!” Biscuit does not take the hat out of her mouth. Biscuit has no idea what hat you could possibly mean.'],
         ['Pat her nose.', 'You pat her nose. She leans in, delighted, and in the same smooth movement unbuckles the strap of your satchel with her lips. By the time you notice, she has a glove. You take the glove back. She takes the other glove. It goes on like this for some time.'],
       ],
-      feed: 'Offer her a treat.', treat: 'carrot',
+      feed: 'Give Biscuit a carrot.', treat: 'carrot',
       wrong: (t) => `Biscuit eats the ${t}. Then she spits it out, on your boots, with great ceremony, and looks at you as if you have personally betrayed her. Biscuit is a carrot horse. (She keeps the hat, though.)`,
       fed: (t) => `The ${t} is gone before you’ve finished holding it out, and so, briefly, are two of your fingers. Biscuit crunches, sighs with pure happiness, then noses at your hand, your pocket, your other pocket, your ear and finally the top of your head, in case you were hiding more up there. You weren’t. She forgives you, mostly.`,
-      none: 'You’ve got nothing for her. Biscuit checks anyway: both pockets, your bag, your sleeve and, with tremendous thoroughness, your hair. Finding nothing, she drops the straw hat at your feet like a disappointed host returning a gift, and wanders off to look for someone with better pockets.',
+      none: 'You’ve got no carrot for her. Biscuit checks anyway: both pockets, your bag, your sleeve and, with tremendous thoroughness, your hair. Finding nothing, she drops the straw hat at your feet like a disappointed host returning a gift, and wanders off to look for someone with better pockets.',
     },
     pewter: {
       line: 'An old dapple-gray mare dozes in her stall, lower lip hanging, one back hoof tipped up. She opens one eye at your approach, decides you’re harmless and leans her great soft head against your shoulder with a long contented breath.',
@@ -4294,10 +4294,10 @@ async function boot() {
         ['Scratch behind her ears.', 'You scratch behind her ears. Pewter’s eyes slide shut, her head grows heavier and heavier on your shoulder, and within a minute she is asleep standing up, snoring gently into your collar. You stay where you are. It seems rude to move.'],
         ['Ask how old she is.', 'Pewter doesn’t answer, being a horse. But the grey round her eyes and the white in her mane say plenty. Tamsin will tell you she’s twenty-four, that she taught half the children in West Kingsreach to ride, and that she has never once been in a hurry about anything.'],
       ],
-      feed: 'Offer her a treat.', treat: 'bread',
+      feed: 'Give Pewter some bread.', treat: 'bread',
       wrong: (t) => `Pewter mouths the ${t} politely, then lets it fall. Her old teeth aren’t what they were. She noses hopefully at your bag instead, where something soft and baked might be hiding.`,
       fed: (t) => `Pewter takes the ${t} very gently, with her soft whiskery lips, and eats it slowly, savouring every bite. When it’s gone she breathes warm air into your palm, as if to say thank you, and goes back to sleep on your shoulder.`,
-      none: 'You come up empty. Pewter doesn’t seem to mind at all. She sighs, rests her chin on your shoulder again and goes on dozing, as if you yourself were the treat.',
+      none: 'You haven’t any bread. Pewter doesn’t seem to mind at all. She sighs, rests her chin on your shoulder again and goes on dozing, as if you yourself were the treat.',
     },
   };
   const HORSE_TREAT_IDS = ['apple', 'carrot', 'bread'];
@@ -5689,6 +5689,16 @@ async function boot() {
   const WELL_LINE = 'The old well sits cool and still, its water dark and deep beneath the mossy stones.';
   const WELL_COIN_COST = 1;
   const WELL_MAX_DRINKS = 5; // the well runs dry after this many drinks (2026-07-28)
+  // Readable headstones (B1's graveyard, 2026-11-16): an interactable with
+  // `headstone: true` + `inscription` opens a text-only window with the
+  // epitaph. Nothing to collect, nothing saved; read them as often as you like.
+  function openHeadstone(item) {
+    ui.openDialog({
+      id: item.id, name: 'Headstone', role: '', noPortrait: true,
+      dialog: { line: item.inscription, responses: ['Step back.'] },
+    }, null, () => {});
+  }
+
   function openWellDialog() {
     const buildActs = () => {
       const responses = [];
@@ -5790,6 +5800,7 @@ async function boot() {
       // The well isn't a pickup — it opens its own dialogue window (drink /
       // toss a coin), so intercept it before any reward/collect handling.
       if (item.well) { openWellDialog(); return; }
+      if (item.headstone) { openHeadstone(item); return; }
       if (item.cave) { enterCave(item.cave, item.enterAt); return; }   // overworld -> cave (enterAt: a specific mouth)
       if (item.caveExit) { exitCave(item.exitTo); return; } // cave -> overworld (or a fixed exitTo)
       // Already-collected interactables with an emptyMessage (e.g. the silo

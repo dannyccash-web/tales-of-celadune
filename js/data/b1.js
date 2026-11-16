@@ -499,7 +499,26 @@ export default {
     { x: 2814, y: 2404, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.90 },
   ],
 
-  interactables: [],
+  // Readable headstones in the graveyard (2026-11-16): `headstone: true` opens
+  // the inscription (main.js openHeadstone). Anchors sit on the stones; each is
+  // read from the path beside its row. Rose Lacey is Ambrose's wife; he stands
+  // at her stone on his daily walk. Two funny, two sad, two plain.
+  interactables: [
+    { id: 'b1_grave_rose', x: 1432, y: 935, range: 105, label: 'Headstone', headstone: true,
+      inscription: 'ROSE LACEY. Wife of Ambrose for forty-one years. “Gone on ahead to put the kettle on.” A small bunch of wildflowers lies at the foot of the stone, still fresh.' },
+    { id: 'b1_grave_pike', x: 630, y: 1125, range: 105, label: 'Headstone', headstone: true,
+      inscription: 'BARTHOLOMEW PIKE, forager. “I know a good mushroom when I see one.” Underneath, in a different and much later hand, someone has carved: He did not.' },
+    { id: 'b1_grave_grue', x: 1038, y: 740, range: 105, label: 'Headstone', headstone: true,
+      inscription: 'OTTILIE GRUE. Lived to ninety-three and complained of her health for seventy of those years. At her own request, the stone says only this: I TOLD YOU I WAS ILL.' },
+    { id: 'b1_grave_hale', x: 776, y: 935, range: 105, label: 'Headstone', headstone: true,
+      inscription: 'SIR DUNSTAN HALE, of the King’s Riders. He rode north after the princess and did not come home. The grave is empty. Someone has polished the stone so often that the letters have gone soft.' },
+    { id: 'b1_grave_fairweather', x: 985, y: 1125, range: 105, label: 'Headstone', headstone: true,
+      inscription: 'PELL AND MORA FAIRWEATHER. Married one spring, drowned the next, crossing to Tidewrack in a borrowed boat. Below, smaller: Lie close, you two. The water cannot part you now.' },
+    { id: 'b1_grave_hallam', x: 1365, y: 740, range: 105, label: 'Headstone', headstone: true,
+      inscription: 'GODRIC HALLAM, cooper of West Kingsreach. Sixty-one years. His barrels never leaked.' },
+    { id: 'b1_grave_quell', x: 1528, y: 1125, range: 105, label: 'Headstone', headstone: true,
+      inscription: 'MARTA QUELL, baker. Beloved mother of four and grandmother of eleven. Rest now. The bread can wait.' },
+  ],
   chests: [],
   battles: [],
   ambushes: [],
@@ -830,7 +849,7 @@ export default {
         { do: 'goto', x: 1305, y: 1455 },
         { do: 'goto', x: 1285, y: 1215 },
         { do: 'goto', x: 1295, y: 1035 },
-        { do: 'goto', x: 1474, y: 1030 },
+        { do: 'goto', x: 1432, y: 1025 }, // Rose's headstone (b1_grave_rose), just north
         { do: 'wait', s: 40, long: true, face: Math.PI },
         { do: 'goto', x: 1295, y: 1035 },
         { do: 'goto', x: 1275, y: 1275 },

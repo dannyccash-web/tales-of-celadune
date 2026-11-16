@@ -1619,7 +1619,7 @@ export default {
   ],
 
   exits: [
-    { edge: 'right', yMin: 1408, yMax: 1542, toBand: [1358, 1601], to: 'B4', note: 'out of the east gate, onto the king’s road' },
+    { edge: 'right', yMin: 1408, yMax: 1542, toBand: [1368, 1602], to: 'B4', note: 'out of the east gate, onto the king’s road' },
     { edge: 'bottom', xMin: 1088, xMax: 1142, toBand: [998, 1082], to: 'C3', note: 'out of the south gate, down into Hallowmere Forest' },
     { edge: 'left', yMin: 648, yMax: 692, toBand: [648, 685], to: 'B2', note: 'the northern road west into the castle town' },
     { edge: 'left', yMin: 1375, yMax: 1532, toBand: [1388, 1525], to: 'B2', note: 'the high street west to the King’s Castle' },
