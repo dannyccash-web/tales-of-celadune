@@ -1660,7 +1660,6 @@ export function updateStatsPanel(stats) {
   $('stat-attack').textContent = stats.attack;
   $('stat-defense').textContent = stats.defense;
   $('stat-speed').textContent = stats.speed;
-  $('stat-luck').textContent = stats.luck;
 }
 
 // ---- Stats tab > Damage subsection (2026-09-11, Danny) ----

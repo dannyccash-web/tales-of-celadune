@@ -253,8 +253,8 @@ export default {
       reward: { gold: 3 },
     },
     // The well (2026-07-21): not a pickup — `well: true` makes main.js's
-    // interact() open a dialogue window (drink for +1 HP anytime; toss a coin
-    // for +1 Luck, once). Label 'Well' rides on this object so it shows exactly
+    // interact() open a dialogue window (drink for +1 HP until it runs dry;
+    // the coin toss for Luck was removed with Luck, 2026-11-17). Label 'Well' rides on this object so it shows exactly
     // when interactable. Anchor is the well's centre (matching the old building
     // label spot); range 130 reaches the path band just south and the x400-450
     // gap to its east — validated walkable with the 36px collider.

@@ -31,17 +31,14 @@ import * as battle from './battle.js';
 
 // Attack/Defense/Speed start at 1/1/1 (Danny's spec) — real combat stats.
 // Speed drives battle.js's turn order + the player's initiative chance
-// (Speed 1 -> 50% to act first, 2 -> 75%, 3 -> 100%). Luck is a NON-COMBAT
-// probability bonus (2026-07-31 rework — see luckChance() below): +10% per
-// point to fishing's rare-catch odds and to battle loot (gold haul + item
-// drop chance). Luck starts at 1 (2026-09-11, Danny — was 0), raised further
-// only by the D3 well's one-time coin-toss (+1 Luck, to 2) — still the only
-// way to raise it as of this date.
+// (Speed 1 -> 50% to act first, 2 -> 75%, 3 -> 100%). Luck was REMOVED from
+// the game on 2026-11-17 (Danny: it wasn't doing much); fishing keeps the odds
+// a starting player had, loot and chest gold have no bonus any more.
 // Level/XP removed 2026-07-22 (Danny) — the game has no experience/leveling
 // loop; progression is gear-driven (weapons/armor + vitality potions).
 const stats = {
   health: 5, healthMax: 5, magic: 0, magicMax: 5, gold: 0,
-  attack: 1, defense: 1, speed: 1, luck: 1,
+  attack: 1, defense: 1, speed: 1,
 };
 // The canonical fresh-start stats, used to reset on New Game (2026-07-22).
 const NEW_GAME_STATS = { ...stats };
@@ -183,23 +180,9 @@ function equipmentBonus(field) {
     return sum + (ITEMS[id]?.[field] || 0);
   }, 0);
 }
-// Attack/Defense scores are base stat + equipped gear only. Luck is NO LONGER a
-// combat modifier (2026-07-31, Danny) — it now only affects non-combat
-// PERCENTAGE-CHANCE mechanics (fishing catch odds, battle loot). See luckChance().
+// Attack/Defense scores are base stat + equipped gear only.
 function effectiveAttack() { return stats.attack + equipmentBonus('attackBonus'); }
 function effectiveDefense() { return stats.defense + equipmentBonus('defenseBonus'); }
-// Luck as a probability bonus: +10% (0.10) per point, applied to EVERY
-// non-combat chance (2026-10-20, Danny — audited):
-//   - fishing: rare catches (boot, Moonscale Trout, Crimson Sailback) get +10
-//     percentage points per Luck point (rollCatch);
-//   - enemy loot: +10 points per Luck point on every item's drop chance, and
-//     enemy gold x(1 + 0.10*Luck) (computeBattleRewards);
-//   - chest gold rolled from a {min,max} range: x(1 + 0.10*Luck) (World.goldLuck).
-// Fixed amounts (a chest's set gold, hidden coin glints, quest rewards) aren't
-// chance rolls and stay as designed. Combat rolls (to-hit, damage, initiative,
-// enchant procs) never use Luck.
-function luckChance() { return stats.luck * 0.10; }
-World.goldLuck = luckChance;
 // Speed including gear (leather boots' speedBonus, 2026-07-26). Capped at 3
 // (the movement/initiative curves top out there). Drives BOTH overworld
 // movement (moveMultForSpeed) and battle initiative (playerInitiativeChance).
@@ -209,11 +192,11 @@ function effectiveSpeed() { return Math.min(3, stats.speed + equipmentBonus('spe
 // panel used to show the raw base stats, so a player wearing +1 armor still saw
 // "Defense 1". Combat already uses the effective values (effectiveAttack/Defense
 // /Speed) — this just makes the display agree. Shows the effective total plus a
-// "(+N)" gear contribution. Luck is unchanged (no gear affects it yet).
+// "(+N)" gear contribution.
 function refreshStatsPanel() {
   const eA = effectiveAttack(), eD = effectiveDefense(), eS = effectiveSpeed();
   ui.updateStatsPanel({
-    attack: eA, defense: eD, speed: eS, luck: stats.luck,
+    attack: eA, defense: eD, speed: eS,
     attackBonus: eA - stats.attack, defenseBonus: eD - stats.defense, speedBonus: eS - stats.speed,
   });
   refreshDamagePanel(); // 2026-09-11: keep the new Damage subsection in sync too
@@ -1020,7 +1003,7 @@ async function boot() {
         inventory: inventory.map((e) => ({ ...e })),
         equipment: { ...equipment },
         quests: quests.map((q) => ({ ...q })),
-        flags: { campQuestDone, campHostile, campTollTier, gafferHappy, thrumhornFed, clucksworthFed, eggathaFed, orrisRescued, orrisDeparted, wellCoinThrown, wellDrinks, vegetableDeliveredToTavern, mirelleStage, mirelleOutcome, calderToldStory, calderToldDangers, maraMet, maraToldTruth, lilyGullThanked, magicRevealed, maraHollowmastRescued, lockboxAcceptedFrom, lockboxGivenTo , ferrySide, lakewardenPaid, arjunMet, adeMet, nkemiStone, nkemiStaff, visitedTowns: [...visitedTowns] },
+        flags: { campQuestDone, campHostile, campTollTier, gafferHappy, thrumhornFed, clucksworthFed, eggathaFed, orrisRescued, orrisDeparted, wellDrinks, vegetableDeliveredToTavern, mirelleStage, mirelleOutcome, calderToldStory, calderToldDangers, maraMet, maraToldTruth, lilyGullThanked, magicRevealed, maraHollowmastRescued, lockboxAcceptedFrom, lockboxGivenTo , ferrySide, lakewardenPaid, arjunMet, adeMet, nkemiStone, nkemiStaff, visitedTowns: [...visitedTowns] },
         caveReturn, // where to exit to if saved inside a cave/dungeon
         worlds: snapshotWorlds(),
       };
@@ -1120,7 +1103,7 @@ async function boot() {
     quests.length = 0;
     campTollPaid = false; campEntered = false; campQuestDone = false;
     campHostile = false; campEntryGate = null; campTollTier = 0;
-    gafferHappy = false; thrumhornFed = false; clucksworthFed = false; eggathaFed = false; orrisRescued = false; orrisDeparted = false; orrisLeaving = false; wellCoinThrown = false; wellDrinks = 0; vegetableDeliveredToTavern = false; mirelleStage = 1; mirelleOutcome = null;
+    gafferHappy = false; thrumhornFed = false; clucksworthFed = false; eggathaFed = false; orrisRescued = false; orrisDeparted = false; orrisLeaving = false; wellDrinks = 0; vegetableDeliveredToTavern = false; mirelleStage = 1; mirelleOutcome = null;
     ferrySide = 'mainland'; // the C3 raft starts moored on the near shore
     lakewardenPaid = false;
     calderToldStory = false; calderToldDangers = false; maraMet = false; maraToldTruth = null;
@@ -1157,6 +1140,7 @@ async function boot() {
     // shape changes and old saves get cleanly rejected instead.
     if (data.v !== SAVE_VERSION) return false;
     Object.assign(stats, NEW_GAME_STATS, data.stats || {});
+    delete stats.luck; // Luck was removed 2026-11-17; older saves still carry it
     inventory.length = 0; (data.inventory || []).forEach((e) => inventory.push({ ...e }));
     for (const k of Object.keys(equipment)) equipment[k] = null;
     Object.assign(equipment, data.equipment || {});
@@ -1164,7 +1148,7 @@ async function boot() {
     const f = data.flags || {};
     campQuestDone = !!f.campQuestDone; campHostile = !!f.campHostile;
     campTollTier = f.campTollTier || 0;
-    gafferHappy = !!f.gafferHappy; thrumhornFed = !!f.thrumhornFed; clucksworthFed = !!f.clucksworthFed; eggathaFed = !!f.eggathaFed; orrisRescued = !!f.orrisRescued; orrisDeparted = !!f.orrisDeparted; orrisLeaving = false; wellCoinThrown = !!f.wellCoinThrown;
+    gafferHappy = !!f.gafferHappy; thrumhornFed = !!f.thrumhornFed; clucksworthFed = !!f.clucksworthFed; eggathaFed = !!f.eggathaFed; orrisRescued = !!f.orrisRescued; orrisDeparted = !!f.orrisDeparted; orrisLeaving = false;
     ferrySide = f.ferrySide === 'island' ? 'island' : 'mainland';
     lakewardenPaid = !!f.lakewardenPaid;
     wellDrinks = f.wellDrinks || 0;
@@ -1450,10 +1434,6 @@ async function boot() {
   // the player, teaching Flee + the give-up-when-far mechanic (2026-07-26).
   let creatureFleeHintShown = false;
 
-  // The D3 well's coin-for-luck offer is one-time per session (like gafferHappy,
-  // not persisted). Tossing a coin for +1 Luck can only happen once. See
-  // openWellDialog().
-  let wellCoinThrown = false;
   // Drinking is limited: the well runs dry after WELL_MAX_DRINKS drinks
   // (2026-07-28, Danny). Persisted in the save flags so the total carries across
   // sessions ("after drinking 5 times in the game").
@@ -5609,16 +5589,12 @@ async function boot() {
   function computeBattleRewards(enemies) {
     let gold = 0;
     const items = {};
-    // LUCK (2026-07-31, Danny): +10% per point to the gold haul AND to every
-    // item's drop chance (a non-combat probability bonus — luck no longer touches
-    // combat rolls). luckChance() = luck*0.10.
-    const luck = luckChance();
     for (const e of enemies) {
       const drops = ENEMIES[e.id]?.drops;
       if (!drops) continue;
-      if (drops.gold) gold += Math.round(randInt(drops.gold.min, drops.gold.max) * (1 + luck));
+      if (drops.gold) gold += randInt(drops.gold.min, drops.gold.max);
       for (const l of drops.loot || []) {
-        const chance = Math.min(1, (l.chance ?? 1) + luck);
+        const chance = Math.min(1, l.chance ?? 1);
         if (Math.random() <= chance) items[l.id] = (items[l.id] || 0) + (l.qty || 1);
       }
     }
@@ -5696,14 +5672,11 @@ async function boot() {
   };
 
   // The D3 well: a dialogue-style window (Water well.png in the portrait slot,
-  // name "Well") offering a repeatable drink (+1 HP) and a one-time coin toss
-  // (+1 Luck) that costs 1 gold. State-built like Gaffer/Chief — the coin option
-  // drops out of the response list once used (wellCoinThrown). The onResponse
-  // callback returns true to keep the window open after drinking/tossing so the
-  // player can act again; 'Leave.' returns falsy and closes it. Tossing with an
-  // empty purse plays the denied sound and leaves the offer standing.
+  // name "Well") offering a drink (+1 HP) until it runs dry after
+  // WELL_MAX_DRINKS. The coin toss for +1 Luck was removed with Luck
+  // (2026-11-17). onResponse returns true to keep the window open after a
+  // drink; 'Leave.' returns falsy and closes it.
   const WELL_LINE = 'The old well sits cool and still, its water dark and deep beneath the mossy stones.';
-  const WELL_COIN_COST = 1;
   const WELL_MAX_DRINKS = 5; // the well runs dry after this many drinks (2026-07-28)
   // Readable headstones (B1's graveyard, 2026-11-16): an interactable with
   // `headstone: true` + `inscription` opens a text-only window with the
@@ -5721,7 +5694,6 @@ async function boot() {
       const acts = [];
       // Drinking is offered only until the well runs dry.
       if (wellDrinks < WELL_MAX_DRINKS) { responses.push('Take a drink.'); acts.push('drink'); }
-      if (!wellCoinThrown) { responses.push('Throw a coin in.'); acts.push('coin'); }
       responses.push('Leave.'); acts.push('leave');
       return { responses, acts };
     };
@@ -5752,29 +5724,6 @@ async function boot() {
         }
         ({ responses, acts } = buildActs());
         ui.updateDialogContent({ line, responses });
-        return true;
-      }
-      if (act === 'coin') {
-        if (stats.gold < WELL_COIN_COST) {
-          audio.sfx(audio.SFX.denied);
-          ({ responses, acts } = buildActs());
-          ui.updateDialogContent({
-            line: 'You reach for a coin — but your purse is empty. The well keeps its favor for now.',
-            responses,
-          });
-          return true;
-        }
-        // Set the flag + luck BEFORE spending — spendGold's autosave then
-        // captures them, so a Continue can't re-toss for another Luck point.
-        wellCoinThrown = true;
-        stats.luck += 1;
-        spendGold(WELL_COIN_COST); // deducts 1 gold + plays the coin clink (+ autosave)
-        refreshStatsPanel();
-        ({ responses, acts } = buildActs());
-        ui.updateDialogContent({
-          line: 'You flip a coin into the dark. A faint plink echoes up — and a strange sense of fortune settles over you. (Luck +1.)',
-          responses,
-        });
         return true;
       }
       return; // Leave — falsy closes the window
@@ -5907,56 +5856,23 @@ async function boot() {
     if (spot) startFishing(spot);
   }
 
-  // Weighted catch table (2026-07-16, Danny's odds). LUCK raises the Moonscale
-  // Trout chance by +10% per point (2026-07-31, Danny): base 10% → 20% at Luck 1,
-  // 30% at Luck 2, and so on (capped at 70%). Roll the Moonscale first at that
-  // boosted chance; otherwise fall through to the ordinary catches in their
-  // original 50:30:10 weighting.
-  // Reworked 2026-10-10 (Danny: nobody was ever catching a boot). The boot
-  // used to be the last slice of the ORDINARY table, AFTER the luck-boosted
-  // Moonscale roll — so it was only ~8.9% at Luck 1 and every point of Luck
-  // shaved it further (7.8% at Luck 2). With bait capped at a handful per
-  // playthrough, about half of players never saw one. Now the boot is rolled
-  // FIRST at a flat BOOT_CHANCE that Luck never touches; Luck only trades
-  // ordinary fish for the Moonscale Trout.
-  // Reworked again 2026-10-20 (Danny: Luck should raise the odds of EVERY rare
-  // catch, boots included). The boot is still rolled first, but now at
-  // 5% + 10 points per Luck point (capped 40%), so a starting Luck-1 player
-  // sees exactly the old 15% and each extra point adds 10.
-  //   Luck 1: boot 15%, Moonscale 17%, trout ~43%, bluegill ~26%
-  //   Luck 2: boot 25%, Moonscale ~22.5%, trout ~33%, bluegill ~20%
-  const BOOT_BASE = 5, BOOT_CAP = 40;   // percent at Luck 0, and the ceiling
-  const MOON_BASE = 10, MOON_CAP = 70;
-  function luckPoints() { return luckChance() * 100; } // +10 percentage points per Luck
+  // Weighted catch table (2026-07-16, Danny's odds; Luck removed 2026-11-17,
+  // keeping the odds a starting player had). The old boot is rolled first at
+  // BOOT_CHANCE, then the Moonscale at MOON_CHANCE of what's left, then trout
+  // or bluegill 5:3: boot 15%, Moonscale 17%, trout ~43%, bluegill ~26%.
+  const BOOT_CHANCE = 15, MOON_CHANCE = 20; // percent
   function rollCatch() {
     // A scene can carry its own catch table (2026-10-11: the sea spots in
-    // C1/D1). It replaces the freshwater table entirely. Entries with a
-    // `luckBonus` are rare catches: their `weight` is the percent chance at
-    // Luck 0 and each Luck point adds `luckBonus` percentage points (capped
-    // at `luckCap`, default 70); the other entries share whatever is left in
-    // proportion to their weights (2026-10-20).
+    // C1/D1); it replaces the freshwater table entirely. Plain weighted pick.
     const table = world.scene.fishingCatch;
     if (table && table.length) {
-      const lp = luckChance() * 10; // Luck points
-      const rare = table.filter((e) => e.luckBonus);
-      const common = table.filter((e) => !e.luckBonus);
-      const pct = new Map();
-      let rareTotal = 0;
-      for (const e of rare) { const p = Math.min(e.luckCap ?? 70, e.weight + lp * e.luckBonus); pct.set(e, p); rareTotal += p; }
-      if (rareTotal > 95) { const k = 95 / rareTotal; for (const e of rare) pct.set(e, pct.get(e) * k); rareTotal = 95; }
-      if (rare.length) {
-        const cw = common.reduce((s, e) => s + e.weight, 0) || 1;
-        for (const e of common) pct.set(e, (100 - rareTotal) * e.weight / cw);
-      } else for (const e of table) pct.set(e, e.weight);
-      const total = table.reduce((s, e) => s + pct.get(e), 0);
+      const total = table.reduce((s, e) => s + e.weight, 0);
       let r = Math.random() * total;
-      for (const e of table) { if ((r -= pct.get(e)) < 0) return e.id; }
+      for (const e of table) { if ((r -= e.weight) < 0) return e.id; }
       return table[table.length - 1].id;
     }
-    const boot = Math.min(BOOT_CAP, BOOT_BASE + luckPoints());
-    if (Math.random() * 100 < boot) return 'old_boot';
-    const moon = Math.min(MOON_CAP, MOON_BASE + luckPoints());
-    if (Math.random() * 100 < moon) return 'rare_fish';
+    if (Math.random() * 100 < BOOT_CHANCE) return 'old_boot';
+    if (Math.random() * 100 < MOON_CHANCE) return 'rare_fish';
     return Math.random() * 80 < 50 ? 'trout' : 'bluegill';
   }
 
@@ -5965,13 +5881,12 @@ async function boot() {
   let fishing = false;
   const FISH_MS = 10000;
   // The rarest catch at the current spot (2026-11-17, for Ewan's special bait): in a
-  // scene with its own catch table, the rare (luckBonus) entry with the lowest
+  // scene with its own catch table, the entry with the lowest weight
   // base weight, else the lowest-weight entry; in fresh water, the Moonscale.
   function rarestCatch() {
     const table = world.scene.fishingCatch;
     if (table && table.length) {
-      const pool = table.some((e) => e.luckBonus) ? table.filter((e) => e.luckBonus) : table;
-      return pool.reduce((a, e) => (e.weight < a.weight ? e : a)).id;
+      return table.reduce((a, e) => (e.weight < a.weight ? e : a)).id;
     }
     return 'rare_fish';
   }

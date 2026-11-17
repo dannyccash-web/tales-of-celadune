@@ -658,13 +658,12 @@ export default {
     { x: 680, y: 630 },
     { x: 120, y: 2140 },
   ],
-  // Same saltwater table as C1 — sea bass 75%, crimson sailback 25% at Luck 1.
-  // Luck-scaled (2026-10-20, Danny): the sailback's weight is its chance at
-  // Luck 0 (15%) and each Luck point adds 10 points, so a starting Luck-1
-  // player still sees 75/25, Luck 2 sees 65/35. See main.js's rollCatch.
+  // Saltwater catch table (2026-10-11, Danny): every cast here lands a sea
+  // bass (75%) or a crimson sailback (25%), no boot, no Moonscale. Weights are
+  // percentages (Luck removed 2026-11-17). Read by main.js's rollCatch.
   fishingCatch: [
-    { id: 'sea_bass', weight: 85 },
-    { id: 'crimson_sailback', weight: 15, luckBonus: 10 },
+    { id: 'sea_bass', weight: 75 },
+    { id: 'crimson_sailback', weight: 25 },
   ],
 
   chests: [
