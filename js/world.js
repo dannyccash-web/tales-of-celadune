@@ -578,6 +578,15 @@ export class World {
     // (width==VIEW_W), the clamp pins that axis to 0, i.e. the old fixed behavior.
     this.cameraX = Math.min(Math.max(p.x - VIEW_W / 2, 0), Math.max(0, this.scene.width - VIEW_W));
     this.cameraY = Math.min(Math.max(p.y - VIEW_H / 2, 0), Math.max(0, this.scene.height - VIEW_H));
+    // A performance pulls the camera onto the musician; k (0-1, eased by
+    // main.js) blends from the player-centred view to the musician-centred one.
+    const f = this.cameraFocus;
+    if (f && f.k > 0) {
+      const fx = Math.min(Math.max(f.x - VIEW_W / 2, 0), Math.max(0, this.scene.width - VIEW_W));
+      const fy = Math.min(Math.max(f.y - VIEW_H / 2, 0), Math.max(0, this.scene.height - VIEW_H));
+      this.cameraX += (fx - this.cameraX) * f.k;
+      this.cameraY += (fy - this.cameraY) * f.k;
+    }
   }
 
   // Left/right exits match on a y band (yMin/yMax); top/bottom exits on an
@@ -740,6 +749,21 @@ export class World {
           npc.fading = null;
           this.advanceRoutine(npc);
         }
+        continue;
+      }
+
+      // A musician's performance (2026-11-17, main.js's startPerformance):
+      // the musician stands still facing the player; nearby NPCs walk to a
+      // spot in a wide circle (`gather`), stop, and face the musician. A
+      // stationary NPC's gather spot is where it stands, so it just turns.
+      if (npc.performing) { if (npc.performFace != null) npc.rotation = npc.performFace; continue; }
+      if (npc.gather) {
+        const g = npc.gather;
+        if (!g.done) {
+          g.t = (g.t || 0) + dt;
+          if (this.walkToward(npc, g, dt, 12) || g.t > 6) g.done = true;
+        }
+        if (g.done) npc.rotation = Math.atan2(-(g.fx - npc.x), g.fy - npc.y);
         continue;
       }
 
@@ -1456,6 +1480,18 @@ export class World {
     ctx.restore();
   }
 
+  drawSpotlight(sp) {
+    const ctx = this.ctx;
+    const x = sp.x - this.cameraX, y = sp.y - this.cameraY;
+    const g = ctx.createRadialGradient(x, y, 150, x, y, 380);
+    g.addColorStop(0, 'rgba(0,0,0,0)');
+    g.addColorStop(1, `rgba(0,0,0,${0.78 * sp.alpha})`);
+    ctx.save();
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+    ctx.restore();
+  }
+
   render() {
     const ctx = this.ctx;
 
@@ -1560,6 +1596,10 @@ export class World {
         if (it.sparkle || (it.reward && it.reward.item === 'metallic_ore')) this.drawSparkle(it);
       }
     }
+
+    // A musician's spotlight (2026-11-17): darken everything outside a wide
+    // soft circle on the performer. main.js eases `alpha` in and out.
+    if (this.spotlight && this.spotlight.alpha > 0.01) this.drawSpotlight(this.spotlight);
 
     // Interaction labels (NPC names, buildings, interactables, chests, fishing)
     // are hidden while a modal overlay (dialog/panel/battle/game-over/…) is up,

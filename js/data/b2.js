@@ -569,7 +569,7 @@ export default {
       x: 2400, y: 2170, speed: 30, startsHome: false,
       // Strolls the road above the fountain, playing to whoever stops.
       patrol: [{ x: 2400, y: 2170 }, { x: 2620, y: 2165 }],
-      dialog: { line: 'Ah, an audience! Maro Tidesong, bard of the coast. Stay a verse. I’m writing the Ballad of the Stolen Princess, and I need someone to tell me how it ends.', responses: ['Leave.'] },
+      dialog: { line: 'Ah, an audience! Maro Tidesong, bard of the coast. Stay a verse, eight gold and worth every coin. I’m writing the Ballad of the Stolen Princess, and I need someone to tell me how it ends.', responses: ['Leave.'] },
       chatter: [
         { q: 'How does it end?', a: 'Depends on the crowd! For the soldiers, the wizard wants the crown and a brave knight cuts him down. For the kitchen maids, it’s a love story, very tragic, everybody cries. For the old men in the taverns, something in the north takes them both and nobody ever comes home. All three sell. I just don’t know which one is true.' },
         { q: 'Which one do you believe?', a: 'Me? I believe nobody has told the real story yet. There’s always another verse.' },
@@ -754,7 +754,7 @@ export default {
       chatter: [
         { q: 'What do you know about the princess?', a: 'That she ran off with him, and good for her! Oh, don’t look at me like that. Everyone’s wailing about a kidnapping, but nobody gets carried out of a castle without a single scream, not with walls this thin. She’s a grown woman, whatever the king calls her. A long winter, a clever old wizard, a tower full of books. You work it out.' },
         { q: 'People don’t seem to like that.', a: 'Because I laugh! Somebody in this town has to. Hester gives me a look like curdled milk every time I pass the fountain. I bring her a sweet bun on Sundays anyway. She eats it.' },
-        { q: 'Where are you off to?', a: 'Water from the well, then round to the fountain to hear the bard. He sings my version for a copper. It’s the best one.' },
+        { q: 'Where are you off to?', a: 'Water from the well, then round to the fountain to hear the bard. He sings my version if you pay him enough. It’s the best one.' },
       ],
     },
   ],

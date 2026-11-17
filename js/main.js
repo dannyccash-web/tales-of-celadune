@@ -1096,6 +1096,7 @@ async function boot() {
   // Wipe every bit of run state back to a pristine start and drop the player at
   // the D3 spawn. Used by New Game (and as loadGame's fallback).
   function resetToNewGame() {
+    if (liveSong) stopPerformanceNow();
     checkpointPending = false; // a pickup from the state being replaced must not checkpoint the new one
     Object.assign(stats, NEW_GAME_STATS);
     inventory.length = 0;
@@ -1131,6 +1132,7 @@ async function boot() {
   // CHECKPOINT_KEY (what continueFromDeath reads). Returns false on a missing
   // or unrecognized save so the caller can fall back.
   function loadGame(key = SAVE_KEY) {
+    if (liveSong) stopPerformanceNow();
     checkpointPending = false; // a pickup from the state being replaced must not checkpoint the new one
     let data;
     try { data = JSON.parse(localStorage.getItem(key)); } catch { data = null; }
@@ -2026,6 +2028,17 @@ async function boot() {
     // Vendor Buy/Sell: swap the response box into the item grid, in place —
     // the dialog window stays open (portrait/name/role untouched), matching
     // how every other in-dialog choice behaves.
+    if (effect.playSong) {
+      const song = SONGS[effect.playSong];
+      if (stats.gold < song.price) {
+        audio.sfx(audio.SFX.denied);
+        ui.updateDialogContent({ line: SONG_BROKE[effect.playSong], responses: ['Leave.'] });
+        return true;
+      }
+      spendGold(song.price);
+      setTimeout(() => startPerformance(effect.playSong), 0);
+      return false; // close the dialog; the song takes over
+    }
     if (effect.shop) {
       openVendorGrid(npc, effect.shop);
       return true; // stay open — we're managing the response box ourselves
@@ -4871,6 +4884,7 @@ async function boot() {
     else dialog = withBlessing(withChatter(resolveNpcDialog(npc, isQuestReady), npc), npc);
     dialog = withVegDelivery(dialog, npc);
     dialog = withPastryDelivery(dialog, npc);
+    dialog = withSong(dialog, npc);
     // Any Bramblekin (guards or Chief) parley shows the camp backdrop (2026-07-22).
     const background = (npc.bramblekin || npc.id === 'bramblekin_chief') ? BRAMBLEKIN_BG : npc.background;
     // `lockDialog` rides on the built dialog (Orris's ambush) — ui.js reads it
@@ -4969,6 +4983,7 @@ async function boot() {
   let currentBattleBg = null;
 
   function startBattle(enemyIds, onEnd, background) {
+    if (liveSong) { stopPerformanceNow(); audio.play(sceneMusicTrack(currentSceneId), 0); }
     const playing = audio.nowPlaying();
     if (playing !== audio.TRACKS.battle) preBattleTrack = playing;
     audio.play(audio.TRACKS.battle);
@@ -5747,6 +5762,7 @@ async function boot() {
   }
 
   function interact() {
+    if (liveSong && !liveSong.ending) return; // listening; walk away to stop
     const npc = world.nearestNpcInRange();
     if (npc) { openNpcDialog(npc); return; }
 
@@ -6027,6 +6043,124 @@ async function boot() {
     return 1 - t * t * (3 - 2 * t);
   }
 
+  // ---- Musicians' songs (2026-11-17, Danny) ----
+  // Pay a musician and the world stops to listen: the dialog closes, the
+  // camera eases onto the musician, NPCs nearby gather in a wide circle facing
+  // them, the screen darkens outside a spotlight, the area's music and ambient
+  // sound fade and the song plays (once). Walking more than WALK_AWAY px from
+  // where the player stood, or the song ending, fades everything back.
+  const SONGS = {
+    tesfaye_lark: { price: 3, src: 'assets/audio/Modal_Lute_Melody_1.mp3', toast: 'Tesfaye strikes up a wedding reel.' },
+    lio_shen: { price: 5, src: 'assets/audio/Modal_Lullaby.mp3', toast: 'Lio plays an old Aldermoor lullaby.' },
+    maro_tidesong: { price: 8, src: 'assets/audio/Modal_Lute_Melody.mp3', toast: 'Maro plays a verse of the Ballad of the Stolen Princess.' },
+  };
+  const SONG_BROKE = {
+    tesfaye_lark: 'Three gold. I’m stranded, not desperate. Well. I’m a little desperate. Come back with three gold.',
+    lio_shen: 'Five gold, I’m afraid. I wish I could play for nothing, but the court stopped paying me.',
+    maro_tidesong: 'Eight gold for a verse, friend. Art isn’t cheap, and neither is the coast road.',
+  };
+  const GATHER_RANGE = 650, WALK_AWAY = 40;
+  let liveSong = null; // { npc, scene, startX, startY, k, ending, crowd: [npcs] }
+
+  function withSong(dialog, npc) {
+    const song = SONGS[npc.id];
+    if (!song || npc.atHome) return dialog;
+    const responses = [...dialog.responses];
+    const effects = responses.map((_, i) => dialog.responseEffects?.[i] ?? null);
+    const at = Math.max(0, responses.length - 1);
+    responses.splice(at, 0, `Pay ${song.price} gold for a song.`);
+    effects.splice(at, 0, { playSong: npc.id });
+    return { ...dialog, responses, responseEffects: effects };
+  }
+
+  // Terrain-only clearance (NPC bodies ignored) for picking circle spots.
+  function terrainClear(x, y, r = 20) {
+    if (x < r || y < r || x > world.scene.width - r || y > world.scene.height - r) return false;
+    return !world.scene.obstacles.some((o) => {
+      const cx = Math.max(o.x, Math.min(x, o.x + o.w)), cy = Math.max(o.y, Math.min(y, o.y + o.h));
+      return (x - cx) ** 2 + (y - cy) ** 2 < r * r;
+    });
+  }
+  function lineClear(ax, ay, bx, by) {
+    const n = Math.ceil(Math.hypot(bx - ax, by - ay) / 15);
+    for (let i = 1; i <= n; i++) if (!terrainClear(ax + (bx - ax) * i / n, ay + (by - ay) * i / n, 16)) return false;
+    return true;
+  }
+
+  // Penned and stabled animals stay put (they have no business in a crowd).
+  const ANIMAL_IDS = new Set(['gaffer', 'cinder', 'thrumhorn']);
+  function isAnimal(n) { return ANIMAL_IDS.has(n.id) || !!n.call || !!HORSES[n.id]; }
+
+  function startPerformance(id) {
+    const npc = world.npcs.find((n) => n.id === id);
+    const song = SONGS[id];
+    if (!npc || !song) return;
+    const p = world.player;
+    npc.performing = true;
+    npc.performFace = Math.atan2(-(p.x - npc.x), p.y - npc.y);
+    // Spots on two rings round the musician, clear of walls, reachable in a
+    // straight line from the musician, and not on top of the player.
+    let slots = [];
+    for (const r of [200, 260]) {
+      for (let i = 0; i < 18; i++) {
+        const a = (i / 18) * Math.PI * 2 + (r === 260 ? Math.PI / 18 : 0);
+        const x = npc.x + Math.cos(a) * r, y = npc.y + Math.sin(a) * r;
+        if (Math.hypot(x - p.x, y - p.y) < 80) continue;
+        if (terrainClear(x, y, 22) && lineClear(npc.x, npc.y, x, y)) slots.push({ x, y });
+      }
+    }
+    const crowd = world.npcs
+      .filter((n) => n !== npc && !n.atHome && !n.hidden && !n.defeated && !n.creature && !n.isPlace && !n.fading && !isAnimal(n))
+      .filter((n) => Math.hypot(n.x - npc.x, n.y - npc.y) < GATHER_RANGE)
+      .sort((a, b) => Math.hypot(a.x - npc.x, a.y - npc.y) - Math.hypot(b.x - npc.x, b.y - npc.y));
+    for (const n of crowd) {
+      if (!n.speed || !(n.routine || n.patrol)) { n.gather = { x: n.x, y: n.y, fx: npc.x, fy: npc.y, done: true }; continue; }
+      let best = null, bd = Infinity;
+      for (const s of slots) { const d = Math.hypot(s.x - n.x, s.y - n.y); if (d < bd) { bd = d; best = s; } }
+      if (!best) { n.gather = { x: n.x, y: n.y, fx: npc.x, fy: npc.y, done: true }; continue; }
+      slots = slots.filter((s) => Math.hypot(s.x - best.x, s.y - best.y) >= 60);
+      n.gather = { x: best.x, y: best.y, fx: npc.x, fy: npc.y, done: false, t: 0 };
+    }
+    liveSong = { npc, crowd, scene: currentSceneId, startX: p.x, startY: p.y, k: 0, ending: false };
+    world.cameraFocus = { x: npc.x, y: npc.y, k: 0 };
+    world.spotlight = { x: npc.x, y: npc.y - 10, alpha: 0 };
+    ui.toast(song.toast);
+    audio.playSong(song.src, 900, () => endPerformance());
+  }
+  function releaseCrowd(pf) {
+    pf.npc.performing = false; pf.npc.performFace = null;
+    for (const n of pf.crowd) { n.gather = null; n.stuckTimer = 0; }
+  }
+  // Start fading back to normal (walked away, or the song finished).
+  function endPerformance() {
+    const pf = liveSong;
+    if (!pf || pf.ending) return;
+    pf.ending = true;
+    releaseCrowd(pf);
+    if (pf.scene === currentSceneId) audio.play(sceneMusicTrack(currentSceneId), 1200);
+  }
+  // Drop everything at once (scene change, battle).
+  function stopPerformanceNow() {
+    const pf = liveSong;
+    if (!pf) return;
+    releaseCrowd(pf);
+    const w = worlds[pf.scene];
+    if (w) { w.cameraFocus = null; w.spotlight = null; }
+    liveSong = null;
+  }
+  function updatePerformance(dt) {
+    const pf = liveSong;
+    if (!pf) return;
+    if (pf.scene !== currentSceneId) { stopPerformanceNow(); return; }
+    if (!pf.ending && Math.hypot(world.player.x - pf.startX, world.player.y - pf.startY) > WALK_AWAY) endPerformance();
+    const target = pf.ending ? 0 : 1;
+    pf.k += (target - pf.k) * Math.min(1, dt * (pf.ending ? 3 : 4));
+    if (pf.ending && pf.k < 0.01) { world.cameraFocus = null; world.spotlight = null; liveSong = null; return; }
+    const e = pf.k * pf.k * (3 - 2 * pf.k);
+    world.cameraFocus.k = e;
+    world.spotlight.alpha = e;
+  }
+
   // Animal calls (2026-11-11, Danny): an npc with `call: { every: [lo, hi],
   // range }` plays its DIALOGUE_SFX every lo-hi seconds while the player is
   // within `range`. Loudest (half the dialogue volume, which plays at 1.0)
@@ -6087,14 +6221,15 @@ async function boot() {
     world.playerTorch = state.started && hasTorch;
     // Hide proximity labels while any modal (dialog/panel/battle/…) is open so
     // they don't render over the overlay (2026-07-28, the "Old Barn" label bug).
-    world.suppressLabels = modalLock || ridingFerry; // no name labels floating over the crossing
+    world.suppressLabels = modalLock || ridingFerry || !!liveSong; // no name labels over the crossing or a song
     world.update(dt, input, locked, modalLock);
     // Runs AFTER world.update, which zeroes player.moving/walkTimer every frame
     // while input is locked — the cutscene sets both itself so the walk-flip
     // still plays while the player steps on and off the raft. One frame of
     // camera lag against the new position is imperceptible at 60fps.
     if (!modalLock) maybeCallFerry();
-    if (!modalLock) animalCalls(dt);
+    if (!modalLock && !liveSong) animalCalls(dt);
+    updatePerformance(dt);
     if (orrisLeaving && !ui.isDialogOpen()) { orrisLeaving = false; hideOrris(); requestAutosave(); }
     if (!(ferry?.empty && modalLock)) updateFerry(dt); // a fetch pauses with the world; a ride never has a modal open
     world.render();
@@ -6107,7 +6242,8 @@ async function boot() {
       const silent = !state.started || ui.isBattleOpen() || ui.isVictoryOpen() || ui.isGameOverOpen() || deathFading;
       const wd = world.waterDistances(world.player.x, world.player.y);
       const fd = world.fireDistance(world.player.x, world.player.y);
-      audio.setAmbient(silent ? {} : { river: ambientLevel(wd.river), sea: ambientLevel(wd.sea), fire: fireLevel(fd) }, dt);
+      const hush = liveSong ? 1 - liveSong.k : 1; // a song quiets the area
+      audio.setAmbient(silent ? {} : { river: ambientLevel(wd.river) * hush, sea: ambientLevel(wd.sea) * hush, fire: fireLevel(fd) * hush }, dt);
     }
 
     // Scene exits: crossing an edge with a matching exit either walks the

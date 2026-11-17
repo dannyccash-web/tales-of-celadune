@@ -366,6 +366,23 @@ export function play(src, fadeMs = 1200) {
   }
 }
 
+// A musician's song (2026-11-17): like play(), but plays ONCE and calls
+// onEnd when it finishes. It becomes the current track, so a later play()
+// (the scene's music) cross-fades it out the usual way.
+export function playSong(src, fadeMs = 800, onEnd) {
+  if (typeof Audio === 'undefined') return;
+  const old = current;
+  const el = new Audio(src);
+  el.loop = false;
+  el.volume = 0;
+  current = { el, src };
+  el.addEventListener('ended', () => { if (current && current.el === el && onEnd) onEnd(); });
+  el.play().then(() => {
+    if (current && current.el === el) fade(el, musicVolume, fadeMs);
+  }).catch(() => { if (current && current.el === el && onEnd) onEnd(); });
+  if (old) fade(old.el, 0, fadeMs, () => old.el.pause());
+}
+
 export function nowPlaying() {
   return current ? current.src : null;
 }

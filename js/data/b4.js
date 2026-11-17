@@ -580,11 +580,12 @@ export default {
       portrait: 'assets/images/tesfaye_lark.png',
       x: 1999, y: 1183, speed: 0, startsHome: false, rotation: Math.PI / 2,
       dialog: {
-        line: 'Requests are a copper. Silence is two. You’d be surprised how many people in this camp pay for the silence.',
+        line: 'Requests are three gold. Silence is five. You’d be surprised how many people in this camp pay for the silence.',
         responses: ['Leave.'],
       },
       chatter: [
-        { q: 'Will you play something?', a: 'I would, but the only song anyone asks for this week is the one about the princess, and I’ve played it until I hate it. Nobody knows how it ends yet. That’s the trouble with writing it now.' },
+        { q: 'What do you play?', a: 'Weddings, mostly. Reels, jigs, anything that gets somebody’s uncle up on a table. I don’t do sad songs. This camp has enough sad without me putting a tune to it.' },
+        { q: 'Don’t you know the song about the princess?', a: 'Everybody wants that one, and I won’t play it. Some poor girl is missing and her father is beside himself, and people want to tap their feet to it? No. Ask me for a reel.' },
         { q: 'How did you end up here?', a: 'I was walking east to play a wedding. I assume the wedding went ahead without me. I hope the bride found someone who knows more than four songs.' },
       ],
     },

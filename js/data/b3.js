@@ -1191,10 +1191,11 @@ export default {
         { do: 'goto', x: 891, y: 1235 },
         { do: 'wait', s: 3 },
       ],
-      dialog: { line: 'Would you like a song? I know the cheerful ones too, though I’m out of practice with those lately.', responses: ['Leave.'] },
+      dialog: { line: 'Would you like a song? I only know the old ones, I’m afraid. Nobody asks for those any more, which is exactly why I play them.', responses: ['Leave.'] },
       chatter: [
         { q: 'Why play in the square?', a: 'The king silenced the court’s music the day the princess was taken. A musician who stops playing forgets how. So I play here, for whoever stops to listen.' },
         { q: 'Did you know the princess?', a: 'I played at her name-day feasts for years. She always asked for the oldest songs, the ones nobody else remembered.' },
+        { q: 'What do you play?', a: 'Lullabies, mostly. The ones mothers in Aldermoor sang before there was a king to sing about. Nobody ever wrote them down. If I stop playing them, they’re gone.' },
       ],
     },
     {
