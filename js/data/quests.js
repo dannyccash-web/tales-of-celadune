@@ -141,4 +141,9 @@ export default {
     name: 'Ore for the Brigandine',
     description: 'Durgan Coldforge will forge a Coldforge Brigandine if you bring him 3 more chunks of metallic ore.',
   },
+  // Cairnfolk Cave (B4B, 2026-11-17): Ketta Slatebrook's bridge.
+  b4b_bridge: {
+    name: 'Mending the Span',
+    description: 'Ketta Slatebrook took the bridge over the chasm in Cairnfolk Cave apart on purpose and threw the parts down the side tunnels: the winch gear, the iron pins and the haul rope. Find all three and bring them back to her.',
+  },
 };

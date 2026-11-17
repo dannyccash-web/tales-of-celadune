@@ -1,0 +1,84 @@
+TALES OF CELADUNE - CAIRNFOLK CAVE: CHARACTER PROMPTS
+=====================================================
+7 Cairnfolk: 3 men, 3 women, 1 girl (about 8).
+Matched to Durgan Coldforge and Morrick Stillstone: grey granite skin in flaky,
+layered strata with mica glints, heavy brows, broad stocky builds, hair and
+beards that look carved from stone, muted weathered workwear.
+Each prompt stands on its own. Copy everything between the lines.
+
+
+-----------------------------------------------------------------------------
+1. BRANNOCH DEEPVEIN - elder engineer, head of the cave (male, ~300 years old)
+-----------------------------------------------------------------------------
+
+PORTRAIT:
+Full-body fantasy RPG character portrait, painterly semi-realistic style, plain transparent background, vertical 2:3 framing. A very old Cairnfolk man, a stocky stone-skinned humanoid: skin of grey granite in flaking layered strata with tiny glinting mica flecks, heavy craggy brow, deep-set amber eyes. A long beard and eyebrows that look like pale weathered stone, cracked and chalky white, with thin quartz veins running through his skin. He is slightly hunched but still broad. He wears a long faded brown wool coat over a linen shirt, a leather tool belt holding brass calipers, a plumb bob and a folding rule, and round spectacles with polished quartz lenses. He holds a rolled parchment of engineering drawings under one arm and a stout walking staff of iron-shod oak. Expression: shrewd, patient, quietly proud. Muted earthy palette, warm soft lighting, same style as a weathered stone-folk blacksmith character.
+
+OVERHEAD:
+Top-down view of the same character from directly above, facing down, small game sprite: grey stone head and shoulders, white stone beard, brown coat, rolled parchment under one arm. Plain transparent background, soft drop shadow, readable at 54x54 pixels.
+
+
+-----------------------------------------------------------------------------
+2. HULDA FLINTMERE - master mason (female, middle-aged)
+-----------------------------------------------------------------------------
+
+PORTRAIT:
+Full-body fantasy RPG character portrait, painterly semi-realistic style, plain transparent background, vertical 2:3 framing. A middle-aged Cairnfolk woman, a stocky stone-skinned humanoid with powerful shoulders and thick forearms: skin of warm grey granite in flaking layered strata with glinting mica flecks, strong jaw, heavy brow, steady grey eyes. Her hair looks like slabs of dark slate, pulled back into two thick stone braids bound with iron rings. She wears a rolled-sleeve linen shirt, a heavy stone-dusted leather apron, and a wide belt with chisels, a mason's square and a wooden mallet. She carries a squared stone block on one shoulder as if it weighs nothing. Expression: no-nonsense, confident, a hint of dry humor. Muted earthy palette, warm soft lighting.
+
+OVERHEAD:
+Top-down view of the same character from directly above, facing down, small game sprite: broad grey stone shoulders, two dark slate braids, leather apron, a pale stone block on one shoulder. Plain transparent background, soft drop shadow, readable at 54x54 pixels.
+
+
+-----------------------------------------------------------------------------
+3. TAVOR FLINTMERE - young miner (male, young adult)
+-----------------------------------------------------------------------------
+
+PORTRAIT:
+Full-body fantasy RPG character portrait, painterly semi-realistic style, plain transparent background, vertical 2:3 framing. A young Cairnfolk man, a stocky stone-skinned humanoid, leaner than his elders: skin of dark iron-grey stone in flaking layered strata streaked with rusty orange ore veins and a few mica glints, a smoother younger face, eager bright amber eyes. Short spiky hair like broken shards of dark rock. He wears a dented leather mining cap with a small lit candle-lantern fixed to the front, a sleeveless padded vest, a sooty linen shirt, knee pads and heavy boots. He rests a well-worn pickaxe over one shoulder and carries a small sack of glittering ore chunks. Expression: cheerful, eager, a little cocky. Muted earthy palette with warm lantern glow.
+
+OVERHEAD:
+Top-down view of the same character from directly above, facing down, small game sprite: leather mining cap with a glowing candle on top, dark grey stone shoulders, pickaxe over one shoulder. Plain transparent background, soft drop shadow, readable at 54x54 pixels.
+
+
+-----------------------------------------------------------------------------
+4. KETTA SLATEBROOK - tinkering engineer (female, young adult)
+-----------------------------------------------------------------------------
+
+PORTRAIT:
+Full-body fantasy RPG character portrait, painterly semi-realistic style, plain transparent background, vertical 2:3 framing. A young Cairnfolk woman, a stocky stone-skinned humanoid: skin of cool blue-grey slate in thin flaking layers with fine mica glints, a sharp curious face, bright hazel eyes. Short choppy hair like stacked slivers of slate, with a pencil tucked behind one ear and brass goggles pushed up on her forehead. She wears a canvas work smock with many pockets, a leather tool roll slung across her chest full of small wrenches and screwdrivers, and fingerless leather gloves. She holds a small brass-and-iron pulley contraption with a little crank, gears exposed, mid-adjustment. Expression: absorbed, clever, about to say "I can fix that." Muted earthy palette with brass highlights, warm soft lighting.
+
+OVERHEAD:
+Top-down view of the same character from directly above, facing down, small game sprite: choppy blue-grey slate hair with brass goggles on the forehead, canvas smock, a small brass gadget held in front. Plain transparent background, soft drop shadow, readable at 54x54 pixels.
+
+
+-----------------------------------------------------------------------------
+5. MOTHER ORLA GRAVELMOOT - cave cook and healer, not a builder (female, elderly)
+-----------------------------------------------------------------------------
+
+PORTRAIT:
+Full-body fantasy RPG character portrait, painterly semi-realistic style, plain transparent background, vertical 2:3 framing. An elderly Cairnfolk woman, a short, round, stone-skinned humanoid: skin of dark basalt in softened weathered strata with faint mica glints and patches of pale green lichen on her shoulders and the backs of her hands, a broad kind face deeply creased like old rock, warm amber eyes. Thin wispy hair like grey stone threads tied in a bun under a knitted shawl. She wears a long homespun dress, a patched apron with dried herbs tucked in the pocket, and carries a wicker basket of pale cave mushrooms in one arm and a long wooden ladle in the other hand. Expression: motherly, warm, the one who feeds everyone. Muted earthy palette, warm hearth-like lighting.
+
+OVERHEAD:
+Top-down view of the same character from directly above, facing down, small game sprite: short round figure in a knitted shawl over a grey stone bun, basket of pale mushrooms on one arm. Plain transparent background, soft drop shadow, readable at 54x54 pixels.
+
+
+-----------------------------------------------------------------------------
+6. HALVARD GRAVELMOOT - mushroom farmer who never took to stone, not a builder (male, middle-aged)
+-----------------------------------------------------------------------------
+
+PORTRAIT:
+Full-body fantasy RPG character portrait, painterly semi-realistic style, plain transparent background, vertical 2:3 framing. A middle-aged Cairnfolk man, a stocky stone-skinned humanoid with a big belly: skin of sandy tan sandstone in soft crumbling layers with a few mica glints, a gentle rounded face, sleepy brown eyes, a short stubbly beard like coarse gravel. Thick curls of hair like rounded river pebbles. He wears a loose undyed tunic, rope belt, soil-stained trousers rolled to the knee, and a wide floppy hat with a small glowing blue mushroom growing from the brim. He holds a small hand trowel and a wooden tray of luminous blue and pale cave mushrooms. Expression: easygoing, dreamy, content to be the odd one out among the builders. Muted earthy palette with soft blue mushroom glow.
+
+OVERHEAD:
+Top-down view of the same character from directly above, facing down, small game sprite: wide floppy hat with a small glowing blue mushroom on the brim, tan stone arms, a tray of glowing mushrooms held in front. Plain transparent background, soft drop shadow, readable at 54x54 pixels.
+
+
+-----------------------------------------------------------------------------
+7. DESSA FLINTMERE - apprentice in the making (girl, about 8)
+-----------------------------------------------------------------------------
+
+PORTRAIT:
+Full-body fantasy RPG character portrait, painterly semi-realistic style, plain transparent background, vertical 2:3 framing. A Cairnfolk girl about eight years old, a small stocky stone-skinned child: skin of light grey granite, smoother and less layered than an adult's, with only a few tiny mica sparkles, round cheeks, big bright amber eyes, a gap-toothed grin. Short stubby pigtails that look like little rounded pebbles tied with red string. She wears an oversized hand-me-down leather apron rolled up at the waist and dragging near her feet, a patched linen smock and small sturdy boots. She proudly holds a child-sized wooden mallet in one hand and a lumpy pebble she has carved into a crude little bird in the other. Expression: mischievous, proud, full of energy. Muted earthy palette with a pop of red, warm soft lighting.
+
+OVERHEAD:
+Top-down view of the same character from directly above, facing down, small game sprite: small child figure, two little pebble pigtails with red string, oversized brown apron, tiny wooden mallet. Plain transparent background, soft drop shadow, readable at 54x54 pixels.

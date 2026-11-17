@@ -8,8 +8,8 @@
 // (the waterfall, top-left) and leaves the bottom edge at x~300-440, lining up
 // with the river down C4's west side. A dirt road comes up from C4 to a
 // T-junction at the centre; a narrower track carries on north from the
-// junction to a dark cave mouth under the cliff (scenery only — no cave
-// interior, per Danny the cliffs just signal the frozen north). North of the
+// junction to a dark cave mouth under the cliff, the way into Cairnfolk Cave
+// (B4B, 2026-11-17). North of the
 // road, between the junction and the barricade, is the camp of travellers the
 // closure has stranded (tents, two covered wagons, crates, a firewood pile).
 // At x~2610 a line of crossed stakes closes the road: the EASTERN BARRICADE.
@@ -426,7 +426,12 @@ export default {
   // the bank ~97px east. Freshwater table.
   fishingSpots: [{ x: 540, y: 1990 }],
 
-  interactables: [],
+  // The cave mouth at the end of the cliff trail opens into Cairnfolk Cave
+  // (B4B, 2026-11-17). The mouth itself is rock; the label sits on it and is
+  // reached from the trail end just below.
+  interactables: [
+    { id: 'b4_cairnfolk_cave', x: 1725, y: 395, range: 110, label: 'Cairnfolk Cave', cave: 'B4B' },
+  ],
   chests: [],
   battles: [],
   ambushes: [],

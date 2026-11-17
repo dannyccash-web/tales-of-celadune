@@ -160,6 +160,23 @@ export class World {
     // always starts with the raft at its scene-data mooring; where it ACTUALLY
     // is comes from the saved `ferrySide` flag, re-applied on scene entry.
     this.props = (scene.props || []).map((pr) => ({ ...pr }));
+    // Gates (2026-11-17, B4B's chasm bridge): an obstacle or prop may carry
+    // `gate: '<name>'`. A gated obstacle blocks until main.js adds that name
+    // here; a gated prop is only DRAWN once it's open. Per-instance, so a fresh
+    // World starts with every gate shut; main.js re-opens them from save flags.
+    this.openGates = new Set();
+    // Drifting mist (2026-11-17, B4B's chasm): `mists: [{x, y, w, h, ...}]`,
+    // soft translucent puffs sliding sideways across the rect, drawn over the
+    // background and props but under every character. See drawMist().
+    this.mists = (scene.mists || []).map((m, i) => ({
+      x: m.x, y: m.y, w: m.w, h: m.h,
+      count: m.count ?? 26,     // puffs in the band
+      speed: m.speed ?? 14,     // px/s sideways drift
+      alpha: m.alpha ?? 0.16,   // peak opacity of one puff
+      size: m.size ?? 170,      // puff radius
+      color: m.color || '200,214,226',
+      seed: m.seed ?? i * 0.53,
+    }));
     this.images = images; // { [src]: HTMLImageElement }
     this.silhouettes = new Map(); // img -> black-silhouette canvas for shadows
 
@@ -465,6 +482,7 @@ export class World {
       // autonomous NPCs out of a pocket without blocking the player, who
       // moves deliberately and isn't at risk of getting stuck there.
       if (ob.npcOnly && isPlayer) continue;
+      if (ob.gate && this.openGates.has(ob.gate)) continue;
       if (circleRectOverlap(x, y, r, ob)) {
         out.push({ id: ob, cx: ob.x + ob.w / 2, cy: ob.y + ob.h / 2 });
       }
@@ -1353,6 +1371,46 @@ export class World {
     ctx.restore();
   }
 
+  // Drifting mist (2026-11-17): soft radial puffs that slide sideways through
+  // the rect and wrap round, each breathing in and out on its own slow cycle,
+  // with a little vertical sway. Positions come from the shared clock, so
+  // nothing is stored per frame. Faded towards the rect's top and bottom so
+  // the band has no hard edge.
+  drawMist(m) {
+    const ctx = this.ctx;
+    if (m.y + m.h - this.cameraY < -m.size || m.y - this.cameraY > VIEW_H + m.size) return;
+    ctx.save();
+    const span = m.w + m.size * 2;
+    for (let i = 0; i < m.count; i++) {
+      const h1 = Math.sin((i + 1) * 12.9898 + m.seed * 78.233) * 43758.5453;
+      const r1 = h1 - Math.floor(h1);
+      const h2 = Math.sin((i + 1) * 39.3468 + m.seed * 11.135) * 24634.6345;
+      const r2 = h2 - Math.floor(h2);
+      const dir = i % 3 === 0 ? -1 : 1;
+      const speed = m.speed * (0.6 + r2 * 0.8);
+      let px = (r1 * span + dir * this.time * speed) % span;
+      if (px < 0) px += span;
+      const wx = m.x - m.size + px;
+      const wy = m.y + m.h * (0.15 + 0.7 * r2) + Math.sin(this.time * 0.21 + i * 1.7) * m.h * 0.08;
+      const edge = Math.min(1, Math.min(wy - m.y, m.y + m.h - wy) / (m.h * 0.35));
+      const breath = 0.55 + 0.45 * Math.sin(this.time * (0.13 + r1 * 0.12) + i * 2.1);
+      const a = m.alpha * breath * Math.max(0, edge);
+      if (a <= 0.004) continue;
+      const sx = wx - this.cameraX, sy = wy - this.cameraY;
+      if (sx < -m.size || sx > VIEW_W + m.size) continue;
+      const rad = m.size * (0.75 + r1 * 0.6);
+      const g = ctx.createRadialGradient(sx, sy, 0, sx, sy, rad);
+      g.addColorStop(0, `rgba(${m.color},${a})`);
+      g.addColorStop(0.55, `rgba(${m.color},${a * 0.45})`);
+      g.addColorStop(1, `rgba(${m.color},0)`);
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.ellipse(sx, sy, rad * 1.6, rad * 0.7, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
   drawSmoke(s) {
     const ctx = this.ctx;
     const baseScreenY = s.y - this.cameraY;
@@ -1534,8 +1592,10 @@ export class World {
     // the lake) never writes back into scene data. Drawn before the chests so
     // a prop always sits UNDER whatever is standing on it.
     for (const pr of this.props) {
+      if (pr.gate && !this.openGates.has(pr.gate)) continue;
       this.drawSprite(this.images[pr.sprite], pr.x, pr.y, ((pr.rotation || 0) * Math.PI) / 180);
     }
+    for (const m of this.mists) this.drawMist(m);
 
     // Layer 2: treasure chests (on the ground, so under characters), then NPCs,
     // then the player on top. Emptied chests are gone. Drawn via drawSprite so

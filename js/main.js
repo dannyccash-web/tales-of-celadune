@@ -18,6 +18,7 @@ import sceneC3B from './data/c3b.js';
 import sceneC3C from './data/c3c.js';
 import sceneC3D from './data/c3d.js';
 import sceneB4 from './data/b4.js';
+import sceneB4B from './data/b4b.js';
 import sceneB3 from './data/b3.js';
 import sceneB2 from './data/b2.js';
 import sceneB1 from './data/b1.js';
@@ -452,7 +453,7 @@ function loadImages(sources, onProgress) {
 // one gets the usual "isn't ready yet" toast, and they never appear in fast
 // travel. Remove an id from this set to open that scene up.
 const LOCKED_SCENES = new Set([]); // B4 opened 2026-11-04, B3 2026-11-05, B2 2026-11-08, B1 2026-11-13 (Danny). Add an id to lock a scene again.
-const SCENES = { D1: sceneD1, D1B: sceneD1B, D2: sceneD2, D3: sceneD3, D4: sceneD4, D4B: sceneD4B, C4: sceneC4, C1: sceneC1, C1B: sceneC1B, C1C: sceneC1C, C1D: sceneC1D, C2: sceneC2, C3: sceneC3, C3B: sceneC3B, C3C: sceneC3C, C3D: sceneC3D, B4: sceneB4, B3: sceneB3, B2: sceneB2, B1: sceneB1 };
+const SCENES = { D1: sceneD1, D1B: sceneD1B, D2: sceneD2, D3: sceneD3, D4: sceneD4, D4B: sceneD4B, C4: sceneC4, C1: sceneC1, C1B: sceneC1B, C1C: sceneC1C, C1D: sceneC1D, C2: sceneC2, C3: sceneC3, C3B: sceneC3B, C3C: sceneC3C, C3D: sceneC3D, B4: sceneB4, B4B: sceneB4B, B3: sceneB3, B2: sceneB2, B1: sceneB1 };
 
 async function boot() {
   // Preload assets for EVERY registered scene up front — scene switches are
@@ -495,6 +496,7 @@ async function boot() {
     'assets/images/orris_fenwick_1.png', // his dialog opens on approach, so preload BOTH portraits (same as Edras)
     'assets/images/orris_fenwick_2.png',
     'assets/images/Edras Holloweye.png', // D4B hermit — dialog auto-opens on approach, so preload the portrait
+    'assets/images/dessa_flintmere.png', // B4B: Dessa runs up and her dialog opens on its own
     'assets/images/ysra_nineshells.png', // C1B's Drownweft — fought via dialogue/theft-trigger, not a `battles` list
     // Temple of Aeluna (2026-10-15): the Gloamkin are roaming creatures and
     // Morrowvane is fought from his dialogue, so none are in a `battles` list.
@@ -580,6 +582,13 @@ async function boot() {
   // Corporal Ade Thornwick stops the player once at West Kingsreach's south
   // gate (B1, 2026-11-15), same pattern as Arjun. Persisted.
   let adeMet = false;
+  // Cairnfolk Cave (B4B, 2026-11-17). b4bBridgeFixed: Ketta has rebuilt the
+  // chasm bridge (opens the world gate 'b4b_bridge'). dessaMet: Dessa has run
+  // up and said hello once. Both persisted. orlaFedThisVisit: Orla's broth is
+  // once per visit, reset on every scene entry.
+  let b4bBridgeFixed = false;
+  let dessaMet = false;
+  let orlaFedThisVisit = false;
   // Soraya Dawnveil's blessing at the High Temple (B1, 2026-11-15) is once per
   // visit, like Elowen's. Not persisted; reset on every scene entry.
   let sorayaBlessedThisVisit = false;
@@ -651,6 +660,7 @@ async function boot() {
     window.world = world; // debug handle follows the active scene
     elowenBlessedThisVisit = false; // per-visit blessing gate resets each scene entry (2026-07-31)
     sorayaBlessedThisVisit = false;
+    orlaFedThisVisit = false;
     if (SCENES[id]?.travel) visitedTowns.add(id); // a town, once entered, is a fast-travel destination
     refreshTravelPanel(); // also moves the "You are here" marker
     if (fresh && pendingWorldFlags) applyWorldFlags(world, pendingWorldFlags[id]);
@@ -670,6 +680,7 @@ async function boot() {
     // Nkemi has had time with Lily's stone once the player leaves and comes back.
     if (id === 'B3' && nkemiStone === 'given') nkemiStone = 'ready';
     if (id === 'B3' && arjunMet) { const a = world.npcs.find((n) => n.id === 'arjun_talwar'); if (a) { a.chaseTalk = false; a._chasing = false; } }
+    if (id === 'B4B') applyB4BState();
     if (id === 'B1' && adeMet) { const a = world.npcs.find((n) => n.id === 'ade_thornwick'); if (a) { a.chaseTalk = false; a._chasing = false; } }
     // Mara Hollowmast doesn't appear in town until rescued from C1D (2026-09-12)
     // - reuses `.defeated` purely as a presence gate (world.js: a defeated npc
@@ -1003,7 +1014,7 @@ async function boot() {
         inventory: inventory.map((e) => ({ ...e })),
         equipment: { ...equipment },
         quests: quests.map((q) => ({ ...q })),
-        flags: { campQuestDone, campHostile, campTollTier, gafferHappy, thrumhornFed, clucksworthFed, eggathaFed, orrisRescued, orrisDeparted, wellDrinks, vegetableDeliveredToTavern, mirelleStage, mirelleOutcome, calderToldStory, calderToldDangers, maraMet, maraToldTruth, lilyGullThanked, magicRevealed, maraHollowmastRescued, lockboxAcceptedFrom, lockboxGivenTo , ferrySide, lakewardenPaid, arjunMet, adeMet, nkemiStone, nkemiStaff, visitedTowns: [...visitedTowns] },
+        flags: { campQuestDone, campHostile, campTollTier, gafferHappy, thrumhornFed, clucksworthFed, eggathaFed, orrisRescued, orrisDeparted, wellDrinks, vegetableDeliveredToTavern, mirelleStage, mirelleOutcome, calderToldStory, calderToldDangers, maraMet, maraToldTruth, lilyGullThanked, magicRevealed, maraHollowmastRescued, lockboxAcceptedFrom, lockboxGivenTo , ferrySide, lakewardenPaid, arjunMet, adeMet, b4bBridgeFixed, dessaMet, nkemiStone, nkemiStaff, visitedTowns: [...visitedTowns] },
         caveReturn, // where to exit to if saved inside a cave/dungeon
         worlds: snapshotWorlds(),
       };
@@ -1113,6 +1124,7 @@ async function boot() {
     maraHollowmastRescued = false;
     arjunMet = false;
     adeMet = false;
+    b4bBridgeFixed = false; dessaMet = false;
     nkemiStone = 'none'; nkemiStaff = 'none';
     lockboxAcceptedFrom = null; lockboxGivenTo = null;
     caveReturn = null;
@@ -1162,6 +1174,8 @@ async function boot() {
     maraHollowmastRescued = !!f.maraHollowmastRescued;
     arjunMet = !!f.arjunMet;
     adeMet = !!f.adeMet;
+    b4bBridgeFixed = !!f.b4bBridgeFixed;
+    dessaMet = !!f.dessaMet;
     nkemiStone = f.nkemiStone || 'none';
     nkemiStaff = f.nkemiStaff || 'none';
     lockboxAcceptedFrom = f.lockboxAcceptedFrom || null;
@@ -1869,6 +1883,42 @@ async function boot() {
         line: 'She turns the lockbox over once in her hands, then presses her palm flat against it and murmurs something too quiet to catch. “May Maren, Warden of the Tide, watch over you in every water you cross.” Something settles into you, steady and lasting. (Defense permanently +1.)',
         responses: ['Leave.'],
       });
+      return true;
+    }
+    // ---- Cairnfolk Cave (B4B, 2026-11-17) ----
+    if (effect.kettaMenu) { ui.updateDialogContent(buildKettaDialog()); return true; }
+    if (effect.kettaCross) {
+      if (kettaPiecesHeld() === KETTA_PIECES.length) {
+        ui.updateDialogContent({ line: KETTA_CROSS_HAVE, responses: ['Here are your pieces.', 'Never mind.'], responseEffects: [{ kettaFix: true }, { kettaMenu: true }] });
+      } else {
+        ui.updateDialogContent({ line: KETTA_CROSS, responses: ['I’ll find the pieces.', 'Never mind.'], responseEffects: [{ kettaAccept: true }, { kettaMenu: true }] });
+      }
+      return true;
+    }
+    if (effect.kettaAccept) {
+      startQuest('b4b_bridge');
+      ui.updateDialogContent({ line: KETTA_ACCEPT, responses: ['Leave.'] });
+      return true;
+    }
+    if (effect.kettaFix) {
+      for (const id of KETTA_PIECES) removeItem(id, 1, true);
+      ui.showGaveItem(ITEMS.bridge_winch_gear);
+      if (questStatus('b4b_bridge') === 'none') startQuest('b4b_bridge');
+      completeQuest('b4b_bridge');
+      b4bBridgeFixed = true;
+      applyB4BState();
+      audio.sfx(audio.SFX.door, 0.8);
+      requestAutosave();
+      ui.updateDialogContent({ line: KETTA_FIX, responses: ['Leave.'] });
+      return true;
+    }
+    if (effect.orlaMenu) { ui.updateDialogContent(buildOrlaDialog(npc)); return true; }
+    if (effect.orlaBroth) {
+      const back = { responses: ['Go back.', 'Leave.'], responseEffects: [{ orlaMenu: true }, null] };
+      if (orlaFedThisVisit) { ui.updateDialogContent({ line: ORLA_ALREADY, ...back }); return true; }
+      orlaFedThisVisit = true;
+      const healed = healPlayer(stats.healthMax);
+      ui.updateDialogContent({ line: healed > 0 ? ORLA_BROTH : ORLA_BROTH_FULL, ...back });
       return true;
     }
     // ---- Mateo Avellaneda's chestnuts (C3, 2026-10-10) ----
@@ -2747,6 +2797,75 @@ async function boot() {
   // the live npc, so swapping `portrait` on the instance is all it takes.
   const ORRIS_PORTRAIT_AMBUSH = 'assets/images/orris_fenwick_1.png';
   const ORRIS_PORTRAIT_SAFE = 'assets/images/orris_fenwick_2.png';
+
+  // ---- Cairnfolk Cave (B4B, 2026-11-17) ----
+  // Ketta Slatebrook keeps the chasm bridge, and keeps it broken: she took the
+  // middle span apart so nothing crosses from the frozen side. Asking to cross
+  // gets you her quest (b4b_bridge): bring back the winch gear, the iron pins
+  // and the haul rope she threw down the side tunnels. Handing them over opens
+  // the world gate 'b4b_bridge' (the span is drawn and stops blocking).
+  const KETTA_PIECES = ['bridge_winch_gear', 'bridge_pins', 'bridge_rope'];
+  const KETTA_GREET = 'Don’t touch the winch. Don’t touch the rails. Actually, don’t touch anything near my bridge. Ketta Slatebrook. I keep this bridge. Mostly I keep it from working.';
+  const KETTA_WHY = 'Because I took it apart. The middle span folds up, so I pulled the pins, stripped the winch gear and cut the haul rope. Nothing crosses from the cold side now. Nothing crosses from this side either, which is the bit everyone forgets to thank me for.';
+  const KETTA_OTHER = 'The upper galleries. Frozen solid now. A season ago the frost came down out of the mountain, and there was something moving in it. Not animals. Things that went tink, tink, tink against the ice. Brannoch said pull back. I said give me an hour. It took me twenty minutes.';
+  const KETTA_CROSS = 'No. ...You actually mean it. You’re mad, you know that? Fine. I’m not putting it back together myself, because I’m not mad. I threw the pieces down the side tunnels so nobody could get clever: the winch gear, the iron pins and the haul rope. Bring me all three and I’ll set the span. If anything follows you back across, that’s your problem.';
+  const KETTA_CROSS_HAVE = 'No. ...Wait. Is that my winch gear? And my pins? And my rope, which I threw very hard? You went and found them before you even asked. That’s either very clever or very worrying. Hand them over, then, and I’ll set the span. If anything follows you back across, that’s your problem.';
+  const KETTA_ACCEPT = 'Side tunnels, south of here. Mind the rats. And the bats. And the rats. Don’t come back missing anything, I’ve only got the one bridge.';
+  const KETTA_FIX = 'You found all of it. Fine. Fine! Give me a minute. (She seats the pins, fits the gear to the winch and runs the rope, and the middle span comes down across the chasm with a long wooden groan.) There. She’ll hold. Don’t make me regret it.';
+  const KETTA_AFTER = 'She’s down and she’s holding. If you hear tink, tink, tink behind you, run. Don’t stop to wave.';
+  function kettaPiecesHeld() { return KETTA_PIECES.filter((id) => inventory.some((it) => it.id === id && it.qty > 0)).length; }
+  function buildKettaDialog() {
+    const st = questStatus('b4b_bridge');
+    const other = { followUp: KETTA_OTHER };
+    if (st === 'completed') return { line: KETTA_AFTER, responses: ['What’s on the other side?', 'Leave.'], responseEffects: [other, null] };
+    if (st === 'active') {
+      const n = kettaPiecesHeld();
+      if (n === KETTA_PIECES.length) {
+        return { line: 'You’re back, and you’re carrying something heavy. Tell me that’s my winch gear.', responses: ['Here are your pieces.', 'What’s on the other side?', 'Leave.'], responseEffects: [{ kettaFix: true }, other, null] };
+      }
+      const line = n === 0
+        ? 'Still alive? Good. The winch gear, the iron pins and the haul rope. All three, or the span stays up.'
+        : `You’ve got ${n} of my three pieces. The span needs all of them. I need the winch gear, the iron pins and the haul rope.`;
+      return { line, responses: ['What’s on the other side?', 'Leave.'], responseEffects: [other, null] };
+    }
+    return {
+      line: KETTA_GREET,
+      responses: ['Why doesn’t it work?', 'What’s on the other side?', 'I want to cross the bridge.', 'Leave.'],
+      responseEffects: [{ followUp: KETTA_WHY }, other, { kettaCross: true }, null],
+    };
+  }
+  // The rebuilt span: open the gate on the live World (also on every B4B entry,
+  // so a fresh World built from a save matches). Dessa only runs up once.
+  function applyB4BState() {
+    if (currentSceneId !== 'B4B' || !world) return;
+    if (b4bBridgeFixed) world.openGates.add('b4b_bridge');
+    if (dessaMet) { const d = world.npcs.find((n) => n.id === 'dessa_flintmere'); if (d) { d.chaseTalk = false; d._chasing = false; } }
+  }
+  // Dessa Flintmere, eight, runs straight up to the first visitor in a year.
+  const DESSA_FIRST = 'A VISITOR! You’re a real one, right? From up top? Ma said nobody comes down anymore, and I said somebody will, and you came! I’m Dessa! Dessa Flintmere! Do you want to see my bird? I carved it. It’s a bird. Mostly.';
+  const DESSA_AGAIN = 'You came back! Do you want to know something? I know loads of things. Ask me anything. Ask me two things.';
+  function buildDessaDialog(npc) {
+    const first = !dessaMet;
+    if (first) {
+      dessaMet = true;
+      const live = world.npcs.find((n) => n.id === 'dessa_flintmere');
+      if (live) { live.chaseTalk = false; live._chasing = false; }
+      requestAutosave();
+    }
+    return withChatter({ line: first ? DESSA_FIRST : DESSA_AGAIN, responses: ['Leave.'] }, npc);
+  }
+  // Orla Gravelmoot's broth: a full heal, once per visit.
+  const ORLA_BROTH = 'Here, love. Mushroom broth, hot, with a bit of root in it for the strength. Drink it all. (You feel warm right through, and your wounds stop aching.)';
+  const ORLA_BROTH_FULL = 'You’re hale enough already, but nobody leaves my table hungry. Drink up. (It’s good broth. It tastes like nice dirt.)';
+  const ORLA_ALREADY = 'You’ve had your bowl, and I’ve the whole cave to feed. Come back another time and there’ll be more.';
+  function buildOrlaDialog(npc) {
+    const base = withChatter(resolveNpcDialog(npc, isQuestReady), npc);
+    const at = base.responses.length - 1; // before the trailing "Leave."
+    const responses = [...base.responses]; const effects = base.responseEffects ? [...base.responseEffects] : responses.map(() => null);
+    responses.splice(at, 0, 'Could I have some broth?');
+    effects.splice(at, 0, { orlaBroth: true });
+    return { ...base, responses, responseEffects: effects };
+  }
 
   // ---- Arjun Talwar, Kingsreach's east gate (B3, 2026-11-05) ----
   // The first time the player comes near, he steps out and stops them (the
@@ -4861,6 +4980,9 @@ async function boot() {
     else if (npc.id === 'edmund_fairlock') dialog = buildEdmundDialog(npc);
     else if (npc.id === 'arjun_talwar') dialog = buildArjunDialog(npc);
     else if (npc.id === 'ade_thornwick') dialog = buildAdeDialog(npc);
+    else if (npc.id === 'ketta_slatebrook') dialog = buildKettaDialog();
+    else if (npc.id === 'dessa_flintmere') dialog = buildDessaDialog(npc);
+    else if (npc.id === 'orla_gravelmoot') dialog = buildOrlaDialog(npc);
     else if (HORSES[npc.id]) dialog = buildHorseDialog(npc.id);
     else if (npc.id === 'cinder') dialog = buildCinderDialog();
     else if (npc.id === 'sir_clucksworth' || npc.id === 'dame_eggatha') dialog = buildChickenDialog(npc.id);

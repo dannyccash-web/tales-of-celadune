@@ -725,6 +725,30 @@ const ITEMS = {
     description: 'An ordinary-looking rock Lily swears is magic. She found it on the beach herself.',
     questItem: false,
   },
+  // ---- Ketta's bridge parts (Cairnfolk Cave, B4B, 2026-11-17) ----
+  // Quest items for b4b_bridge: found in three dead-end tunnels, handed back to
+  // Ketta Slatebrook to rebuild the chasm bridge. Art is a placeholder.
+  bridge_winch_gear: {
+    id: 'bridge_winch_gear',
+    name: 'Winch Gear',
+    image: 'assets/images/bridge_winch_gear.png',
+    description: 'A heavy brass gear from the bridge winch in Cairnfolk Cave. Ketta will want it back.',
+    questItem: true,
+  },
+  bridge_pins: {
+    id: 'bridge_pins',
+    name: 'Iron Bridge Pins',
+    image: 'assets/images/bridge_pins.png',
+    description: 'Three thick iron pins that lock the middle span of Ketta’s bridge in place.',
+    questItem: true,
+  },
+  bridge_rope: {
+    id: 'bridge_rope',
+    name: 'Haul Rope',
+    image: 'assets/images/bridge_rope.png',
+    description: 'A coil of heavy haul rope, cut clean through at one end. It lowers the bridge’s middle span.',
+    questItem: true,
+  },
   // ---- SPELLS (2026-11-05) --------------------------------------------------
   // Magic comes from Ithrel ("heart-seed" in Old Aelunic): crystals Aeluna's
   // priests set workings into before Aldermoor had a king. Nkemi Vesper (B3)
