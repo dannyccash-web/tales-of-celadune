@@ -99,6 +99,16 @@ export const DIALOGUE_SFX = {
   ambrose_lacey: 'assets/audio/mrstokes302-hmmm-sound-male-sfx-mrstokes302-420028.mp3',
   ade_thornwick: 'assets/audio/universfield-muffled-reaction-242214.mp3',
   maelis_graymantle: 'assets/audio/freesound_community-reverb-89603.mp3', // the ghostly enemy-death reverb
+  // The King's Castle town (B2, 2026-11-17)
+  bastian_crowe: 'assets/audio/mrstokes302-hmmm-sound-male-sfx-mrstokes302-420028.mp3',
+  folasade_okoro: 'assets/audio/freesound_community-mmm-hmm-36292.mp3',
+  tariq_al_mansur: 'assets/audio/universfield-muffled-reaction-242214.mp3',
+  hester_marlowe: 'assets/audio/freesound_community-long-sigh-104609.mp3',
+  nettle_bramblewick: 'assets/audio/pacomoya-eh-13143.mp3', // Rootkin, like Skitter and Pip
+  maro_tidesong: 'assets/audio/u_9kvcihzjc7-squashwo-gua-plants-vs-zombies-hmm-383643.mp3', // Tidefolk, Cade's clip
+  haneul_seo: 'assets/audio/u_xg7ssi08yr-female-ah-ha-389835.mp3',
+  silas_wexley: 'assets/audio/mrstokes302-hmmm-sound-male-sfx-mrstokes302-420028.mp3',
+  pilar_ocampo: 'assets/audio/freesound_community-girl-chucklewav-14669.mp3',
 
   // D2 village (2026-07-16). Three male + three female "hmm/reaction" clips
   // (Danny's picks), spread ~3 apiece across the 9 men and 9 women so the

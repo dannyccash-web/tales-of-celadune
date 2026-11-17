@@ -2707,6 +2707,21 @@ async function boot() {
     return { ...d, responses, responseEffects: effects };
   }
 
+  // Sir Bastian Crowe at the keep doors (B2, 2026-11-17). With the royal
+  // summons in the bag he notes the player's name for the chamberlain; the
+  // keep stays shut (visit_the_king has no turn-in until the King's scene).
+  const BASTIAN_SUMMONS_LINE = 'The king\u2019s own seal. Then you are expected, and nobody told me, which I do not like. The king is receiving no one today, summons or no. Keep that safe and stay near the castle. I will see your name goes to the chamberlain, and when these doors open, they open for you first.';
+  function buildBastianDialog(npc) {
+    const d = withChatter(npc.dialog, npc);
+    if (!inventory.some((it) => it.id === 'royal_summons')) return d;
+    const responses = [...d.responses];
+    const effects = d.responseEffects ? [...d.responseEffects] : responses.map(() => null);
+    const at = Math.max(0, responses.length - 1);
+    responses.splice(at, 0, 'Show him the royal summons.');
+    effects.splice(at, 0, { followUp: BASTIAN_SUMMONS_LINE });
+    return { ...d, responses, responseEffects: effects };
+  }
+
   function buildLakewardenDialog() {
     // Still poling over to fetch the player (2026-10-10) — finish that first.
     if (ferry) {
@@ -4868,6 +4883,7 @@ async function boot() {
     else if (npc.id === 'morrowvane') dialog = buildMorrowvaneDialog();
     else if (npc.id === 'lakewarden') dialog = buildLakewardenDialog();
     else if (npc.id === 'abena_stoneward') dialog = buildAbenaDialog(npc);
+    else if (npc.id === 'bastian_crowe') dialog = buildBastianDialog(npc);
     else if (npc.id === 'mateo_avellaneda') dialog = buildMateoDialog();
     else if (npc.id === 'bramblekin_chief') dialog = buildChiefDialog();
     else if (npc.bramblekin) dialog = buildBramblekinDialog(npc);
