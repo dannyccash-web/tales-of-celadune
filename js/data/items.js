@@ -727,7 +727,8 @@ const ITEMS = {
   },
   // ---- Ketta's bridge parts (Cairnfolk Cave, B4B, 2026-11-17) ----
   // Quest items for b4b_bridge: found in three dead-end tunnels, handed back to
-  // Ketta Slatebrook to rebuild the chasm bridge. Art is a placeholder.
+  // Ketta Slatebrook to rebuild the chasm bridge. No art yet and not placed in
+  // the world yet (Danny adds both later); the image paths are the names to use.
   bridge_winch_gear: {
     id: 'bridge_winch_gear',
     name: 'Winch Gear',

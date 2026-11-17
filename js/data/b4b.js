@@ -547,10 +547,9 @@ export default {
   ],
   interactables: [
     { id: 'b4b_exit', x: 1495, y: 2955, range: 120, caveExit: true, exitTo: { scene: 'B4', x: 1725, y: 470 }, label: 'Leave the Cave' },
-    // Ketta's bridge parts, thrown down three dead-end tunnels.
-    { id: 'b4b_winch_gear', x: 2205, y: 2790, label: 'A brass gear', reward: { item: 'bridge_winch_gear', qty: 1, catch: true }, message: 'You found a heavy brass winch gear, half buried in grit.' },
-    { id: 'b4b_bridge_pins', x: 345, y: 2815, label: 'Iron pins', reward: { item: 'bridge_pins', qty: 1, catch: true }, message: 'You found a bundle of thick iron pins wedged between two rocks.' },
-    { id: 'b4b_bridge_rope', x: 2780, y: 1900, label: 'A coil of rope', reward: { item: 'bridge_rope', qty: 1, catch: true }, message: 'You found a coil of heavy haul rope, cut clean at one end.' },
+    // Ketta's bridge parts (winch gear, iron pins, haul rope) go here later,
+    // in three dead-end tunnels: SE ~2205,2790, SW ~345,2815, NE ~2780,1900.
+    // Removed 2026-11-17 until Danny's art is in.
   ],
   // Rats and bats at four tunnel crossings in the south (single type each).
   ambushes: [
