@@ -373,6 +373,18 @@ const ITEMS = {
     questItem: false,
     price: 2,
   },
+  // Special Fishing Bait (2026-11-17) — sold only by Ewan Hartwood (B4), 3 in
+  // the game. Always lands the rarest catch at the spot it's cast (main.js's
+  // rarestCatch): the Moonscale Trout in fresh water, the Crimson Sailback in
+  // the sea. When the player carries both kinds of bait, casting asks which.
+  special_fishing_bait: {
+    id: 'special_fishing_bait',
+    name: 'Special Fishing Bait',
+    image: 'assets/images/special_fishing_bait.png',
+    description: 'A fine old tin of fat grubs and worms, dug from the warm ground at the edge of the burning chasm. Bait a hook with them and the rarest fish in the water will take it.',
+    questItem: false,
+    price: 20,
+  },
   // Small Shield (2026-09-19, Danny) — spoils from C2's highwaymen. An OFF-HAND
   // weapon like the torch: it can be swung for 1 damage, but the point of it is
   // `damageReduction`, a NEW field read by main.js's damagePlayer — every point

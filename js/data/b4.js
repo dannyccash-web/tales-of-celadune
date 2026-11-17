@@ -403,9 +403,28 @@ export default {
   buildings: [],
 
   // The firewood pile in the stranded camp, lit (2026-10-16).
-  // 2nd fire: the lit fire pit at the riverside camp by Dame Elspeth's tent (new art, 2026-11-04)
-  fires: [{ x: 1933, y: 1150 }, { x: 931, y: 2297 }],
-  smoke: [{ x: 1933, y: 1122 }, { x: 932, y: 2261 }],
+  // 2nd fire: the lit fire pit at the riverside camp by Ewan's tent (new art, 2026-11-04)
+  // The rest (2026-11-17): flames along the burning chasm in the south-east
+  // clearing (the crack runs ~2200,2420 to 2580,2200), with smoke billowing
+  // off both rims. Its crackle comes free with the fire ambience.
+  fires: [
+    { x: 1933, y: 1150 }, { x: 931, y: 2297 },
+    { x: 2245, y: 2430, scale: 2.4 }, { x: 2295, y: 2425, scale: 2.0 },
+    { x: 2385, y: 2390, scale: 2.6 }, { x: 2430, y: 2365, scale: 2.1 },
+    { x: 2490, y: 2305, scale: 2.4 }, { x: 2550, y: 2260, scale: 2.2 },
+  ],
+  smoke: [
+    { x: 1933, y: 1122 }, { x: 932, y: 2261 },
+    { x: 2235, y: 2340, seed: 0.1, alpha: 0.38, rise: 280, baseR: 14, growR: 42 },
+    { x: 2335, y: 2300, seed: 0.45, alpha: 0.38, rise: 300, baseR: 14, growR: 42 },
+    { x: 2440, y: 2250, seed: 0.7, alpha: 0.38, rise: 290, baseR: 14, growR: 42 },
+    { x: 2530, y: 2200, seed: 0.25, alpha: 0.38, rise: 280, baseR: 14, growR: 42 },
+    { x: 2310, y: 2455, seed: 0.85, alpha: 0.32, rise: 250, baseR: 13, growR: 38 },
+    { x: 2470, y: 2400, seed: 0.55, alpha: 0.32, rise: 260, baseR: 13, growR: 38 },
+  ],
+  // Ewan's fishing spot on the river above his camp (2026-11-17); fished from
+  // the bank ~97px east. Freshwater table.
+  fishingSpots: [{ x: 540, y: 1990 }],
 
   interactables: [],
   chests: [],
@@ -415,8 +434,9 @@ export default {
   // ---- NPCs (2026-10-16) ----
   // Ten characters (Arjun Talwar and Vikram Ashvale moved to Kingsreach, B3,
   // 2026-11-05): the barricade garrison, the stranded camp, and Dame
-  // Elspeth Varrick hiding at the secluded camp by the river (added once her
-  // art arrived, 2026-10-16).
+  // the woodsman Ewan Hartwood at the camp by the river (2026-11-17; Dame
+  // Elspeth Varrick was there until then, her entry is kept in
+  // js/data/reserve.js for the King's castle).
   // Voices are in audio.js's DIALOGUE_SFX. Every position was checked against
   // the real collision: standable with the 36px collider and reachable from
   // spawn. Guards face west (rotation PI/2), toward anyone coming up the road.
@@ -568,24 +588,32 @@ export default {
         { q: 'How did you end up here?', a: 'I was walking east to play a wedding. I assume the wedding went ahead without me. I hope the bride found someone who knows more than four songs.' },
       ],
     },
-    // ---- The secluded camp by the river ----
+    // ---- The camp by the river (2026-11-17, replaces Dame Elspeth, who moves to the King's castle later) ----
     {
-      id: 'elspeth_varrick', name: 'Dame Elspeth Varrick', role: 'KNIGHT OF THE CROWN',
-      sprite: 'assets/images/dame_elspeth_varrick_overhead.png',
-      portrait: 'assets/images/dame_elspeth_varrick.png',
-      // A survivor of the king's search party, hiding wounded beside her tent.
-      // Says the north was all cold and that they never once saw the wizard;
-      // that is as close to the twist as anything in B4 gets.
-      x: 933, y: 2176, speed: 0, startsHome: false, rotation: Math.PI / 2,
+      id: 'ewan_hartwood', name: 'Ewan Hartwood', role: 'WOODSMAN',
+      sprite: 'assets/images/ewan_hartwood_overhead.png',
+      portrait: 'assets/images/ewan_hartwood.png',
+      // Lost his cabin east of the camp to the burning chasm and lives in the
+      // tent by the river now, fishing to get by. Homeless vendor (trades on
+      // the spot, like Nera): river fish plus the game's only special fishing
+      // bait, which that always lands the rarest catch at a spot (main.js's
+      // chooseBait / rarestCatch).
+      vendor: true,
+      stock: [{ id: 'trout', qty: 3 }, { id: 'bluegill', qty: 2 }, { id: 'special_fishing_bait', qty: 3 }],
+      gold: 25,
+      x: 933, y: 2176, speed: 32, startsHome: false,
+      // Bank above the tent, round the camp, by the fire pit. Every leg clear
+      // of the tent and fire ring (checked on the collision).
+      patrol: [{ x: 700, y: 1995 }, { x: 760, y: 2040 }, { x: 900, y: 2100 }, { x: 1050, y: 2300 }, { x: 960, y: 2370 }],
       dialog: {
-        line: 'Easy. Easy. I’m not going to hurt you, and I’d ask you to return the favor. Are you from the barricade? No? Good. Then you didn’t see me.',
+        line: 'Mind the hooks on that line. Ewan Hartwood. I’d offer you a seat by the fire, but the fire’s about all I’ve got left.',
         responses: ['Leave.'],
       },
       chatter: [
-        { q: 'Who are you?', a: 'Dame Elspeth Varrick, Knight of the Crown. One of the knights the king sent north after his daughter. There were twenty of us when we rode out. I’m what came back.' },
-        { q: 'What happened up there?', a: 'Cold like you wouldn’t believe, past the cliffs. Ice on the inside of our helms. We climbed for days and never saw the wizard. Not once. Not a fire, not a footprint. Only the cold, worse the closer we got, and then something in the ice I still can’t put a name to.' },
-        { q: 'Why are you hiding?', a: 'Because the captain at that barricade would have to report me, and the king would want to know why I’m alive when nineteen good knights aren’t. I don’t have an answer for him yet. When I do, I’ll walk into Kingsreach myself.' },
-        { q: 'Your wounds look bad.', a: 'They’re healing. Slowly. The river’s cold and clean, and nobody comes this way. Don’t fuss. Just don’t tell anyone I’m here.' },
+        { q: 'What happened to you?', a: 'I had a cabin, east of here past the trees. Built it myself, twelve years back. Then one night the ground split open like a seam, and fire came up out of it. By morning there was nothing where my cabin stood but a crack full of flame. I got out with my boots, my rod and this tent.' },
+        { q: 'What is that chasm?', a: 'Wish I knew. You can feel the heat a hundred paces off, and it hasn’t cooled a day since it opened. Some nights you hear things moving down in it. I stay on this side of the trees and I don’t go looking.' },
+        { q: 'How do you get by?', a: 'The river. Trout and bluegill, mostly, enough to eat and a few left over to sell. If you’ve coin, I’ll part with some. Better in your belly than spoiling in my basket.' },
+        { q: 'What’s in the fancy tin?', a: 'Bait. Special bait. The ground at the edge of that chasm is warm, and the grubs and worms that come up out of it are fat as your thumb. I baited a hook with them when I was desperate, and the biggest fish in the river near fought each other to get at it. Every time. Put it on your hook and you’ll pull out the rarest thing swimming wherever you cast. I’ve three tins left. I’m not going back for more.' },
       ],
     },
   ],

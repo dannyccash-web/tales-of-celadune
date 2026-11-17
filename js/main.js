@@ -5964,24 +5964,54 @@ async function boot() {
   // catch (big picture + banner). `fishing` locks player input for the cast.
   let fishing = false;
   const FISH_MS = 10000;
+  // The rarest catch at the current spot (2026-11-17, for Ewan's special bait): in a
+  // scene with its own catch table, the rare (luckBonus) entry with the lowest
+  // base weight, else the lowest-weight entry; in fresh water, the Moonscale.
+  function rarestCatch() {
+    const table = world.scene.fishingCatch;
+    if (table && table.length) {
+      const pool = table.some((e) => e.luckBonus) ? table.filter((e) => e.luckBonus) : table;
+      return pool.reduce((a, e) => (e.weight < a.weight ? e : a)).id;
+    }
+    return 'rare_fish';
+  }
   function startFishing(spot) {
     if (fishing) return;
     const hasRod = inventory.some((it) => it.id === 'fishing_rod');
     const hasBait = inventory.some((it) => it.id === 'fishing_bait');
-    if (!hasRod || !hasBait) {
+    const hasGrub = inventory.some((it) => it.id === 'special_fishing_bait');
+    if (!hasRod || (!hasBait && !hasGrub)) {
       audio.sfx(audio.SFX.denied);
-      const need = (!hasRod && !hasBait) ? 'a fishing rod and some bait'
+      const need = (!hasRod && !hasBait && !hasGrub) ? 'a fishing rod and some bait'
                  : !hasRod ? 'a fishing rod'
                  : 'some bait';
       ui.toast(`You’ll need ${need} to fish here.`);
       return;
     }
+    if (!hasGrub) { castLine(spot, 'fishing_bait'); return; }
+    // Carrying special bait: ask which bait, so it's never spent by accident.
+    const opts = [];
+    if (hasBait) opts.push(['Use fishing bait.', 'fishing_bait']);
+    opts.push(['Use the special bait.', 'special_fishing_bait']);
+    opts.push(['Not now.', null]);
+    const view = {
+      id: 'fishing', name: 'Fishing', role: '', noPortrait: true,
+      dialog: { line: 'Which bait will you put on the hook?', responses: opts.map((o) => o[0]) },
+    };
+    ui.openDialog(view, null, (v, index) => {
+      const bait = opts[index][1];
+      if (bait) setTimeout(() => castLine(spot, bait), 0);
+      return false;
+    });
+  }
+  function castLine(spot, bait) {
+    if (fishing) return;
     fishing = true;
-    removeItem('fishing_bait', 1, true);
+    removeItem(bait, 1, true);
     audio.sfx(audio.SFX.cast);
     world.fishing = { x: spot.x, y: spot.y };
     setTimeout(() => {
-      const id = rollCatch();
+      const id = bait === 'special_fishing_bait' ? rarestCatch() : rollCatch();
       world.fishing = null;
       fishing = false;
       addItem(id, 1, true); // silent; the reveal + banner announce it

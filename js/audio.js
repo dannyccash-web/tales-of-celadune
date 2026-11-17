@@ -210,6 +210,8 @@ export const DIALOGUE_SFX = {
   vikram_ashvale: 'assets/audio/mrstokes302-hmmm-sound-male-sfx-mrstokes302-420028.mp3',
   // Elspeth is wounded, so the pained female grunt (Mara Vellorne's) fits her.
   elspeth_varrick: 'assets/audio/phatphrogstudio-rpg-female-attack-grunt-no-ai-481720.mp3',
+  // Ewan Hartwood replaced her in B4 (2026-11-17); her clip stays for the castle.
+  ewan_hartwood: 'assets/audio/mrstokes302-hmmm-sound-male-sfx-mrstokes302-420028.mp3',
   // Kingsreach (B3, 2026-11-05) — from the existing pool, split by gender.
   harlan_brewick: 'assets/audio/mrstokes302-hmmm-sound-male-sfx-mrstokes302-420028.mp3',
   nkemi_vesper: 'assets/audio/freesound_community-mmm-hmm-36292.mp3',
