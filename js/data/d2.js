@@ -1285,10 +1285,20 @@ export default {
     // TWO villager houses still have a chimney in the art: Darius's (roof stack) and
     // Jory's (a stone stack against its west wall). The other eight
     // villager plumes were removed.
-    { x: 1214, y: 566, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.0 },
-    { x: 1176, y: 1030, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.08 },
-    { x: 1199, y: 1872, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.15 },
-    { x: 1908, y: 815, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.77 },
+    // 2026-11-18: re-rendered background — Emeric's/Kwame's/Jory's plumes moved onto
+    // their chimneys, and seven more villager houses now have chimneys (below).
+    { x: 1218, y: 555, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.0 }, // Kwame
+    { x: 1184, y: 1006, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.08 }, // Emeric (2026-11-18: was 1176,1030)
+    { x: 1199, y: 1872, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.15 }, // Bram
+    { x: 1982, y: 752, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.77 }, // Jory: chimney now on the ridge (2026-11-18: was 1908,815)
+    // 2026-11-18 new art: these villager houses now have chimneys
+    { x: 1630, y: 697, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.22 }, // Petra
+    { x: 1872, y: 429, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.31 }, // Ingrith
+    { x: 2364, y: 781, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.4 }, // Marisol
+    { x: 1690, y: 1175, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.47 }, // Faris
+    { x: 2012, y: 1197, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.56 }, // Priya
+    { x: 2427, y: 1207, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.63 }, // Malik
+    { x: 2005, y: 2163, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.92 }, // Adaline
     { x: 543, y: 1700, count: 11, rise: 150, drift: 13, baseR: 5, growR: 15, speed: 0.12, alpha: 0.34, seed: 0.85 },
   ],
 

@@ -17,6 +17,7 @@ export default {
   // multiples of 25.
   obstacles: [
     { x: 508, y: 1304, w: 118, h: 171, note: 'well + frame' },
+    { x: 2035, y: 1360, w: 55, h: 115, note: 'barrels beside Your House (2026-11-18 art check)' },
     // --- Auto-generated: collision delta from Danny's annotated blue/yellow overlay (2026-09-13) ---
     { x: 0, y: 0, w: 3000, h: 250, note: 'auto: collision delta from annotated overlay, 2026-09-13' },
     { x: 0, y: 325, w: 2050, h: 25, note: 'auto: collision delta from annotated overlay, 2026-09-13' },

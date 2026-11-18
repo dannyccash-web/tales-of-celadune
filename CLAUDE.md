@@ -1723,6 +1723,18 @@ First B-row scene. `js/data/b4.js`, `assets/images/B4_Background.jpg` (3000x3000
 - **Ambushes** at four southern crossings (single type each): A 2 rats (529,2505), B 2 bats (1021,2708), C 3 rats (1901,2328), D 2 bats (2195,2727), each with a retreat clear of the others. None on the spawn-to-plaza road.
 - **Verified** in headless Chrome on a clone of the live repo + these files: B4 cave mouth -> B4B spawn, Ketta's full quest (offer, accept, all three pickups, turn-in, gate opens, walking the span to its far end), Dessa's intercept, Orla's broth healing 1 -> 5, an ambush starting a cave-bat fight, leaving to B4 at (1725,470), `b4bBridgeFixed`/`dessaMet` in the save. Only console error: the missing favicon.
 
+## Rows C + D re-rendered art (2026-11-18)
+
+Danny replaced all eight C/D backgrounds (C1-C4, D1-D4). **Same layouts, no global shift** (phase correlation ~0px everywhere); each is a re-render with local drift of a few px and redrawn details (sea and waves, C3's dome now has a broken pane, roofs, rocks). Recompressed q92 4:4:4 (~14MB -> ~6.7MB each; denser art than the last set).
+- **Method (reuse for "same layout, re-rendered"):** (1) collision overlaid on the new art per scene; (2) a 50px patch matcher (old patch vs new art, +-16px search) to find cells whose content actually changed or moved, only along collision edges; (3) every POI (doors, labels, smoke, fires, pickups, chests, fishing spots, ripples) template-matched from old to new; (4) flagged spots checked on 1:1 crops with world-coordinate ticks. A colour-based random forest was tried first and is too noisy here (flags ship decks, dock planks, pond rims); don't use it alone. Scripts were in the device's /tmp (not kept).
+- **Collision:** still fits everywhere; only change is D3's barrels beside Your House now blocked (x2035-2085, y1360-1475). Small drifted rocks/shrubs left as they were.
+- **D1:** the hut was redrawn ~45px west. Calder's door 2297,622 -> **2255,628** (on the doorway threshold, nearest reachable 45px), label -> 2255,604; the left path torch 2258,704 (now on the path) -> **2200,690**.
+- **D2 smoke:** Kwame -> 1218,555, Emeric -> 1184,1006, **Jory's chimney is now on the ridge -> 1982,752** (was the west-wall stack at 1908,815). **Seven more villager houses now have chimneys and smoke:** Petra 1630,697, Ingrith 1872,429, Marisol 2364,781, Faris 1690,1175, Priya 2012,1197, Malik 2427,1207, Adaline 2005,2163 (D2 now 12 plumes). Bram's and Darius's unchanged.
+- **D4:** firepit fire + smoke 2177,2307 -> 2188,2318 (pit centre).
+- **Unchanged and checked:** C1's six plumes, all C1/D2/D3 doors, the C2 fire rings (dead centre), C3 temple door (sits at the dome's new broken pane), C3 cave mouth, every fishing spot, chest and pickup. C4's camp fire still sits on grass between tent and wagon (no pit in this art either).
+- **Water animation regenerated** for C1 C3 C4 D1 D2 D4; B4/B1 entries restored byte-identical.
+- **Verified:** real-World BFS per scene: every door within 79, every goto/patrol/pickup/chest/fishing spot and exit band reachable (only the by-design misses: C3's island temple door, Gaffer in his sealed pen); 900s D3 NPC sim identical to before. Headless Chromium can't run on this device shell (missing libXdamage), so the boot check was done on the live site.
+
 ## Status / roadmap
 
 - ⏳ **REMINDER — Dame Elspeth Varrick goes in the King's castle.** Taken out of B4 on 2026-11-17 (Danny), not deleted: her full npc entry is in `js/data/reserve.js` (nothing imports it), her art (`dame_elspeth_varrick*.png`) and voice (`audio.js` `elspeth_varrick`) are still in the repo. When B2's keep / the King's scene is built, move her entry in and rewrite her lines (they're about hiding from the barricade).

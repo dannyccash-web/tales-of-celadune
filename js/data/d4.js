@@ -1091,10 +1091,10 @@ export default {
   // The Bramblekin camp's firepit (2026-10-12, Danny): a code-drawn flame
   // (World.drawFire) with its smoke rising from the same point.
   fires: [
-    { x: 2177, y: 2307 },
+    { x: 2188, y: 2318 },
   ],
   smoke: [
-    { x: 2177, y: 2307 },
+    { x: 2188, y: 2318 },
   ],
 
   // The woodland camp is the Bramblekin toll-camp now — its guards + Chief
