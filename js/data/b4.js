@@ -431,6 +431,10 @@ export default {
   // reached from the trail end just below.
   interactables: [
     { id: 'b4_cairnfolk_cave', x: 1725, y: 395, range: 110, label: 'Cairnfolk Cave', cave: 'B4B' },
+    // The burning chasm (2026-11-19, Danny): climb down into the Molten Deep's
+    // second level, landing on the sunlit floor in the middle of B4D; B4D's
+    // 'Climb Up to the Surface' brings the player back to this rim.
+    { id: 'b4_chasm_down', x: 2350, y: 2320, range: 120, label: 'Climb Down into the Chasm', cave: 'B4D', enterAt: { x: 1330, y: 1350 } },
   ],
   chests: [],
   battles: [],

@@ -120,7 +120,7 @@ function decodeWater(id) {
   }
   const riverDist = w.river ? near(riverPick) : null;
   const seaDist = near((m) => m === 2);
-  return (WATER_CACHE[id] = { n, cell: w.cell, f, mask, shores, riverDist, seaDist });
+  return (WATER_CACHE[id] = { n, cell: w.cell, f, mask, shores, riverDist, seaDist, lava: !!w.lava });
 }
 
 export class World {
@@ -1277,7 +1277,7 @@ export class World {
     const cj0 = Math.max(0, Math.floor((y0 - M) / c)), cj1 = Math.min(n - 1, Math.floor((y0 + VIEW_H + M) / c));
     for (let j = cj0; j <= cj1; j++) for (let i = ci0; i <= ci1; i++) if (W.mask[j * n + i]) vis.push(j * n + i);
     const parts = this.waterParts;
-    const target = Math.min(170, Math.round(vis.length * 0.22));
+    const target = Math.min(170, Math.round(vis.length * (W.lava ? 0.5 : 0.22)));
     const flowAt = (x, y) => {
       const i = Math.floor(x / c), j = Math.floor(y / c);
       if (i < 0 || j < 0 || i >= n || j >= n || !W.mask[j * n + i]) return null;
@@ -1307,19 +1307,22 @@ export class World {
         parts.pop();
         continue;
       }
-      q.x += v[0] * 70 * dt;
-      q.y += v[1] * 70 * dt;
+      // Lava (B4D/B4F, 2026-11-19) moves slower and thicker, and is drawn in
+      // transparent orange instead of white.
+      const spd = W.lava ? 38 : 70;
+      q.x += v[0] * spd * dt;
+      q.y += v[1] * spd * dt;
       const m = Math.hypot(v[0], v[1]);
       const fade = Math.sin(Math.PI * q.age / q.life);
-      const a = (0.22 + 0.16 * m) * fade * fade;
+      const a = (W.lava ? 0.5 + 0.25 * m : 0.22 + 0.16 * m) * fade * fade;
       if (a < 0.01) continue;
       if (q.seed === undefined) q.seed = Math.random() * 6.28;
       // Sea waves (kind 2, C1/D1, 2026-10-13): the same ribbon, but turned
       // ACROSS the motion and longer, so the open sea reads as lines of swell
       // rolling east toward the beach rather than a current.
       const wave = v[2] === 2;
-      const len = wave ? 50 + 50 * m : 22 + 30 * m; // px
-      const half = 2.0 + 1.3 * m;         // max half-thickness, px
+      const len = wave ? 50 + 50 * m : W.lava ? 30 + 34 * m : 22 + 30 * m; // px
+      const half = W.lava ? 2.8 + 1.6 * m : 2.0 + 1.3 * m; // max half-thickness, px
       const amp = wave ? 1.4 : 1.8 + 1.2 * m; // wobble amplitude, px
       const fx = v[0] / m, fy = v[1] / m; // direction of travel
       const ux = wave ? -fy : fx, uy = wave ? fx : fy; // the ribbon's long axis
@@ -1334,7 +1337,7 @@ export class World {
         lx[i] = cx + nx * w; ly[i] = cy + ny * w;
         rx[i] = cx - nx * w; ry[i] = cy - ny * w;
       }
-      ctx.fillStyle = `rgba(236,246,251,${a.toFixed(3)})`;
+      ctx.fillStyle = W.lava ? `rgba(255,205,105,${a.toFixed(3)})` : `rgba(236,246,251,${a.toFixed(3)})`;
       ctx.beginPath();
       ctx.moveTo(lx[0], ly[0]);
       for (let i = 1; i <= SEG; i++) ctx.lineTo(lx[i], ly[i]);
