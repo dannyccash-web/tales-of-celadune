@@ -31,6 +31,9 @@ export default {
   height: 3000,
   spawn: { x: 1495, y: 2895 },
   returns: 'B4',
+  // A fast-travel stop (2026-11-19, Danny): lands on the stone plaza at the
+  // bridge foot, 100px+ clear of walls and 130px from every NPC point.
+  travel: { name: 'Cairnfolk Cave', x: 1430, y: 2090 },
   music: 'cave',
   battleBackground: 'assets/images/cave_background.jpg',
   obstacles: [
@@ -730,13 +733,16 @@ export default {
         {do: "goto", x: 2485, y: 2445},
       ],
       chatter: [
-        { q: 'What’s it like living in a cave?', a: 'It’s the best. Some of the walls glow if you lick the right ones. Don’t lick the wrong ones. Mister Halvard grows mushrooms that light up, and Missus Orla cooks them, and they taste like dirt, but nice dirt.' },
-        { q: 'What do you want to be when you grow up?', a: 'A mason like Ma, and a miner like Pa, and an engineer like Ketta, and an Elder like Elder Brannoch. Ma says I have to pick one. I say I’ve got loads of time. I’m eight.' },
-        { q: 'Have you ever been up top?', a: 'Once! There was a sky. It was too big and it didn’t have a ceiling and I didn’t like it. Then I saw a tree, and I liked that. Trees are like roots that got brave.' },
-        { q: 'Why is the bridge broken?', a: 'Ketta broke it on purpose, so nothing comes over from the cold side. I heard something over there once. It went tink, tink, tink, like the ice was talking. I wasn’t scared. I was a little scared.' },
-        { q: 'Tell me about your bird.', a: 'I carved it out of a pebble with Ma’s smallest chisel. Don’t tell Ma. You can tell it’s a bird because of the beak. That bump is the beak. That other bump is also the beak.' },
-        { q: 'Who is Elder Brannoch?', a: 'He’s in charge of everybody. He’s three hundred and something. He says he stopped counting because the numbers got rude. He knows everything about stone and he smells like chalk.' },
-        { q: 'Where are the rats coming from?', a: 'The side tunnels. Pa says they came down because the cold side got cold. Bats too. I’m not allowed past the plazas on my own. I go a little past the plazas on my own.' },
+        { q: 'What’s it like living in a cave?', a: 'It’s the best. Some of the walls glow if you lick the right ones. Don’t lick the wrong ones. Mister Halvard grows mushrooms that light up, and Missus Orla cooks them, and they taste like dirt, but nice dirt.', more: [
+          { q: 'Have you ever been up top?', a: 'Once! There was a sky. It was too big and it didn’t have a ceiling and I didn’t like it. Then I saw a tree, and I liked that. Trees are like roots that got brave.' },
+          { q: 'Who is Elder Brannoch?', a: 'He’s in charge of everybody. He’s three hundred and something. He says he stopped counting because the numbers got rude. He knows everything about stone and he smells like chalk.' },
+        ] },
+        { q: 'What do you want to be when you grow up?', a: 'A mason like Ma, and a miner like Pa, and an engineer like Ketta, and an Elder like Elder Brannoch. Ma says I have to pick one. I say I’ve got loads of time. I’m eight.', more: [
+          { q: 'Tell me about your bird.', a: 'I carved it out of a pebble with Ma’s smallest chisel. Don’t tell Ma. You can tell it’s a bird because of the beak. That bump is the beak. That other bump is also the beak.' },
+        ] },
+        { q: 'Why is the bridge broken?', a: 'Ketta broke it on purpose, so nothing comes over from the cold side. I heard something over there once. It went tink, tink, tink, like the ice was talking. I wasn’t scared. I was a little scared.', more: [
+          { q: 'Where are the rats coming from?', a: 'The side tunnels. Pa says they came down because the cold side got cold. Bats too. I’m not allowed past the plazas on my own. I go a little past the plazas on my own.' },
+        ] },
       ],
     },
     {

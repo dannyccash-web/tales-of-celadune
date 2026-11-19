@@ -59,6 +59,24 @@
           <div class="diamond"><span>M</span></div>
           <label>Menu</label>
         </div>
+        <!-- Manual save (2026-11-19): opens #save-modal. Also the S key. -->
+        <div class="icon-btn" id="btn-save">
+          <div class="diamond"><span>S</span></div>
+          <label>Save</label>
+        </div>
+      </div>
+
+      <!-- Save modal (2026-11-19): pauses the game over a dark backdrop.
+           Yes writes the save and shows "Game saved" for a moment; No (or
+           Escape) closes it. Left/Right/Up/Down pick, Space/Enter confirms. -->
+      <div id="save-modal" class="hidden">
+        <div class="confirm-box">
+          <p id="save-modal-text">Save game?</p>
+          <div class="confirm-buttons" id="save-modal-buttons">
+            <button id="btn-save-yes" class="menu-btn">Yes</button>
+            <button id="btn-save-no" class="menu-btn">No</button>
+          </div>
+        </div>
       </div>
 
       <!-- Vertical "Level" indicator (2026-09-11; redesigned 2026-09-12;
@@ -255,6 +273,10 @@
                 <div class="control-row">
                   <span class="control-keys"><span class="key-cap">M</span></span>
                   <span class="control-desc">Open and close the Menu.</span>
+                </div>
+                <div class="control-row">
+                  <span class="control-keys"><span class="key-cap">S</span></span>
+                  <span class="control-desc">Save your game.</span>
                 </div>
               </div>
             </section>

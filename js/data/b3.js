@@ -765,8 +765,9 @@ export default {
       ],
       dialog: { line: 'Welcome to the Gilded Tankard! Sit anywhere that isn’t sticky. And if it’s fresh food you’re after, the larder’s open. Apples, carrots, the lot. What’ll it be?', responses: ['Leave.'] },
       chatter: [
-        { q: 'Heard any news?', a: 'Only the news that never changes. The court wizard took the princess, the king shut the roads, and nobody in this city has sold a barrel to a stranger in a month. You’re the first new face through that door since the frost came down off the peaks.' },
-        { q: 'How’s business?', a: 'Thin. The road east is barred, the road north is iced, and my best customers are soldiers who drink on credit. There’s a farmer down south who sends me squash, bless her. Without it the stew would be mostly hope.' },
+        { q: 'Heard any news?', a: 'Only the news that never changes. The court wizard took the princess, the king shut the roads, and nobody in this city has sold a barrel to a stranger in a month. You’re the first new face through that door since the frost came down off the peaks.', more: [
+          { q: 'How’s business?', a: 'Thin. The road east is barred, the road north is iced, and my best customers are soldiers who drink on credit. There’s a farmer down south who sends me squash, bless her. Without it the stew would be mostly hope.' },
+        ] },
         { q: 'What’s good here?', a: 'The stew. Always the stew. Don’t ask what’s in it on a Thursday.' },
       ],
     },
@@ -950,9 +951,11 @@ export default {
       ],
       dialog: { line: 'Hm. Dented, scuffed, patched with string. Your gear says you fight more than you think. Look around. Nothing here fails.', responses: ['Leave.'] },
       chatter: [
-        { q: 'Where are you from?', a: 'The peaks. North, past where the maps stop being honest. My clan worked the deep seams there for nine hundred years.' },
-        { q: 'Why did you leave?', a: 'The passes froze. Not the way they freeze in winter. Different. Wrong. We came down. That is all I will say.' },
-        { q: 'Is your armor any good?', a: 'Better than yours.' },
+        { q: 'Is your armor any good?', a: 'Better than yours.', more: [
+          { q: 'Where are you from?', a: 'The peaks. North, past where the maps stop being honest. My clan worked the deep seams there for nine hundred years.', more: [
+            { q: 'Why did you leave?', a: 'The passes froze. Not the way they freeze in winter. Different. Wrong. We came down. That is all I will say.' },
+          ] },
+        ] },
       ],
     },
     {

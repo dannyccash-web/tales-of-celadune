@@ -1643,6 +1643,65 @@ export function toggleInventory() {
   openPanel('inventory');
 }
 
+// ---- Save modal (2026-11-19, Danny) ----
+// "Save game?" Yes/No over a dark backdrop. main.js decides whether saving is
+// allowed (openSaveModal is only called when it is), does the save in onYes
+// (returning true on success) and keeps the world paused while isSaveOpen().
+// After Yes the box shows "Game saved" for SAVE_DONE_MS, then closes itself.
+const SAVE_DONE_MS = 1800;
+let saveModal = null; // { sel: 0 = Yes / 1 = No, phase: 'ask' | 'done', onYes, timer }
+export function isSaveOpen() { return !!saveModal; }
+function renderSaveModal() {
+  $('btn-save-yes').classList.toggle('selected', saveModal?.sel === 0);
+  $('btn-save-no').classList.toggle('selected', saveModal?.sel === 1);
+}
+export function openSaveModal({ onYes }) {
+  if (saveModal) return;
+  saveModal = { sel: 0, phase: 'ask', onYes, timer: null };
+  const root = $('save-modal');
+  root.classList.remove('saved');
+  $('save-modal-text').textContent = 'Save game?';
+  $('save-modal-buttons').classList.remove('hidden');
+  root.classList.remove('hidden');
+  renderSaveModal();
+}
+function closeSaveModal() {
+  if (!saveModal) return;
+  if (saveModal.timer) clearTimeout(saveModal.timer);
+  saveModal = null;
+  $('save-modal').classList.add('hidden');
+}
+function chooseSave(sel) {
+  if (!saveModal || saveModal.phase !== 'ask') return;
+  if (sel === 1) { closeSaveModal(); return; }
+  const ok = saveModal.onYes?.() !== false;
+  saveModal.phase = 'done';
+  $('save-modal').classList.add('saved');
+  $('save-modal-buttons').classList.add('hidden');
+  $('save-modal-text').textContent = ok ? 'Game saved.' : 'The game could not be saved.';
+  saveModal.timer = setTimeout(closeSaveModal, SAVE_DONE_MS);
+}
+export function saveKey(key) {
+  if (!saveModal || saveModal.phase !== 'ask') return;
+  if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(key)) { saveModal.sel = 1 - saveModal.sel; renderSaveModal(); return; }
+  if (key === ' ' || key === 'Enter') { chooseSave(saveModal.sel); return; }
+  if (key === 'Escape') chooseSave(1);
+}
+export function initSaveModal({ onRequest }) {
+  $('btn-save').addEventListener('click', () => onRequest());
+  $('btn-save-yes').addEventListener('click', () => chooseSave(0));
+  $('btn-save-no').addEventListener('click', () => chooseSave(1));
+  $('save-modal').addEventListener('click', (e) => { if (e.target === $('save-modal')) chooseSave(1); });
+}
+// Set a Menu > Audio slider from code (loading a save), firing its normal
+// handler so the audio level follows.
+export function setVolumeSlider(id, v) {
+  const input = $(`${id}-slider`);
+  if (!input) return;
+  input.value = Math.round(Math.max(0, Math.min(1, v)) * 100);
+  input.dispatchEvent(new Event('input'));
+}
+
 export function closeAllPanels() {
   closePanel('menu');
   closePanel('inventory');

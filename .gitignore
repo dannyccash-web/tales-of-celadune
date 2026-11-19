@@ -11,5 +11,7 @@
 _*.mjs
 _*.jpg
 _*.png
-_sync*.tgz
+_*.tgz
+_*.py
+_*.js
 Claude outputs/

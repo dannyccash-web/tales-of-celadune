@@ -557,8 +557,9 @@ export default {
       x: 2670, y: 1395, speed: 0, startsHome: false, rotation: Math.PI / 2,
       dialog: { line: 'Candles! Honey! Healing herbs, fresh dug! Nettle Bramblewick, at your service. You look like someone who needs a candle. Everybody does, this month.', responses: ['Leave.'] },
       chatter: [
-        { q: 'Why does everybody need a candle?', a: 'For the princess! Folk set one in the window every night, so she can find her way home. I can’t dip them fast enough. It’s a terrible thing, and I won’t pretend I’m sorry for the trade, but I light one myself every night, and I don’t charge me for it.' },
-        { q: 'Where do you think she is?', a: 'North. Something up there called him. You don’t sit thirty years in a tower and then run off one night unless something calls you. My nan used to say the cold places have voices, if you’re fool enough to listen. He listened. And he took her with him.' },
+        { q: 'Why does everybody need a candle?', a: 'For the princess! Folk set one in the window every night, so she can find her way home. I can’t dip them fast enough. It’s a terrible thing, and I won’t pretend I’m sorry for the trade, but I light one myself every night, and I don’t charge me for it.', more: [
+          { q: 'Where do you think she is?', a: 'North. Something up there called him. You don’t sit thirty years in a tower and then run off one night unless something calls you. My nan used to say the cold places have voices, if you’re fool enough to listen. He listened. And he took her with him.' },
+        ] },
         { q: 'You’re Rootkin?', a: 'Bark and blossom, like my cousins. There’s a Pip Kettlethorn over in the market, and Skitter out by the sea at Tidewrack, though Skitter won’t thank you for mentioning me. Most Rootkin keep to themselves. Not me. I like the noise.' },
       ],
     },

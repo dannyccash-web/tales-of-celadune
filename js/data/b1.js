@@ -678,9 +678,10 @@ export default {
       ],
       dialog: { line: 'Rodrigo Valdane. If it has an edge and it’s worth carrying, I made it. Have a look, don’t touch the ones still cooling.', responses: ['Leave.'] },
       chatter: [
-        { q: 'Do you make armor too?', a: 'No. Durgan Coldforge does armor, over in the market quarter, and he’s welcome to it. I make the thing that goes through armor. We get along fine as long as nobody asks which of us is more useful.' },
         { q: 'Have you heard of Sorcha Emberfell?', a: 'Sorcha? I trained her! Down in Millmere, years back, when she couldn’t lift a hammer without falling over. She tells everyone she’s better than me now. She’s better at horseshoes. I’ll give her horseshoes.' },
-        { q: 'What makes a good blade?', a: 'Balance first, edge second, looks a distant third. Any fool can make a sword that shines. Make one that doesn’t twist in your hand on the third swing, and then we’ll talk.' },
+        { q: 'What makes a good blade?', a: 'Balance first, edge second, looks a distant third. Any fool can make a sword that shines. Make one that doesn’t twist in your hand on the third swing, and then we’ll talk.', more: [
+          { q: 'Do you make armor too?', a: 'No. Durgan Coldforge does armor, over in the market quarter, and he’s welcome to it. I make the thing that goes through armor. We get along fine as long as nobody asks which of us is more useful.' },
+        ] },
       ],
     },
     {
@@ -703,8 +704,9 @@ export default {
       ],
       dialog: { line: 'Be welcome in Aeluna’s house, child. I am Soraya Dawnveil. I keep this temple, and the order that serves it.', responses: ['Leave.'] },
       chatter: [
-        { q: 'Who is Aeluna?', a: 'The goddess of the dawn and of moonlight, of every light that comes back after the dark. She was worshipped in these lands before there was a king in Aldermoor. We are what remains of her priesthood.' },
-        { q: 'What happened to her old temple?', a: 'It stood on an island in the forest lake south of here, the Temple of Aeluna, our true home. Something found its way inside and our order could not drive it out. The ones who lived moved the river itself to wall it in. This dome is where we have prayed ever since. One day we will go home.' },
+        { q: 'Who is Aeluna?', a: 'The goddess of the dawn and of moonlight, of every light that comes back after the dark. She was worshipped in these lands before there was a king in Aldermoor. We are what remains of her priesthood.', more: [
+          { q: 'What happened to her old temple?', a: 'It stood on an island in the forest lake south of here, the Temple of Aeluna, our true home. Something found its way inside and our order could not drive it out. The ones who lived moved the river itself to wall it in. This dome is where we have prayed ever since. One day we will go home.' },
+        ] },
         { q: 'Do you know Elowen in Millmere?', a: 'Elowen Dawnmere was the best novice I ever taught, and the most stubborn. I sent her to Millmere because they needed her, and because she would never have stopped arguing with me here. Give her my love, if you pass that way.' },
         { q: 'What is in the west mausoleum?', a: 'A soul that will not rest. Three times our order has tried to lay Lady Maelis down, and three times she has been standing in her doorway by morning. I do not know what she wants. I am beginning to suspect she is waiting for someone to ask.' },
       ],
@@ -772,8 +774,9 @@ export default {
       ],
       dialog: { line: 'Well, don’t just stand in the door letting the warm out. Agatha Pennyfold. I buy, I sell, I don’t ask where things came from, and I always pay fair. Ish.', responses: ['Leave.'] },
       chatter: [
-        { q: 'What do you buy?', a: 'Anything that isn’t nailed down, and a few things that were. Old blades, odd stones, bits of monsters, the lot. My purse is deeper than any shopkeeper in Kingsreach, so if they turn you away, bring it to me.' },
-        { q: 'What’s the strangest thing you’ve bought?', a: 'An old boot. A fisherman swore blind it once belonged to a duke. I paid him two coppers for it, mostly for the story. Then a collector from the castle town paid me twelve gold for it, for the very same story. I love this trade.' },
+        { q: 'What do you buy?', a: 'Anything that isn’t nailed down, and a few things that were. Old blades, odd stones, bits of monsters, the lot. My purse is deeper than any shopkeeper in Kingsreach, so if they turn you away, bring it to me.', more: [
+          { q: 'What’s the strangest thing you’ve bought?', a: 'An old boot. A fisherman swore blind it once belonged to a duke. I paid him two coppers for it, mostly for the story. Then a collector from the castle town paid me twelve gold for it, for the very same story. I love this trade.' },
+        ] },
         { q: 'Any gossip?', a: 'Plenty, but it costs extra. Free sample: Tamsin’s tan mare has stolen four hats this month, one of them off the head of a magistrate. I bought it from her. The magistrate bought it back from me. Lovely week.' },
       ],
     },

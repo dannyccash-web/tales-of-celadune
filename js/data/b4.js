@@ -616,10 +616,12 @@ export default {
         responses: ['Leave.'],
       },
       chatter: [
-        { q: 'What happened to you?', a: 'I had a cabin, east of here past the trees. Built it myself, twelve years back. Then one night the ground split open like a seam, and fire came up out of it. By morning there was nothing where my cabin stood but a crack full of flame. I got out with my boots, my rod and this tent.' },
-        { q: 'What is that chasm?', a: 'Wish I knew. You can feel the heat a hundred paces off, and it hasn’t cooled a day since it opened. Some nights you hear things moving down in it. I stay on this side of the trees and I don’t go looking.' },
-        { q: 'How do you get by?', a: 'The river. Trout and bluegill, mostly, enough to eat and a few left over to sell. If you’ve coin, I’ll part with some. Better in your belly than spoiling in my basket.' },
-        { q: 'What’s in the fancy tin?', a: 'Bait. Special bait. The ground at the edge of that chasm is warm, and the grubs and worms that come up out of it are fat as your thumb. I baited a hook with them when I was desperate, and the biggest fish in the river near fought each other to get at it. Every time. Put it on your hook and you’ll pull out the rarest thing swimming wherever you cast. I’ve three tins left. I’m not going back for more.' },
+        { q: 'What happened to you?', a: 'I had a cabin, east of here past the trees. Built it myself, twelve years back. Then one night the ground split open like a seam, and fire came up out of it. By morning there was nothing where my cabin stood but a crack full of flame. I got out with my boots, my rod and this tent.', more: [
+          { q: 'What is that chasm?', a: 'Wish I knew. You can feel the heat a hundred paces off, and it hasn’t cooled a day since it opened. Some nights you hear things moving down in it. I stay on this side of the trees and I don’t go looking.' },
+        ] },
+        { q: 'How do you get by?', a: 'The river. Trout and bluegill, mostly, enough to eat and a few left over to sell. If you’ve coin, I’ll part with some. Better in your belly than spoiling in my basket.', more: [
+          { q: 'What’s in the fancy tin?', a: 'Bait. Special bait. The ground at the edge of that chasm is warm, and the grubs and worms that come up out of it are fat as your thumb. I baited a hook with them when I was desperate, and the biggest fish in the river near fought each other to get at it. Every time. Put it on your hook and you’ll pull out the rarest thing swimming wherever you cast. I’ve three tins left. I’m not going back for more.' },
+        ] },
       ],
     },
   ],
