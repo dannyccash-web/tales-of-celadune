@@ -48,10 +48,25 @@ export function setMagicBarVisible(visible) {
 // `.dim` so the player can see the whole level map at a glance, not just
 // the current number. main.js's enterScene() calls this once per scene
 // change.
-export function setLevelIndicator(level) {
+// `count` (2026-11-19, for the four-level Molten Deep): how many level boxes
+// to show; the boxes are rebuilt when it changes. Defaults to 3 (the temple).
+export function setLevelIndicator(level, count = 3) {
   const el = $('level-indicator');
   el.classList.toggle('hidden', level == null);
   if (level == null) return;
+  const wrap = el.querySelector('.level-boxes');
+  if (wrap.children.length !== count) {
+    wrap.replaceChildren();
+    for (let i = 1; i <= count; i++) {
+      const box = document.createElement('div');
+      box.className = 'level-box';
+      box.dataset.level = String(i);
+      const label = document.createElement('span');
+      label.textContent = 'L' + i;
+      box.appendChild(label);
+      wrap.appendChild(box);
+    }
+  }
   el.querySelectorAll('.level-box').forEach((box) => {
     box.classList.toggle('dim', Number(box.dataset.level) !== level);
   });

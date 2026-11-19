@@ -19,6 +19,10 @@ import sceneC3C from './data/c3c.js';
 import sceneC3D from './data/c3d.js';
 import sceneB4 from './data/b4.js';
 import sceneB4B from './data/b4b.js';
+import sceneB4C from './data/b4c.js';
+import sceneB4D from './data/b4d.js';
+import sceneB4E from './data/b4e.js';
+import sceneB4F from './data/b4f.js';
 import sceneB3 from './data/b3.js';
 import sceneB2 from './data/b2.js';
 import sceneB1 from './data/b1.js';
@@ -453,7 +457,7 @@ function loadImages(sources, onProgress) {
 // one gets the usual "isn't ready yet" toast, and they never appear in fast
 // travel. Remove an id from this set to open that scene up.
 const LOCKED_SCENES = new Set([]); // B4 opened 2026-11-04, B3 2026-11-05, B2 2026-11-08, B1 2026-11-13 (Danny). Add an id to lock a scene again.
-const SCENES = { D1: sceneD1, D1B: sceneD1B, D2: sceneD2, D3: sceneD3, D4: sceneD4, D4B: sceneD4B, C4: sceneC4, C1: sceneC1, C1B: sceneC1B, C1C: sceneC1C, C1D: sceneC1D, C2: sceneC2, C3: sceneC3, C3B: sceneC3B, C3C: sceneC3C, C3D: sceneC3D, B4: sceneB4, B4B: sceneB4B, B3: sceneB3, B2: sceneB2, B1: sceneB1 };
+const SCENES = { D1: sceneD1, D1B: sceneD1B, D2: sceneD2, D3: sceneD3, D4: sceneD4, D4B: sceneD4B, C4: sceneC4, C1: sceneC1, C1B: sceneC1B, C1C: sceneC1C, C1D: sceneC1D, C2: sceneC2, C3: sceneC3, C3B: sceneC3B, C3C: sceneC3C, C3D: sceneC3D, B4: sceneB4, B4B: sceneB4B, B4C: sceneB4C, B4D: sceneB4D, B4E: sceneB4E, B4F: sceneB4F, B3: sceneB3, B2: sceneB2, B1: sceneB1 };
 
 async function boot() {
   // Preload assets for EVERY registered scene up front — scene switches are
@@ -697,7 +701,7 @@ async function boot() {
     // Vertical "Level" HUD indicator (2026-09-11) — shown only inside a
     // scene that declares its own `level` (so far just C1C, the ship
     // dungeon's Level 1); hidden everywhere else.
-    ui.setLevelIndicator(SCENES[id]?.level ?? null);
+    ui.setLevelIndicator(SCENES[id]?.level ?? null, SCENES[id]?.levels); // `levels`: how many boxes (default 3)
   }
   enterScene('D3');
   window.quests = quests; // debug handle

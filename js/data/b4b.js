@@ -547,6 +547,10 @@ export default {
   ],
   interactables: [
     { id: 'b4b_exit', x: 1495, y: 2955, range: 120, caveExit: true, exitTo: { scene: 'B4', x: 1725, y: 470 }, label: 'Leave the Cave' },
+    // The root tunnel in the NE corner leads down to the Molten Deep (B4C,
+    // 2026-11-19). Lands at the foot of B4C's stairs; B4C's stairs bring the
+    // player back here, on the floor in front of the mouth (2740,1905).
+    { id: 'b4b_to_b4c', x: 2760, y: 1820, range: 120, cave: 'B4C', label: 'Tunnel Down' },
     // Ketta's bridge parts (winch gear, iron pins, haul rope) go here later,
     // in three dead-end tunnels: SE ~2205,2790, SW ~345,2815, NE ~2780,1900.
     // Removed 2026-11-17 until Danny's art is in.
