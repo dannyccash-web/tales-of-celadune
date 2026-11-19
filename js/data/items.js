@@ -634,7 +634,10 @@ const ITEMS = {
   // ---- COLDFORGE ARMOR (2026-11-06) -------------------------------------------
   // Durgan Coldforge's own make, sold at the Anvil & Aegis in Kingsreach (B3).
   // A step up from leather, short of heavy plate: each piece doubles its
-  // leather counterpart's bonus. Blued, frost-etched steel over oxblood
+  // leather counterpart's bonus. Each piece also has `fireReduction: 1`
+  // (2026-11-19, Danny): fire damage is cut by 1 per piece worn (main.js
+  // damagePlayer). Deliberately NOT shown on the item; Durgan only says it
+  // keeps you cool. Blued, frost-etched steel over oxblood
   // leather, stamped with his anvil-and-snowflake mark.
   coldforge_helm: {
     id: 'coldforge_helm',
@@ -644,6 +647,7 @@ const ITEMS = {
     questItem: false,
     slot: 'head',
     defenseBonus: 2,
+    fireReduction: 1,
     price: 90, // 2026-11-12 economy pass
   },
   coldforge_brigandine: {
@@ -654,6 +658,7 @@ const ITEMS = {
     questItem: false,
     slot: 'clothing',
     defenseBonus: 2,
+    fireReduction: 1,
     price: 130, // 2026-11-12 economy pass
   },
   coldforge_gauntlets: {
@@ -664,6 +669,7 @@ const ITEMS = {
     questItem: false,
     slot: 'hands',
     attackBonus: 2,
+    fireReduction: 1,
     price: 110, // 2026-11-12 economy pass
   },
   coldforge_boots: {
@@ -674,6 +680,7 @@ const ITEMS = {
     questItem: false,
     slot: 'feet',
     speedBonus: 2,
+    fireReduction: 1,
     price: 85, // 2026-11-12 economy pass
   },
   // Lily Farrow's lost-gull quest (C1, 2026-09-10). Feathers are scattered
@@ -769,7 +776,7 @@ const ITEMS = {
     questItem: false,
     slot: 'spell',
     spell: true,
-    magicCost: 2,
+    magicCost: 3, // 2 -> 3 (2026-11-19, Danny)
     spellEffect: 'ward',
   },
   nythsurge: {
@@ -780,7 +787,7 @@ const ITEMS = {
     questItem: false,
     slot: 'spell',
     spell: true,
-    magicCost: 3,
+    magicCost: 4, // 3 -> 4 (2026-11-19, Danny)
     spellEffect: 'surge',
     spellDamage: { min: 2, max: 4 },
   },

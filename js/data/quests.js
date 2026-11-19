@@ -141,6 +141,11 @@ export default {
     name: 'Ore for the Brigandine',
     description: 'Durgan Coldforge will forge a Coldforge Brigandine if you bring him 3 more chunks of metallic ore.',
   },
+  // West Kingsreach (B1, 2026-11-19): Tamsin's horses.
+  b1_horse_treats: {
+    name: 'Treats for the Stable',
+    description: 'Tamsin Brackenhorn’s horses are fussy. Give Baron an apple, Biscuit a carrot and Pewter some bread, then tell Tamsin.',
+  },
   // Cairnfolk Cave (B4B, 2026-11-17): Ketta Slatebrook's bridge.
   b4b_bridge: {
     name: 'Mending the Span',

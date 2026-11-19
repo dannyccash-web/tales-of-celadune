@@ -326,8 +326,11 @@ function equipmentDamageReduction() {
 // highwayman's 2-3 outright. That is exactly what was asked for; if it plays
 // too strong, the floor below is the knob (Math.max(1, ...) makes every hit
 // sting for at least 1).
-function damagePlayer(amount) {
-  const dealt = Math.max(0, amount - equipmentDamageReduction());
+// `fire: true` = fire damage: each piece of gear with `fireReduction` (the
+// Coldforge set, 2026-11-19) takes that much more off.
+function damagePlayer(amount, { fire = false } = {}) {
+  const soak = equipmentDamageReduction() + (fire ? equipmentBonus('fireReduction') : 0);
+  const dealt = Math.max(0, amount - soak);
   stats.health = Math.max(0, stats.health - dealt);
   ui.updateHud(stats);
   if (dealt > 0) ui.flashHealthDamage();
@@ -1003,7 +1006,7 @@ async function boot() {
         inventory: inventory.map((e) => ({ ...e })),
         equipment: { ...equipment },
         quests: quests.map((q) => ({ ...q })),
-        flags: { campQuestDone, campHostile, campTollTier, gafferHappy, thrumhornFed, clucksworthFed, eggathaFed, orrisRescued, orrisDeparted, wellDrinks, vegetableDeliveredToTavern, mirelleStage, mirelleOutcome, calderToldStory, calderToldDangers, maraMet, maraToldTruth, lilyGullThanked, magicRevealed, maraHollowmastRescued, lockboxAcceptedFrom, lockboxGivenTo , ferrySide, lakewardenPaid, arjunMet, adeMet, b4bBridgeFixed, dessaMet, nkemiStone, nkemiStaff, visitedTowns: [...visitedTowns] },
+        flags: { campQuestDone, campHostile, campTollTier, gafferHappy, thrumhornFed, clucksworthFed, eggathaFed, orrisRescued, orrisDeparted, wellDrinks, vegetableDeliveredToTavern, mirelleStage, mirelleOutcome, calderToldStory, calderToldDangers, maraMet, maraToldTruth, lilyGullThanked, magicRevealed, maraHollowmastRescued, lockboxAcceptedFrom, lockboxGivenTo , ferrySide, lakewardenPaid, arjunMet, adeMet, b4bBridgeFixed, dessaMet, nkemiStone, nkemiStaff, horsesFed: [...horsesFed], visitedTowns: [...visitedTowns] },
         caveReturn, // where to exit to if saved inside a cave/dungeon
         // Per-visit gates (reset on every scene entry): saved so a reload in
         // the temple can't hand out a second blessing.
@@ -1066,7 +1069,7 @@ async function boot() {
     arjunMet = false;
     adeMet = false;
     b4bBridgeFixed = false; dessaMet = false;
-    nkemiStone = 'none'; nkemiStaff = 'none';
+    nkemiStone = 'none'; nkemiStaff = 'none'; horsesFed = [];
     lockboxAcceptedFrom = null; lockboxGivenTo = null;
     caveReturn = null;
     visitedTowns.clear();
@@ -1120,6 +1123,7 @@ async function boot() {
     dessaMet = !!f.dessaMet;
     nkemiStone = f.nkemiStone || 'none';
     nkemiStaff = f.nkemiStaff || 'none';
+    horsesFed = Array.isArray(f.horsesFed) ? f.horsesFed.filter((h) => HORSES[h]) : [];
     lockboxAcceptedFrom = f.lockboxAcceptedFrom || null;
     lockboxGivenTo = f.lockboxGivenTo || null;
     // Saves from before 2026-10-12 that already handed Roderick the lockbox
@@ -2250,21 +2254,35 @@ async function boot() {
     }
     // B1's horses (2026-11-15): a carrot or apple each time; GAVE reveal + snort.
     if (effect.feedHorse) {
-      const H = HORSES[effect.feedHorse];
-      const treat = horseTreat(effect.feedHorse);
-      if (!treat) { audio.sfx(audio.SFX.denied); ui.updateDialogContent({ line: H.none, responses: ['Leave.'] }); return true; }
-      removeItem(treat, 1);
+      const id = effect.feedHorse; const H = HORSES[id];
+      if (!horseHas(H.treat)) { audio.sfx(audio.SFX.denied); ui.updateDialogContent({ line: H.none, responses: ['Leave.'] }); return true; }
+      removeItem(H.treat, 1);
       audio.sfx(HORSE_SNORT);
-      ui.showGaveItem(ITEMS[treat]);
-      ui.updateDialogContent({ line: H.fed(ITEMS[treat].name.toLowerCase()), responses: [H.options[0][0], H.options[1][0], 'Leave.'], responseEffects: [{ followUp: H.options[0][1] }, { followUp: H.options[1][1] }, null] });
+      ui.showGaveItem(ITEMS[H.treat]);
+      const firstSet = !horsesFed.includes(id);
+      if (firstSet) horsesFed = [...horsesFed, id];
+      let line = H.fed(ITEMS[H.treat].name.toLowerCase());
+      if (firstSet && !horsesLeft().length && questStatus('b1_horse_treats') !== 'completed') line += ' (That’s all three horses fed. Tamsin will want to hear.)';
+      ui.updateDialogContent({ line, responses: [H.options[0][0], H.options[1][0], 'Leave.'], responseEffects: [{ followUp: H.options[0][1] }, { followUp: H.options[1][1] }, null] });
       return true;
     }
-    if (effect.noHorseTreat) {
-      audio.sfx(audio.SFX.denied);
-      // Carrying another horse's treat gets a picky refusal (the treat is kept).
-      const H = HORSES[effect.noHorseTreat];
-      const other = HORSE_TREAT_IDS.find((t) => t !== H.treat && horseHas(t));
-      ui.updateDialogContent({ line: other ? H.wrong(ITEMS[other].name.toLowerCase()) : H.none, responses: ['Leave.'] });
+    if (effect.tamsinMenu) { ui.updateDialogContent(buildTamsinDialog()); return true; }
+    if (effect.tamsinOffer) {
+      ui.updateDialogContent({ line: TAMSIN_OFFER, responses: ['I’ll see to it.', 'Not right now.'], responseEffects: [{ tamsinAccept: true }, { tamsinMenu: true }] });
+      return true;
+    }
+    if (effect.tamsinAccept) {
+      startQuest('b1_horse_treats');
+      ui.updateDialogContent({ line: TAMSIN_ACCEPT, responses: ['Leave.'] });
+      return true;
+    }
+    if (effect.tamsinTurnIn) {
+      if (questStatus('b1_horse_treats') === 'none') startQuest('b1_horse_treats');
+      addGold(TAMSIN_GOLD);
+      addItem('health_potion', 1, true);
+      ui.showReceivedItem(ITEMS.health_potion);
+      completeQuest('b1_horse_treats');
+      ui.updateDialogContent({ line: TAMSIN_THANKS, responses: ['Leave.'] });
       return true;
     }
     // Kingsreach's chickens (2026-11-11): a chestnut each. Clucksworth crows
@@ -4385,9 +4403,8 @@ async function boot() {
         ['Admire his bridle.', 'You admire the brass crest. Baron notices you noticing, lifts his head another inch and turns so the light catches it. Tamsin says he carried a knight of the realm for eleven years. He clearly hasn’t forgotten, and he’d rather you didn’t either.'],
       ],
       feed: 'Give Baron an apple.', treat: 'apple',
-      wrong: (t) => `Baron sniffs the ${t}, lifts his lip in an expression of the most profound disappointment, and turns his head away. A horse of his standing eats apples. Everybody knows that.`,
       fed: (t) => `Baron studies the ${t} for a long moment, as though it might be a trick. Then he takes it with great delicacy, chews slowly with his eyes half shut, and gives one short, approving snort. You are, provisionally, a person of quality.`,
-      none: 'You turn out your pockets: no apple. Baron watches the whole performance without blinking, then turns his head and looks pointedly at the far wall of the stall, the way a lord looks away from a beggar.',
+      none: 'You hold out an empty hand with a flourish, as if presenting an apple. Baron looks at the hand. He looks at you. He lets out a long, weary breath through his nose: the sigh of a horse who once carried a knight of the realm and is now being pranked by a nobody with no apple.',
     },
     biscuit: {
       line: 'A golden buckskin mare has her nose in your bag before you’ve said a word. There’s a straw hat in her mouth. It is not her hat. A little wooden tag on her halter says BISCUIT, as if she needed introducing.',
@@ -4396,9 +4413,8 @@ async function boot() {
         ['Pat her nose.', 'You pat her nose. She leans in, delighted, and in the same smooth movement unbuckles the strap of your satchel with her lips. By the time you notice, she has a glove. You take the glove back. She takes the other glove. It goes on like this for some time.'],
       ],
       feed: 'Give Biscuit a carrot.', treat: 'carrot',
-      wrong: (t) => `Biscuit eats the ${t}. Then she spits it out, on your boots, with great ceremony, and looks at you as if you have personally betrayed her. Biscuit is a carrot horse. (She keeps the hat, though.)`,
       fed: (t) => `The ${t} is gone before you’ve finished holding it out, and so, briefly, are two of your fingers. Biscuit crunches, sighs with pure happiness, then noses at your hand, your pocket, your other pocket, your ear and finally the top of your head, in case you were hiding more up there. You weren’t. She forgives you, mostly.`,
-      none: 'You’ve got no carrot for her. Biscuit checks anyway: both pockets, your bag, your sleeve and, with tremendous thoroughness, your hair. Finding nothing, she drops the straw hat at your feet like a disappointed host returning a gift, and wanders off to look for someone with better pockets.',
+      none: 'You’ve got no carrot. Biscuit refuses to accept this. She searches both pockets, your bag, your sleeve and your hair, then eats one of your bootlaces out of pure spite and wanders off, wearing a straw hat that is definitely not hers.',
     },
     pewter: {
       line: 'An old dapple-gray mare dozes in her stall, lower lip hanging, one back hoof tipped up. She opens one eye at your approach, decides you’re harmless and leans her great soft head against your shoulder with a long contented breath.',
@@ -4407,22 +4423,48 @@ async function boot() {
         ['Ask how old she is.', 'Pewter doesn’t answer, being a horse. But the grey round her eyes and the white in her mane say plenty. Tamsin will tell you she’s twenty-four, that she taught half the children in West Kingsreach to ride, and that she has never once been in a hurry about anything.'],
       ],
       feed: 'Give Pewter some bread.', treat: 'bread',
-      wrong: (t) => `Pewter mouths the ${t} politely, then lets it fall. Her old teeth aren’t what they were. She noses hopefully at your bag instead, where something soft and baked might be hiding.`,
       fed: (t) => `Pewter takes the ${t} very gently, with her soft whiskery lips, and eats it slowly, savouring every bite. When it’s gone she breathes warm air into your palm, as if to say thank you, and goes back to sleep on your shoulder.`,
-      none: 'You haven’t any bread. Pewter doesn’t seem to mind at all. She sighs, rests her chin on your shoulder again and goes on dozing, as if you yourself were the treat.',
+      none: 'No bread. Pewter noses your empty palm, finds nothing, and gives you a look of such gentle, grandmotherly disappointment that you briefly consider becoming a baker. Then she falls asleep on your shoulder anyway, snoring.',
     },
   };
-  const HORSE_TREAT_IDS = ['apple', 'carrot', 'bread'];
+  // Simplified 2026-11-19 (Danny): each horse wants ONE treat. Have it = fed
+  // line; don't = a funny line. Every horse fed at least once is recorded in
+  // `horsesFed` (persisted) for Tamsin's quest, b1_horse_treats.
+  let horsesFed = [];
   const horseHas = (id) => inventory.some((it) => it.id === id);
-  function horseTreat(id) { return horseHas(HORSES[id].treat) ? HORSES[id].treat : null; }
   function buildHorseDialog(id) {
     const H = HORSES[id];
     return {
       line: H.line,
       responses: [H.options[0][0], H.options[1][0], H.feed, 'Leave.'],
-      responseEffects: [{ followUp: H.options[0][1] }, { followUp: H.options[1][1] },
-        horseTreat(id) ? { feedHorse: id } : { noHorseTreat: id }, null],
+      responseEffects: [{ followUp: H.options[0][1] }, { followUp: H.options[1][1] }, { feedHorse: id }, null],
     };
+  }
+
+  // ---- Tamsin Brackenhorn's quest: a treat for each horse (B1, 2026-11-19) ----
+  const TAMSIN_GOLD = 15;
+  const TAMSIN_ASK = 'Need a hand with the horses?';
+  const TAMSIN_OFFER = 'A hand? You could, as it happens. With the roads shut I’ve had no riders, and those three have gone sulky with boredom. A treat would lift them. But they’re fussy. Baron eats apples and nothing else, he thinks carrots are for peasants. Biscuit is a carrot horse through and through. Pewter’s teeth are going, so it’s soft bread for her. Give each of them their own treat and I’ll make it worth your while.';
+  const TAMSIN_ACCEPT = 'Good. Apples for Baron, carrots for Biscuit, bread for Pewter. And mind your fingers with the tan one.';
+  const TAMSIN_THANKS = `All three? Baron is practically smiling, which for him is a scandal, and Pewter hasn’t been this awake in a month. Here, for your trouble. ${TAMSIN_GOLD} gold and a health potion. I keep a few for the horses, but I reckon you’ll need it more than they do.`;
+  const HORSE_NAMES = { baron: 'Baron', biscuit: 'Biscuit', pewter: 'Pewter' };
+  function horsesLeft() { return Object.keys(HORSES).filter((h) => !horsesFed.includes(h)); }
+  function buildTamsinDialog() {
+    const live = world.npcs.find((n) => n.id === 'tamsin_brackenhorn');
+    const base = withChatter({ line: live.dialog.line, responses: [...live.dialog.responses] }, live);
+    const st = questStatus('b1_horse_treats');
+    let opt = null;
+    if (st !== 'completed' && !horsesLeft().length) opt = ['I’ve fed all three horses.', { tamsinTurnIn: true }];
+    else if (st === 'none') opt = [TAMSIN_ASK, { tamsinOffer: true }];
+    else if (st === 'active') {
+      const left = horsesLeft().map((h) => `${HORSE_NAMES[h]} (${ITEMS[HORSES[h].treat].name.toLowerCase()})`);
+      opt = ['About the horses’ treats…', { followUp: `Still waiting on ${left.join(', ').replace(/, ([^,]*)$/, ' and $1')}. They’ll let you know when they’ve had theirs. Loudly.` }];
+    }
+    if (!opt) return base;
+    const responses = [...base.responses]; const effects = base.responseEffects ? [...base.responseEffects] : responses.map(() => null);
+    const at = responses.length - 1; // before the trailing "Leave."
+    responses.splice(at, 0, opt[0]); effects.splice(at, 0, opt[1]);
+    return { ...base, responses, responseEffects: effects };
   }
 
   // ---- Mirelle's vegetable run (D3, reworked 2026-11-03, Danny) ----
@@ -4969,6 +5011,7 @@ async function boot() {
     else if (npc.id === 'dessa_flintmere') dialog = buildDessaDialog(npc);
     else if (npc.id === 'orla_gravelmoot') dialog = buildOrlaDialog(npc);
     else if (HORSES[npc.id]) dialog = buildHorseDialog(npc.id);
+    else if (npc.id === 'tamsin_brackenhorn') dialog = buildTamsinDialog();
     else if (npc.id === 'cinder') dialog = buildCinderDialog();
     else if (npc.id === 'sir_clucksworth' || npc.id === 'dame_eggatha') dialog = buildChickenDialog(npc.id);
     else if (npc.id === 'mara_vellorne') dialog = buildMaraDialog();
@@ -5453,11 +5496,13 @@ async function boot() {
         ui.setBattleMessage(`The ${enemy.name} strikes your ward and the blow turns back on it. +${dmg} damage done.`);
         return;
       }
-      const dealt = damagePlayer(dmg); // plays the player's hurt grunt; returns post-shield damage
+      const def = ENEMIES[enemy.id] || {};
+      const fire = !!(def.fireDamage ?? def.fire); // fire creatures deal fire damage (Coldforge armor soaks it)
+      const dealt = damagePlayer(dmg, { fire }); // plays the player's hurt grunt; returns post-soak damage
       audio.sfx(audio.SFX.punch); // the impact, layered over the grunt
       ui.shakeScreen(); // player was hit — shake the whole battle scene
       ui.setBattleMessage(dealt === 0
-        ? `The ${enemy.name} hits you — your shield turns it aside.`
+        ? `The ${enemy.name} hits you — your ${fire && equipmentBonus('fireReduction') ? 'armor' : 'shield'} turns it aside.`
         : dealt < dmg
           ? `The ${enemy.name} hits you. −${dealt} damage taken (${dmg - dealt} turned aside).`
           : `The ${enemy.name} hits you. −${dmg} damage taken.`);

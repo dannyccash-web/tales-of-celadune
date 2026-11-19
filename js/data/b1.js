@@ -610,7 +610,7 @@ export default {
       ],
       dialog: { line: 'Mind where you step, and mind your pockets around the tan one. Tamsin Brackenhorn. These are my stables, and those three are my horses, whatever they’ll tell you.', responses: ['Leave.'] },
       chatter: [
-        { q: 'Tell me about the horses.', a: 'Baron’s the brown. Carried a knight for eleven years and has never let anyone forget it. Biscuit’s the tan, and she’s a thief: hats, gloves, apples, once a whole loaf off a baker’s cart. Pewter’s the grey. Twenty-four, sweet as summer, and asleep more than she’s awake. And they’re fussy. Baron eats apples and nothing else, he thinks carrots are for peasants. Biscuit is a carrot horse through and through. Pewter’s teeth are going, so it’s soft bread for her. Get it right and you’ve a friend for life.' },
+        { q: 'Tell me about the horses.', a: 'Baron’s the brown. Carried a knight for eleven years and has never let anyone forget it. Biscuit’s the tan, and she’s a thief: hats, gloves, apples, once a whole loaf off a baker’s cart. Pewter’s the grey. Twenty-four, sweet as summer, and asleep more than she’s awake.' },
         { q: 'You’re a Hollowhorn?', a: 'From the high meadows, east past the King’s Road. Came down thirty years ago to sell a string of ponies and never went back. There’s a weaver over in the market quarter, Oriel Tallhorn, from my own valley. Her family’s on the far side of that barricade. So’s most of mine. We don’t talk about it much.' },
         { q: 'Business slow?', a: 'With the roads sealed? Nobody’s hiring a horse to go anywhere. I’ve got three eating their heads off and no riders. Still. Better here with me than out on the King’s Road.' },
       ],

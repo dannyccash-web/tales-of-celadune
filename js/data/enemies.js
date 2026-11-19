@@ -10,7 +10,10 @@
 // player. speed drives this round's turn order (battle.turnOrder) alongside
 // the player's stats.speed.
 //
-// `fire: true` (planned, none yet) marks a fire creature: the Mireman King's
+// `fire: true` (planned, none yet) marks a fire creature: its attacks are FIRE
+// damage (cut by 1 per Coldforge piece worn, main.js damagePlayer; set
+// `fireDamage: false` for a fire creature that hits with something else, or
+// `fireDamage: true` on a non-fire creature that breathes fire), and the Mireman King's
 // Trident (items.js) does +3 against it via bonusDamageVs.tags.
 export default {
   // ---- The two Highwaymen (C2 caravan-rest ambush, 2026-09-18) ----

@@ -951,7 +951,7 @@ export default {
       ],
       dialog: { line: 'Hm. Dented, scuffed, patched with string. Your gear says you fight more than you think. Look around. Nothing here fails.', responses: ['Leave.'] },
       chatter: [
-        { q: 'Is your armor any good?', a: 'Better than yours.', more: [
+        { q: 'Is your armor any good?', a: 'Better than yours. Coldforge steel is quenched in meltwater off the high passes, the way my clan always did it. It stays cool. Walk into a furnace in it and you will be glad of that.', more: [
           { q: 'Where are you from?', a: 'The peaks. North, past where the maps stop being honest. My clan worked the deep seams there for nine hundred years.', more: [
             { q: 'Why did you leave?', a: 'The passes froze. Not the way they freeze in winter. Different. Wrong. We came down. That is all I will say.' },
           ] },
