@@ -22,8 +22,6 @@ export default {
   returns: 'B4B',
   music: 'cave',
   battleBackground: 'assets/images/B4D_Battle_Background.jpg',
-  level: 2,
-  levels: 4,
   obstacles: [
     {x: 810, y: 0, w: 1270, h: 60},
     {x: 810, y: 60, w: 1290, h: 20},
@@ -1164,7 +1162,13 @@ export default {
   fishingSpots: [],
   chests: [],
   battles: [],
-  ambushes: [],
+  // Random encounters (2026-11-20): fire creatures only, kept away from the
+  // ruined house and the chasm-climb landing in the middle.
+  ambushes: [
+    { id: 'b4d_ambush_a', x: 500, y: 1150, range: 141, enemies: ['cinderwing', 'cinderwing'], retreat: { x: 718, y: 889 } },
+    { id: 'b4d_ambush_b', x: 1300, y: 2100, range: 141, enemies: ['emberwisp', 'emberwisp', 'emberwisp'], retreat: { x: 1499, y: 1932 } },
+    { id: 'b4d_ambush_c', x: 2350, y: 2050, range: 141, enemies: ['cinderwing', 'emberwisp', 'emberwisp'], retreat: { x: 2055, y: 2220 } },
+  ],
   exits: [
     { edge: 'top', xMin: 635, xMax: 795, to: 'B4C', toBand: [665, 785] },
     { edge: 'top', xMin: 2095, xMax: 2245, to: 'B4C', toBand: [2095, 2205] },
@@ -1188,13 +1192,12 @@ export default {
     { x: 1870, y: 1070, rise: 240, count: 18, baseR: 10, growR: 30, drift: 22, alpha: 0.3, speed: 0.11 },
     { x: 2165, y: 885, rise: 190, count: 16, baseR: 8, growR: 24, drift: 16, alpha: 0.3, speed: 0.12 },
   ],
-  // Slagkin Stalkers (2026-11-20): placed to see how the level feels. NOT
-  // hostile yet — `creature` (no talk, no label) with aggroRange 0, so they only
-  // prowl their patrols. Kept 700px+ from the chasm-climb landing (1330,1350).
-  // When they start attacking: give them an enemyId + aggroRange like D1's cragclaws.
+  // Slagkin Stalkers (2026-11-20): roaming `creature` foes (D1 cragclaw AI):
+  // prowl their patrols, charge within aggroRange, give up past giveUpRange
+  // from their spawn. Kept 700px+ from the chasm-climb landing (1330,1350).
   npcs: [
-    { id: 'slagkin_stalker_1', enemyId: 'slagkin_stalker', name: 'Slagkin Stalker', sprite: 'assets/images/slagkin_stalker_overhead.png', creature: true, aggroRange: 0, speed: 70, x: 445, y: 545, patrol: [{ x: 445, y: 545 }, { x: 595, y: 795 }, { x: 845, y: 815 }] },
-    { id: 'slagkin_stalker_2', enemyId: 'slagkin_stalker', name: 'Slagkin Stalker', sprite: 'assets/images/slagkin_stalker_overhead.png', creature: true, aggroRange: 0, speed: 70, x: 345, y: 1745, patrol: [{ x: 345, y: 1745 }, { x: 545, y: 1945 }, { x: 845, y: 1995 }] },
-    { id: 'slagkin_stalker_3', enemyId: 'slagkin_stalker', name: 'Slagkin Stalker', sprite: 'assets/images/slagkin_stalker_overhead.png', creature: true, aggroRange: 0, speed: 70, x: 2545, y: 1345, patrol: [{ x: 2545, y: 1345 }, { x: 2595, y: 1595 }, { x: 2455, y: 1455 }] },
+    { id: 'slagkin_stalker_1', enemyId: 'slagkin_stalker', name: 'Slagkin Stalker', sprite: 'assets/images/slagkin_stalker_overhead.png', creature: true, aggroRange: 320, chaseSpeed: 160, giveUpRange: 650, speed: 70, x: 445, y: 545, patrol: [{ x: 445, y: 545 }, { x: 595, y: 795 }, { x: 845, y: 815 }] },
+    { id: 'slagkin_stalker_2', enemyId: 'slagkin_stalker', name: 'Slagkin Stalker', sprite: 'assets/images/slagkin_stalker_overhead.png', creature: true, aggroRange: 320, chaseSpeed: 160, giveUpRange: 650, speed: 70, x: 345, y: 1745, patrol: [{ x: 345, y: 1745 }, { x: 545, y: 1945 }, { x: 845, y: 1995 }] },
+    { id: 'slagkin_stalker_3', enemyId: 'slagkin_stalker', name: 'Slagkin Stalker', sprite: 'assets/images/slagkin_stalker_overhead.png', creature: true, aggroRange: 320, chaseSpeed: 160, giveUpRange: 650, speed: 70, x: 2545, y: 1345, patrol: [{ x: 2545, y: 1345 }, { x: 2595, y: 1595 }, { x: 2455, y: 1455 }] },
   ],
 };

@@ -72,7 +72,6 @@ export default {
   // Fights below deck use the ship-interior battle backdrop (2026-10-10, Danny).
   battleBackground: 'assets/images/boat_background_2.jpg',
 
-  level: 1, // first level of the ship dungeon — see header comment
 
   obstacles: [
     // Regenerated 2026-11-04 for the new, longer hull art: per-10px-row hull silhouette inset 45px (left) / 50px (right) to the inner rail, bow cargo + stern cargo + the hatch blocked; everything else is open deck.

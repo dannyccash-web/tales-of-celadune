@@ -79,7 +79,6 @@ export default {
 
   music: 'cave',
 
-  level: 3, // third and (for now) final level of the temple dungeon
 
   // Every fight on this level uses its own backdrop (2026-10-15).
   battleBackground: 'assets/images/C3B3_Battle_Background.jpg',

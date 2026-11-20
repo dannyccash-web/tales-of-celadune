@@ -11,8 +11,9 @@
 // workshop round the east plaza, and a maze of dirt tunnels with mushroom
 // corners, two pools and a root tunnel (NE, scenery).
 //
-// The BRIDGE: the art shows only its two ends; Ketta Slatebrook took the middle
-// span apart on purpose. Her quest (b4b_bridge) brings back the winch gear, pins
+// The BRIDGE: the art shows only its two ends; someone took the middle span apart
+// a hundred years ago and scattered the parts below (rewritten 2026-11-20; Ketta
+// is trying to put it back together). Her quest (b4b_bridge) brings back the winch gear, pins
 // and rope; finishing it opens the world gate 'b4b_bridge' (main.js): the gated
 // obstacle over the span stops blocking and the gated prop (the span image,
 // built from the art's own planks) is drawn. The far landing is still blocked
@@ -34,7 +35,6 @@ export default {
   // A fast-travel stop (2026-11-19, Danny): lands on the stone plaza at the
   // bridge foot, 100px+ clear of walls and 130px from every NPC point.
   travel: { name: 'Cairnfolk Cave', x: 1430, y: 2090 },
-  music: 'cave',
   battleBackground: 'assets/images/cave_background.jpg',
   obstacles: [
     {x: 0, y: 0, w: 3000, h: 1130},
@@ -554,9 +554,9 @@ export default {
     // 2026-11-19). Lands at the foot of B4C's stairs; B4C's stairs bring the
     // player back here, on the floor in front of the mouth (2740,1905).
     { id: 'b4b_to_b4c', x: 2760, y: 1820, range: 120, cave: 'B4C', label: 'Tunnel Down' },
-    // Ketta's bridge parts (winch gear, iron pins, haul rope) go here later,
-    // in three dead-end tunnels: SE ~2205,2790, SW ~345,2815, NE ~2780,1900.
-    // Removed 2026-11-17 until Danny's art is in.
+    // Ketta's bridge parts were scattered through the tunnels BELOW the cave
+    // (2026-11-20): the winch gear is in a chest in B4E's small north-east
+    // chamber. The pins and the haul rope are not placed yet.
   ],
   // Rats and bats at four tunnel crossings in the south (single type each).
   ambushes: [
@@ -610,7 +610,7 @@ export default {
       },
       chatter: [
         { q: 'What is this place?', a: 'Cairnfolk Cave. Our people cut it out of the mountain’s roots, one hall at a time. The lower halls are ours. The upper galleries were ours too, once, before the cold came.' },
-        { q: 'What happened to the upper galleries?', a: 'The cold came. Not winter cold. A cold that climbs. A season ago the north galleries started to frost over, and then things started moving in the frost. We pulled back across the chasm and let Ketta take the bridge apart. It was the right call. I still hate it.' },
+        { q: 'What happened to the upper galleries?', a: 'The cold came. Not winter cold. A cold that climbs. A season ago the galleries across the chasm started to frost over, and then things started moving in the frost. Nobody has crossed that chasm in a hundred years, not since someone took the bridge apart. Ketta wants it mended, just in case. I hope she never has to use it.' },
         { q: 'Have you heard about the king’s trouble?', a: 'Only that the road above is shut and the guards are jumpy. Kings come and go; the mountain doesn’t care. But I’ll say this much. The frost started about the time that trouble did. I’m an engineer, not a seer. I just notice when two things start in the same season.' },
       ],
     },
@@ -655,7 +655,7 @@ export default {
       chatter: [
         { q: 'You built all this?', a: 'Most of the lower halls. Brannoch drew it, I cut it, Tavor hauled it, and Ketta made it stay up. Stone’s honest. You ask it to hold, it holds. People could learn from that.' },
         { q: 'Tell me about your family.', a: 'Tavor’s my husband. Younger than me, louder than me, and he thinks I haven’t noticed he married up. Dessa’s our girl. Eight years old and she’s already chipped more stone than most apprentices. Mostly walls she wasn’t supposed to.' },
-        { q: 'What’s across the chasm?', a: 'Nothing we want back yet. Ask Ketta, it’s her bridge. Or it was, until she took it apart on purpose.' },
+        { q: 'What’s across the chasm?', a: 'Nothing we want, I’d say. Ask Ketta, it’s her bridge. Someone took it apart long before she was born, and she’s been trying to put it back together ever since.' },
       ],
     },
     {
@@ -740,7 +740,7 @@ export default {
         { q: 'What do you want to be when you grow up?', a: 'A mason like Ma, and a miner like Pa, and an engineer like Ketta, and an Elder like Elder Brannoch. Ma says I have to pick one. I say I’ve got loads of time. I’m eight.', more: [
           { q: 'Tell me about your bird.', a: 'I carved it out of a pebble with Ma’s smallest chisel. Don’t tell Ma. You can tell it’s a bird because of the beak. That bump is the beak. That other bump is also the beak.' },
         ] },
-        { q: 'Why is the bridge broken?', a: 'Ketta broke it on purpose, so nothing comes over from the cold side. I heard something over there once. It went tink, tink, tink, like the ice was talking. I wasn’t scared. I was a little scared.', more: [
+        { q: 'Why is the bridge broken?', a: 'Somebody broke it ages and ages ago, before even Elder Brannoch was born. Ketta’s fixing it. I heard something over there once. It went tink, tink, tink, like the ice was talking. I wasn’t scared. I was a little scared.', more: [
           { q: 'Where are the rats coming from?', a: 'The side tunnels. Pa says they came down because the cold side got cold. Bats too. I’m not allowed past the plazas on my own. I go a little past the plazas on my own.' },
         ] },
       ],

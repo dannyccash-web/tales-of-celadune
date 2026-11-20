@@ -25,8 +25,6 @@ export default {
   returns: 'B4B',
   music: 'cave',
   battleBackground: 'assets/images/B4C_Battle_Background.jpg',
-  level: 1,
-  levels: 4,
   obstacles: [
     {x: 0, y: 0, w: 2750, h: 10},
     {x: 2910, y: 0, w: 90, h: 10},
@@ -1047,7 +1045,16 @@ export default {
   fishingSpots: [],
   chests: [],
   battles: [],
-  ambushes: [],
+  // Random encounters (2026-11-20): rats and bats in the middle tunnels, fire
+  // creatures toward the hot south where the lava is breaking through.
+  ambushes: [
+    { id: 'b4c_ambush_a', x: 600, y: 1300, range: 141, enemies: ['blight_rat', 'blight_rat'], retreat: { x: 400, y: 1467 } },
+    { id: 'b4c_ambush_b', x: 1400, y: 1450, range: 141, enemies: ['cave_bat', 'cave_bat', 'cave_bat'], retreat: { x: 1599, y: 1282 } },
+    { id: 'b4c_ambush_c', x: 2450, y: 1200, range: 141, enemies: ['blight_rat', 'blight_rat', 'blight_rat'], retreat: { x: 2257, y: 970 } },
+    { id: 'b4c_ambush_d', x: 500, y: 2250, range: 141, enemies: ['emberwisp', 'emberwisp'], retreat: { x: 667, y: 2050 } },
+    { id: 'b4c_ambush_e', x: 1950, y: 2200, range: 141, enemies: ['cinderwing', 'emberwisp'], retreat: { x: 2206, y: 2245 } },
+    { id: 'b4c_ambush_f', x: 2450, y: 2050, range: 141, enemies: ['cinderwing', 'cinderwing'], retreat: { x: 2189, y: 2268 } },
+  ],
   exits: [
     { edge: 'bottom', xMin: 665, xMax: 785, to: 'B4D', toBand: [635, 795] },
     { edge: 'bottom', xMin: 2095, xMax: 2205, to: 'B4D', toBand: [2095, 2245] },
@@ -1058,5 +1065,28 @@ export default {
     { x: 1838, y: 2192, rise: 160, count: 14, baseR: 5, growR: 15, drift: 10, alpha: 0.32, speed: 0.13 },
     { x: 2643, y: 2222, rise: 200, count: 14, baseR: 5, growR: 15, drift: 10, alpha: 0.32, speed: 0.13 },
   ],
-  npcs: [],
+  // Hagen Ironshale (2026-11-20), foreman of the lower works, a Cairnfolk.
+  // Wanders the open chamber in the middle of the top band; the first time he
+  // sees the player he hurries over (chaseTalk) to warn them off, then goes
+  // back to his rounds (main.js buildHagenDialog, persisted hagenMet).
+  npcs: [
+    {
+      id: 'hagen_ironshale', name: 'Hagen Ironshale', role: 'FOREMAN OF THE LOWER WORKS',
+      sprite: 'assets/images/hagen_ironshale_overhead.png',
+      portrait: 'assets/images/hagen_ironshale.png',
+      speed: 45, startsHome: false, x: 1480, y: 620,
+      chaseTalk: true, aggroRange: 420, chaseSpeed: 150, giveUpRange: 1100,
+      patrol: [{ x: 1480, y: 620 }, { x: 1360, y: 520 }, { x: 1500, y: 480 }, { x: 1640, y: 540 }],
+      dialog: { line: 'Keep to the upper tunnels.', responses: ['Leave.'] },
+      chatter: [
+        { q: 'What were you building?', a: 'A new level. Fresh halls below the cave, room for the families to spread out. We had the stairs cut and half the tunnels shored up. Then the floor started getting warm.', more: [
+          { q: 'Will you go back to it?', a: 'When the lava settles. If it settles. Stone doesn’t hurry, and neither do I. But I’m not sending my crew down into that until I know what’s pushing it up.' },
+        ] },
+        { q: 'What kind of fire beasts?', a: 'Little ones first. Embers that float about on their own, and bats with burning wings that set your hair alight. Further down, worse. Big slag-things that move like men. I saw one walk through the lava like it was bathwater.', more: [
+          { q: 'Where are they coming from?', a: 'Below. Always below. Something down there has been opening the deep, and everything that lives in the heat is coming up with it. I don’t like it. I don’t like it one bit.' },
+        ] },
+        { q: 'I can look after myself.', a: 'They all say that. Fine. If you’re going down, wrap up in something that doesn’t burn and take more potions than you think you need. And don’t blame me.' },
+      ],
+    },
+  ],
 };

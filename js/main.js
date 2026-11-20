@@ -514,6 +514,7 @@ async function boot() {
     'assets/images/B4E_Battle_Background.jpg',
     'assets/images/B4F_Battle_Background.jpg',
     'assets/images/dessa_flintmere.png', // B4B: Dessa runs up and her dialog opens on its own
+    'assets/images/hagen_ironshale.png', // B4C: Hagen hurries over and his dialog opens on its own
     'assets/images/ysra_nineshells.png', // C1B's Drownweft — fought via dialogue/theft-trigger, not a `battles` list
     // Temple of Aeluna (2026-10-15): the Gloamkin are roaming creatures and
     // Morrowvane is fought from his dialogue, so none are in a `battles` list.
@@ -605,6 +606,8 @@ async function boot() {
   // once per visit, reset on every scene entry.
   let b4bBridgeFixed = false;
   let dessaMet = false;
+  // Hagen Ironshale (B4C, 2026-11-20) runs over to warn the player once. Persisted.
+  let hagenMet = false;
   let orlaFedThisVisit = false;
   // Soraya Dawnveil's blessing at the High Temple (B1, 2026-11-15) is once per
   // visit, like Elowen's. Not persisted; reset on every scene entry.
@@ -698,6 +701,7 @@ async function boot() {
     if (id === 'B3' && nkemiStone === 'given') nkemiStone = 'ready';
     if (id === 'B3' && arjunMet) { const a = world.npcs.find((n) => n.id === 'arjun_talwar'); if (a) { a.chaseTalk = false; a._chasing = false; } }
     if (id === 'B4B') applyB4BState();
+    if (id === 'B4C' && hagenMet) { const h = world.npcs.find((n) => n.id === 'hagen_ironshale'); if (h) { h.chaseTalk = false; h._chasing = false; } }
     if (id === 'B1' && adeMet) { const a = world.npcs.find((n) => n.id === 'ade_thornwick'); if (a) { a.chaseTalk = false; a._chasing = false; } }
     // Mara Hollowmast doesn't appear in town until rescued from C1D (2026-09-12)
     // - reuses `.defeated` purely as a presence gate (world.js: a defeated npc
@@ -714,7 +718,6 @@ async function boot() {
     // Vertical "Level" HUD indicator (2026-09-11) — shown only inside a
     // scene that declares its own `level` (so far just C1C, the ship
     // dungeon's Level 1); hidden everywhere else.
-    ui.setLevelIndicator(SCENES[id]?.level ?? null, SCENES[id]?.levels); // `levels`: how many boxes (default 3)
   }
   enterScene('D3');
   window.quests = quests; // debug handle
@@ -1018,7 +1021,7 @@ async function boot() {
         inventory: inventory.map((e) => ({ ...e })),
         equipment: { ...equipment },
         quests: quests.map((q) => ({ ...q })),
-        flags: { campQuestDone, campHostile, campTollTier, gafferHappy, thrumhornFed, clucksworthFed, eggathaFed, orrisRescued, orrisDeparted, wellDrinks, vegetableDeliveredToTavern, mirelleStage, mirelleOutcome, calderToldStory, calderToldDangers, maraMet, maraToldTruth, lilyGullThanked, magicRevealed, maraHollowmastRescued, lockboxAcceptedFrom, lockboxGivenTo , ferrySide, lakewardenPaid, arjunMet, adeMet, b4bBridgeFixed, dessaMet, nkemiStone, nkemiStaff, horsesFed: [...horsesFed], visitedTowns: [...visitedTowns] },
+        flags: { campQuestDone, campHostile, campTollTier, gafferHappy, thrumhornFed, clucksworthFed, eggathaFed, orrisRescued, orrisDeparted, wellDrinks, vegetableDeliveredToTavern, mirelleStage, mirelleOutcome, calderToldStory, calderToldDangers, maraMet, maraToldTruth, lilyGullThanked, magicRevealed, maraHollowmastRescued, lockboxAcceptedFrom, lockboxGivenTo , ferrySide, lakewardenPaid, arjunMet, adeMet, b4bBridgeFixed, dessaMet, hagenMet, nkemiStone, nkemiStaff, horsesFed: [...horsesFed], visitedTowns: [...visitedTowns] },
         caveReturn, // where to exit to if saved inside a cave/dungeon
         // Per-visit gates (reset on every scene entry): saved so a reload in
         // the temple can't hand out a second blessing.
@@ -1080,7 +1083,7 @@ async function boot() {
     maraHollowmastRescued = false;
     arjunMet = false;
     adeMet = false;
-    b4bBridgeFixed = false; dessaMet = false;
+    b4bBridgeFixed = false; dessaMet = false; hagenMet = false;
     nkemiStone = 'none'; nkemiStaff = 'none'; horsesFed = [];
     lockboxAcceptedFrom = null; lockboxGivenTo = null;
     caveReturn = null;
@@ -1133,6 +1136,7 @@ async function boot() {
     adeMet = !!f.adeMet;
     b4bBridgeFixed = !!f.b4bBridgeFixed;
     dessaMet = !!f.dessaMet;
+    hagenMet = !!f.hagenMet;
     nkemiStone = f.nkemiStone || 'none';
     nkemiStaff = f.nkemiStaff || 'none';
     horsesFed = Array.isArray(f.horsesFed) ? f.horsesFed.filter((h) => HORSES[h]) : [];
@@ -2504,6 +2508,12 @@ async function boot() {
       });
       return true;
     }
+    // A demon royal's last word before the fight (2026-11-20): the only
+    // response closes the dialog, and the close starts the battle.
+    if (effect.demonLine) {
+      ui.updateDialogContent({ line: effect.demonLine, responses: ['Fight.'], responseEffects: [null] });
+      return true;
+    }
     if (effect.message) ui.toast(effect.message);
     if (effect.followUp) {
       // NPC replied to the player's response — offer at least "Go back."
@@ -2809,14 +2819,14 @@ async function boot() {
   // and the haul rope she threw down the side tunnels. Handing them over opens
   // the world gate 'b4b_bridge' (the span is drawn and stops blocking).
   const KETTA_PIECES = ['bridge_winch_gear', 'bridge_pins', 'bridge_rope'];
-  const KETTA_GREET = 'Don’t touch the winch. Don’t touch the rails. Actually, don’t touch anything near my bridge. Ketta Slatebrook. I keep this bridge. Mostly I keep it from working.';
-  const KETTA_WHY = 'Because I took it apart. The middle span folds up, so I pulled the pins, stripped the winch gear and cut the haul rope. Nothing crosses from the cold side now. Nothing crosses from this side either, which is the bit everyone forgets to thank me for.';
-  const KETTA_OTHER = 'The upper galleries. Frozen solid now. A season ago the frost came down out of the mountain, and there was something moving in it. Not animals. Things that went tink, tink, tink against the ice. Brannoch said pull back. I said give me an hour. It took me twenty minutes.';
-  const KETTA_CROSS = 'No. ...You actually mean it. You’re mad, you know that? Fine. I’m not putting it back together myself, because I’m not mad. I threw the pieces down the side tunnels so nobody could get clever: the winch gear, the iron pins and the haul rope. Bring me all three and I’ll set the span. If anything follows you back across, that’s your problem.';
-  const KETTA_CROSS_HAVE = 'No. ...Wait. Is that my winch gear? And my pins? And my rope, which I threw very hard? You went and found them before you even asked. That’s either very clever or very worrying. Hand them over, then, and I’ll set the span. If anything follows you back across, that’s your problem.';
-  const KETTA_ACCEPT = 'Side tunnels, south of here. Mind the rats. And the bats. And the rats. Don’t come back missing anything, I’ve only got the one bridge.';
-  const KETTA_FIX = 'You found all of it. Fine. Fine! Give me a minute. (She seats the pins, fits the gear to the winch and runs the rope, and the middle span comes down across the chasm with a long wooden groan.) There. She’ll hold. Don’t make me regret it.';
-  const KETTA_AFTER = 'She’s down and she’s holding. If you hear tink, tink, tink behind you, run. Don’t stop to wave.';
+  const KETTA_GREET = 'Don’t touch the winch. Don’t touch the rails. Ketta Slatebrook. I keep this bridge, such as it is. It hasn’t carried anyone across in a hundred years.';
+  const KETTA_WHY = 'Because someone took it apart long before my time. The middle span folds up, and whoever did it pulled the pins, stripped the winch gear, cut the haul rope and scattered the lot through the deep tunnels. Nobody wrote down why. I’m putting it back together, just in case we ever need it. Whether anyone should actually use it is another question.';
+  const KETTA_OTHER = 'The upper galleries. Nobody’s set foot over there in living memory, and now they’re frozen solid. A season ago the frost came down out of the mountain, and there’s something moving in it. Things that go tink, tink, tink against the ice. Whoever took my bridge apart knew something was over there. I’d dearly like to know what.';
+  const KETTA_CROSS = 'Cross? ...You actually mean it. You’re mad, you know that? Well, I want her working anyway, in case we ever need to get across in a hurry. Or back. The winch gear, the iron pins and the haul rope are out there somewhere, scattered through the tunnels below us. Bring me all three and I’ll set the span. What you do with it after that is your business. I’d think hard about it.';
+  const KETTA_CROSS_HAVE = 'Cross? ...Wait. Is that the winch gear? And the pins? And the haul rope? Nobody’s seen those in a hundred years, and you just walk in carrying them. That’s either very clever or very worrying. Hand them over, then, and I’ll set the span. What you do with it after that is your business. I’d think hard about it.';
+  const KETTA_ACCEPT = 'They’ll be below us, down the root tunnel where it gets hot. Watch yourself down there, Hagen says it’s gone bad. Don’t come back missing anything, I’ve only got the one bridge.';
+  const KETTA_FIX = 'You found all of it. Fine. Fine! Give me a minute. (She seats the pins, fits the gear to the winch and runs the rope, and the middle span comes down across the chasm with a long wooden groan.) There. First time in a hundred years. She’ll hold. I still don’t know if we should be glad.';
+  const KETTA_AFTER = 'She’s down and she’s holding. If you cross, go carefully. If you hear tink, tink, tink, run. Don’t stop to wave.';
   function kettaPiecesHeld() { return KETTA_PIECES.filter((id) => inventory.some((it) => it.id === id && it.qty > 0)).length; }
   function buildKettaDialog() {
     const st = questStatus('b4b_bridge');
@@ -2825,11 +2835,11 @@ async function boot() {
     if (st === 'active') {
       const n = kettaPiecesHeld();
       if (n === KETTA_PIECES.length) {
-        return { line: 'You’re back, and you’re carrying something heavy. Tell me that’s my winch gear.', responses: ['Here are your pieces.', 'What’s on the other side?', 'Leave.'], responseEffects: [{ kettaFix: true }, other, null] };
+        return { line: 'You’re back, and you’re carrying something heavy. Tell me that’s the winch gear.', responses: ['Here are your pieces.', 'What’s on the other side?', 'Leave.'], responseEffects: [{ kettaFix: true }, other, null] };
       }
       const line = n === 0
         ? 'Still alive? Good. The winch gear, the iron pins and the haul rope. All three, or the span stays up.'
-        : `You’ve got ${n} of my three pieces. The span needs all of them. I need the winch gear, the iron pins and the haul rope.`;
+        : `You’ve got ${n} of the three pieces. The span needs all of them. I need the winch gear, the iron pins and the haul rope.`;
       return { line, responses: ['What’s on the other side?', 'Leave.'], responseEffects: [other, null] };
     }
     return {
@@ -2857,6 +2867,21 @@ async function boot() {
       requestAutosave();
     }
     return withChatter({ line: first ? DESSA_FIRST : DESSA_AGAIN, responses: ['Leave.'] }, npc);
+  }
+  // Hagen Ironshale (B4C, 2026-11-20): the foreman of the lower works runs over
+  // the first time he sees the player (chaseTalk, like Dessa), then goes back
+  // to wandering his chamber.
+  const HAGEN_FIRST = 'Oi! You there! Stop! What in the deep are you doing down here? Didn’t anyone up top tell you? This level’s shut. Lava’s been seeping up through the floor, and the fire-things came with it. Bats with burning wings, little floating embers, and worse further down. We’ve had to stop all work and pull everyone out. I’m Hagen Ironshale. I run the lower works, or I did. Now I mostly stand here and keep folk away from it.';
+  const HAGEN_AGAIN = 'Still here? I can’t stop you, I suppose. Keep to the upper tunnels if you’ve any sense, and if something starts to glow, don’t wait to see what it is.';
+  function buildHagenDialog(npc) {
+    const first = !hagenMet;
+    if (first) {
+      hagenMet = true;
+      const live = world.npcs.find((n) => n.id === 'hagen_ironshale');
+      if (live) { live.chaseTalk = false; live._chasing = false; }
+      requestAutosave();
+    }
+    return withChatter({ line: first ? HAGEN_FIRST : HAGEN_AGAIN, responses: ['Leave.'] }, npc);
   }
   // Orla Gravelmoot's broth: a full heal, once per visit.
   const ORLA_BROTH = 'Here, love. Mushroom broth, hot, with a bit of root in it for the strength. Drink it all. (You feel warm right through, and your wounds stop aching.)';
@@ -4462,13 +4487,28 @@ async function boot() {
   // both endings just close the dialog. When the fights go in, start the
   // battle from "Draw your weapon." (and probably "Back away." too: they
   // inevitably attack) the way fightMorrowvane() does.
+  // 2026-11-20: the fights are ON. Every way out of the conversation ends in
+  // a battle: "Draw your weapon." and "Back away." show the royal's line with a
+  // single "Fight." response, and closing the dialog by ANY route (that
+  // response, Escape) starts the fight via the onClose hook openNpcDialog
+  // installs for `demonRoyal` npcs (fightDemonRoyal).
   function buildDemonRoyalDialog(npc) {
     const base = withChatter({ line: npc.dialog.line, responses: ['Leave.'] }, npc);
     const responses = base.responses.slice(0, -1);
     const effects = (base.responseEffects || responses.map(() => null)).slice(0, responses.length);
     responses.push('Draw your weapon.', 'Back away.');
-    effects.push({ followUp: npc.demonRoyal.draw, noBack: true }, { followUp: npc.demonRoyal.back, noBack: true });
+    effects.push({ demonLine: npc.demonRoyal.draw }, { demonLine: npc.demonRoyal.back });
     return { ...base, responses, responseEffects: effects };
+  }
+  // Win = gone for good (checkpoint). Flee = a 2s pause; the approach trigger
+  // re-arms once the player has backed off (world.js proximityTalk hysteresis).
+  function fightDemonRoyal(id) {
+    const live = world.npcs.find((n) => n.id === id);
+    if (!live || live.defeated) return;
+    setTimeout(() => startBattle([id], (result) => {
+      if (result === 'victory') { live.defeated = true; takeCheckpoint(); }
+      else if (result === 'fled') { live.pause = 2; }
+    }), 0);
   }
 
   // ---- Tamsin Brackenhorn's quest: a treat for each horse (B1, 2026-11-19) ----
@@ -5018,6 +5058,7 @@ async function boot() {
   // they have no voice clip and no quest-status dialog variants. Gaffer's
   // dialog is state-built (fed / holding corn) rather than quest-driven.
   function openNpcDialog(npc, onClose) {
+    if (npc.demonRoyal) onClose = () => fightDemonRoyal(npc.id); // any exit = a fight
     if (npc.isPlace) {
       ui.openDialog(buildPlaceView(npc), onClose, (npcView, index) => applyPlaceResponse(npc, npcView, index));
       return;
@@ -5039,6 +5080,7 @@ async function boot() {
     else if (npc.id === 'ade_thornwick') dialog = buildAdeDialog(npc);
     else if (npc.id === 'ketta_slatebrook') dialog = buildKettaDialog();
     else if (npc.id === 'dessa_flintmere') dialog = buildDessaDialog(npc);
+    else if (npc.id === 'hagen_ironshale') dialog = buildHagenDialog(npc);
     else if (npc.id === 'orla_gravelmoot') dialog = buildOrlaDialog(npc);
     else if (HORSES[npc.id]) dialog = buildHorseDialog(npc.id);
     else if (npc.id === 'tamsin_brackenhorn') dialog = buildTamsinDialog();

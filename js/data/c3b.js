@@ -67,7 +67,6 @@ export default {
 
   music: 'cave',
 
-  level: 1, // first level of the temple dungeon — drives the HUD's level indicator
 
   // Every fight on this level uses its own backdrop (2026-10-15).
   battleBackground: 'assets/images/C3B1_Battle_Background.jpg',

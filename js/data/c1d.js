@@ -39,7 +39,6 @@ export default {
   music: 'cave',
   // Fights below deck use the ship-interior battle backdrop (2026-10-10, Danny).
   battleBackground: 'assets/images/boat_background_2.jpg',
-  level: 2, // shows "Level 2" in the HUD's vertical indicator (see main.js's enterScene)
 
   obstacles: [
     // Regenerated 2026-11-04 for the new, longer hull art: per-10px-row hull silhouette inset 45px (left) / 50px (right) to the inner rail, bow cargo + stern cargo + the hatch blocked; everything else is open deck.

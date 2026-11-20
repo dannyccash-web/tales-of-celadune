@@ -231,6 +231,7 @@ export const DIALOGUE_SFX = {
   orla_gravelmoot: 'assets/audio/freesound_community-mmm-hmm-36292.mp3',
   ketta_slatebrook: 'assets/audio/freesound_community-woman-sigh-101931.mp3',
   dessa_flintmere: 'assets/audio/freesound_community-girl-chucklewav-14669.mp3',
+  hagen_ironshale: 'assets/audio/mrstokes302-hmmm-sound-male-sfx-mrstokes302-420028.mp3', // B4C foreman (2026-11-20)
   edmund_fairlock: 'assets/audio/u_9kvcihzjc7-squashwo-gua-plants-vs-zombies-hmm-383643.mp3',
   cuthbert_hollis: 'assets/audio/universfield-muffled-reaction-242214.mp3',
   galen_thorne: 'assets/audio/mrstokes302-hmmm-sound-male-sfx-mrstokes302-420028.mp3',

@@ -775,7 +775,7 @@ const ITEMS = {
     id: 'bridge_winch_gear',
     name: 'Winch Gear',
     image: 'assets/images/bridge_winch_gear.png',
-    description: 'A heavy brass gear from the bridge winch in Cairnfolk Cave. Ketta will want it back.',
+    description: 'A heavy brass gear from the old bridge winch in Cairnfolk Cave, lost down here for a hundred years. Ketta will want it.',
     questItem: true,
   },
   bridge_pins: {

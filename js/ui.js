@@ -40,38 +40,6 @@ export function setMagicBarVisible(visible) {
   $('magic-stat').classList.toggle('hidden', !visible);
 }
 
-// Vertical "Level" indicator on the left edge of the HUD (2026-09-11;
-// redesigned 2026-09-12) — for the ship dungeon (C1C/C1D) and any further
-// dungeon levels later. Shown only while the active scene declares its own
-// `level`; pass null/undefined to hide it. One box per level already in the
-// markup (data-level="N"); the active level's box is normal, the rest get
-// `.dim` so the player can see the whole level map at a glance, not just
-// the current number. main.js's enterScene() calls this once per scene
-// change.
-// `count` (2026-11-19, for the four-level Molten Deep): how many level boxes
-// to show; the boxes are rebuilt when it changes. Defaults to 3 (the temple).
-export function setLevelIndicator(level, count = 3) {
-  const el = $('level-indicator');
-  el.classList.toggle('hidden', level == null);
-  if (level == null) return;
-  const wrap = el.querySelector('.level-boxes');
-  if (wrap.children.length !== count) {
-    wrap.replaceChildren();
-    for (let i = 1; i <= count; i++) {
-      const box = document.createElement('div');
-      box.className = 'level-box';
-      box.dataset.level = String(i);
-      const label = document.createElement('span');
-      label.textContent = 'L' + i;
-      box.appendChild(label);
-      wrap.appendChild(box);
-    }
-  }
-  el.querySelectorAll('.level-box').forEach((box) => {
-    box.classList.toggle('dim', Number(box.dataset.level) !== level);
-  });
-}
-
 // Flash + glow the health fill (remove/reflow/add pattern so it replays on
 // every hit, same trick as the dialog portrait's entrance animation). Call
 // this alongside updateHud() whenever the player takes damage.

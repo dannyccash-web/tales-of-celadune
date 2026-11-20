@@ -394,17 +394,25 @@ export default {
   // Mireman King's Trident and Nythsurge do extra against it. Damage is set
   // high on purpose: through full Coldforge + a shield (5 soaked) a royal's
   // 7-11 lands as 2-6; through leather it lands as 6-10 and kills in two hits.
-  // Simulated for an 11 HP player, 3 health potions + 1 vitality potion,
-  // attack 3 / defense 5 / speed 3 (full Coldforge), Nythsurge ready:
-  //   Vargoth   ~67% with the trident, ~36% with a longsword, ~8% in half Coldforge
-  //   Sythra    ~66% / ~38% / ~7%
-  //   Kazharoth ~35% / ~6% / ~2%  (the toughest fight in the game)
-  //   Slagkin Stalker / Brute: a sure win in full Coldforge; Stalker ~60% and
-  //   Brute ~25% in leather. Cinderwing / Emberwisp: easy in anything.
+  // Simulated 2026-11-20 (fights ON) for an 11 HP player with 3 health
+  // potions + 1 vitality potion, Speed 3 (win rates):
+  //                   leather  half CF  full CF   full CF  full CF+   full CF+
+  //                   +LS      +LS      +LS       +trident trident+Nyth trident+Vaelward
+  //   2 Cinderwings    21%      83%     100%      100%     100%       100%
+  //   Stalker          13%      67%     100%      100%     100%       100%
+  //   Brute             1%      18%      88%       97%      97%        99%
+  //   Vargoth           0%       2%      34%       70%      69%        88%
+  //   Sythra            0%       1%      34%       69%      68%        92%
+  //   Kazharoth         0%       0%       3%       27%      49%        36%
+  // (LS = longsword; an Ensnaring longsword in full Coldforge: Vargoth 57%,
+  // Sythra 62%, Kazharoth 9%.) B4C's three fire ambushes back to back: 55% in
+  // half Coldforge, a sure thing in full. So: Coldforge gets you through the
+  // regular fights; the royals want the trident or a spell on top.
   // Demons and slag-things, so none are `poisonable`.
-  // NOT HOSTILE YET (Danny, 2026-11-20): nothing in the world starts these
-  // fights. The Slagkin carry `enemyId` but `aggroRange: 0`; the royals'
-  // "Draw your weapon." only closes the dialog (main.js buildDemonRoyalDialog).
+  // Fights ON since 2026-11-20 (round 3): Slagkin are roaming creatures,
+  // Cinderwings/Emberwisps come from B4C/B4D ambushes and Kazharoth's summons,
+  // and the royals' conversations always end in a fight (main.js
+  // buildDemonRoyalDialog / fightDemonRoyal).
   cinderwing: {
     id: 'cinderwing',
     name: 'Cinderwing',
@@ -438,7 +446,7 @@ export default {
     attack: 6,
     defense: 3,
     speed: 10,
-    damage: { min: 5, max: 8 },
+    damage: { min: 6, max: 9 },
     fire: true,
     drops: { gold: { min: 10, max: 16 }, loot: [{ id: 'health_potion', chance: 0.25 }] },
   },
@@ -447,11 +455,11 @@ export default {
     id: 'slagkin_brute',
     name: 'Slagkin Brute',
     portrait: 'assets/images/slagkin_brute.png',
-    health: 20,
+    health: 22,
     attack: 4,
     defense: 5,
     speed: 6,
-    damage: { min: 6, max: 9 },
+    damage: { min: 7, max: 10 },
     fire: true,
     drops: { gold: { min: 14, max: 20 }, loot: [{ id: 'health_potion', chance: 0.3 }, { id: 'magic_potion', chance: 0.15 }] },
   },
@@ -489,7 +497,7 @@ export default {
     id: 'kazharoth_unburnt',
     name: 'Kazharoth the Unburnt',
     portrait: 'assets/images/kazharoth_unburnt.png',
-    health: 32,
+    health: 30,
     attack: 8,
     defense: 7,
     speed: 10,

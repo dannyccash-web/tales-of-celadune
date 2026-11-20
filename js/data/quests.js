@@ -149,6 +149,6 @@ export default {
   // Cairnfolk Cave (B4B, 2026-11-17): Ketta Slatebrook's bridge.
   b4b_bridge: {
     name: 'Mending the Span',
-    description: 'Ketta Slatebrook took the bridge over the chasm in Cairnfolk Cave apart on purpose and threw the parts down the side tunnels: the winch gear, the iron pins and the haul rope. Find all three and bring them back to her.',
+    description: 'Someone took apart the bridge over the chasm in Cairnfolk Cave a hundred years ago and scattered the parts through the tunnels below: the winch gear, the iron pins and the haul rope. Ketta Slatebrook wants it working again, just in case. Find all three and bring them back to her.',
   },
 };
