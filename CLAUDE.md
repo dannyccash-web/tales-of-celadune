@@ -1828,6 +1828,14 @@ Lore (canonical from here): a **royal family of demons** is climbing up through 
 - **Level HUD removed everywhere:** `#level-indicator` markup + CSS, `ui.setLevelIndicator`, its call in `enterScene`, and every scene's `level`/`levels` field are gone.
 - **Verified:** real-World checks (every ambush, retreat, chest, NPC point reachable; patrols complete; every Slagkin charges a nearby player; Hagen runs over; nothing fires with the player far away); headless Chrome: Hagen's intercept then no repeat, a B4C ambush (Cinderwing+Emberwisp on the B4C backdrop), a Stalker charge on the B4D backdrop, the winch-gear chest, Escape out of Sythra's talk starts her fight, "Back away." -> line -> Fight with Vargoth, a forced Vargoth win marks him defeated, Kazharoth's "Draw your weapon." fight on the B4F backdrop, no level HUD; no page errors.
 
+## Saving is 100% manual; Continue after dying loads the last save (2026-11-20, round 4)
+
+Danny: the only save is the S button's "Save game?" -> Yes. **This supersedes every earlier note about checkpoints** (scene-entry saves, the death checkpoint taken on entering a screen / winning a fight / receiving a quest, fast travel and ferry checkpoints, the 2026-11-19 in-memory `deathCheckpoint`).
+- Removed from main.js: `deathCheckpoint`, `takeCheckpoint()` and all ~15 calls to it (scene entry, cave enter/exit, fast travel, the Lakewarden crossing, every battle victory, Orris's rescue, Mara Hollowmast's rescue, new game / continue), `questSaveHook` and its debounce timer, and the old `respawnAfterDefeat()` fallback. `requestAutosave()` stays a no-op (`autosaveHook` null).
+- `loadGame({ keepAudio })` only ever reads the one save (`celadune_save_v1`). **Title-screen Continue and the death screen's Continue both load it.** After dying, the volume sliders are left where the player has them (`keepAudio: true`), and the scene's music is restarted. **Dying with no save at all starts a fresh new game on the farm.**
+- So a kill, a pickup, a quest or a scene change only becomes permanent when the player saves; dying or quitting rewinds to the last save.
+- Verified in headless Chrome: die with no save -> new game at the farm spawn (gold reset); save at a spot in D3 with 42 gold, walk into D2 and get 500 gold (save untouched), die -> back at the saved spot with 42; reload + title Continue -> same. No page errors.
+
 ## Status / roadmap
 
 - ⏳ **REMINDER — Dame Elspeth Varrick goes in the King's castle.** Taken out of B4 on 2026-11-17 (Danny), not deleted: her full npc entry is in `js/data/reserve.js` (nothing imports it), her art (`dame_elspeth_varrick*.png`) and voice (`audio.js` `elspeth_varrick`) are still in the repo. When B2's keep / the King's scene is built, move her entry in and rewrite her lines (they're about hiding from the barricade).
