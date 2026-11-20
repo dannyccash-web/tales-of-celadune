@@ -1188,5 +1188,13 @@ export default {
     { x: 1870, y: 1070, rise: 240, count: 18, baseR: 10, growR: 30, drift: 22, alpha: 0.3, speed: 0.11 },
     { x: 2165, y: 885, rise: 190, count: 16, baseR: 8, growR: 24, drift: 16, alpha: 0.3, speed: 0.12 },
   ],
-  npcs: [],
+  // Slagkin Stalkers (2026-11-20): placed to see how the level feels. NOT
+  // hostile yet — `creature` (no talk, no label) with aggroRange 0, so they only
+  // prowl their patrols. Kept 700px+ from the chasm-climb landing (1330,1350).
+  // When they start attacking: give them an enemyId + aggroRange like D1's cragclaws.
+  npcs: [
+    { id: 'slagkin_stalker_1', name: 'Slagkin Stalker', sprite: 'assets/images/slagkin_stalker_overhead.png', creature: true, aggroRange: 0, speed: 70, x: 445, y: 545, patrol: [{ x: 445, y: 545 }, { x: 595, y: 795 }, { x: 845, y: 815 }] },
+    { id: 'slagkin_stalker_2', name: 'Slagkin Stalker', sprite: 'assets/images/slagkin_stalker_overhead.png', creature: true, aggroRange: 0, speed: 70, x: 345, y: 1745, patrol: [{ x: 345, y: 1745 }, { x: 545, y: 1945 }, { x: 845, y: 1995 }] },
+    { id: 'slagkin_stalker_3', name: 'Slagkin Stalker', sprite: 'assets/images/slagkin_stalker_overhead.png', creature: true, aggroRange: 0, speed: 70, x: 2545, y: 1345, patrol: [{ x: 2545, y: 1345 }, { x: 2595, y: 1595 }, { x: 2455, y: 1455 }] },
+  ],
 };

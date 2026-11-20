@@ -501,6 +501,9 @@ async function boot() {
     'assets/images/orris_fenwick_1.png', // his dialog opens on approach, so preload BOTH portraits (same as Edras)
     'assets/images/orris_fenwick_2.png',
     'assets/images/Edras Holloweye.png', // D4B hermit — dialog auto-opens on approach, so preload the portrait
+    'assets/images/kazharoth_unburnt.png', // Molten Deep royals — their dialogs open on approach too
+    'assets/images/sythra_embercoil.png',
+    'assets/images/vargoth_ashcleaver.png',
     'assets/images/dessa_flintmere.png', // B4B: Dessa runs up and her dialog opens on its own
     'assets/images/ysra_nineshells.png', // C1B's Drownweft — fought via dialogue/theft-trigger, not a `battles` list
     // Temple of Aeluna (2026-10-15): the Gloamkin are roaming creatures and
@@ -4441,6 +4444,24 @@ async function boot() {
     };
   }
 
+  // ---- The demon royals of the Molten Deep (2026-11-20, Danny) ----
+  // Kazharoth the Unburnt (B4F), his brother Vargoth Ashcleaver and his sister
+  // Sythra Embercoil (B4E) stop the player to talk when they come near
+  // (proximityTalk). Their topics are ordinary chatter (with `more`); the
+  // conversation always ends with "Draw your weapon." or "Back away.", whose
+  // lines come from the npc's `demonRoyal: { draw, back }`. NOT HOSTILE YET:
+  // both endings just close the dialog. When the fights go in, start the
+  // battle from "Draw your weapon." (and probably "Back away." too: they
+  // inevitably attack) the way fightMorrowvane() does.
+  function buildDemonRoyalDialog(npc) {
+    const base = withChatter({ line: npc.dialog.line, responses: ['Leave.'] }, npc);
+    const responses = base.responses.slice(0, -1);
+    const effects = (base.responseEffects || responses.map(() => null)).slice(0, responses.length);
+    responses.push('Draw your weapon.', 'Back away.');
+    effects.push({ followUp: npc.demonRoyal.draw, noBack: true }, { followUp: npc.demonRoyal.back, noBack: true });
+    return { ...base, responses, responseEffects: effects };
+  }
+
   // ---- Tamsin Brackenhorn's quest: a treat for each horse (B1, 2026-11-19) ----
   const TAMSIN_GOLD = 15;
   const TAMSIN_ASK = 'Need a hand with the horses?';
@@ -5012,6 +5033,7 @@ async function boot() {
     else if (npc.id === 'orla_gravelmoot') dialog = buildOrlaDialog(npc);
     else if (HORSES[npc.id]) dialog = buildHorseDialog(npc.id);
     else if (npc.id === 'tamsin_brackenhorn') dialog = buildTamsinDialog();
+    else if (npc.demonRoyal) dialog = buildDemonRoyalDialog(npc);
     else if (npc.id === 'cinder') dialog = buildCinderDialog();
     else if (npc.id === 'sir_clucksworth' || npc.id === 'dame_eggatha') dialog = buildChickenDialog(npc.id);
     else if (npc.id === 'mara_vellorne') dialog = buildMaraDialog();

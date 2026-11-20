@@ -188,6 +188,10 @@ export const DIALOGUE_SFX = {
   // coming out of a deep hood. M1 (mrstokes) would have been the obvious
   // pick tonally but already carries 8 of the game's men.
   lakewarden: 'assets/audio/universfield-muffled-reaction-242214.mp3',
+  // Molten Deep demon royals (2026-11-20).
+  kazharoth_unburnt: 'assets/audio/freesound_community-reverb-89603.mp3',
+  vargoth_ashcleaver: 'assets/audio/universfield-muffled-reaction-242214.mp3',
+  sythra_embercoil: 'assets/audio/u_xg7ssi08yr-female-ah-ha-389835.mp3',
   // Mateo Avellaneda (2026-10-10) — the thoughtful adult-male "hmmm", which
   // suits a man about to explain chestnuts to you. Swapped off pacomoya-eh
   // (Skitter's) the same day at Danny's request. No one else in C3 uses it.

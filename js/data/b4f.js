@@ -654,5 +654,13 @@ export default {
     { x: 2795, y: 1627, scale: 0.5 },
     { x: 2793, y: 1960, scale: 0.5 },
   ],
-  npcs: [],
+  // A Slagkin Stalker in the upper-left chamber and a Brute in the upper-right
+  // (2026-11-20, not hostile yet). Kazharoth the Unburnt stands on the dais
+  // before his throne, turning to watch the player, and speaks once they come
+  // within 420px (proximityTalk). No fight yet.
+  npcs: [
+    { id: 'slagkin_stalker_4', name: 'Slagkin Stalker', sprite: 'assets/images/slagkin_stalker_overhead.png', creature: true, aggroRange: 0, speed: 70, x: 495, y: 445, patrol: [{ x: 495, y: 445 }, { x: 775, y: 465 }, { x: 945, y: 435 }] },
+    { id: 'slagkin_brute_3', name: 'Slagkin Brute', sprite: 'assets/images/slagkin_brute_overhead.png', creature: true, aggroRange: 0, speed: 40, x: 1445, y: 445, patrol: [{ x: 1445, y: 445 }, { x: 1745, y: 445 }, { x: 1945, y: 485 }] },
+    { id: 'kazharoth_unburnt', name: 'Kazharoth the Unburnt', role: 'KING OF THE MOLTEN DEEP', sprite: 'assets/images/kazharoth_unburnt_overhead.png', portrait: 'assets/images/kazharoth_unburnt.png', speed: 0, startsHome: false, x: 1125, y: 2325, rotation: 3.14159, watchPlayer: 900, proximityTalk: true, talkRange: 420, demonRoyal: { draw: 'You raise a blade in my hall? Delightful. Nothing amusing has happened down here in an age. Come, then. I will give you the honour of dying before a king.', back: 'Yes, run. Go back up and tell them what you saw. Tell them all. Fear spreads faster than fire, and it does half my work for me.' }, dialog: { line: 'So. The little surface creature has crawled all the way down to my hall. You may approach the throne. Do not kneel; I can see you have no talent for it. Speak, and be brief. A king’s time is not spent on insects.', responses: ['Leave.'] }, chatter: [{ q: 'Who are you?', a: 'Kazharoth the Unburnt, King of the Molten Deep. I have ruled this fire since before your kingdoms had names, and the flame has never once dared to touch me.', more: [{ q: 'Why “the Unburnt”?', a: 'As a boy I walked into the heart of the deep fire and walked out again. Everyone else who tried is part of the floor now. You are standing on a few of them.' }, { q: 'And your brother and sister?', a: 'Vargoth is a hammer and Sythra is a knife. A king needs both, and neither is ever allowed near the crown.' }] }, { q: 'What do you want?', a: 'Everything above us. Your fields, your rivers, your little stone castles. Your king has sealed his borders and turned his face north, and while he stares at the cold, the ground beneath his feet is opening. I simply intend to step through.', more: [{ q: 'You’ll never win.', a: 'Never is a word for creatures who die. I have waited a thousand years and could wait a thousand more, but I don’t believe I will have to. Your world is tired and frightened and looking the wrong way. Wars are won long before anyone draws a blade.' }] }] },
+  ],
 };
