@@ -883,7 +883,16 @@ export class World {
         const d = Math.hypot(p.x - npc.x, p.y - npc.y);
         const range = npc.aggroRange ?? 300;
         const playerFromTerritory = Math.hypot(p.x - npc._territoryX, p.y - npc._territoryY);
-        const chase = d < range && playerFromTerritory < (npc.giveUpRange ?? 500);
+        // `aggroZone` (2026-11-20, the Molten Deep royals): a rect that sets
+        // the chase off wherever the player stands inside it, on top of the
+        // ordinary aggroRange circle (B4E's great hall, so nobody walks past).
+        const z = npc.aggroZone;
+        const inZone = !!z && p.x >= z.x && p.x <= z.x + z.w && p.y >= z.y && p.y <= z.y + z.h;
+        // A smartChase royal that has started a chase keeps at it until the
+        // player is past its giveUpRange (it doesn't drop the chase just
+        // because the player stepped back out of the zone/circle).
+        const chase = ((npc.smartChase && npc._chasing) || d < range || inZone) && playerFromTerritory < (npc.giveUpRange ?? 500);
+        if (npc._chaseArmed === false && npc._rearm > 0) { npc._rearm -= dt; if (npc._rearm <= 0) npc._chaseArmed = true; }
         if (chase) {
           npc._chasing = true;
           const strike = npc.strikeRange ?? 60;
@@ -891,16 +900,25 @@ export class World {
             if (npc._chaseArmed !== false && !this.pendingChaseTalk) {
               this.pendingChaseTalk = npc;
               npc._chaseArmed = false;
+              npc._rearm = npc.rearmAfter || 0; // 0 = only re-arms by leaving range (the old rule)
             }
           } else {
             const sp = npc.speed;
             npc.speed = npc.chaseSpeed ?? 140;
-            this.walkToward(npc, { x: p.x, y: p.y }, dt, 8);
+            // A smartChase royal always runs a little faster than the player can
+            // (boots and all), so a sprint down the hall doesn't outrun it.
+            if (npc.smartChase) npc.speed = Math.max(npc.speed, PLAYER_SPEED * (this.playerSpeedMult || 1) * 1.6);
+            // `smartChase` (the Molten Deep royals, 2026-11-20): their aggro
+            // range reaches across rooms, so a straight-line walk would pin
+            // them against a wall. They follow a grid path round the walls.
+            const goal = npc.smartChase ? this.chaseWaypoint(npc, p, dt) : p;
+            this.walkToward(npc, { x: goal.x, y: goal.y }, dt, 8);
             npc.speed = sp;
           }
           continue;
         }
         npc._chasing = false; // out of range, or too far from her territory — resumes routine/patrol below
+        npc._path = null;
         if (d > range * 1.4) npc._chaseArmed = true;
       }
 
@@ -922,6 +940,85 @@ export class World {
       npc.moving = moved;
       npc.walkTimer = moved ? npc.walkTimer + dt : 0;
     });
+  }
+
+  // ---- Grid pathing for `smartChase` NPCs (2026-11-20) ----
+  // A 20px walkability grid of the scene's TERRAIN (obstacle rects grown by
+  // the collider radius; bodies ignored), built once per World. chaseWaypoint
+  // re-plans a BFS path to the target every ~0.4s and returns a point a few
+  // cells ahead on it (or the target itself once there's a straight clear line).
+  navGrid() {
+    if (this._nav) return this._nav;
+    const C = 20, r = COLLIDER / 2;
+    const W = Math.ceil(this.scene.width / C), H = Math.ceil(this.scene.height / C);
+    const block = new Uint8Array(W * H);
+    for (const ob of this.scene.obstacles) {
+      if (ob.gate && this.openGates.has(ob.gate)) continue;
+      const x0 = Math.max(0, Math.floor((ob.x - r) / C)), x1 = Math.min(W - 1, Math.floor((ob.x + ob.w + r) / C));
+      const y0 = Math.max(0, Math.floor((ob.y - r) / C)), y1 = Math.min(H - 1, Math.floor((ob.y + ob.h + r) / C));
+      for (let gy = y0; gy <= y1; gy++) for (let gx = x0; gx <= x1; gx++) {
+        if (circleRectOverlap(gx * C + C / 2, gy * C + C / 2, r, ob)) block[gy * W + gx] = 1;
+      }
+    }
+    this._nav = { C, W, H, block };
+    return this._nav;
+  }
+  navLineClear(ax, ay, bx, by) {
+    const { C, W, block } = this.navGrid();
+    const n = Math.ceil(Math.hypot(bx - ax, by - ay) / (C / 2));
+    for (let i = 0; i <= n; i++) {
+      const x = ax + (bx - ax) * (i / Math.max(1, n)), y = ay + (by - ay) * (i / Math.max(1, n));
+      if (block[Math.floor(y / C) * W + Math.floor(x / C)]) return false;
+    }
+    return true;
+  }
+  chaseWaypoint(npc, target, dt) {
+    const { C, W, H, block } = this.navGrid();
+    if (this.navLineClear(npc.x, npc.y, target.x, target.y)) { npc._path = null; return target; }
+    npc._pathT = (npc._pathT || 0) - dt;
+    if (!npc._path || npc._pathT <= 0) {
+      npc._pathT = 0.4;
+      const cell = (x, y) => {
+        let gx = Math.floor(x / C), gy = Math.floor(y / C);
+        if (!block[gy * W + gx]) return gy * W + gx;
+        for (let rad = 1; rad < 4; rad++) for (let dy = -rad; dy <= rad; dy++) for (let dx = -rad; dx <= rad; dx++) {
+          const nx = gx + dx, ny = gy + dy;
+          if (nx >= 0 && ny >= 0 && nx < W && ny < H && !block[ny * W + nx]) return ny * W + nx;
+        }
+        return -1;
+      };
+      const s = cell(npc.x, npc.y), g = cell(target.x, target.y);
+      npc._path = null;
+      if (s >= 0 && g >= 0) {
+        const prev = new Int32Array(W * H).fill(-1); prev[s] = s;
+        const q = [s]; let head = 0, found = false;
+        while (head < q.length && head < 30000) {
+          const c = q[head++]; if (c === g) { found = true; break; }
+          const cx = c % W, cy = (c / W) | 0;
+          for (const [dx, dy] of [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]) {
+            const nx = cx + dx, ny = cy + dy;
+            if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+            const n = ny * W + nx;
+            if (block[n] || prev[n] >= 0) continue;
+            if (dx && dy && (block[cy * W + nx] || block[ny * W + cx])) continue; // no corner cutting
+            prev[n] = c; q.push(n);
+          }
+        }
+        if (found) {
+          const path = []; for (let c = g; c !== s; c = prev[c]) path.push(c);
+          npc._path = path.reverse().map((c) => ({ x: (c % W) * C + C / 2, y: ((c / W) | 0) * C + C / 2 }));
+        }
+      }
+    }
+    if (!npc._path || !npc._path.length) return target;
+    // Drop waypoints already reached, then aim at the furthest one (up to 8
+    // ahead) that's in a straight clear line.
+    while (npc._path.length > 1 && Math.hypot(npc._path[0].x - npc.x, npc._path[0].y - npc.y) < C) npc._path.shift();
+    let best = npc._path[0];
+    for (let i = Math.min(8, npc._path.length - 1); i > 0; i--) {
+      if (this.navLineClear(npc.x, npc.y, npc._path[i].x, npc._path[i].y)) { best = npc._path[i]; break; }
+    }
+    return best;
   }
 
   // Steer one tick toward a target; returns true when the NPC has arrived.

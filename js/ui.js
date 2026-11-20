@@ -134,7 +134,12 @@ function showDialogPage(animate = true) {
   const more = dialogState.page < dialogState.pages.length - 1;
   dialogState.paging = more;
   dialogState.selected = 0;
-  renderResponses(more ? ['Continue'] : dialogState.pageResponses);
+  const shown = more ? ['Continue'] : dialogState.pageResponses;
+  renderResponses(shown);
+  $('dialog-arrow').classList.toggle('hidden', !shown?.length);
+  // No options at all (a demon royal's "you're not leaving" line): the empty
+  // response frame is hidden too.
+  $('dialog-response-box').style.visibility = shown?.length ? '' : 'hidden';
   refreshSelection();
 }
 
@@ -290,13 +295,21 @@ export function dialogKey(key) {
   // A LOCKED dialog ignores Escape (2026-09-19, Orris's ambush): the player is
   // being jumped on the road and the only way out is the response that starts
   // the fight. Set via `lockDialog` on the npc view handed to openDialog.
-  if (key === 'Escape' && !dialogState.locked) closeDialog();
+  if (key === 'Escape') {
+    if (!dialogState.locked) closeDialog();
+    else dialogState.npc?.onEscape?.(); // a locked dialog may treat Escape as "trying to leave" (the demon royals)
+  }
 }
+// The response labels currently on offer (main.js's demon-royal leave check).
+export function currentResponses() { return [...(dialogState.npc?.dialog?.responses || [])]; }
 
 function chooseResponse() {
   // Mid-line "Continue": advance to the next page rather than acting on a
   // response — the real options only live on the last page (see beginPagedLine).
   if (dialogState.paging) { dialogState.page += 1; showDialogPage(true); return; }
+  // A line with NO responses is held on screen until main.js closes it (the
+  // demon royals' "leaving? no" line, 2026-11-20).
+  if (!dialogState.pageResponses?.length) return;
   const picked = dialogState.npc?.dialog?.responses?.[dialogState.selected];
   if (picked) dialogState.used?.add(picked);
   // Most responses are still placeholders that just close the dialog, but a
@@ -361,6 +374,7 @@ export function closeDialog() {
   dialogState.typing = false;
   dialogState.open = false;
   $('dialog').classList.add('hidden');
+  $('dialog-response-box').style.visibility = '';
   const received = $('dialog-received');
   clearTimeout(transferTimer);
   received.classList.add('hidden');
@@ -585,6 +599,17 @@ function applyItemGlow(img, def) { applyGlow(img, def?.glow || null); }
 export function setEnemyGlow(enemy) {
   const slot = battleUiState.enemySlots.find((s) => s.enemy === enemy)?.el;
   applyGlow(slot?.querySelector('.enemy-portrait'), enemy.statusGlow || null);
+  const tag = slot?.querySelector('.enemy-status');
+  if (tag) fillStatusTag(tag, enemy);
+}
+// Small status words under an enemy's health bar (2026-11-20): Poisoned /
+// Ensnared / Burning, each in its effect's colour.
+function fillStatusTag(tag, enemy) {
+  tag.innerHTML = '';
+  const add = (txt, cls) => { const s = document.createElement('span'); s.className = cls; s.textContent = txt; tag.appendChild(s); };
+  if (enemy.skipTurn) add('Ensnared', 'st-ensnared');
+  if (enemy.poisoned) add('Poisoned', 'st-poisoned');
+  if (enemy.burning) add('Burning', 'st-burning');
 }
 
 export function showDialogGrid({ kind, items, playerGold, vendorGold, emptyText, onSelect, onInspect, onBack }) {
@@ -1925,9 +1950,21 @@ export function renderBattleEnemies(enemies) {
   battleUiState.enemies = enemies;
   const box = $('battle-enemies');
   box.innerHTML = '';
-  battleUiState.enemySlots = enemies.map((enemy) => {
+  // A royal (the Molten Deep's demon family, 2026-11-20) stands in the middle
+  // with everyone else at their sides, alternating right / left, and sits
+  // BEHIND them (its big portrait is wider than a slot). The slot list is
+  // built in this visual order, so targeting Left/Right follows the screen.
+  const royal = enemies.find((e) => e.royal);
+  let ordered = enemies;
+  if (royal) {
+    const others = enemies.filter((e) => e !== royal);
+    const left = [], right = [];
+    others.forEach((e, i) => (i % 2 ? left : right).push(e));
+    ordered = [...left.reverse(), royal, ...right];
+  }
+  battleUiState.enemySlots = ordered.map((enemy) => {
     const slot = document.createElement('div');
-    slot.className = 'enemy-slot';
+    slot.className = enemy.royal ? 'enemy-slot royal' : 'enemy-slot';
 
     // Once an enemy's death dissolve has played (main.js sets deathPlayed when
     // it calls killEnemy), it renders as an EMPTY slot — the column stays for
@@ -1980,7 +2017,10 @@ export function renderBattleEnemies(enemies) {
     // The portrait is bottom-justified again (2026-07-31), so the ground shadow
     // + gold ring keep their fixed CSS baseline (top:640) — no per-image
     // re-anchoring needed.
-    slot.append(name, bar, shadow, ring, portrait);
+    const status = document.createElement('div');
+    status.className = 'enemy-status';
+    fillStatusTag(status, enemy);
+    slot.append(name, bar, status, shadow, ring, portrait);
     box.appendChild(slot);
     return { el: slot, enemy };
   });
@@ -2000,7 +2040,16 @@ function replayClass(el, cls) {
   el.classList.add(cls);
 }
 
-export function reactEnemyHit(enemy) { replayClass(slotFor(enemy), 'hit'); }
+// The hit / lunge class comes off again when its animation ends (2026-11-20):
+// left on, its finished animation kept overriding a status glow's pulse on the
+// same portrait, so a poisoned foe never visibly glowed.
+function replayOnce(el, cls) {
+  if (!el) return;
+  replayClass(el, cls);
+  const done = (e) => { if (e.target.classList?.contains('enemy-portrait')) { el.classList.remove(cls); el.removeEventListener('animationend', done); } };
+  el.addEventListener('animationend', done);
+}
+export function reactEnemyHit(enemy) { replayOnce(slotFor(enemy), 'hit'); }
 
 // Nythsurge frost (2026-11-06): an icy layer cut to the portrait's own shape
 // (CSS mask of the same image), screen-blended so the art goes pale blue-white,
@@ -2031,7 +2080,7 @@ function addFrost(slot, enemy) {
 
 // Vaelward's screen-edge glow, on while the ward is up.
 export function setWardGlow(on) { $('ward-glow')?.classList.toggle('on', !!on); }
-export function enemyAttackAnim(enemy) { replayClass(slotFor(enemy), 'attacking'); }
+export function enemyAttackAnim(enemy) { replayOnce(slotFor(enemy), 'attacking'); }
 export function shakeScreen() { replayClass($('battle'), 'screen-shake'); }
 
 // Dissolve an enemy's portrait into ~22 ember/ash motes: the portrait gets

@@ -2313,3 +2313,47 @@ html, body {
   70%  { opacity: 0.6; }
   100% { opacity: 0; }
 }
+
+/* ---- Molten Deep royals in battle (2026-11-20) ----
+   A royal's portrait fills the full portrait band (550px tall, width follows
+   the art, so Kazharoth's square portrait no longer shrinks to fit a 380px
+   column) and its slot sits BEHIND the others: any summon or companion beside
+   it stays in front, uncovered. ui.js puts the royal in the middle slot. */
+.enemy-slot { z-index: 2; }
+.enemy-slot.royal { z-index: 1; }
+.enemy-slot.royal .enemy-portrait {
+  max-width: none;
+  max-height: none;
+  height: 550px;
+  width: auto;
+}
+
+/* Status words under an enemy's health bar (2026-11-20). */
+.enemy-status {
+  position: absolute;
+  top: 158px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  font-family: 'Lato', sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95), 0 0 6px rgba(0, 0, 0, 0.8);
+  pointer-events: none;
+  z-index: 3;
+}
+.enemy-status .st-poisoned { color: #6fe36f; }
+.enemy-status .st-ensnared { color: #e0a04a; }
+.enemy-status .st-burning { color: #ff8a3a; }
+
+/* An enemy's status glow is stronger than an inventory item's, so it reads on
+   a 500px portrait (same colours, same 2.8s pulse). */
+.enemy-portrait.enchant-glow { animation: enemy-status-pulse 2.8s ease-in-out infinite; }
+@keyframes enemy-status-pulse {
+  0%, 100% { filter: drop-shadow(0 0 6px var(--glow)) drop-shadow(0 0 16px var(--glow)); }
+  50%      { filter: drop-shadow(0 0 12px var(--glow)) drop-shadow(0 0 34px var(--glow)); }
+}

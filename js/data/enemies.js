@@ -473,7 +473,8 @@ export default {
     id: 'vargoth_ashcleaver',
     name: 'Vargoth Ashcleaver',
     portrait: 'assets/images/vargoth_ashcleaver.png',
-    health: 25,
+    health: 45,
+    royal: true, // Molten Deep royal: big centred battle portrait (ui renderBattleEnemies)
     attack: 4,
     defense: 6,
     speed: 7,
@@ -485,7 +486,8 @@ export default {
     id: 'sythra_embercoil',
     name: 'Sythra Embercoil',
     portrait: 'assets/images/sythra_embercoil.png',
-    health: 22,
+    health: 42,
+    royal: true, // Molten Deep royal: big centred battle portrait (ui renderBattleEnemies)
     attack: 5,
     defense: 4,
     speed: 11,
@@ -500,7 +502,8 @@ export default {
     id: 'kazharoth_unburnt',
     name: 'Kazharoth the Unburnt',
     portrait: 'assets/images/kazharoth_unburnt.png',
-    health: 30,
+    health: 50,
+    royal: true, // Molten Deep royal: big centred battle portrait (ui renderBattleEnemies)
     attack: 6,
     defense: 7,
     speed: 10,

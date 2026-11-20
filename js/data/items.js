@@ -136,7 +136,13 @@ export function statLineFor(item) {
     // Damage panel (2026-09-12, Danny: "make sure the bonus damage... is
     // accounted for and noted in the item's damage description").
     const bonus = item.bonusDamageVs ? ` (+${item.bonusDamageVs.amount} vs ${item.bonusDamageVs.label})` : '';
-    return `${dmg} DMG${bonus}`;
+    // A weapon that also raises a stat (the Small Shield's +1 DEF) says so on
+    // the same line (2026-11-20).
+    const extra = [];
+    if (item.attackBonus) extra.push(`+${item.attackBonus} ATK`);
+    if (item.defenseBonus) extra.push(`+${item.defenseBonus} DEF`);
+    if (item.speedBonus) extra.push(`+${item.speedBonus} SPD`);
+    return `${dmg} DMG${bonus}${extra.length ? ' · ' + extra.join(' · ') : ''}`;
   }
   const parts = [];
   if (item.attackBonus) parts.push(`+${item.attackBonus} ATK`);
@@ -394,10 +400,12 @@ const ITEMS = {
     id: 'small_shield',
     name: 'Small Shield',
     image: 'assets/images/small_shield.png',
-    description: 'A banded buckler, scarred and much repaired. Turns aside 2 damage from anything that reaches you, and there is always the option of simply hitting someone with it.',
+    description: 'A banded buckler, scarred and much repaired. Defense +1 while it’s on your arm, and there is always the option of simply hitting someone with it.',
     slot: 'offhand',
     damage: 1,
-    damageReduction: 1,
+    // 2026-11-20 (Danny): a shield raises Defense by 1 (was damageReduction 1,
+    // which nothing in the UI showed and which made flat-1 hitters harmless).
+    defenseBonus: 1,
     price: 30,
   },
   fishing_rod: {

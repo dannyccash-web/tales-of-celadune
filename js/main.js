@@ -2474,6 +2474,7 @@ async function boot() {
     }
     // A demon royal's last word before the fight (2026-11-20): the only
     // response closes the dialog, and the close starts the battle.
+    if (effect.demonLeave) { demonLeave(npc); return true; }
     if (effect.demonLine) {
       ui.updateDialogContent({ line: effect.demonLine, responses: ['Fight.'], responseEffects: [null] });
       return true;
@@ -4458,8 +4459,22 @@ async function boot() {
     const responses = base.responses.slice(0, -1);
     const effects = (base.responseEffects || responses.map(() => null)).slice(0, responses.length);
     responses.push('Draw your weapon.', 'Back away.');
-    effects.push({ demonLine: npc.demonRoyal.draw }, { demonLine: npc.demonRoyal.back });
+    effects.push({ demonLine: npc.demonRoyal.draw }, { demonLeave: true });
+    demonLeaving = false;
     return { ...base, responses, responseEffects: effects };
+  }
+  // Trying to leave a royal (2026-11-20, Danny): "Back away." or Escape shows
+  // their refusal with no options, holds it a few seconds after it finishes
+  // typing, then the window closes and the fight starts (openNpcDialog's
+  // onClose -> fightDemonRoyal).
+  let demonLeaving = false;
+  function demonLeave(npc) {
+    if (demonLeaving) return;
+    if (ui.isDialogOpen() && ui.currentResponses?.().join() === 'Fight.') { ui.closeDialog(); return; } // already drawn: just fight
+    demonLeaving = true;
+    const line = npc.demonRoyal.back;
+    ui.updateDialogContent({ line, responses: [] });
+    setTimeout(() => { demonLeaving = false; if (ui.isDialogOpen()) ui.closeDialog(); }, line.length * 22 + 2800);
   }
   // Win = gone (until the next load of a save from before the win). Flee = a 2s pause; the approach trigger
   // re-arms once the player has backed off (world.js proximityTalk hysteresis).
@@ -5073,7 +5088,10 @@ async function boot() {
     const background = (npc.bramblekin || npc.id === 'bramblekin_chief') ? BRAMBLEKIN_BG : npc.background;
     // `lockDialog` rides on the built dialog (Orris's ambush) — ui.js reads it
     // off the npc view to disable Escape.
-    ui.openDialog({ ...npc, dialog, background, lockDialog: !!dialog.lockDialog }, onClose, applyResponseEffect);
+    // Demon royals (2026-11-20): Escape doesn't close the window, it counts as
+    // trying to leave (demonLeave below).
+    const royalView = npc.demonRoyal ? { lockDialog: true, onEscape: () => demonLeave(npc) } : {};
+    ui.openDialog({ ...npc, dialog, background, lockDialog: !!dialog.lockDialog, ...royalView }, onClose, applyResponseEffect);
   }
 
   // ---- Battle (2026-07-08) ----
@@ -5183,6 +5201,7 @@ async function boot() {
         key: `${id}_${i}`, id, name: def.name, portrait: def.portrait,
         health: def.health, maxHealth: def.health,
         attack: def.attack, defense: def.defense, speed: def.speed, damage: def.damage,
+        royal: !!def.royal,
       };
     });
     battleState.onEnd = onEnd || null;
@@ -5568,8 +5587,14 @@ async function boot() {
   // Enchantment glow on an affected enemy (2026-10-13, Danny): ensnare shows
   // until its lost turn passes, venom until the enemy dies. Ensnare wins while
   // both are live (it's the shorter, more urgent one).
+  // Status glow (2026-11-20): any poisoned / ensnared / burning foe pulses in
+  // the effect's colour, whatever caused it (enchanted weapon, Spider Fang,
+  // torch). ui.js also prints a small status tag under its health bar.
+  const STATUS_GLOW = { ensnared: '#d08b2c', poisoned: '#5fd35f', burning: '#ff7a2a' };
   function refreshEnemyGlow(enemy) {
-    enemy.statusGlow = enemy.ensnareGlow || enemy.venomGlow || null;
+    enemy.statusGlow = enemy.skipTurn ? (enemy.ensnareGlow || STATUS_GLOW.ensnared)
+      : enemy.poisoned ? (enemy.venomGlow || STATUS_GLOW.poisoned)
+      : enemy.burning ? STATUS_GLOW.burning : null;
     ui.setEnemyGlow(enemy);
   }
 
@@ -5624,6 +5649,8 @@ async function boot() {
           target.poisonDamage = ench.poison;
           target.venomGlow = weapon.glow; // glows for as long as the venom runs (to the death)
           procLine = ` The venom takes — the ${target.name} is envenomed!`;
+        } else if (!ENEMIES[target.id]?.poisonable) {
+          procLine = ` The venom hisses away on the ${target.name} — it can’t be poisoned.`;
         }
       }
       refreshEnemyGlow(target);
@@ -5632,7 +5659,7 @@ async function boot() {
       // player turn (tickBurns) until it dies (2026-07-26). (`weapon` is the
       // same equipped-item lookup hoisted above for the magic-cost/curse check.)
       const ignites = weapon?.burn != null && !!ENEMIES[target.id]?.wood && !target.burning && target.health > 0;
-      if (ignites) { target.burning = true; target.burnDamage = weapon.burn; }
+      if (ignites) { target.burning = true; target.burnDamage = weapon.burn; refreshEnemyGlow(target); }
       ui.setBattleMessage(target.health <= 0
         ? `The ${target.name} falls! +${dmg} damage done.`
         : ignites
@@ -5694,12 +5721,15 @@ async function boot() {
       target.poisoned = true;
       target.poisonDamage = def.poison;
       msg = `You sink the fang into the ${target.name} — venom takes hold. +${dmg} damage done.`;
+    } else if (def.poison != null) {
+      msg = `You strike the ${target.name}, but the venom can’t take hold on it. +${dmg} damage done.`;
     } else {
       msg = `You strike the ${target.name}. +${dmg} damage done.`;
     }
     target.health = Math.max(0, target.health - dmg);
     audio.sfx(audio.SFX.punch);
     ui.setBattleMessage(msg);
+    if (target.health > 0) refreshEnemyGlow(target);
     ui.renderBattleEnemies(battleState.enemies);
     if (target.health > 0) ui.reactEnemyHit(target);
     const died = handleEnemyDeaths();

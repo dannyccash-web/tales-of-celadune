@@ -2418,8 +2418,8 @@ export default {
   // prowl their patrols, charge within aggroRange, give up past giveUpRange
   // from their spawn. Kept 700px+ from the chasm-climb landing (1330,1350).
   npcs: [
-    { id: 'slagkin_stalker_1', enemyId: 'slagkin_stalker', name: 'Slagkin Stalker', sprite: 'assets/images/slagkin_stalker_overhead.png', creature: true, aggroRange: 320, chaseSpeed: 160, giveUpRange: 650, speed: 70, x: 445, y: 545, patrol: [{ x: 445, y: 545 }, { x: 595, y: 795 }, { x: 845, y: 815 }] },
-    { id: 'slagkin_stalker_2', enemyId: 'slagkin_stalker', name: 'Slagkin Stalker', sprite: 'assets/images/slagkin_stalker_overhead.png', creature: true, aggroRange: 320, chaseSpeed: 160, giveUpRange: 650, speed: 70, x: 360, y: 1705, patrol: [{ x: 360, y: 1705 }, { x: 585, y: 1890 }, { x: 870, y: 1950 }] },
-    { id: 'slagkin_stalker_3', enemyId: 'slagkin_stalker', name: 'Slagkin Stalker', sprite: 'assets/images/slagkin_stalker_overhead.png', creature: true, aggroRange: 320, chaseSpeed: 160, giveUpRange: 650, speed: 70, x: 2545, y: 1345, patrol: [{ x: 2545, y: 1345 }, { x: 2595, y: 1595 }, { x: 2455, y: 1455 }] },
+    { id: 'slagkin_stalker_1', enemyId: 'slagkin_stalker', name: 'Slagkin Stalker', sprite: 'assets/images/slagkin_stalker_overhead.png', creature: true, aggroRange: 320, chaseSpeed: 180, giveUpRange: 650, speed: 70, x: 445, y: 545, patrol: [{ x: 445, y: 545 }, { x: 595, y: 795 }, { x: 845, y: 815 }] },
+    { id: 'slagkin_stalker_2', enemyId: 'slagkin_stalker', name: 'Slagkin Stalker', sprite: 'assets/images/slagkin_stalker_overhead.png', creature: true, aggroRange: 320, chaseSpeed: 180, giveUpRange: 650, speed: 70, x: 360, y: 1705, patrol: [{ x: 360, y: 1705 }, { x: 585, y: 1890 }, { x: 870, y: 1950 }] },
+    { id: 'slagkin_stalker_3', enemyId: 'slagkin_stalker', name: 'Slagkin Stalker', sprite: 'assets/images/slagkin_stalker_overhead.png', creature: true, aggroRange: 320, chaseSpeed: 180, giveUpRange: 650, speed: 70, x: 2545, y: 1345, patrol: [{ x: 2545, y: 1345 }, { x: 2595, y: 1595 }, { x: 2455, y: 1455 }] },
   ],
 };
