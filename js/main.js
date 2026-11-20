@@ -5128,6 +5128,9 @@ async function boot() {
   // Advance to the next turn, optionally after a delay (used to hold on a
   // death dissolve). Guards on battleState.active so a fled/ended fight can't
   // resume via a stale timer.
+  // Every player action now holds ENEMY_TURN_DELAY_MS before the queue moves
+  // on (2026-11-20). With a 0 delay the next "Enemy’s Turn" line replaced the
+  // result in the same tick, so hits and misses were never shown.
   function advanceTurnAfter(ms) {
     const go = () => { if (battleState.active) { battleState.turnPos += 1; runQueue(); } };
     if (ms > 0) setTimeout(go, ms); else go();
@@ -5400,7 +5403,10 @@ async function boot() {
     ui.renderBattleEnemies(battleState.enemies);
     if (outcome === 'attack' && enemy.health > 0) ui.enemyAttackAnim(enemy);
     const died = handleEnemyDeaths();
-    const hold = died ? Math.max(DEATH_ANIM_MS, ENEMY_TURN_DELAY_MS) : (battleState.reflected ? ENEMY_TURN_DELAY_MS : 0);
+    // Always hold so the hit/miss line can be read (2026-11-20): with no hold,
+    // runQueue's "Your Turn" replaced it in the same tick, so the player never
+    // saw an enemy miss, only their health dropping.
+    const hold = died ? Math.max(DEATH_ANIM_MS, ENEMY_TURN_DELAY_MS) : ENEMY_TURN_DELAY_MS;
     battleState.reflected = false;
     battleState.turnPos += 1;
     if (hold) setTimeout(() => runQueue(), hold); else runQueue();
@@ -5587,7 +5593,7 @@ async function boot() {
     if (weapon?.cursed) {
       damagePlayer(1);
       ui.setBattleMessage(`You channel the ${weapon.name} — pain lances up your arm instead!`);
-      advanceTurnAfter(0);
+      advanceTurnAfter(ENEMY_TURN_DELAY_MS);
       return;
     }
     const hit = battle.resolveAttack(effectiveAttack(), target.defense);
@@ -5641,7 +5647,7 @@ async function boot() {
     ui.renderBattleEnemies(battleState.enemies);
     if (landed && target.health > 0) ui.reactEnemyHit(target); // shake a survivor; a kill dissolves instead
     const died = handleEnemyDeaths();
-    advanceTurnAfter(died ? DEATH_ANIM_MS : 0);
+    advanceTurnAfter(died ? Math.max(DEATH_ANIM_MS, ENEMY_TURN_DELAY_MS) : ENEMY_TURN_DELAY_MS);
   }
 
   // Consumes the item equipped to the Use slot (equipment.item, set from
@@ -5659,8 +5665,7 @@ async function boot() {
     const result = usePotion(equipment.item);
     ui.setBattleMessage(result.message);
     if (!result.ok) { showPlayerActions(); return; } // no-op action — see showPlayerActions()'s comment
-    battleState.turnPos += 1;
-    runQueue();
+    advanceTurnAfter(ENEMY_TURN_DELAY_MS); // let the potion line read
   }
 
   // Use the equipped offensive Use-slot item on a target (2026-07-31,
@@ -5698,7 +5703,7 @@ async function boot() {
     ui.renderBattleEnemies(battleState.enemies);
     if (target.health > 0) ui.reactEnemyHit(target);
     const died = handleEnemyDeaths();
-    advanceTurnAfter(died ? DEATH_ANIM_MS : 0);
+    advanceTurnAfter(died ? Math.max(DEATH_ANIM_MS, ENEMY_TURN_DELAY_MS) : ENEMY_TURN_DELAY_MS);
   }
 
   // Burn damage for any alight enemy, applied at the start of the player's turn.

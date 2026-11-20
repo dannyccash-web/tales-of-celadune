@@ -1041,6 +1041,12 @@ export default {
   entrances: [],
   interactables: [
     { id: 'b4c_up', x: 2830, y: 80, range: 120, caveExit: true, exitTo: { scene: 'B4B', x: 2740, y: 1905 }, label: 'Climb to the Cairnfolk Cave' },
+    // Metallic ore (2026-11-20) in three quiet corners, clear of the ambushes
+    // and Hagen's chamber: the NW mushroom nook, the east mushroom alcove and
+    // the south-middle tunnel. Glints only with a torch out (world.js).
+    { id: 'b4c_ore_1', x: 300, y: 320, label: 'Metallic ore', reward: { item: 'metallic_ore', qty: 1, catch: true }, sparkle: true, message: 'You pried a chunk of metallic ore loose from the rock.' },
+    { id: 'b4c_ore_2', x: 2700, y: 1020, label: 'Metallic ore', reward: { item: 'metallic_ore', qty: 1, catch: true }, sparkle: true, message: 'You pried a chunk of metallic ore loose from the rock.' },
+    { id: 'b4c_ore_3', x: 1300, y: 1720, label: 'Metallic ore', reward: { item: 'metallic_ore', qty: 1, catch: true }, sparkle: true, message: 'You pried a chunk of metallic ore loose from the rock.' },
   ],
   fishingSpots: [],
   chests: [],
