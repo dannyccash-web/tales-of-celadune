@@ -10,7 +10,7 @@
 // player. speed drives this round's turn order (battle.turnOrder) alongside
 // the player's stats.speed.
 //
-// `fire: true` (planned, none yet) marks a fire creature: its attacks are FIRE
+// `fire: true` (the Molten Deep, 2026-11-20) marks a fire creature: its attacks are FIRE
 // damage (cut by 1 per Coldforge piece worn, main.js damagePlayer; set
 // `fireDamage: false` for a fire creature that hits with something else, or
 // `fireDamage: true` on a non-fire creature that breathes fire), and the Mireman King's
@@ -386,5 +386,116 @@ export default {
     summon: { every: 5, pool: ['gloamkin_moonwretch'] },
     poisonable: true,
     drops: { gold: { min: 35, max: 50 }, loot: [{ id: 'vitality_potion', chance: 1 }, { id: 'health_potion', chance: 1, qty: 2 }] },
+  },
+
+  // ---- The Molten Deep (B4C-B4F, 2026-11-20) ----
+  // Every foe down here is a FIRE creature (`fire: true`): its hits are fire
+  // damage, cut by 1 per Coldforge piece worn (main.js damagePlayer), and the
+  // Mireman King's Trident and Nythsurge do extra against it. Damage is set
+  // high on purpose: through full Coldforge + a shield (5 soaked) a royal's
+  // 7-11 lands as 2-6; through leather it lands as 6-10 and kills in two hits.
+  // Simulated for an 11 HP player, 3 health potions + 1 vitality potion,
+  // attack 3 / defense 5 / speed 3 (full Coldforge), Nythsurge ready:
+  //   Vargoth   ~67% with the trident, ~36% with a longsword, ~8% in half Coldforge
+  //   Sythra    ~66% / ~38% / ~7%
+  //   Kazharoth ~35% / ~6% / ~2%  (the toughest fight in the game)
+  //   Slagkin Stalker / Brute: a sure win in full Coldforge; Stalker ~60% and
+  //   Brute ~25% in leather. Cinderwing / Emberwisp: easy in anything.
+  // Demons and slag-things, so none are `poisonable`.
+  // NOT HOSTILE YET (Danny, 2026-11-20): nothing in the world starts these
+  // fights. The Slagkin carry `enemyId` but `aggroRange: 0`; the royals'
+  // "Draw your weapon." only closes the dialog (main.js buildDemonRoyalDialog).
+  cinderwing: {
+    id: 'cinderwing',
+    name: 'Cinderwing',
+    portrait: 'assets/images/cinderwing.png',
+    health: 6,
+    attack: 4,
+    defense: 2,
+    speed: 12, // a bat: nearly always acts first
+    damage: { min: 5, max: 7 },
+    fire: true,
+    drops: { gold: { min: 4, max: 7 } },
+  },
+  emberwisp: {
+    id: 'emberwisp',
+    name: 'Emberwisp',
+    portrait: 'assets/images/emberwisp.png',
+    health: 4,
+    attack: 3,
+    defense: 1,
+    speed: 10,
+    damage: { min: 4, max: 6 },
+    fire: true,
+    drops: { gold: { min: 2, max: 4 } },
+  },
+  // A lesser Sythra: quick and hard-hitting, lightly armored.
+  slagkin_stalker: {
+    id: 'slagkin_stalker',
+    name: 'Slagkin Stalker',
+    portrait: 'assets/images/slagkin_stalker.png',
+    health: 14,
+    attack: 6,
+    defense: 3,
+    speed: 10,
+    damage: { min: 5, max: 8 },
+    fire: true,
+    drops: { gold: { min: 10, max: 16 }, loot: [{ id: 'health_potion', chance: 0.25 }] },
+  },
+  // A lesser Vargoth: slow, heavy, hard to hurt.
+  slagkin_brute: {
+    id: 'slagkin_brute',
+    name: 'Slagkin Brute',
+    portrait: 'assets/images/slagkin_brute.png',
+    health: 20,
+    attack: 4,
+    defense: 5,
+    speed: 6,
+    damage: { min: 6, max: 9 },
+    fire: true,
+    drops: { gold: { min: 14, max: 20 }, loot: [{ id: 'health_potion', chance: 0.3 }, { id: 'magic_potion', chance: 0.15 }] },
+  },
+  // The royal family. Vargoth has the higher defense, Sythra the higher
+  // attack, Kazharoth tops both. Each drops a fat purse, a potion and their
+  // own regalia (items.js).
+  vargoth_ashcleaver: {
+    id: 'vargoth_ashcleaver',
+    name: 'Vargoth Ashcleaver',
+    portrait: 'assets/images/vargoth_ashcleaver.png',
+    health: 30,
+    attack: 5,
+    defense: 6,
+    speed: 7,
+    damage: { min: 7, max: 11 },
+    fire: true,
+    drops: { gold: { min: 55, max: 75 }, loot: [{ id: 'vargoth_sword', chance: 1 }, { id: 'health_potion', chance: 1 }] },
+  },
+  sythra_embercoil: {
+    id: 'sythra_embercoil',
+    name: 'Sythra Embercoil',
+    portrait: 'assets/images/sythra_embercoil.png',
+    health: 28,
+    attack: 8,
+    defense: 4,
+    speed: 11,
+    damage: { min: 7, max: 11 },
+    fire: true,
+    drops: { gold: { min: 55, max: 75 }, loot: [{ id: 'sythra_spear', chance: 1 }, { id: 'magic_potion', chance: 1 }] },
+  },
+  // Every turn he takes, a 50% chance he calls an Emberwisp or a Cinderwing
+  // instead of attacking (`summon.chance`, main.js takeEnemyTurn; still capped
+  // by MAX_BATTLE_ENEMIES).
+  kazharoth_unburnt: {
+    id: 'kazharoth_unburnt',
+    name: 'Kazharoth the Unburnt',
+    portrait: 'assets/images/kazharoth_unburnt.png',
+    health: 32,
+    attack: 8,
+    defense: 7,
+    speed: 10,
+    damage: { min: 7, max: 10 },
+    fire: true,
+    summon: { chance: 0.5, pool: ['emberwisp', 'cinderwing'], line: 'Kazharoth raises a lazy hand — a {name} answers from the flames!' },
+    drops: { gold: { min: 100, max: 130 }, loot: [{ id: 'kazharoth_crown', chance: 1 }, { id: 'health_potion', chance: 1 }] },
   },
 };

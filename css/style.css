@@ -213,8 +213,8 @@ html, body {
   top: 50px;
   right: 50px;
   display: flex;
-  gap: 22px; /* tightened 44 -> 22 (2026-07-28) — pulls Inventory rightward toward
-                Menu so the cluster is smaller and clears the enemy names */
+  gap: 6px; /* (2026-11-20) each button is now a fixed 74px column (below), so the
+              three diamonds sit exactly 80px apart regardless of label length */
 }
 
 .icon-btn {
@@ -222,6 +222,7 @@ html, body {
   flex-direction: column;
   align-items: center;
   gap: 10px; /* tightened 20 -> 10 to shrink the top-right cluster */
+  width: 74px; /* fixed column (2026-11-20, Danny): Inventory/Menu/Save equidistant */
   cursor: pointer;
 }
 

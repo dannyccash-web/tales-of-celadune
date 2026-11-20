@@ -21,7 +21,7 @@ export default {
   spawn: { x: 740, y: 80 },
   returns: 'B4B',
   music: 'cave',
-  battleBackground: 'assets/images/cave_background.jpg',
+  battleBackground: 'assets/images/B4D_Battle_Background.jpg',
   level: 2,
   levels: 4,
   obstacles: [
@@ -1193,8 +1193,8 @@ export default {
   // prowl their patrols. Kept 700px+ from the chasm-climb landing (1330,1350).
   // When they start attacking: give them an enemyId + aggroRange like D1's cragclaws.
   npcs: [
-    { id: 'slagkin_stalker_1', name: 'Slagkin Stalker', sprite: 'assets/images/slagkin_stalker_overhead.png', creature: true, aggroRange: 0, speed: 70, x: 445, y: 545, patrol: [{ x: 445, y: 545 }, { x: 595, y: 795 }, { x: 845, y: 815 }] },
-    { id: 'slagkin_stalker_2', name: 'Slagkin Stalker', sprite: 'assets/images/slagkin_stalker_overhead.png', creature: true, aggroRange: 0, speed: 70, x: 345, y: 1745, patrol: [{ x: 345, y: 1745 }, { x: 545, y: 1945 }, { x: 845, y: 1995 }] },
-    { id: 'slagkin_stalker_3', name: 'Slagkin Stalker', sprite: 'assets/images/slagkin_stalker_overhead.png', creature: true, aggroRange: 0, speed: 70, x: 2545, y: 1345, patrol: [{ x: 2545, y: 1345 }, { x: 2595, y: 1595 }, { x: 2455, y: 1455 }] },
+    { id: 'slagkin_stalker_1', enemyId: 'slagkin_stalker', name: 'Slagkin Stalker', sprite: 'assets/images/slagkin_stalker_overhead.png', creature: true, aggroRange: 0, speed: 70, x: 445, y: 545, patrol: [{ x: 445, y: 545 }, { x: 595, y: 795 }, { x: 845, y: 815 }] },
+    { id: 'slagkin_stalker_2', enemyId: 'slagkin_stalker', name: 'Slagkin Stalker', sprite: 'assets/images/slagkin_stalker_overhead.png', creature: true, aggroRange: 0, speed: 70, x: 345, y: 1745, patrol: [{ x: 345, y: 1745 }, { x: 545, y: 1945 }, { x: 845, y: 1995 }] },
+    { id: 'slagkin_stalker_3', enemyId: 'slagkin_stalker', name: 'Slagkin Stalker', sprite: 'assets/images/slagkin_stalker_overhead.png', creature: true, aggroRange: 0, speed: 70, x: 2545, y: 1345, patrol: [{ x: 2545, y: 1345 }, { x: 2595, y: 1595 }, { x: 2455, y: 1455 }] },
   ],
 };

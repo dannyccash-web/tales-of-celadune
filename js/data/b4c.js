@@ -24,7 +24,7 @@ export default {
   spawn: { x: 2740, y: 380 },
   returns: 'B4B',
   music: 'cave',
-  battleBackground: 'assets/images/cave_background.jpg',
+  battleBackground: 'assets/images/B4C_Battle_Background.jpg',
   level: 1,
   levels: 4,
   obstacles: [

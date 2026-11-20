@@ -612,6 +612,41 @@ const ITEMS = {
     bonusDamageVs: { tags: ['fire'], amount: 3, label: 'fire creatures' },
     price: 70,
   },
+  // ---- Demon royal regalia (Molten Deep, 2026-11-20) ----
+  // Dropped by the three royals (enemies.js). Vargoth's sword is the stronger
+  // blade with a little extra against ice; Sythra's spear is weaker but bites
+  // ice harder. No ice creatures exist yet: give future ones `ice: true`.
+  // The crown does nothing for now (Danny: it will later) but sells high.
+  vargoth_sword: {
+    id: 'vargoth_sword',
+    name: 'Sword of Vargoth',
+    image: 'assets/images/sword of vargoth.png',
+    description: 'Vargoth Ashcleaver’s jagged greatsword, still warm from the deep. Its heat runs hungry for anything made of frost.',
+    questItem: false,
+    slot: 'mainhand',
+    damage: { min: 6, max: 9 },
+    bonusDamageVs: { tags: ['ice'], amount: 2, label: 'ice creatures' },
+    price: 120,
+  },
+  sythra_spear: {
+    id: 'sythra_spear',
+    name: 'Spear of Sythra',
+    image: 'assets/images/spear of sythra.png',
+    description: 'Sythra Embercoil’s slender spear, its head a sliver of banked flame. Lighter than it looks, and frost recoils from it.',
+    questItem: false,
+    slot: 'mainhand',
+    damage: { min: 4, max: 7 },
+    bonusDamageVs: { tags: ['ice'], amount: 4, label: 'ice creatures' },
+    price: 100,
+  },
+  kazharoth_crown: {
+    id: 'kazharoth_crown',
+    name: 'Crown of Kazharoth',
+    image: 'assets/images/crown of kazharoth.png',
+    description: 'The burning crown of Kazharoth the Unburnt, King of the Molten Deep. It is still hot to the touch, and it will not cool.',
+    questItem: false,
+    price: 400,
+  },
   royal_summons: {
     id: 'royal_summons',
     name: 'Royal Summons',
@@ -790,6 +825,8 @@ const ITEMS = {
     magicCost: 4, // 3 -> 4 (2026-11-19, Danny)
     spellEffect: 'surge',
     spellDamage: { min: 2, max: 4 },
+    // Freezing brine: +2 against fire creatures (2026-11-20, main.js castSpell).
+    bonusDamageVs: { tags: ['fire'], amount: 2, label: 'fire creatures' },
   },
 };
 

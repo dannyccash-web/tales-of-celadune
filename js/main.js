@@ -276,6 +276,7 @@ function spellSummary() {
   const damage = def.spellDamage ? `${def.spellDamage.min}-${def.spellDamage.max}` : '0';
   const fx = [];
   if (def.spellEffect === 'surge') fx.push('Strikes every foe at once');
+  if (def.bonusDamageVs) fx.push(`+${def.bonusDamageVs.amount} damage vs ${def.bonusDamageVs.label}`);
   if (def.spellEffect === 'ward') fx.push('For one round, enemy hits turn back on the attacker');
   fx.push(`Costs ${def.magicCost} magic per cast`);
   return { name: def.name, damage, effects: fx };
@@ -504,6 +505,14 @@ async function boot() {
     'assets/images/kazharoth_unburnt.png', // Molten Deep royals — their dialogs open on approach too
     'assets/images/sythra_embercoil.png',
     'assets/images/vargoth_ashcleaver.png',
+    'assets/images/slagkin_stalker.png', // Molten Deep fire creatures (not in any `battles` list)
+    'assets/images/slagkin_brute.png',
+    'assets/images/cinderwing.png', // Kazharoth's summons
+    'assets/images/emberwisp.png',
+    'assets/images/B4C_Battle_Background.jpg', // Molten Deep battle backdrops (scene battleBackground)
+    'assets/images/B4D_Battle_Background.jpg',
+    'assets/images/B4E_Battle_Background.jpg',
+    'assets/images/B4F_Battle_Background.jpg',
     'assets/images/dessa_flintmere.png', // B4B: Dessa runs up and her dialog opens on its own
     'assets/images/ysra_nineshells.png', // C1B's Drownweft — fought via dialogue/theft-trigger, not a `battles` list
     // Temple of Aeluna (2026-10-15): the Gloamkin are roaming creatures and
@@ -5240,8 +5249,10 @@ async function boot() {
     }
     const targets = aliveEnemies();
     let total = 0;
+    const bv = def.bonusDamageVs; // Nythsurge: +2 vs fire creatures
     for (const e of targets) {
-      const d = battle.rollDamage(def.spellDamage);
+      const d = battle.rollDamage(def.spellDamage)
+        + (bv && ((bv.ids || []).includes(e.id) || (bv.tags || []).some((t) => ENEMIES[e.id]?.[t])) ? bv.amount : 0);
       e.health = Math.max(0, e.health - d);
       total += d;
     }
@@ -5427,6 +5438,7 @@ async function boot() {
     if (def.defenseBonus) stats.push({ label: 'Def', value: fmtBonus(def.defenseBonus), tone: def.defenseBonus > 0 ? 'pos' : 'neg' });
     if (def.speedBonus) stats.push({ label: 'Spd', value: fmtBonus(def.speedBonus), tone: def.speedBonus > 0 ? 'pos' : 'neg' });
     if (def.burn) stats.push({ label: 'Burn', value: `${def.burn}`, tone: 'pos' });
+    if (def.bonusDamageVs) stats.push({ label: `vs ${def.bonusDamageVs.label}`, value: `+${def.bonusDamageVs.amount}`, tone: 'pos' });
     // Magic cost (2026-09-10, Ysra's Staff) is shown plainly like any other
     // stat — only the curse itself stays hidden (see items.js's schema note).
     if (def.magicCost) stats.push({ label: 'Magic Cost', value: `${def.magicCost}`, tone: 'neg' });
@@ -5436,6 +5448,7 @@ async function boot() {
   function spellDetailCard(def) {
     const stats = [];
     if (def.spellDamage) stats.push({ label: 'Damage', value: `${def.spellDamage.min}-${def.spellDamage.max} all foes` });
+    if (def.bonusDamageVs) stats.push({ label: `vs ${def.bonusDamageVs.label}`, value: `+${def.bonusDamageVs.amount}`, tone: 'pos' });
     if (def.spellEffect === 'ward') stats.push({ label: 'Effect', value: 'Reflect', tone: 'pos' });
     stats.push({ label: 'Magic Cost', value: `${def.magicCost}`, tone: 'neg' });
     return { name: def.name, desc: def.description || '', stats };
@@ -5490,7 +5503,12 @@ async function boot() {
   function takeEnemyTurn(enemy) {
     const def = ENEMIES[enemy.id];
     enemy.turnsTaken = (enemy.turnsTaken || 0) + 1;
-    if (def?.summon && enemy.turnsTaken % def.summon.every === 0 && battleState.enemies.length < MAX_BATTLE_ENEMIES) {
+    // `summon.every: n` = every nth turn; `summon.chance: p` (2026-11-20,
+    // Kazharoth) = a p chance on any turn. `summon.line` overrides the
+    // message ({name} = the summoned foe).
+    const sm = def?.summon;
+    const summonDue = sm && (sm.chance != null ? Math.random() < sm.chance : enemy.turnsTaken % sm.every === 0);
+    if (summonDue && battleState.enemies.length < MAX_BATTLE_ENEMIES) {
       const summonId = def.summon.pool[Math.floor(Math.random() * def.summon.pool.length)];
       const sDef = ENEMIES[summonId];
       battleState.enemies.push({
@@ -5498,7 +5516,7 @@ async function boot() {
         health: sDef.health, maxHealth: sDef.health,
         attack: sDef.attack, defense: sDef.defense, speed: sDef.speed, damage: sDef.damage,
       });
-      ui.setBattleMessage(`The ${enemy.name} chants darkly — a ${sDef.name} answers the call!`);
+      ui.setBattleMessage(def.summon.line ? def.summon.line.replace('{name}', sDef.name) : `The ${enemy.name} chants darkly — a ${sDef.name} answers the call!`);
       audio.sfx(audio.SFX.magic);
       return 'summon';
     }
