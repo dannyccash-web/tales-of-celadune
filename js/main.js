@@ -5810,7 +5810,10 @@ async function boot() {
       if (drops.gold) gold += randInt(drops.gold.min, drops.gold.max);
       for (const l of drops.loot || []) {
         const chance = Math.min(1, l.chance ?? 1);
-        if (Math.random() <= chance) items[l.id] = (items[l.id] || 0) + (l.qty || 1);
+        // `oneOf: [ids]` (2026-11-20): one roll, then one of the listed items
+        // at random (the Molten Deep's "a health OR a magic potion").
+        const id = l.oneOf ? l.oneOf[Math.floor(Math.random() * l.oneOf.length)] : l.id;
+        if (Math.random() <= chance) items[id] = (items[id] || 0) + (l.qty || 1);
       }
     }
     gold = Math.max(gold, MIN_BATTLE_GOLD);

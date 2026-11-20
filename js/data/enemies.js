@@ -394,23 +394,23 @@ export default {
   // Mireman King's Trident and Nythsurge do extra against it. Damage is set
   // high on purpose: through full Coldforge + a shield (5 soaked) a royal's
   // 7-11 lands as 2-6; through leather it lands as 6-10 and kills in two hits.
-  // Rebalanced 2026-11-20 (round 5) after Danny couldn't beat a Stalker with
-  // the trident + two Coldforge pieces. Attacks were lowered across the board
-  // (a Stalker's attack 6 vs a defense-3 player hit 77% of the time); the
-  // royals keep their weight through health and damage instead. Danny's
-  // "Sythra higher attack, Vargoth higher defense, Kazharoth above both" holds
-  // for attack/defense except Kazharoth's attack equals Sythra's.
+  // Rebalanced 2026-11-20 (round 6, Danny's numbers): damage lowered so a
+  // full Coldforge set (4 fire soaked) + shield can shrug most hits off
+  // entirely, which Danny accepted. Vargoth 25hp, Sythra 22hp / attack 5.
+  // Every Molten Deep foe drops gold scaled to difficulty and has a chance of
+  // ONE health-or-magic potion (`oneOf` loot, main.js computeBattleRewards):
+  // Emberwisp 10%, Cinderwing 20%, Stalker 35%, Brute 50%, Vargoth 65%,
+  // Sythra 75%, Kazharoth 100%.
   // Simulated win rates (mirrors main.js; potions used when low):
   //                 trident+CF   same, 10hp  +leather  leather   full CF  full CF  full CF+
   //                 helm+boots   3 potions   +shield   +LS,      +LS      +trident trident
   //                 8hp,1 potion                       no CF                      +Nythsurge
-  //  2 Cinderwings      62%         77%        94%       22%      100%     100%     100%
-  //  Stalker            69%         92%        99%       28%      100%     100%     100%
-  //  Brute              21%         38%        78%        6%      100%     100%     100%
-  //  Vargoth             1%          2%         8%        0%       38%      73%      73%
-  //  Sythra              0%          1%         5%        0%       26%      62%      63%
-  //  Kazharoth           0%          0%         1%        0%        3%      24%      43%
-  // With Vaelward instead of Nythsurge: Vargoth 88%, Sythra 87%, Kazharoth 31%.
+  //  2 Cinderwings      78%         90%        99%       37%      100%     100%     100%
+  //  Stalker            68%         92%        99%       32%      100%     100%     100%
+  //  Brute              20%         37%        80%        6%      100%     100%     100%
+  //  Vargoth            14%         31%        70%        2%      100%     100%     100%
+  //  Sythra             14%         28%        57%        2%       99%     100%     100%
+  //  Kazharoth           1%          1%         5%        0%       19%      70%      85%
   // Demons and slag-things, so none are `poisonable`.
   // Fights ON since 2026-11-20 (round 3): Slagkin are roaming creatures,
   // Cinderwings/Emberwisps come from B4C/B4D ambushes and Kazharoth's summons,
@@ -424,9 +424,9 @@ export default {
     attack: 3,
     defense: 2,
     speed: 12, // a bat: nearly always acts first
-    damage: { min: 5, max: 7 },
+    damage: { min: 4, max: 6 },
     fire: true,
-    drops: { gold: { min: 4, max: 7 } },
+    drops: { gold: { min: 4, max: 7 }, loot: [{ oneOf: ['health_potion', 'magic_potion'], chance: 0.2 }] },
   },
   emberwisp: {
     id: 'emberwisp',
@@ -436,9 +436,9 @@ export default {
     attack: 2,
     defense: 1,
     speed: 10,
-    damage: { min: 4, max: 6 },
+    damage: { min: 3, max: 5 },
     fire: true,
-    drops: { gold: { min: 2, max: 4 } },
+    drops: { gold: { min: 2, max: 4 }, loot: [{ oneOf: ['health_potion', 'magic_potion'], chance: 0.1 }] },
   },
   // A lesser Sythra: quick and hard-hitting, lightly armored.
   slagkin_stalker: {
@@ -451,7 +451,7 @@ export default {
     speed: 10,
     damage: { min: 5, max: 7 },
     fire: true,
-    drops: { gold: { min: 10, max: 16 }, loot: [{ id: 'health_potion', chance: 0.25 }] },
+    drops: { gold: { min: 10, max: 16 }, loot: [{ oneOf: ['health_potion', 'magic_potion'], chance: 0.35 }] },
   },
   // A lesser Vargoth: slow, heavy, hard to hurt.
   slagkin_brute: {
@@ -464,7 +464,7 @@ export default {
     speed: 6,
     damage: { min: 6, max: 8 },
     fire: true,
-    drops: { gold: { min: 14, max: 20 }, loot: [{ id: 'health_potion', chance: 0.3 }, { id: 'magic_potion', chance: 0.15 }] },
+    drops: { gold: { min: 14, max: 20 }, loot: [{ oneOf: ['health_potion', 'magic_potion'], chance: 0.5 }] },
   },
   // The royal family. Vargoth has the higher defense, Sythra the higher
   // attack, Kazharoth tops both. Each drops a fat purse, a potion and their
@@ -473,25 +473,25 @@ export default {
     id: 'vargoth_ashcleaver',
     name: 'Vargoth Ashcleaver',
     portrait: 'assets/images/vargoth_ashcleaver.png',
-    health: 32,
+    health: 25,
     attack: 4,
     defense: 6,
     speed: 7,
-    damage: { min: 7, max: 11 },
+    damage: { min: 5, max: 8 },
     fire: true,
-    drops: { gold: { min: 55, max: 75 }, loot: [{ id: 'vargoth_sword', chance: 1 }, { id: 'health_potion', chance: 1 }] },
+    drops: { gold: { min: 40, max: 55 }, loot: [{ id: 'vargoth_sword', chance: 1 }, { oneOf: ['health_potion', 'magic_potion'], chance: 0.65 }] },
   },
   sythra_embercoil: {
     id: 'sythra_embercoil',
     name: 'Sythra Embercoil',
     portrait: 'assets/images/sythra_embercoil.png',
-    health: 30,
-    attack: 6,
+    health: 22,
+    attack: 5,
     defense: 4,
     speed: 11,
-    damage: { min: 8, max: 11 },
+    damage: { min: 6, max: 9 },
     fire: true,
-    drops: { gold: { min: 55, max: 75 }, loot: [{ id: 'sythra_spear', chance: 1 }, { id: 'magic_potion', chance: 1 }] },
+    drops: { gold: { min: 45, max: 60 }, loot: [{ id: 'sythra_spear', chance: 1 }, { oneOf: ['health_potion', 'magic_potion'], chance: 0.75 }] },
   },
   // Every turn he takes, a 50% chance he calls an Emberwisp or a Cinderwing
   // instead of attacking (`summon.chance`, main.js takeEnemyTurn; still capped
@@ -504,9 +504,9 @@ export default {
     attack: 6,
     defense: 7,
     speed: 10,
-    damage: { min: 7, max: 11 },
+    damage: { min: 5, max: 10 },
     fire: true,
     summon: { chance: 0.5, pool: ['emberwisp', 'cinderwing'], line: 'Kazharoth raises a lazy hand — a {name} answers from the flames!' },
-    drops: { gold: { min: 100, max: 130 }, loot: [{ id: 'kazharoth_crown', chance: 1 }, { id: 'health_potion', chance: 1 }] },
+    drops: { gold: { min: 100, max: 130 }, loot: [{ id: 'kazharoth_crown', chance: 1 }, { oneOf: ['health_potion', 'magic_potion'], chance: 1 }] },
   },
 };
