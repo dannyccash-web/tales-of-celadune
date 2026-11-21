@@ -1652,6 +1652,9 @@ html, body {
 .battle-action.focused .battle-action-label { color: var(--text); } /* white */
 
 .battle-action.disabled { cursor: default; }
+/* An action that can't be used right now (no weapon in that hand, no spell,
+   no item, can't flee, short of magic) has its title darkened (2026-11-21). */
+.battle-action.disabled .battle-action-label { color: #5a4c3a; text-shadow: none; }
 
 /* Detail card floating above the FOCUSED action's circle: weapon/item name,
    a short description, and a stat line. ui.js populates + un-hides it only on
@@ -1968,6 +1971,9 @@ html, body {
 #save-modal .confirm-box { min-width: 520px; }
 #save-modal.saved .confirm-box { gap: 0; }
 #save-modal.saved #save-modal-text { color: var(--gold-bright); }
+#save-modal .load-save-btn { font-size: 20px; padding: 10px 36px; margin-top: 6px; }
+#save-modal.saved .load-save-btn,
+#save-modal.confirm-load .load-save-btn { display: none; }
 
 
 /* Both the toast and the battle status banner drop in with the same motion. */
@@ -2357,3 +2363,10 @@ html, body {
   0%, 100% { filter: drop-shadow(0 0 6px var(--glow)) drop-shadow(0 0 16px var(--glow)); }
   50%      { filter: drop-shadow(0 0 12px var(--glow)) drop-shadow(0 0 34px var(--glow)); }
 }
+
+/* Battle layering (2026-11-21): the enemy row is its own stacking layer (its
+   slots' z-index only orders enemies among themselves), and the action bar,
+   its detail cards and the status banner always sit in front of portraits. */
+#battle-enemies { z-index: 0; }
+#battle-actions { z-index: 4; }
+#battle-status { z-index: 5; }

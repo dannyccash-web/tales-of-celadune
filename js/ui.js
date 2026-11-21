@@ -1642,20 +1642,33 @@ export function toggleInventory() {
 // (returning true on success) and keeps the world paused while isSaveOpen().
 // After Yes the box shows "Game saved" for SAVE_DONE_MS, then closes itself.
 const SAVE_DONE_MS = 1800;
-let saveModal = null; // { sel: 0 = Yes / 1 = No, phase: 'ask' | 'done', onYes, timer }
+// 2026-11-21: a third button, "Load Last Save" (sel 2), under Yes/No. It asks
+// "Load your last save? Anything since then will be lost." (phase
+// 'confirmLoad', Yes/No again) before main.js's onLoad reloads. Dimmed and
+// skipped when there's no save (canLoad false).
+let saveModal = null; // { sel: 0 Yes / 1 No / 2 Load, phase: 'ask' | 'confirmLoad' | 'done', onYes, onLoad, canLoad, timer }
 export function isSaveOpen() { return !!saveModal; }
 function renderSaveModal() {
   $('btn-save-yes').classList.toggle('selected', saveModal?.sel === 0);
   $('btn-save-no').classList.toggle('selected', saveModal?.sel === 1);
+  $('btn-save-load').classList.toggle('selected', saveModal?.sel === 2);
+  $('btn-save-load').classList.toggle('disabled', !saveModal?.canLoad);
 }
-export function openSaveModal({ onYes }) {
+export function openSaveModal({ onYes, onLoad, canLoad }) {
   if (saveModal) return;
-  saveModal = { sel: 0, phase: 'ask', onYes, timer: null };
+  saveModal = { sel: 0, phase: 'ask', onYes, onLoad, canLoad: !!canLoad, timer: null };
   const root = $('save-modal');
-  root.classList.remove('saved');
+  root.classList.remove('saved', 'confirm-load');
   $('save-modal-text').textContent = 'Save game?';
   $('save-modal-buttons').classList.remove('hidden');
   root.classList.remove('hidden');
+  renderSaveModal();
+}
+function askLoad() {
+  if (!saveModal?.canLoad) return;
+  saveModal.phase = 'confirmLoad'; saveModal.sel = 1; // default to No: loading throws progress away
+  $('save-modal').classList.add('confirm-load');
+  $('save-modal-text').textContent = 'Load your last save? Anything since then will be lost.';
   renderSaveModal();
 }
 function closeSaveModal() {
@@ -1665,7 +1678,19 @@ function closeSaveModal() {
   $('save-modal').classList.add('hidden');
 }
 function chooseSave(sel) {
-  if (!saveModal || saveModal.phase !== 'ask') return;
+  if (!saveModal) return;
+  if (saveModal.phase === 'confirmLoad') {
+    if (sel === 1) { // back to the save question
+      saveModal.phase = 'ask'; saveModal.sel = 2;
+      $('save-modal').classList.remove('confirm-load');
+      $('save-modal-text').textContent = 'Save game?';
+      renderSaveModal(); return;
+    }
+    const onLoad = saveModal.onLoad;
+    closeSaveModal(); onLoad?.(); return;
+  }
+  if (saveModal.phase !== 'ask') return;
+  if (sel === 2) { askLoad(); return; }
   if (sel === 1) { closeSaveModal(); return; }
   const ok = saveModal.onYes?.() !== false;
   saveModal.phase = 'done';
@@ -1675,15 +1700,22 @@ function chooseSave(sel) {
   saveModal.timer = setTimeout(closeSaveModal, SAVE_DONE_MS);
 }
 export function saveKey(key) {
-  if (!saveModal || saveModal.phase !== 'ask') return;
-  if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(key)) { saveModal.sel = 1 - saveModal.sel; renderSaveModal(); return; }
-  if (key === ' ' || key === 'Enter') { chooseSave(saveModal.sel); return; }
+  if (!saveModal || saveModal.phase === 'done') return;
+  const s = saveModal;
+  if (s.phase === 'ask') {
+    // Left/Right flip Yes/No; Down drops to Load Last Save (if there is one), Up comes back.
+    if (key === 'ArrowLeft' || key === 'ArrowRight') { s.sel = s.sel === 2 ? 0 : 1 - s.sel; renderSaveModal(); return; }
+    if (key === 'ArrowDown') { if (s.canLoad) s.sel = 2; renderSaveModal(); return; }
+    if (key === 'ArrowUp') { if (s.sel === 2) s.sel = 0; renderSaveModal(); return; }
+  } else if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(key)) { s.sel = 1 - s.sel; renderSaveModal(); return; }
+  if (key === ' ' || key === 'Enter') { chooseSave(s.sel); return; }
   if (key === 'Escape') chooseSave(1);
 }
 export function initSaveModal({ onRequest }) {
   $('btn-save').addEventListener('click', () => onRequest());
   $('btn-save-yes').addEventListener('click', () => chooseSave(0));
   $('btn-save-no').addEventListener('click', () => chooseSave(1));
+  $('btn-save-load').addEventListener('click', () => { if (saveModal?.phase === 'ask') chooseSave(2); });
   $('save-modal').addEventListener('click', (e) => { if (e.target === $('save-modal')) chooseSave(1); });
 }
 // Set a Menu > Audio slider from code (loading a save), firing its normal

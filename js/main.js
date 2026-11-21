@@ -1196,7 +1196,14 @@ async function boot() {
     if (busy) { audio.sfx(audio.SFX.denied); ui.toast('You can’t save right now.'); return; }
     ui.closeAllPanels();
     for (const k of Object.keys(input)) input[k] = false; // no held key carries through the pause
-    ui.openSaveModal({ onYes: () => saveGame() });
+    ui.openSaveModal({ onYes: () => saveGame(), onLoad: loadLastSave, canLoad: hasSave() });
+  }
+  // Menu "Load Last Save" (2026-11-21): reload the last manual save, the same
+  // way the death screen's Continue does.
+  function loadLastSave() {
+    if (!loadGame({ keepAudio: true })) { audio.sfx(audio.SFX.denied); ui.toast('There’s no save to load.'); return; }
+    audio.play(sceneMusicTrack(currentSceneId), 800);
+    ui.toast('Last save loaded.');
   }
 
   // ---- Fast travel (Menu > Travel, 2026-10-10) ----

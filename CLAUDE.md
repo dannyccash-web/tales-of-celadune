@@ -1878,6 +1878,15 @@ Danny painted B4B (south half only), B4C, B4D, B4E and B4F (**yellow = blocked, 
 - **Inspect** keeps the item description up 5.5s (was 3.5s). `revealBanner` in ui.js's `showItemInspect`.
 - `sim2.mjs`'s chaseTalk test now stands the player 200px from the royal (was 300).
 
+## B4 collision from Danny's markup, Load Last Save, darkened battle actions, crown is a quest item (2026-11-21, round 2)
+
+- **B4 collision** from Danny's markup (yellow = blocked, blue = walkable, on the 2576px art). Same pipeline as the Molten Deep round (paint isolated by differencing against the clean art, 10px cells, 25px discs round every NPC/interactable/route point and both exit bands protected, untouched rects kept verbatim, the rest re-emitted at the end of `obstacles`). **One deviation:** a yellow stroke crossed the trail from the main south road to Ewan Hartwood's camp and sealed it, so the trail is carved back open (polyline (1100,2240)→(1510,2410), r 28). `_verify_b3b4.mjs` ALL OK (Ewan + his patrol reachable again); cave mouth, chasm and fishing spot still in range.
+- **Load Last Save** (save modal, `index.html` #btn-save-load): a third button under Yes/No. Down arrow reaches it, Up goes back; dimmed and skipped with no save. Choosing it asks "Load your last save? Anything since then will be lost." (Yes / No, No preselected); Yes runs main.js's `loadLastSave()` (= `loadGame({keepAudio:true})` + the scene's music + a "Last save loaded." toast). ui.js save-modal phases are now 'ask' / 'confirmLoad' / 'done'.
+- **Unusable battle actions** (`.battle-action.disabled`: empty slot, no spell, no item, short of magic, can't flee) have their title darkened to #5a4c3a.
+- **Battle layering:** `#battle-enemies` is its own stacking layer (z-index 0), `#battle-actions` 4, `#battle-status` 5, so the action bar and its detail cards are always in front of portraits (the royal z-index work last round had let portraits slide over it).
+- **Kazharoth's talkRange** 800 → 650.
+- **Crown of Kazharoth** is now a quest item (`questItem: true`, no price): can't be sold or dropped.
+
 ## Status / roadmap
 
 - ⏳ **REMINDER — Dame Elspeth Varrick goes in the King's castle.** Taken out of B4 on 2026-11-17 (Danny), not deleted: her full npc entry is in `js/data/reserve.js` (nothing imports it), her art (`dame_elspeth_varrick*.png`) and voice (`audio.js` `elspeth_varrick`) are still in the repo. When B2's keep / the King's scene is built, move her entry in and rewrite her lines (they're about hiding from the barricade).

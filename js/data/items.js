@@ -624,7 +624,7 @@ const ITEMS = {
   // Dropped by the three royals (enemies.js). Vargoth's sword is the stronger
   // blade with a little extra against ice; Sythra's spear is weaker but bites
   // ice harder. No ice creatures exist yet: give future ones `ice: true`.
-  // The crown does nothing for now (Danny: it will later) but sells high.
+  // The crown is a quest item (2026-11-21); it does nothing yet (Danny: it will later).
   vargoth_sword: {
     id: 'vargoth_sword',
     name: 'Sword of Vargoth',
@@ -652,8 +652,7 @@ const ITEMS = {
     name: 'Crown of Kazharoth',
     image: 'assets/images/crown of kazharoth.png',
     description: 'The burning crown of Kazharoth the Unburnt, King of the Molten Deep. It is still hot to the touch, and it will not cool.',
-    questItem: false,
-    price: 400,
+    questItem: true, // 2026-11-21 (Danny): a quest item, so it can't be sold or dropped (was price 400)
   },
   royal_summons: {
     id: 'royal_summons',
