@@ -905,9 +905,6 @@ export class World {
           } else {
             const sp = npc.speed;
             npc.speed = npc.chaseSpeed ?? 140;
-            // A smartChase royal always runs a little faster than the player can
-            // (boots and all), so a sprint down the hall doesn't outrun it.
-            if (npc.smartChase) npc.speed = Math.max(npc.speed, PLAYER_SPEED * (this.playerSpeedMult || 1) * 1.6);
             // `smartChase` (the Molten Deep royals, 2026-11-20): their aggro
             // range reaches across rooms, so a straight-line walk would pin
             // them against a wall. They follow a grid path round the walls.

@@ -1871,6 +1871,13 @@ Danny painted B4B (south half only), B4C, B4D, B4E and B4F (**yellow = blocked, 
 - **Small Shield = Defense +1** (`defenseBonus: 1`); its `damageReduction: 1` is gone (nothing showed it, and it made flat-1 hitters harmless). `statLineFor` now appends a weapon's stat bonuses to its damage line: the shield reads "1 DMG · +1 DEF".
 - Verified: sim2 ALL OK; the hall catch check above; headless Chrome: poisoned spider glows green with a POISONED tag, the immune line on an Emberwisp, Kazharoth centred between his summons, Escape and "Back away." each start the fight ~4s later, no console errors.
 
+## Royals wait for the hall outside their doors, faster spoils, longer Inspect (2026-11-21)
+
+- **Vargoth and Sythra (B4E) were too fast and started too early** (Danny). Their `aggroZone` is now only the stretch of the great hall right outside each bedroom door: Vargoth x1000-1780, y1250-1700; Sythra x1000-1820, y1850-2350. aggroRange 600 → 250 (so they still react if you walk right up to them inside their rooms). Chase speeds 160 / 175, and the 1.6×-player-speed boost in world.js is gone. Kept: `smartChase` pathing, a chase that once started continues (giveUpRange now 1500 from their room), `rearmAfter: 6`. Headless: walking down the hall at Speed 1 from every pair of patrol positions, nobody starts until the player reaches the door segment, and one of them always catches the player before the bottom exit (at Speed 2+ a straight sprint can get out).
+- **Spoils screen:** each reward reveals every 0.9s (was 1.5s), the first after 0.45s (was 0.65s). `VICTORY_REVEAL_MS` in ui.js.
+- **Inspect** keeps the item description up 5.5s (was 3.5s). `revealBanner` in ui.js's `showItemInspect`.
+- `sim2.mjs`'s chaseTalk test now stands the player 200px from the royal (was 300).
+
 ## Status / roadmap
 
 - ⏳ **REMINDER — Dame Elspeth Varrick goes in the King's castle.** Taken out of B4 on 2026-11-17 (Danny), not deleted: her full npc entry is in `js/data/reserve.js` (nothing imports it), her art (`dame_elspeth_varrick*.png`) and voice (`audio.js` `elspeth_varrick`) are still in the repo. When B2's keep / the King's scene is built, move her entry in and rewrite her lines (they're about hiding from the barricade).

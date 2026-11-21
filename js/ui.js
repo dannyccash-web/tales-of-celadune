@@ -499,7 +499,7 @@ export function showItemInspect(description, statLine) {
     });
     txt.appendChild(wrap);
   }
-  revealBanner(3500); // a second longer than a plain toast (2026-11-06, Danny)
+  revealBanner(5500); // 5.5s: two seconds longer again (2026-11-21, Danny)
 }
 
 // Quest lifecycle events use the same banner, gold-styled as their own beat.
@@ -2343,7 +2343,7 @@ export function initGameOver(handlers) {
 // and calls onClose (which runs the battle's own onEnd). Space/Enter/Escape
 // skips: grant everything remaining at once and close.
 const victoryState = { open: false, rewards: [], els: [], idx: 0, onReward: null, onClose: null, timer: null };
-const VICTORY_REVEAL_MS = 1500;
+const VICTORY_REVEAL_MS = 900; // was 1500 (2026-11-21, Danny: spoils faster)
 const VICTORY_CLOSE_MS = 1600;
 
 export function isVictoryOpen() { return victoryState.open; }
@@ -2394,7 +2394,7 @@ export function showVictory({ rewards, onReward, onClose, background }) {
   });
 
   $('victory').classList.remove('hidden');
-  victoryState.timer = setTimeout(revealNextReward, 650); // let the screen settle first
+  victoryState.timer = setTimeout(revealNextReward, 450); // let the screen settle first
 }
 
 function revealNextReward() {
