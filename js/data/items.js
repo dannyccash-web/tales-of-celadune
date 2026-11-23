@@ -122,6 +122,16 @@ export const ENCHANTS = {
     blurb: 'Fang-bitten steel: a 50% chance on any hit to envenom a living foe, festering for 1 damage at the start of each of its turns.',
     procMessage: (t) => `The venom takes — the ${t} is envenomed!`,
   },
+  // Embercore (2026-11-23, Danny): a 25% drop from Slagkin Stalkers and Brutes.
+  // Burning ticks at the start of each player turn (main.js tickBurns) until the
+  // foe dies; fire creatures (`fire: true`) can't be set alight, and wood
+  // (`wood: true`) burns hotter (2 a tick).
+  embercore: {
+    id: 'blazing', kind: 'burn', reagentId: 'embercore', burn: 1,
+    prefix: 'Blazing', chance: 0.50, glow: '#ff7a2a',
+    blurb: 'Embercore-forged steel: a 50% chance on any hit to set a foe alight, burning for 1 damage (2 against wood) at the start of each of your turns until it dies. Fire creatures won’t burn.',
+    procMessage: (t) => `Flames catch — the ${t} is set alight!`,
+  },
 };
 
 export function statLineFor(item) {
@@ -523,6 +533,16 @@ const ITEMS = {
     questItem: false,
     price: 20,
   },
+  // Embercore (2026-11-23, Danny): a still-burning heart of slag, dropped 25%
+  // by Slagkin Stalkers and Brutes. Orris binds it into a weapon (Blazing).
+  embercore: {
+    id: 'embercore',
+    name: 'Embercore',
+    image: 'assets/images/embercore.png',
+    description: 'A fist-sized lump of slag with fire still running in its cracks. It never cools, and it’s warm enough to light a pipe on.',
+    questItem: false,
+    price: 25,
+  },
   // Spider Fang (2026-07-31, Danny) — a general item (Items tab, `slot: 'item'`,
   // like the potions) that's OFFENSIVE: equip it to the battle Use slot and use
   // it on an enemy for 1 damage, and if the foe is `poisonable` (flesh, not the
@@ -869,7 +889,7 @@ const ITEMS = {
         // Worth a little more than the plain weapon, so selling one back is not
         // a downgrade. Plain price + half again, rounded.
         price: base.price ? Math.round(base.price * 1.5) : undefined,
-        enchant: { kind: ench.kind, chance: ench.chance, amount: ench.amount, poison: ench.poison, key: ench.id },
+        enchant: { kind: ench.kind, chance: ench.chance, amount: ench.amount, poison: ench.poison, burn: ench.burn, key: ench.id },
         glow: ench.glow,
       };
     }

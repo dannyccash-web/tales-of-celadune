@@ -1907,6 +1907,12 @@ Danny painted B4B (south half only), B4C, B4D, B4E and B4F (**yellow = blocked, 
 - `kingsreach_counting_house` (the old Edmund "lockbox is settled" quest) is only kept for old saves.
 - **Verified** in headless Chrome: Garrick → cutlass → lockbox → Mara (offer back) → Garrick relieved; Roderick hand-off with Wynne's quest taken (Wynne fails), Bag of Crowns → Edmund → Royal Summons; selling the bag to Agatha (100 gold, quest failed, not in her stock); the Wynne branch (Defense 1 → 2, Roderick's fails) and Garrick giving the cutlass after a rescue. No console errors.
 
+## Embercore + Blazing enchantment (2026-11-23, round 3)
+
+- **New item `embercore`** (Danny's `embercore.png`, price 25, tradeable): Slagkin Stalkers and Brutes each drop one 25% of the time (`enemies.js` loot).
+- **Orris enchants with it:** `ENCHANTS.embercore` in items.js → **Blazing** weapons (`dagger_blazing`, `short_sword_blazing`, `longsword_blazing`, generated like the others), glow `#ff7a2a`. 50% chance on a hit to set the foe alight (`kind: 'burn'`, handled in main.js `playerAttack` next to ensnare/poison): it burns for 1 at the start of each player turn (the existing `tickBurns`) until it dies, 2 against `wood` foes. **Fire creatures (`fire: true`) can't burn**, and the hit line says so. The status glow + "Burning" tag come from the 2026-11-20 status work. Orris's explanation is `ORRIS_EXPLAIN.embercore`.
+- Verified in headless Chrome: Blazing Longsword sets a Cave Spider alight (1/turn) and a Rootweaver (2/turn), bounces off a Slagkin Stalker; a 4000-roll Brute loot sample drops embercore 25.5%. No console errors.
+
 ## Status / roadmap
 
 - ⏳ **REMINDER — Dame Elspeth Varrick goes in the King's castle.** Taken out of B4 on 2026-11-17 (Danny), not deleted: her full npc entry is in `js/data/reserve.js` (nothing imports it), her art (`dame_elspeth_varrick*.png`) and voice (`audio.js` `elspeth_varrick`) are still in the repo. When B2's keep / the King's scene is built, move her entry in and rewrite her lines (they're about hiding from the barricade).

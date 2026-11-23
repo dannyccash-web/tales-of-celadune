@@ -451,7 +451,7 @@ export default {
     speed: 10,
     damage: { min: 5, max: 7 },
     fire: true,
-    drops: { gold: { min: 10, max: 16 }, loot: [{ oneOf: ['health_potion', 'magic_potion'], chance: 0.35 }] },
+    drops: { gold: { min: 10, max: 16 }, loot: [{ oneOf: ['health_potion', 'magic_potion'], chance: 0.35 }, { id: 'embercore', chance: 0.25 }] },
   },
   // A lesser Vargoth: slow, heavy, hard to hurt.
   slagkin_brute: {
@@ -464,7 +464,7 @@ export default {
     speed: 6,
     damage: { min: 6, max: 8 },
     fire: true,
-    drops: { gold: { min: 14, max: 20 }, loot: [{ oneOf: ['health_potion', 'magic_potion'], chance: 0.5 }] },
+    drops: { gold: { min: 14, max: 20 }, loot: [{ oneOf: ['health_potion', 'magic_potion'], chance: 0.5 }, { id: 'embercore', chance: 0.25 }] },
   },
   // The royal family. Vargoth has the higher defense, Sythra the higher
   // attack, Kazharoth tops both. Each drops a fat purse, a potion and their

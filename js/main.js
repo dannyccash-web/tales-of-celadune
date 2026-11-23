@@ -3158,6 +3158,7 @@ async function boot() {
   // weapon and the reagent are spent by applyEnchant.
   const ORRIS_EXPLAIN = {
     rootweaver_heart: (w) => `A rootweaver’s heart — oh, you absolute menace. That thing grew by taking hold, and it will teach the habit to your ${w}. Now and then, when you land a blow, roots will burst out of the ground and snare whatever you hit, and it will lose its next move fighting them off. The heart is spent in the binding. Shall I?`,
+    embercore: (w) => `An embercore! Feel that, it’s still burning in there. Bind it into your ${w} and now and then a blow will set whatever you hit on fire, and it keeps burning every turn until it drops. Wood goes up faster. Anything that’s already made of fire just laughs at it, mind. The core is spent in the binding. Shall I?`,
     spider_fang: (w) => `A spider’s fang, and still charged — see the bead on the tip? Bind it into your ${w} and every so often a cut will leave poison in the wound, and it keeps eating at the creature, turn after turn, until it drops. Some things will not take poison at all — wood and root just shrug it off. The fang is spent in the binding. Shall I?`,
   };
 
@@ -5731,6 +5732,16 @@ async function boot() {
           procLine = ` The venom takes — the ${target.name} is envenomed!`;
         } else if (!ENEMIES[target.id]?.poisonable) {
           procLine = ` The venom hisses away on the ${target.name} — it can’t be poisoned.`;
+        }
+      } else if (procced && ench.kind === 'burn' && target.health > 0) {
+        // Blazing (embercore, 2026-11-23): sets any non-fire foe alight; it
+        // burns at the start of each player turn (tickBurns) until it dies.
+        if (ENEMIES[target.id]?.fire) {
+          procLine = ` Flames wash over the ${target.name} — it’s made of fire, it won’t burn.`;
+        } else if (!target.burning) {
+          target.burning = true;
+          target.burnDamage = ENEMIES[target.id]?.wood ? ench.burn * 2 : ench.burn;
+          procLine = ` Flames catch — the ${target.name} is set alight!`;
         }
       }
       refreshEnemyGlow(target);
