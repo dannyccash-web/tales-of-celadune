@@ -952,7 +952,7 @@ export default {
       ],
    },
     {
-      id: 'wynne_ashcombe', name: 'Wynne Ashcombe', role: 'SHRINE-KEEPER',
+      id: 'wynne_ashcombe', name: 'Wynne Ashcombe', role: 'PRIESTESS OF AELUNA', // was SHRINE-KEEPER (2026-11-23, Danny)
       sprite: 'assets/images/wynne_ashcombe_overhead.png',
       portrait: 'assets/images/wynne_ashcombe.png',
       x: 1899, y: 857, speed: 38, startsHome: false,
@@ -1051,14 +1051,9 @@ export default {
       // had removed). Once Mara's rescued, main.js's
       // applyGarrickRescueState swaps this npc's portrait/dialog/chatter
       // live for the relieved GARRICK_RESCUED_* versions.
-      dialog: {
-        line: 'His eyes keep drifting past you, out toward the harbor, like he’s watching for something that isn’t there. “Sorry — didn’t mean to stare off. Long day at the docks.”',
-        responses: ['You look like something’s eating at you.', 'Leave.'],
-        responseEffects: [
-          { followUp: '“It’s my wife — Mara. Sails with the Maiden’s Grace.” He rubs a hand over his face. “Ship limped into port a few days back crawling with miremen, hull to hold, and nobody’s heard a word from her or the rest of the crew since. I don’t know if she’s alive down there.” He’s quiet a moment, ashamed. “I should’ve gone in after her myself — I do security when the ships come in, it’s half my job. But Harbormaster Roderick Vane’s forbidden any of us from setting foot on that wreck, crew’s kin or not. Says he won’t lose more townsfolk to it. Doesn’t make it any easier to stand here and do nothing.” He looks at you, something desperate in it. “If you’re the sort who goes looking for trouble… please. Just see if she’s alive down there.”' },
-          null,
-        ],
-     },
+      // Dialog is state-built in main.js (buildGarrickDialog, 2026-11-23):
+      // his search-for-Mara quest (c1_find_mara) and the cutlass.
+      dialog: { line: 'His eyes keep drifting past you to the harbour.', responses: ['Leave.'] },
    },
     {
       // Hidden until rescued from the Maiden's Grace's flooded hold (C1D,
@@ -1081,9 +1076,10 @@ export default {
         { do: 'wait', s: 10 },
         { do: 'goHome' },
       ],
-      dialog: { line: 'Fresh air still doesn’t taste like anything but a gift, some days. Garrick keeps saying the same, though he’d never admit it plain. Thank you again — for the hold, I mean. I don’t forget a thing like that.', responses: ['Leave.'] },
+      dialog: { line: 'There’s my rescuer. Fresh air still tastes like a gift, some days. Garrick won’t stop fussing, and I’ve stopped telling him to. I don’t forget what you did down in that hold.', responses: ['Leave.'] },
       chatter: [
         { q: 'How are you settling in?', a: 'Better than I’ve any right to, honestly. Garrick fusses more than he used to — I let him. After what happened out there, I don’t mind being fussed over.' },
+        { q: 'Will you sail the Maiden’s Grace again?', a: 'The moment she’s clear of those things and the hull’s sound. Tidewrack doesn’t eat if that ship doesn’t sail. And I owe it to my crew to bring her home properly.' },
       ],
    },
     {
@@ -1232,6 +1228,7 @@ export default {
       ],
       dialog: { line: 'You’ve got dry-land legs under you, but I’d wager you could learn to hold your breath if it came to it. Most can, with reason enough.', responses: ['Leave.'] },
       chatter: [
+        { q: 'You spotted the Maiden’s Grace?', a: 'Coming up from a dive off the point. She was drifting in on the tide with her sails half torn and not a soul on deck. We rowed out and towed her in, happy as gulls. Then we looked over the rail. I still dream about it.' },
         { q: 'Could you dive the wreck?', a: 'Faster than any of Roderick’s rope-and-lantern crews, I’d wager — if he’d ever let me near it. Someday, maybe. When there’s a reason worth the risk.' },
       ],
    },

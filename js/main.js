@@ -1012,7 +1012,7 @@ async function boot() {
         inventory: inventory.map((e) => ({ ...e })),
         equipment: { ...equipment },
         quests: quests.map((q) => ({ ...q })),
-        flags: { campQuestDone, campHostile, campTollTier, gafferHappy, thrumhornFed, clucksworthFed, eggathaFed, orrisRescued, orrisDeparted, wellDrinks, vegetableDeliveredToTavern, mirelleStage, mirelleOutcome, calderToldStory, calderToldDangers, maraMet, maraToldTruth, lilyGullThanked, magicRevealed, maraHollowmastRescued, lockboxAcceptedFrom, lockboxGivenTo , ferrySide, lakewardenPaid, arjunMet, adeMet, b4bBridgeFixed, dessaMet, hagenMet, nkemiStone, nkemiStaff, horsesFed: [...horsesFed], visitedTowns: [...visitedTowns] },
+        flags: { campQuestDone, campHostile, campTollTier, gafferHappy, thrumhornFed, clucksworthFed, eggathaFed, orrisRescued, orrisDeparted, wellDrinks, vegetableDeliveredToTavern, mirelleStage, mirelleOutcome, calderToldStory, calderToldDangers, maraMet, maraToldTruth, lilyGullThanked, magicRevealed, maraHollowmastRescued, maraCutlassGiven, lockboxAcceptedFrom, lockboxGivenTo , ferrySide, lakewardenPaid, arjunMet, adeMet, b4bBridgeFixed, dessaMet, hagenMet, nkemiStone, nkemiStaff, horsesFed: [...horsesFed], visitedTowns: [...visitedTowns] },
         caveReturn, // where to exit to if saved inside a cave/dungeon
         // Per-visit gates (reset on every scene entry): saved so a reload in
         // the temple can't hand out a second blessing.
@@ -1053,6 +1053,7 @@ async function boot() {
     lilyGullThanked = false;
     magicRevealed = false;
     maraHollowmastRescued = false;
+    maraCutlassGiven = false;
     arjunMet = false;
     adeMet = false;
     b4bBridgeFixed = false; dessaMet = false; hagenMet = false;
@@ -1101,6 +1102,7 @@ async function boot() {
     lilyGullThanked = !!f.lilyGullThanked;
     magicRevealed = !!f.magicRevealed;
     maraHollowmastRescued = !!f.maraHollowmastRescued;
+    maraCutlassGiven = !!f.maraCutlassGiven;
     arjunMet = !!f.arjunMet;
     adeMet = !!f.adeMet;
     b4bBridgeFixed = !!f.b4bBridgeFixed;
@@ -1113,9 +1115,21 @@ async function boot() {
     lockboxGivenTo = f.lockboxGivenTo || null;
     // Saves from before 2026-10-12 that already handed Roderick the lockbox
     // never got the counting-house quest; add it quietly on load.
-    if (lockboxGivenTo === 'roderick' && !quests.some((q) => q.id === 'kingsreach_counting_house')) {
+    if (lockboxGivenTo === 'roderick' && !quests.some((q) => q.id === 'kingsreach_counting_house')
+      && quests.some((q) => q.id === 'c1_lockbox')) {
       quests.push({ id: 'kingsreach_counting_house', status: 'active' });
     }
+    // 2026-11-23: the shared c1_lockbox quest became two (Roderick's
+    // c1_lockbox_crown, Wynne's c1_lockbox_wynne). An old save's entry becomes
+    // the one it was accepted from (or, once finished, given to).
+    const oldBox = quests.find((q) => q.id === 'c1_lockbox');
+    if (oldBox) {
+      const who = oldBox.status === 'completed' ? lockboxGivenTo : lockboxAcceptedFrom;
+      oldBox.id = who === 'wynne' ? 'c1_lockbox_wynne' : 'c1_lockbox_crown';
+    }
+    // The cutlass used to be Mara's thank-you in the hold; a save that already
+    // has it counts as given.
+    if (maraHollowmastRescued && (inventory.some((e) => e.id === 'cutlass') || Object.values(equipment).includes('cutlass'))) maraCutlassGiven = true;
     caveReturn = data.caveReturn || null;
     vegetableDeliveredToTavern = !!f.vegetableDeliveredToTavern;
     mirelleStage = [1, 2, 3].includes(f.mirelleStage) ? f.mirelleStage : 1;
@@ -1403,6 +1417,8 @@ async function boot() {
   // (enterScene un-hides `mara_hollowmast_town`, which otherwise starts
   // hidden). See buildMaraHollowmastDialog().
   let maraHollowmastRescued = false;
+  // Garrick has handed over Mara's old cutlass (2026-11-23) — persisted.
+  let maraCutlassGiven = false;
   // The Maiden's Grace lockbox quest (2026-09-13) — 'roderick'/'wynne'/null.
   // See buildRoderickDialog/buildWynneDialog and applyResponseEffect's
   // roderickLockboxAccept/wynneLockboxAccept/giveLockboxToRoderick/
@@ -1795,57 +1811,81 @@ async function boot() {
       ui.updateDialogContent({ line: 'Look at the colour on that sailback. Into the pot it goes, eggs and all. By sundown this whole harbour’ll be crowded round my door with bowls in hand, and for one night nobody’ll be talking about that ship. Here, the first crock’s yours. Don’t mind the smell, everyone says it smells like low tide in a boot. One bowl and you’ll be right as rain. And take this Vitality Potion too. A traveller paid for a winter of suppers with it, and you’ve earned it more than I have. (Received a Vitality Potion.)', responses: ['Leave.'] });
       return true;
     }
-    // ---- The Maiden's Grace lockbox (Roderick/Wynne, 2026-09-13) ----
-    // Accepting from either just starts the ONE shared quest and records
-    // who it was accepted from (lockboxAcceptedFrom) — see
-    // buildRoderickDialog/buildWynneDialog for how the other party reacts
-    // while it's active, and giveLockboxToRoderick/giveLockboxToWynne below
-    // for the (separate, later) choice of who actually gets it.
+    // ---- The Maiden's Grace lockbox: two separate quests (2026-11-23) ----
+    // Roderick's c1_lockbox_crown and Wynne's c1_lockbox_wynne. Whoever gets
+    // the lockbox completes their quest (started on the spot if it never was);
+    // the other's quest, if the player had taken it, FAILS. Roderick then
+    // offers c1_crown_coin.
     if (effect.roderickLockboxAccept) {
-      startQuest('c1_lockbox');
-      lockboxAcceptedFrom = 'roderick';
-      requestAutosave();
-      ui.updateDialogContent({ line: 'Good. Mind the miremen down there — they don’t much care whose service you’re in.', responses: ['Leave.'] });
+      startQuest('c1_lockbox_crown');
+      ui.updateDialogContent({ line: RODERICK_ACCEPT, responses: ['Leave.'] });
       return true;
     }
     if (effect.wynneLockboxAccept) {
-      startQuest('c1_lockbox');
-      lockboxAcceptedFrom = 'wynne';
-      requestAutosave();
-      ui.updateDialogContent({ line: 'Tides keep you steady down there. Go carefully.', responses: ['Leave.'] });
+      startQuest('c1_lockbox_wynne');
+      ui.updateDialogContent({ line: WYNNE_ACCEPT, responses: ['Leave.'] });
       return true;
     }
     if (effect.giveLockboxToRoderick) {
-      // 25, cut from 50 on 2026-09-20: the choice this quest exists to pose is
-      // Roderick's coin vs Wynne's permanent +1 Defense, and at 50 gold the coin
-      // was simply the better deal, so the "mutually exclusive" branch wasn't a
-      // decision. At 25 the two sides are genuinely comparable.
       const LOCKBOX_RODERICK_GOLD = 25;
       removeItem('lockbox', 1, true);
       lockboxGivenTo = 'roderick';
-      completeQuest('c1_lockbox');
+      if (questStatus('c1_lockbox_crown') === 'none') startQuest('c1_lockbox_crown');
+      completeQuest('c1_lockbox_crown');
+      failQuest('c1_lockbox_wynne'); // no-op unless the player had taken her quest
       addGold(LOCKBOX_RODERICK_GOLD);
-      requestAutosave();
       ui.showGaveItem(ITEMS.lockbox);
-      startQuest('kingsreach_counting_house'); // 2026-10-12 (Danny)
       ui.updateDialogContent({
-        line: 'Now THAT’S a fine piece of work. You’ve done the Crown a real service, friend — and yourself no disservice either, by the weight of it. (Gained 25 gold.) If your road ever takes you to Kingsreach, call in at the king’s counting house — they’ll want to hear from someone who was there that a debt’s been settled.',
-        responses: ['Leave.'],
+        line: RODERICK_THANKS + ' (Gained ' + LOCKBOX_RODERICK_GOLD + ' gold.) ' + RODERICK_COIN_OFFER,
+        responses: ['I’ll carry it.', 'Not right now.'],
+        responseEffects: [{ roderickCoinAccept: true }, null],
       });
+      return true;
+    }
+    if (effect.roderickCoinOffer) {
+      ui.updateDialogContent({ line: RODERICK_COIN_OFFER, responses: ['I’ll carry it.', 'Not right now.'], responseEffects: [{ roderickCoinAccept: true }, null] });
+      return true;
+    }
+    if (effect.roderickCoinAccept) {
+      startQuest('c1_crown_coin');
+      addItem('crown_coin_purse', 1, true);
+      ui.showReceivedItem(ITEMS.crown_coin_purse);
+      ui.updateDialogContent({ line: RODERICK_COIN_GIVEN, responses: ['Leave.'] });
       return true;
     }
     if (effect.giveLockboxToWynne) {
       removeItem('lockbox', 1, true);
       lockboxGivenTo = 'wynne';
-      completeQuest('c1_lockbox');
+      if (questStatus('c1_lockbox_wynne') === 'none') startQuest('c1_lockbox_wynne');
+      completeQuest('c1_lockbox_wynne');
+      failQuest('c1_lockbox_crown');
       stats.defense += 1;
       refreshStatsPanel();
-      requestAutosave();
       ui.showGaveItem(ITEMS.lockbox);
-      ui.updateDialogContent({
-        line: 'She turns the lockbox over once in her hands, then presses her palm flat against it and murmurs something too quiet to catch. “May Maren, Warden of the Tide, watch over you in every water you cross.” Something settles into you, steady and lasting. (Defense permanently +1.)',
-        responses: ['Leave.'],
-      });
+      ui.updateDialogContent({ line: WYNNE_THANKS, responses: ['Leave.'] });
+      return true;
+    }
+    // ---- Garrick Hollowmast's search for Mara (2026-11-23) ----
+    if (effect.garrickMenu) { ui.updateDialogContent(buildGarrickDialog()); return true; }
+    if (effect.garrickStory) {
+      ui.updateDialogContent({ line: GARRICK_STORY, responses: ['I’ll search the ship for her.', 'Not right now.'], responseEffects: [{ garrickAccept: true }, { garrickMenu: true }] });
+      return true;
+    }
+    if (effect.garrickAccept) {
+      startQuest('c1_find_mara');
+      if (!maraCutlassGiven) {
+        maraCutlassGiven = true;
+        addItem('cutlass', 1, true);
+        ui.showReceivedItem(ITEMS.cutlass);
+      }
+      ui.updateDialogContent({ line: GARRICK_ACCEPT, responses: ['Leave.'] });
+      return true;
+    }
+    if (effect.garrickThankCutlass) { // rescued before he ever asked: the cutlass is his thanks
+      maraCutlassGiven = true;
+      addItem('cutlass', 1, true);
+      ui.showReceivedItem(ITEMS.cutlass);
+      ui.updateDialogContent({ line: GARRICK_LATE_CUTLASS, responses: ['Leave.'] });
       return true;
     }
     // ---- Cairnfolk Cave (B4B, 2026-11-17) ----
@@ -2308,6 +2348,22 @@ async function boot() {
     }
     if (effect.orrisFightNow) { startOrrisAmbush(); return true; }
     // Edmund Fairlock closes Roderick's `kingsreach_counting_house` (2026-11-05).
+    if (effect.edmundCoin) {
+      if (questStatus('c1_crown_coin') === 'active' && inventory.some((e) => e.id === 'crown_coin_purse')) {
+        removeItem('crown_coin_purse', 1, true);
+        ui.showGaveItem(ITEMS.crown_coin_purse);
+        completeQuest('c1_crown_coin');
+        if (inventory.some((e) => e.id === 'royal_summons')) {
+          addGold(EDMUND_COIN_FEE);
+          ui.updateDialogContent({ line: EDMUND_COIN_HAVE_SUMMONS + ' (Gained ' + EDMUND_COIN_FEE + ' gold.)', responses: ['Leave.'] });
+        } else {
+          addItem('royal_summons', 1, true);
+          ui.showReceivedItem(ITEMS.royal_summons);
+          ui.updateDialogContent({ line: EDMUND_COIN_SUMMONS, responses: ['Leave.'] });
+        }
+      }
+      return true;
+    }
     if (effect.edmundSettle) {
       if (questStatus('kingsreach_counting_house') === 'active') {
         completeQuest('kingsreach_counting_house');
@@ -2446,37 +2502,33 @@ async function boot() {
     // cutscene — see finalizeMaraHollowmastRescue() above) ----
     if (effect.maraHollowmastStory) {
       ui.updateDialogContent({
-        line: 'My name’s Mara Hollowmast. We were coasting into port — almost home — when the miremen came up over the sides, more of them than I’ve ever seen at once, crawling up out of the water like the wreck itself called them. They went through the crew before anyone could get below. I went still and let them think I was already gone, then got down here before they could finish the job.',
-        responses: ['Let’s get you out of here.', 'Leave.'],
+        line: MARA_HOLD_STORY,
+        responses: ['Garrick sent me. Let’s get you home.', 'Leave.'],
         responseEffects: [{ maraHollowmastThanks: true }, null],
       });
       return true;
     }
     if (effect.maraHollowmastThanks) {
-      ui.updateDialogContent({
-        line: 'She takes your arm and pulls herself upright, wincing. “I’m hurt, but I’ll manage — I just needed a minute before I climbed back up into that.” She nods at the cutlass on her hip. “Take it. You’re in a far better spot to swing it than I am right now.”',
-        responses: ['Accept the cutlass.', 'Refuse it.'],
-        responseEffects: [{ maraHollowmastAccept: true }, { maraHollowmastRefuse: true }],
+      const hasCutlass = inventory.some((it) => it.id === 'cutlass') || Object.values(equipment).includes('cutlass');
+      ui.updateDialogContent(hasCutlass ? {
+        line: MARA_HOLD_SEES_CUTLASS,
+        responses: ['Offer her the cutlass back.', 'Let’s go.'],
+        responseEffects: [{ maraHollowmastOffer: true }, { maraHollowmastGo: true }],
+      } : {
+        line: MARA_HOLD_THANKS,
+        responses: ['Let’s go.'],
+        responseEffects: [{ maraHollowmastGo: true }],
       });
       return true;
     }
-    if (effect.maraHollowmastAccept) {
-      addItem('cutlass', 1);
-      requestAutosave();
-      ui.showReceivedItem(ITEMS.cutlass); // she's GIVING it to the player — Received, not Gave (2026-09-13 fix)
+    if (effect.maraHollowmastOffer) {
       finalizeMaraHollowmastRescue();
-      ui.updateDialogContent({
-        line: 'She presses the cutlass into your hands and pushes herself up off the barrel. By the time you’re back in town, she’s already there, catching her breath by Garrick’s door.',
-        responses: ['Leave.'],
-      });
+      ui.updateDialogContent({ line: MARA_HOLD_KEEP_IT, responses: ['Leave.'] });
       return true;
     }
-    if (effect.maraHollowmastRefuse) {
+    if (effect.maraHollowmastGo) {
       finalizeMaraHollowmastRescue();
-      ui.updateDialogContent({
-        line: '“Suit yourself,” she says, and pushes herself up off the barrel. By the time you’re back in town, she’s already there, catching her breath by Garrick’s door.',
-        responses: ['Leave.'],
-      });
+      ui.updateDialogContent({ line: MARA_HOLD_LEAVES, responses: ['Leave.'] });
       return true;
     }
     // A demon royal's last word before the fight (2026-11-20): the only
@@ -2934,13 +2986,22 @@ async function boot() {
   // Roderick Vane's `kingsreach_counting_house` is active.
   const EDMUND_FINDERS_FEE = 10;
   const EDMUND_SETTLE_LINE = 'The Maiden\u2019s Grace lockbox? Recovered? Oh, that is a whole column I can close. Let me just... yes. Here. The Crown pays a finder\u2019s fee on recovered goods, and for once I actually have the coin to pay it. (Gained ' + EDMUND_FINDERS_FEE + ' gold.)';
+  // 2026-11-23: Roderick's Bag of Crowns (c1_crown_coin) is delivered here
+  // too; Edmund rewards it with a royal summons (or, if the player already
+  // carries one, a fee).
+  const EDMUND_COIN_FEE = 25;
+  const EDMUND_COIN_SUMMONS = 'From Roderick Vane? A hundred crowns, and the seal unbroken. Do you know how rare that is? Most of what’s sent to this office arrives lighter than it left. The Crown notices loyalty, and so do I. Here: a royal summons, with my mark on it. Take it up to the castle. The king has need of people who can be trusted. (Received a Royal Summons.)';
+  const EDMUND_COIN_HAVE_SUMMONS = 'From Roderick Vane? A hundred crowns, and the seal unbroken. I’d have written you a summons to the castle for this, but I see you already carry one. Then take the Crown’s thanks in coin instead, and get yourself up that hill.';
   function buildEdmundDialog(npc) {
     const base = withChatter(resolveNpcDialog(npc, isQuestReady), npc);
-    if (questStatus('kingsreach_counting_house') !== 'active') return base;
+    const add = [], eff = [];
+    if (questStatus('c1_crown_coin') === 'active' && inventory.some((e) => e.id === 'crown_coin_purse')) { add.push('Roderick Vane sent these crowns for the counting house.'); eff.push({ edmundCoin: true }); }
+    if (questStatus('kingsreach_counting_house') === 'active') { add.push('Roderick Vane sends word: the lockbox is settled.'); eff.push({ edmundSettle: true }); }
+    if (!add.length) return base;
     return {
       ...base,
-      responses: ['Roderick Vane sends word: the lockbox is settled.', ...base.responses],
-      responseEffects: [{ edmundSettle: true }, ...(base.responseEffects || base.responses.map(() => null))],
+      responses: [...add, ...base.responses],
+      responseEffects: [...eff, ...(base.responseEffects || base.responses.map(() => null))],
     };
   }
 
@@ -3251,7 +3312,11 @@ async function boot() {
     const def = ITEMS[itemId];
     if (!def) return;
     if (action === 'inspect') { ui.showItemInspect(def.description, statLineFor(def)); return; }
-    if (action === 'remove') { removeItem(itemId); return; }
+    if (action === 'remove') {
+      removeItem(itemId);
+      if (def?.failsQuest && questStatus(def.failsQuest) === 'active' && !inventory.some((e) => e.id === itemId)) failQuest(def.failsQuest);
+      return;
+    }
     if (action === 'equip') { equipItem(itemId); return; }
     if (action === 'unequip') { unequipItem(def.slot); return; }
     if (action === 'use') {
@@ -3778,7 +3843,8 @@ async function boot() {
   // gold/inventory mutation and re-hands fresh lists to ui.refreshDialogGrid
   // after each trade; each trade also plays the same received/gave item
   // reveal used everywhere else in dialog (Buy = received, Sell = gave).
-  function sellValue(def) { return Math.max(1, Math.floor((def?.price || 0) / 2)); }
+  // `sellPrice` overrides the usual half price (the Bag of Crowns sells for exactly 100).
+  function sellValue(def) { return def?.sellPrice ?? Math.max(1, Math.floor((def?.price || 0) / 2)); }
 
   // ---- Durgan Coldforge's ore quests (2026-11-06) ----
   // He stocks the Coldforge helm and boots; each other piece takes 3 metallic
@@ -4102,8 +4168,9 @@ async function boot() {
           removeItem(id, 1, true);
           addGold(value);
           npc.gold -= value;
-          npc.resale[id] = (npc.resale[id] ?? 0) + 1; // now buyable from this vendor
+          if (!d.noResale) npc.resale[id] = (npc.resale[id] ?? 0) + 1; // now buyable from this vendor (not the Bag of Crowns: spent, gone)
           ui.showGaveItem(d);
+          if (d.failsQuest && questStatus(d.failsQuest) === 'active') failQuest(d.failsQuest);
         }
         refresh();
       },
@@ -4198,9 +4265,17 @@ async function boot() {
   // resolves the cutlass offer, marking her defeated on C1D (gone from the
   // hold for good) and revealing her in C1 living with her husband Garrick —
   // see enterScene's `mara_hollowmast_town` reveal and maraHollowmastRescued.
+  // 2026-11-23 (Danny): Mara is the Maiden's Grace's captain. Garrick sends
+  // the player (c1_find_mara) with her old cutlass; offering it back, she
+  // insists the player keep it. Freeing her completes c1_find_mara.
+  const MARA_HOLD_STORY = 'Captain Mara Hollowmast, of this ship, for what that’s worth now. We were two days out from home when they came up over the rails at night. Dozens of them. We fought them across the deck, all of us, and we lost. I took a hook in the side and got down here, and they let the ship drift. I’ve been listening to them walk over my head ever since.';
+  const MARA_HOLD_THANKS = 'Garrick? He’s… he’s all right? Then I’m going home. Give me your arm. I’m hurt, but I can climb.';
+  const MARA_HOLD_SEES_CUTLASS = 'Garrick? He’s… he’s all right? Then I’m going home. Give me your arm. I’m hurt, but I can climb. Wait. That’s my old cutlass on your belt. I left that with him for luck.';
+  const MARA_HOLD_KEEP_IT = 'She closes your hand back around the hilt. “No. It did exactly what I left it home to do. It brought me home. It’s yours now, and you’ve more than earned it.” She pulls herself upright and makes for the ladder. By the time you reach the shore, she’s already at Garrick’s door.';
+  const MARA_HOLD_LEAVES = 'She pulls herself upright and makes for the ladder, one hand on the wall. By the time you reach the shore, she’s already at Garrick’s door.';
   function buildMaraHollowmastDialog() {
     return {
-      line: 'A woman is slumped against a barrel, one hand pressed to a bandaged wound at her side. She flinches at your footsteps, then goes still with disbelief. “You’re… you’re not one of them. Oh, thank the tides.”',
+      line: 'A woman is slumped against a barrel, one hand pressed to a bandaged wound at her side, a broken sabre across her knees. She flinches at your footsteps, then goes still with disbelief. “You’re… you’re not one of them. Oh, thank the tides.”',
       responses: ['What happened here?', 'Leave.'],
       responseEffects: [{ maraHollowmastStory: true }, null],
     };
@@ -4214,6 +4289,8 @@ async function boot() {
     const live = world.npcs.find((n) => n.id === 'mara_hollowmast');
     if (live) live.defeated = true;
     maraHollowmastRescued = true;
+    if (questStatus('c1_find_mara') === 'none') startQuest('c1_find_mara');
+    completeQuest('c1_find_mara');
     const townMara = worlds['C1']?.npcs.find((n) => n.id === 'mara_hollowmast_town');
     if (townMara) townMara.defeated = false;
     applyGarrickRescueState(worlds['C1']?.npcs.find((n) => n.id === 'garrick_hollowmast'));
@@ -4227,17 +4304,28 @@ async function boot() {
   // made after the rescue starts him in the right state too — same pattern
   // as mara_hollowmast_town's defeated-gated reveal. Never reverts, since
   // maraHollowmastRescued itself never reverts.
-  const GARRICK_RESCUED_DIALOG = {
-    line: 'He can’t stop smiling these days, if you hadn’t noticed. “She’s home,” he says, nodding toward the house behind him, where you can just hear Mara humming through an open window. “Sleeping through the night again, first time in weeks. I don’t know how I’ll ever pay you back for that — but our door’s open to you any time, both of ours now.”',
-    responses: ['Leave.'],
-  };
+  // ---- Garrick Hollowmast (C1), state-built since 2026-11-23 ----
+  const GARRICK_OPEN = 'His eyes keep drifting past you to the harbour, to the ship at the end of the dock. “Sorry. I can’t stop looking at her.”';
+  const GARRICK_STORY = '“The Maiden’s Grace. My wife’s ship. Mara’s her captain.” His voice cracks on it. “They were due back a month ago. Then Cade spotted her drifting into the bay with not a soul on deck, and we rowed out and towed her in to the dock. Only when we tied her off did we see what was aboard. Miremen, deck to hold. The crew’s all given up for dead. Half this town lost someone on that ship.” He grips the rail. “But Mara wouldn’t go down without a fight. Not her. If anyone’s still alive in there, it’s her. Will you search the ship? Any trace of her at all.”';
+  const GARRICK_ACCEPT = 'He presses a cutlass into your hands, worn smooth at the grip. “That’s hers. She leaves it with me every voyage, for luck. Says it’s how she knows she’ll come home for it. Take it in there. Maybe it can still bring her home.” (Received Mara’s Cutlass.)';
+  const GARRICK_ACTIVE = 'Any sign of her? Anything? …No. Keep looking. Please. She’s in there somewhere, I know it.';
+  const GARRICK_LATE_CUTLASS = 'He goes into the house and comes back with a worn cutlass. “Mara’s. She left it with me for luck, and look, it worked. She wants you to have it. So do I.” (Received Mara’s Cutlass.)';
+  const GARRICK_RESCUED_LINE = 'He can’t stop smiling. “She’s home,” he says, nodding at the house behind him, where you can hear Mara humming through the open window. “Sleeping through the night again. I don’t know how I’ll ever repay you. Our door’s open to you, both of ours.”';
   const GARRICK_RESCUED_CHATTER = [
-    { q: 'How’s Mara settling in?', a: 'Better every day. Still jumps at loud noises down by the water — can’t blame her — but she’s laughing again, and that’s the only tally that matters to me.' },
+    { q: 'How’s Mara settling in?', a: 'Better every day. She still jumps at a splash down by the water, and who could blame her. But she’s talking about the next voyage already, and that’s my Mara.' },
+    { q: 'What happens to the ship now?', a: 'Tidewrack lives on that ship. Every barrel of salt fish we send up the coast goes out in her hold. Clear her out and she’ll sail again. Mara means to be at the wheel.' },
   ];
+  function buildGarrickDialog() {
+    if (maraHollowmastRescued) {
+      if (!maraCutlassGiven) return { line: GARRICK_RESCUED_LINE, responses: ['I’m glad she’s home.'], responseEffects: [{ garrickThankCutlass: true }] };
+      return { line: GARRICK_RESCUED_LINE, responses: ['Leave.'] };
+    }
+    if (questStatus('c1_find_mara') === 'active') return { line: GARRICK_ACTIVE, responses: ['Leave.'] };
+    return { line: GARRICK_OPEN, responses: ['What’s wrong?', 'Leave.'], responseEffects: [{ garrickStory: true }, null] };
+  }
   function applyGarrickRescueState(garrick) {
     if (!garrick || !maraHollowmastRescued) return;
     garrick.portrait = 'assets/images/garrick_hollowmast_2.png';
-    garrick.dialog = GARRICK_RESCUED_DIALOG;
     garrick.chatter = GARRICK_RESCUED_CHATTER;
   }
 
@@ -4681,89 +4769,73 @@ async function boot() {
       return { line: 'Cragclaw eggs and a crimson sailback, that’s all I need. The eggs you’ll have to take off a cragclaw. The sailback’s a sea fish, red as a sunset, and it bites off the beaches if you’re patient.', responses: ['Leave.'] };
     }
     return {
-      line: 'Look around you. Long faces, every one. The Maiden’s Grace drifts in full of miremen and dead men, and the whole harbour’s been holding its breath ever since. What this town needs is a bowl of my stew. Famous for it, I am. But it wants two things I haven’t got: a clutch of Cragclaw eggs, and a crimson sailback. Bring me those and I’ll lift every spirit in Tidewrack.',
+      line: 'Look around you. Long faces, every one. The Maiden’s Grace drifts home a month late with no crew and a hold full of miremen, and the whole harbour’s been holding its breath ever since. What this town needs is a bowl of my stew. Famous for it, I am. But it wants two things I haven’t got: a clutch of Cragclaw eggs, and a crimson sailback. Bring me those and I’ll lift every spirit in Tidewrack.',
       responses: ['I’ll find them for you.', 'Leave.'],
       responseEffects: [{ perrinAccept: true }, null],
     };
   }
 
-  // Wynne (memorial/compensation) and Roderick (the Crown's cargo) offer
-  // ONE shared quest over the Maiden's Grace's sealed lockbox (2026-09-13,
-  // replacing the earlier unrelated c1_salvage/c1_memorial pair) — Danny:
-  // "speaking to either one and accepting the quest triggers the same
-  // quest, but there are two different outcomes." Accepting from one is
-  // mutually exclusive with the other WHILE the quest is active
-  // (lockboxAcceptedFrom), but who the lockbox is finally GIVEN to
-  // (lockboxGivenTo, set only at hand-off) is a separate, later choice —
-  // the player can still hand it to whichever party they like regardless of
-  // who they originally accepted from. Both NPCs therefore always offer the
-  // "Here's the lockbox." turn-in once the player has it, and the party
-  // that doesn't end up with it reacts worse than the one merely passed
-  // over at accept time (Danny: "even more disappointed").
+  // ---- The lockbox, two quests (2026-11-23, Danny) ----
+  // Roderick Vane (harbourmaster, the Crown's man) and Wynne Ashcombe
+  // (priestess of Aeluna) each want the Maiden's Grace's sealed lockbox from
+  // the hold, as SEPARATE quests (c1_lockbox_crown / c1_lockbox_wynne). Either
+  // can be taken; whoever is handed the lockbox completes theirs (started on
+  // the spot if needed) and the other's, if taken, fails. Roderick follows up
+  // with c1_crown_coin (the Bag of Crowns for Edmund in Kingsreach).
+  const WYNNE_OFFER = 'I light a candle to Aeluna every dawn for the crew of the Maiden’s Grace, and every dawn I ask her to send them home. She hasn’t yet. Most of this town has stopped hoping, and I can’t say they’re wrong. But there’s a lockbox in that ship’s hold, sealed with old wardwork, and what’s inside could feed the families of the lost crew through the winter. Roderick means to send it off to the Crown. Bring it to me instead, and I’ll see it goes to the people who need it.';
+  const WYNNE_ACCEPT = 'Aeluna light your way down there. I’ll pray for you at dawn, along with the rest of them.';
+  const WYNNE_THANKS = 'She holds the lockbox to her chest and bows her head. “Aeluna, who brings back the morning, keep this one in every dark place they go.” Something warm and steady settles over you, and stays. (Defense permanently +1.) “The families will eat this winter. Thank you.”';
   function buildWynneDialog() {
     const hasLockbox = inventory.some((it) => it.id === 'lockbox');
-    if (questStatus('c1_lockbox') === 'completed') {
-      if (lockboxGivenTo === 'wynne') {
-        return { line: 'The families have what they’re owed, and the stone-carver has his coin for the memorial besides. You did right by them, traveler — Maren keep you for it.', responses: ['Leave.'] };
-      }
-      return { line: 'Roderick’s counting house has its lockbox, then, and the Crown its due. I hope it weighs less on your conscience than it does on mine, watching those families go without. Walk gently, traveler.', responses: ['Leave.'] };
+    const mine = questStatus('c1_lockbox_wynne');
+    if (mine === 'completed') return { line: 'The families have what they need for the winter, and they light candles for you now, alongside the crew. Aeluna keep you.', responses: ['Leave.'] };
+    if (lockboxGivenTo === 'roderick') {
+      return { line: mine === 'failed'
+        ? 'You gave it to Roderick. After I asked you. Those families will be eating salt and water this winter so the Crown can count its coin. I’ll still pray for you. Aeluna asks that of me. Don’t ask me to like it.'
+        : 'So the lockbox went to Roderick, and on to the Crown. I suppose that’s the law. I’ll keep praying for the families all the same.', responses: ['Leave.'] };
     }
-    if (questStatus('c1_lockbox') === 'active') {
-      if (hasLockbox) {
-        return {
-          line: lockboxAcceptedFrom === 'wynne'
-            ? 'You found it! Let me see — yes, that’s her lockbox, wardwork and all. Will you let me use what’s inside for the families she left behind?'
-            : 'Is that the Maiden’s Grace’s lockbox? I’d thought Roderick had first claim on it — but I won’t pretend I’m not glad to see it in gentler hands. Will you let the families have what’s inside instead?',
-          responses: ['Here’s the lockbox.', 'Not yet.'],
-          responseEffects: [{ giveLockboxToWynne: true }, null],
-        };
-      }
-      if (lockboxAcceptedFrom === 'wynne') {
-        return { line: 'Any sign of the lockbox down there? Or — tides forgive me for asking first — any sign that anyone survived?', responses: ['Leave.'] };
-      }
-      return { line: 'So Roderick’s got you chasing his cargo instead of me. I understand it — coin talks louder than a shrine-keeper’s asking. If you do lay hands on that lockbox, though, remember there are families who’d rather have it than the Crown.', responses: ['Leave.'] };
+    if (hasLockbox) {
+      return {
+        line: mine === 'active' ? 'You found it. Aeluna be thanked. Will you let me have it, for the families?' : 'Is that the lockbox from the Maiden’s Grace? Please. Let it go to the families of the crew, not to some counting house in Kingsreach.',
+        responses: ['Here’s the lockbox.', 'Not yet.'],
+        responseEffects: [{ giveLockboxToWynne: true }, null],
+      };
     }
-    return {
-      line: 'The Maiden’s Grace didn’t sink, but I doubt that’s much comfort to her crew — miremen took her before she ever reached dock, and I’d be surprised if any of them still draw breath down there. I’d have it confirmed, not just assumed. Clear the wreck of those creatures, and if anyone’s somehow still alive, get them out. There’s also a lockbox in her hold, sealed by ward-craft older than the ship herself — bring it to me, and I’ll see its contents go to the families that crew left behind, with enough left over for a stone so they’re not forgotten.',
-      responses: ['I’ll search the wreck.', 'Not right now.'],
-      responseEffects: [{ wynneLockboxAccept: true }, null],
-    };
+    if (mine === 'active') return { line: 'Any sign of the lockbox? Or of anyone, alive? I keep asking Aeluna. Maybe she’s answering through you.', responses: ['Leave.'] };
+    return { line: WYNNE_OFFER, responses: ['I’ll bring it to you.', 'Not right now.'], responseEffects: [{ wynneLockboxAccept: true }, null] };
   }
-  // Wrapper (2026-09-13): buildRoderickDialog itself is the pure quest-state
-  // logic below (renamed to buildRoderickQuestDialog); this just folds in
-  // Buy/Sell via withShop, so the quest logic doesn't need to know he's also
-  // a vendor now.
+  const RODERICK_OFFER = 'You heard about the Maiden’s Grace? Overdue a month, then Cade sees her drifting into the bay with nobody at the wheel, and we tow her in like fools before anyone looks below. Miremen, hull to hold. Her crew’s presumed dead, every one. And that ship is how this town lives. Every barrel of fish and salt we sell up the coast goes out in her hold. We need her back, and we haven’t the arms to take her. There’s a lockbox in her hold, sealed. It belongs to the Crown. I know what it would mean to the families here, I do, but it isn’t ours. Bring it to me and I’ll see it goes where it’s owed.';
+  const RODERICK_ACCEPT = 'Good. Mind the miremen down there. They don’t much care whose errand you’re on.';
+  const RODERICK_THANKS = 'That’s the one. Still sealed, too. The Crown thanks you, and so do I.';
+  const RODERICK_COIN_OFFER = 'And listen. Anyone who can walk that lockbox out of a ship full of miremen and hand it over without prying it open can be trusted with the Crown’s money. I’ve a hundred crowns in tithes that needs to reach the king’s counting house in Kingsreach. Will you carry it to Edmund Fairlock there?';
+  const RODERICK_COIN_GIVEN = 'He sets a heavy leather bag in your hands, stamped with the royal crown. “A hundred crowns. Edmund Fairlock, at the counting house in Kingsreach. Don’t let it get any lighter on the way.”';
   function buildRoderickDialog() {
     return withShop(buildRoderickQuestDialog(), 'roderick_vane');
   }
   function buildRoderickQuestDialog() {
     const hasLockbox = inventory.some((it) => it.id === 'lockbox');
-    if (questStatus('c1_lockbox') === 'completed') {
-      if (lockboxGivenTo === 'roderick') {
-        return { line: 'That lockbox is already halfway to the counting house, and my thanks along with it. The Crown remembers a debt like that, mark me.', responses: ['Leave.'] };
-      }
-      return { line: 'Gave it to the shrine-keeper, did you. Fine sentiment — buries a stone with the crew’s names on it and buries the Crown’s due right along with them. Don’t expect a second offer like mine.', responses: ['Leave.'] };
+    const mine = questStatus('c1_lockbox_crown');
+    if (mine === 'completed') {
+      const coin = questStatus('c1_crown_coin');
+      if (coin === 'none') return { line: 'You again. That offer of mine still stands, if you’re heading north.', responses: ['What offer?', 'Leave.'], responseEffects: [{ roderickCoinOffer: true }, null] };
+      if (coin === 'active') return { line: 'Edmund Fairlock, the counting house in Kingsreach. The sooner those crowns are off your belt, the sooner I sleep.', responses: ['Leave.'] };
+      if (coin === 'failed') return { line: 'I trusted you with the Crown’s coin, and it never reached Kingsreach. Don’t look at me like that. Edmund wrote to ask where it went. We’re done, you and I, past what you buy and sell.', responses: ['Leave.'] };
+      return { line: 'Edmund wrote to say the crowns arrived, seal and all. Good. The Crown has a long memory for people like you.', responses: ['Leave.'] };
     }
-    if (questStatus('c1_lockbox') === 'active') {
-      if (hasLockbox) {
-        return {
-          line: lockboxAcceptedFrom === 'roderick'
-            ? 'You found her, did you! Let’s have it, then — that’s the Crown’s property you’re holding.'
-            : 'Wynne’s errand, was it — and yet here you stand with the lockbox anyway. I won’t turn away good sense when it walks up and offers itself. Hand it over, and I’ll see it reaches the counting house.',
-          responses: ['Here’s the lockbox.', 'Not yet.'],
-          responseEffects: [{ giveLockboxToRoderick: true }, null],
-        };
-      }
-      if (lockboxAcceptedFrom === 'roderick') {
-        return { line: 'Mind the miremen down there and keep your eyes open for that lockbox. The sooner it’s in the counting house, the sooner this village sees any benefit from that wreck at all.', responses: ['Leave.'] };
-      }
-      return { line: 'Gone and thrown in with the shrine-keeper on that wreck, have you? Fine sentiment. Doesn’t put a coin in the Crown’s coffers, but fine sentiment. If you do lay hands on that lockbox, mind you bring it to me instead — I’d still see it reach the counting house where it belongs.', responses: ['Leave.'] };
+    if (lockboxGivenTo === 'wynne') {
+      return { line: mine === 'failed'
+        ? 'You gave the Crown’s lockbox to Wynne. After you took my errand. I don’t care how good her reasons are. That was the king’s, and now it’s soup.'
+        : 'Wynne has the lockbox, I hear. Kind of her. Unlawful, but kind.', responses: ['Leave.'] };
     }
-    return {
-      line: 'That hulk out there came in crawling with miremen, hull to hold, and I won’t send able-bodied townsfolk in to get themselves killed over it — I need every one of them upright to unload what’s already salvageable. But you look like you can handle yourself. Clear the wreck of those creatures, and while you’re down there, find her lockbox. Whatever’s sealed inside is worth more than the hull carrying it, and I serve the Crown, which means the Crown gets its due. Bring it to me, and I’ll see it reaches the king’s counting house where it belongs.',
-      responses: ['I’ll clear the wreck and find it.', 'Not my business.'],
-      responseEffects: [{ roderickLockboxAccept: true }, null],
-    };
+    if (hasLockbox) {
+      return {
+        line: mine === 'active' ? 'You found it! Let’s have it, then. That’s the Crown’s property you’re holding.' : 'Is that the lockbox off the Maiden’s Grace? That belongs to the Crown. Hand it here and I’ll see it gets where it’s owed.',
+        responses: ['Here’s the lockbox.', 'Not yet.'],
+        responseEffects: [{ giveLockboxToRoderick: true }, null],
+      };
+    }
+    if (mine === 'active') return { line: 'Any luck with that lockbox? Mind the miremen. And mind it doesn’t wander off to the shrine on the way back.', responses: ['Leave.'] };
+    return { line: RODERICK_OFFER, responses: ['I’ll find it for you.', 'Not my business.'], responseEffects: [{ roderickLockboxAccept: true }, null] };
   }
 
   // Toby's net quest: bring him 2 Trout to tide his family over (his net's
@@ -4871,7 +4943,7 @@ async function boot() {
         : 'Any luck? Three sea bass is all I’m asking. You’ll find them off the beaches if you’ve got a rod and some bait.', responses: ['Leave.'] };
     }
     return {
-      line: 'Look at this. Look at it! Something came through my net last night and tore it clean in half. A whole night’s catch, gone back to the sea. This town was already scraping by. The Maiden’s Grace drifted in full of miremen, her crew dead or gone, and every crate she was carrying with them. Without my catch there’s hardly anything left to eat. If you could bring me three sea bass, it’d keep us going till I can mend this.',
+      line: 'Look at this. Look at it! Something came through my net last night and tore it clean in half. A whole night’s catch, gone back to the sea. This town was already scraping by. The Maiden’s Grace came in on a tow rope with no crew and miremen in her hold, and every crate she was carrying is still down there with them. Without my catch there’s hardly anything left to eat. If you could bring me three sea bass, it’d keep us going till I can mend this.',
       responses: ['I’ll bring you three sea bass.', 'Leave.'],
       responseEffects: [{ tobyAccept: true }, null],
     };
@@ -5075,6 +5147,7 @@ async function boot() {
     else if (npc.id === 'mara_hollowmast') dialog = buildMaraHollowmastDialog();
     else if (npc.id === 'perrin_alders') dialog = buildPerrinDialog();
     else if (npc.id === 'wynne_ashcombe') dialog = buildWynneDialog();
+    else if (npc.id === 'garrick_hollowmast') dialog = withChatter(buildGarrickDialog(), npc);
     else if (npc.id === 'roderick_vane') dialog = buildRoderickDialog();
     else if (npc.id === 'toby_farrow') dialog = buildTobyDialog();
     else if (npc.id === 'lily_farrow') dialog = buildLilyDialog();

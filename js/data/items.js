@@ -591,7 +591,7 @@ const ITEMS = {
     id: 'cutlass',
     name: 'Mara’s Cutlass',
     image: 'assets/images/maras_cutlass.png',
-    description: 'Mara Hollowmast’s own blade, given in thanks for driving the miremen off the Maiden’s Grace and back into the water. Balanced for close, ugly work, and it bites harder against the things that lurk in the wreck.',
+    description: 'Captain Mara Hollowmast’s old cutlass, the one she left at home with Garrick for luck. Balanced for close, ugly work, and it bites harder against the things that lurk in the wreck.',
     questItem: false,
     slot: 'mainhand',
     damage: { min: 4, max: 7 },
@@ -646,6 +646,21 @@ const ITEMS = {
     damage: { min: 4, max: 7 },
     bonusDamageVs: { tags: ['ice'], amount: 4, label: 'ice creatures' },
     price: 100,
+  },
+  // Roderick Vane's bag of crowns for the counting house (2026-11-23). NOT a
+  // quest item: it can be sold (for exactly 100, `sellPrice`), but selling or
+  // dropping it fails c1_crown_coin (`failsQuest`), and a vendor doesn't keep
+  // it for resale (`noResale`). Placeholder art drawn in code.
+  crown_coin_purse: {
+    id: 'crown_coin_purse',
+    name: 'Bag of Crowns',
+    image: 'assets/images/crown_coin_purse.png',
+    description: 'A heavy leather bag stamped with the royal crown: a hundred gold crowns, bound for the king’s counting house in Kingsreach.',
+    questItem: false,
+    price: 200,
+    sellPrice: 100,
+    noResale: true,
+    failsQuest: 'c1_crown_coin',
   },
   kazharoth_crown: {
     id: 'kazharoth_crown',

@@ -20,10 +20,29 @@ export default {
   // but who the lockbox is ultimately GIVEN to (lockboxGivenTo) is a
   // separate, later choice, independent of who it was accepted from. See
   // main.js's buildRoderickDialog/buildWynneDialog for the full branching.
-  c1_lockbox: {
-    id: 'c1_lockbox',
-    name: 'The Maiden’s Grace Lockbox',
-    description: 'Clear the miremen from the Maiden’s Grace and recover the ship’s sealed lockbox — then decide who it goes to: Roderick Vane, for the Crown, or Wynne Ashcombe, for the crew’s families.',
+  // 2026-11-23 (Danny): the shared c1_lockbox quest is split into TWO quests,
+  // one per quest-giver. Giving the lockbox to one fails the other if it was
+  // accepted. Old saves' c1_lockbox is migrated in main.js's loadGame.
+  c1_lockbox_crown: {
+    id: 'c1_lockbox_crown',
+    name: 'The Crown’s Lockbox',
+    description: 'Roderick Vane wants the Maiden’s Grace’s sealed lockbox recovered from the hold and brought to him. It belongs to the Crown, however much Tidewrack could use it.',
+  },
+  c1_crown_coin: {
+    id: 'c1_crown_coin',
+    name: 'The Crown’s Coin',
+    description: 'Roderick Vane trusted you with a bag of a hundred gold crowns. Carry it to the king’s counting house in Kingsreach and hand it to Edmund Fairlock.',
+  },
+  c1_lockbox_wynne: {
+    id: 'c1_lockbox_wynne',
+    name: 'For the Crew’s Families',
+    description: 'Wynne Ashcombe, priestess of Aeluna, asked you to bring her the Maiden’s Grace’s sealed lockbox so its contents can go to the families of the lost crew.',
+  },
+  // Garrick Hollowmast (C1, 2026-11-23): find his wife, Captain Mara Hollowmast.
+  c1_find_mara: {
+    id: 'c1_find_mara',
+    name: 'The Captain of the Maiden’s Grace',
+    description: 'Garrick Hollowmast believes his wife, Captain Mara Hollowmast, may still be alive aboard the Maiden’s Grace. Search the ship for any trace of her.',
   },
   // The Reedwalkers' thornback boars (C2, 2026-09-16). Completion is NOT an
   // item turn-in like most quests here — it's a live headcount: Tovan's
