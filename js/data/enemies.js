@@ -264,11 +264,11 @@ export default {
     id: 'mireman_king',
     name: 'Mireman King',
     portrait: 'assets/images/mireman_king.png',
-    health: 20,
+    health: 26, // 2026-11-23 (Danny: a little tougher): 20 -> 26, damage 2-6 -> 3-6
     attack: 4,
     defense: 3,
     speed: 8,
-    damage: { min: 2, max: 6 },
+    damage: { min: 3, max: 6 },
     summon: { every: 3, pool: ['mireman'] },
     poisonable: true,
     drops: { gold: { min: 20, max: 30 }, loot: [{ id: 'trident', chance: 1 }, { id: 'health_potion', chance: 1, qty: 2 }, { id: 'magic_potion', chance: 0.5 }, { id: 'fishing_bait', chance: 1 }] },

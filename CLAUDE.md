@@ -1887,6 +1887,15 @@ Danny painted B4B (south half only), B4C, B4D, B4E and B4F (**yellow = blocked, 
 - **Kazharoth's talkRange** 800 → 650.
 - **Crown of Kazharoth** is now a quest item (`questItem: true`, no price): can't be sold or dropped.
 
+## Maiden's Grace holds redrawn (C1C, C1D) + the Mireman King guards the bow (2026-11-23)
+
+- **New `C1C_Background.jpg` / `C1D_Background.jpg`** (Danny): a much wider hull (x~1100-1900, y~200-2800), cargo at bow and stern, a stairway at the stern end on both levels (x1425-1585, y~1925-2200, same spot on each). C1C has a pool of daylight on the floor amidships (the deck hatch); C1D has wall lanterns and barrels/crates along the sides.
+- **Collision regenerated** for both: per-10px-row hull silhouette inset 95px each side (the rails), plus hand boxes for every cargo stack, the mast base (C1C), the lanterns (C1D) and the stairwells. Generator was in the session scratch (`/home/claude/c1/gen.py`), not kept.
+- **C1C:** spawn (1505,1480); "Top Deck" moved onto the daylight (1505,1390), still returns to C1 at (525,1450); "Bottom Deck" at the stairway's north end (1505,1900). Miremen: one paces aft of the mast base (1380↔1630, y1020, aggro 250), the other the port aisle beside the stairs (x1340, y2060↔2160, aggro 220), both clear of every arrival point.
+- **C1D:** spawn (1505,1860) at the stairway's north end; its ladder up is now labelled "Climb Up" (1505,1900) and lands in C1C at (1505,1860). Chest (1430,760), lockbox (1580,760) and Mara (1505,860) moved up to the bow just aft of the crossbeam. The ordinary mireman paces amidships (1380↔1620, y1450).
+- **Mireman King** now guards the bow: a 4-point loop in front of the chest/Mara (x1390-1620, y1010-1180), aggroRange 280, chaseSpeed 140 (was 200 / 110 in the stern nook), giveUpRange 600. Tougher: HP 20 → 26, damage 2-6 → 3-6.
+- **Verified:** real-World BFS (every interactable, chest, NPC and patrol point reachable; no creature within aggro range of an arrival point), 600s sims for both levels (all patrol points visited, no terrain violations), headless Chrome: C1 → Below Deck → Bottom Deck → Climb Up → Top Deck round trip lands at the right spots, and walking toward the chest pulls the Mireman King (26 HP) into a fight. No console errors.
+
 ## Status / roadmap
 
 - ⏳ **REMINDER — Dame Elspeth Varrick goes in the King's castle.** Taken out of B4 on 2026-11-17 (Danny), not deleted: her full npc entry is in `js/data/reserve.js` (nothing imports it), her art (`dame_elspeth_varrick*.png`) and voice (`audio.js` `elspeth_varrick`) are still in the repo. When B2's keep / the King's scene is built, move her entry in and rewrite her lines (they're about hiding from the barricade).

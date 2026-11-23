@@ -1,3 +1,9 @@
+// 2026-11-23: NEW ART (Danny). Same wide hull as C1C: bow cargo up top,
+// lanterns, barrels/crates along the sides, and the stairway up at the stern
+// end (x1425-1585, y1925-2200, the same spot as C1C's stairs down; its exit
+// interactable sits at the north end). The chest, lockbox and Mara moved to the
+// bow, just aft of the crossbeam, and the Mireman King paces in front of them.
+// Collision regenerated like C1C's. The notes below describe the earlier art.
 // C1D — Maiden's Grace, Bottom Deck (the ship dungeon's Level 2, 2026-09-12).
 // Reached from C1C via the new "Bottom Deck" ladder (c1c_bottomdeck_entrance,
 // x1496/y1840 in C1C's own coordinate space — see that file's header comment
@@ -34,94 +40,95 @@ export default {
   background: 'assets/images/C1D_Background.jpg',
   width: 3000,
   height: 3000,
-  spawn: { x: 1505, y: 1800 }, // just north of the hatch in the new art (2026-11-04)
+  spawn: { x: 1505, y: 1860 }, // the north end of the stairway (2026-11-23 art)
   returns: 'C1C',
   music: 'cave',
   // Fights below deck use the ship-interior battle backdrop (2026-10-10, Danny).
   battleBackground: 'assets/images/boat_background_2.jpg',
 
   obstacles: [
-    // Regenerated 2026-11-04 for the new, longer hull art: per-10px-row hull silhouette inset 45px (left) / 50px (right) to the inner rail, bow cargo + stern cargo + the hatch blocked; everything else is open deck.
-    { x: 0, y: 0, w: 3000, h: 890 },
-    { x: 0, y: 890, w: 1360, h: 30 },
-    { x: 1630, y: 890, w: 1370, h: 10 },
-    { x: 1640, y: 900, w: 1360, h: 50 },
-    { x: 0, y: 920, w: 1350, h: 30 },
-    { x: 0, y: 950, w: 1340, h: 20 },
-    { x: 1660, y: 950, w: 1340, h: 10 },
-    { x: 1640, y: 960, w: 1360, h: 20 },
-    { x: 0, y: 970, w: 1350, h: 10 },
-    { x: 0, y: 980, w: 1340, h: 70 },
-    { x: 1650, y: 980, w: 1350, h: 40 },
-    { x: 1660, y: 1020, w: 1340, h: 30 },
-    { x: 0, y: 1050, w: 1330, h: 90 },
-    { x: 1670, y: 1050, w: 1330, h: 10 },
-    { x: 1660, y: 1060, w: 1340, h: 40 },
-    { x: 1670, y: 1100, w: 1330, h: 40 },
-    { x: 0, y: 1140, w: 1310, h: 10 },
-    { x: 1680, y: 1140, w: 1320, h: 10 },
-    { x: 0, y: 1150, w: 1320, h: 70 },
-    { x: 1660, y: 1150, w: 1340, h: 20 },
-    { x: 1670, y: 1170, w: 1330, h: 30 },
-    { x: 1680, y: 1200, w: 1320, h: 20 },
-    { x: 0, y: 1220, w: 1300, h: 20 },
-    { x: 1690, y: 1220, w: 1310, h: 20 },
-    { x: 0, y: 1240, w: 1320, h: 30 },
-    { x: 1680, y: 1240, w: 1320, h: 70 },
-    { x: 0, y: 1270, w: 1310, h: 40 },
-    { x: 0, y: 1310, w: 1300, h: 10 },
-    { x: 1690, y: 1310, w: 1310, h: 10 },
-    { x: 0, y: 1320, w: 1310, h: 60 },
-    { x: 1670, y: 1320, w: 1330, h: 10 },
-    { x: 1680, y: 1330, w: 1320, h: 50 },
-    { x: 0, y: 1380, w: 1300, h: 10 },
-    { x: 1700, y: 1380, w: 1300, h: 20 },
-    { x: 0, y: 1390, w: 1290, h: 10 },
-    { x: 0, y: 1400, w: 1310, h: 70 },
-    { x: 1680, y: 1400, w: 1320, h: 10 },
-    { x: 1690, y: 1410, w: 1310, h: 60 },
-    { x: 0, y: 1470, w: 1300, h: 20 },
-    { x: 1700, y: 1470, w: 1300, h: 20 },
-    { x: 0, y: 1490, w: 1310, h: 60 },
-    { x: 1690, y: 1490, w: 1310, h: 60 },
-    { x: 0, y: 1550, w: 1290, h: 20 },
-    { x: 1700, y: 1550, w: 1300, h: 10 },
-    { x: 1690, y: 1560, w: 1310, h: 150 },
-    { x: 0, y: 1570, w: 1310, h: 70 },
-    { x: 0, y: 1640, w: 1300, h: 20 },
-    { x: 0, y: 1660, w: 1310, h: 50 },
-    { x: 0, y: 1710, w: 1290, h: 20 },
-    { x: 1700, y: 1710, w: 1300, h: 20 },
-    { x: 0, y: 1730, w: 1310, h: 80 },
-    { x: 1670, y: 1730, w: 1330, h: 10 },
-    { x: 1680, y: 1740, w: 1320, h: 70 },
-    { x: 0, y: 1810, w: 1300, h: 10 },
-    { x: 1690, y: 1810, w: 1310, h: 10 },
-    { x: 0, y: 1820, w: 1310, h: 10 },
-    { x: 1670, y: 1820, w: 1330, h: 10 },
-    { x: 0, y: 1830, w: 1320, h: 60 },
-    { x: 1680, y: 1830, w: 1320, h: 50 },
-    { x: 1440, y: 1880, w: 130, h: 200 },
-    { x: 1670, y: 1880, w: 1330, h: 10 },
-    { x: 0, y: 1890, w: 1310, h: 20 },
-    { x: 1680, y: 1890, w: 1320, h: 20 },
-    { x: 0, y: 1910, w: 1320, h: 30 },
-    { x: 1670, y: 1910, w: 1330, h: 70 },
-    { x: 0, y: 1940, w: 1330, h: 40 },
-    { x: 0, y: 1980, w: 1320, h: 20 },
-    { x: 1680, y: 1980, w: 1320, h: 10 },
-    { x: 1670, y: 1990, w: 1330, h: 10 },
-    { x: 0, y: 2000, w: 1330, h: 30 },
-    { x: 1660, y: 2000, w: 1340, h: 50 },
-    { x: 0, y: 2030, w: 1340, h: 40 },
-    { x: 1650, y: 2050, w: 1350, h: 20 },
-    { x: 0, y: 2070, w: 1330, h: 20 },
-    { x: 1660, y: 2070, w: 1340, h: 20 },
-    { x: 0, y: 2090, w: 1350, h: 60 },
-    { x: 1650, y: 2090, w: 1350, h: 20 },
-    { x: 1640, y: 2110, w: 1360, h: 50 },
-    { x: 0, y: 2150, w: 1360, h: 10 },
-    { x: 0, y: 2160, w: 3000, h: 840 },
+    { x: 0, y: 0, w: 3000, h: 300 },
+    { x: 0, y: 300, w: 1490, h: 10 },
+    { x: 0, y: 310, w: 1480, h: 10 },
+    { x: 1530, y: 300, w: 1470, h: 20 },
+    { x: 1540, y: 320, w: 1460, h: 10 },
+    { x: 0, y: 320, w: 1470, h: 20 },
+    { x: 1550, y: 330, w: 1450, h: 10 },
+    { x: 1560, y: 340, w: 1440, h: 10 },
+    { x: 0, y: 340, w: 1450, h: 20 },
+    { x: 0, y: 360, w: 1440, h: 10 },
+    { x: 1570, y: 350, w: 1430, h: 20 },
+    { x: 0, y: 370, w: 1430, h: 10 },
+    { x: 1480, y: 370, w: 1520, h: 190 },
+    { x: 1680, y: 560, w: 1320, h: 20 },
+    { x: 0, y: 380, w: 1450, h: 240 },
+    { x: 1690, y: 580, w: 1310, h: 40 },
+    { x: 1480, y: 560, w: 190, h: 70 },
+    { x: 0, y: 620, w: 1310, h: 20 },
+    { x: 1700, y: 620, w: 1300, h: 30 },
+    { x: 0, y: 640, w: 1300, h: 40 },
+    { x: 0, y: 680, w: 1290, h: 10 },
+    { x: 1710, y: 650, w: 1290, h: 40 },
+    { x: 1720, y: 690, w: 1280, h: 50 },
+    { x: 0, y: 690, w: 1350, h: 80 },
+    { x: 0, y: 770, w: 1270, h: 10 },
+    { x: 1280, y: 770, w: 70, h: 10 },
+    { x: 1610, y: 690, w: 60, h: 90 },
+    { x: 1730, y: 740, w: 1270, h: 40 },
+    { x: 0, y: 780, w: 1350, h: 20 },
+    { x: 1610, y: 780, w: 1390, h: 20 },
+    { x: 0, y: 800, w: 1320, h: 150 },
+    { x: 1630, y: 800, w: 1370, h: 150 },
+    { x: 1650, y: 950, w: 80, h: 50 },
+    { x: 1750, y: 950, w: 1250, h: 50 },
+    { x: 1650, y: 1000, w: 1350, h: 10 },
+    { x: 1690, y: 1010, w: 1310, h: 80 },
+    { x: 1760, y: 1090, w: 1240, h: 40 },
+    { x: 0, y: 950, w: 1300, h: 210 },
+    { x: 1770, y: 1130, w: 1230, h: 30 },
+    { x: 0, y: 1160, w: 1250, h: 70 },
+    { x: 1760, y: 1160, w: 1240, h: 70 },
+    { x: 1770, y: 1230, w: 1230, h: 30 },
+    { x: 1760, y: 1260, w: 1240, h: 20 },
+    { x: 1770, y: 1280, w: 1230, h: 190 },
+    { x: 0, y: 1230, w: 1240, h: 250 },
+    { x: 1760, y: 1470, w: 1240, h: 30 },
+    { x: 0, y: 1480, w: 1300, h: 210 },
+    { x: 0, y: 1690, w: 1250, h: 10 },
+    { x: 1690, y: 1500, w: 1310, h: 210 },
+    { x: 1750, y: 1710, w: 1250, h: 80 },
+    { x: 0, y: 1700, w: 1260, h: 100 },
+    { x: 0, y: 1800, w: 1270, h: 90 },
+    { x: 1740, y: 1790, w: 1260, h: 100 },
+    { x: 0, y: 1890, w: 1280, h: 40 },
+    { x: 1730, y: 1890, w: 1270, h: 50 },
+    { x: 1720, y: 1940, w: 1280, h: 70 },
+    { x: 0, y: 1930, w: 1350, h: 130 },
+    { x: 0, y: 2060, w: 1300, h: 30 },
+    { x: 1610, y: 1950, w: 90, h: 140 },
+    { x: 1710, y: 2010, w: 1290, h: 80 },
+    { x: 0, y: 2090, w: 1310, h: 20 },
+    { x: 1610, y: 2090, w: 1390, h: 40 },
+    { x: 1690, y: 2130, w: 1310, h: 50 },
+    { x: 0, y: 2110, w: 1350, h: 90 },
+    { x: 1420, y: 1920, w: 170, h: 280 },
+    { x: 1610, y: 2130, w: 60, h: 70 },
+    { x: 0, y: 2200, w: 1330, h: 10 },
+    { x: 1680, y: 2180, w: 1320, h: 30 },
+    { x: 0, y: 2210, w: 1340, h: 30 },
+    { x: 1670, y: 2210, w: 1330, h: 60 },
+    { x: 0, y: 2240, w: 1350, h: 40 },
+    { x: 1660, y: 2270, w: 1340, h: 20 },
+    { x: 0, y: 2280, w: 1360, h: 20 },
+    { x: 1650, y: 2290, w: 1350, h: 10 },
+    { x: 1500, y: 2300, w: 1500, h: 260 },
+    { x: 1550, y: 2560, w: 1450, h: 10 },
+    { x: 0, y: 2300, w: 1470, h: 280 },
+    { x: 1540, y: 2570, w: 1460, h: 20 },
+    { x: 0, y: 2580, w: 1480, h: 20 },
+    { x: 0, y: 2600, w: 1490, h: 10 },
+    { x: 1530, y: 2590, w: 1470, h: 20 },
+    { x: 0, y: 2610, w: 3000, h: 390 },
   ],
 
   interactables: [
@@ -133,11 +140,11 @@ export default {
     // C1C's wall-mounted grate obstacle — see that file's own comment.
     {
       id: 'c1d_topdeck_exit',
-      x: 1505, y: 1870, // on the hatch's top edge in the new art (hatch blocked x1440-1570, y1885-2075) (2026-11-04)
+      x: 1505, y: 1900, // the north (top) end of the stairway up (stairwell blocked x1425-1585, y1925-2200) (2026-11-23)
       range: 100,
       caveExit: true,
-      exitTo: { x: 1490, y: 1830 }, // just above C1C's hatch, beside its Bottom Deck label
-      label: 'Bottom Deck',
+      exitTo: { x: 1505, y: 1860 }, // C1C, at the top of its stairway down
+      label: 'Climb Up',
     },
     // The Maiden's Grace's sealed lockbox (2026-09-13, Roderick/Wynne's
     // "c1_lockbox" quest) — placed to the right of c1d_treasure_chest
@@ -147,7 +154,7 @@ export default {
     // collision and reachable from spawn (BFS, 10px step).
     {
       id: 'c1d_lockbox',
-      x: 1586, y: 972,
+      x: 1580, y: 760, // bow, starboard of Mara (2026-11-23)
       sprite: 'assets/images/enchanted_lockbox_overhead.png',
       label: 'A Sealed Lockbox',
       reward: { item: 'lockbox', qty: 1, catch: true },
@@ -160,7 +167,7 @@ export default {
   chests: [
     {
       id: 'c1d_treasure_chest',
-      x: 1496, y: 972, rotation: 0,
+      x: 1430, y: 760, rotation: 0, // bow, port of Mara (2026-11-23)
       locked: false,
       gold: { min: 15, max: 30 },
       items: [
@@ -185,7 +192,7 @@ export default {
       id: 'mara_hollowmast', name: 'Mara Hollowmast', role: '',
       sprite: 'assets/images/mara_hollowmast_overhead.png',
       portrait: 'assets/images/mara_hollowmast.png',
-      x: 1496, y: 1176, startsHome: false,
+      x: 1505, y: 860, startsHome: false, // bow, between the chest and the lockbox (2026-11-23)
     },
     // A single roaming mireman (Danny: "same chase behavior as the other
     // miremen on the boat") — same stats/pattern as C1C's hold pair and C1's
@@ -196,23 +203,20 @@ export default {
       creature: true, enemyId: 'mireman', pack: 'bottomdeck_mireman',
       sprite: 'assets/images/mireman_overhead.png',
       portrait: 'assets/images/mireman.png',
-      x: 1496, y: 1400, speed: 35, chaseSpeed: 140, aggroRange: 300, giveUpRange: 700, startsHome: false,
-      patrol: [ { x: 1496, y: 1400 }, { x: 1516, y: 1440 } ],
+      x: 1380, y: 1450, speed: 35, chaseSpeed: 140, aggroRange: 250, giveUpRange: 700, startsHome: false,
+      patrol: [ { x: 1380, y: 1450 }, { x: 1620, y: 1450 } ], // amidships (2026-11-23)
     },
-    // The Mireman King (2026-11-12, Danny) — the C-row mini-boss that took the
-    // ship. Lurks in the stern nook aft of the hatch, so he's optional: the
-    // lockbox, the chest and Mara at the bow never require fighting him.
-    // aggroRange 200 keeps the ladder (~283px away) clear. chaseSpeed 110 is
-    // SLOWER than the player's 130, so a player who isn't ready can walk away.
-    // Fight stats + summons in enemies.js (mireman_king). The art files are
-    // stand-ins (a recoloured mireman with a gold trident) until Danny's art.
+    // The Mireman King (2026-11-12; moved 2026-11-23, Danny): paces a loop in
+    // front of the chest, the lockbox and Mara at the bow, guarding them, and
+    // charges anyone who comes within 280px. chaseSpeed 140 (a touch faster
+    // than an unbooted player). Fight stats + summons in enemies.js.
     {
       id: 'mireman_king', name: 'Mireman King', role: '',
       creature: true, enemyId: 'mireman_king', pack: 'mireman_king',
       sprite: 'assets/images/mireman_king_overhead.png',
       portrait: 'assets/images/mireman_king.png',
-      x: 1420, y: 2110, speed: 25, chaseSpeed: 110, aggroRange: 200, giveUpRange: 500, startsHome: false,
-      patrol: [ { x: 1420, y: 2110 }, { x: 1590, y: 2110 } ],
+      x: 1390, y: 1010, speed: 40, chaseSpeed: 140, aggroRange: 280, giveUpRange: 600, startsHome: false,
+      patrol: [ { x: 1390, y: 1010 }, { x: 1620, y: 1010 }, { x: 1620, y: 1180 }, { x: 1390, y: 1180 } ],
     },
   ],
 };
