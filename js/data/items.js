@@ -654,8 +654,8 @@ const ITEMS = {
   crown_coin_purse: {
     id: 'crown_coin_purse',
     name: 'Bag of Crowns',
-    image: 'assets/images/crown_coin_purse.png',
-    description: 'A heavy leather bag stamped with the royal crown: a hundred gold crowns, bound for the king’s counting house in Kingsreach.',
+    image: 'assets/images/bag_of_gold.png',
+    description: 'A heavy velvet bag, drawn tight with gold cord: a hundred gold crowns, bound for the king’s counting house in Kingsreach.',
     questItem: false,
     price: 200,
     sellPrice: 100,

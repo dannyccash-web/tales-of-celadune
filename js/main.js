@@ -4808,7 +4808,7 @@ async function boot() {
   const RODERICK_ACCEPT = 'Good. Mind the miremen down there. They don’t much care whose errand you’re on.';
   const RODERICK_THANKS = 'That’s the one. Still sealed, too. The Crown thanks you, and so do I.';
   const RODERICK_COIN_OFFER = 'And listen. Anyone who can walk that lockbox out of a ship full of miremen and hand it over without prying it open can be trusted with the Crown’s money. I’ve a hundred crowns in tithes that needs to reach the king’s counting house in Kingsreach. Will you carry it to Edmund Fairlock there?';
-  const RODERICK_COIN_GIVEN = 'He sets a heavy leather bag in your hands, stamped with the royal crown. “A hundred crowns. Edmund Fairlock, at the counting house in Kingsreach. Don’t let it get any lighter on the way.”';
+  const RODERICK_COIN_GIVEN = 'He sets a heavy velvet bag in your hands, drawn tight with gold cord. “A hundred crowns. Edmund Fairlock, at the counting house in Kingsreach. Don’t let it get any lighter on the way.”';
   function buildRoderickDialog() {
     return withShop(buildRoderickQuestDialog(), 'roderick_vane');
   }
