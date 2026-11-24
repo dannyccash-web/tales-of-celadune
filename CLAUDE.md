@@ -1924,6 +1924,7 @@ Danny painted B4B (south half only), B4C, B4D, B4E and B4F (**yellow = blocked, 
 ## Home screen art is a JPG (2026-11-24)
 
 - Danny replaced `tales_of_celadune_homescreen.png` with `tales_of_celadune_homescreen.jpg` (1672x941; `background-size: cover` scales it to the screen). Both references in `css/style.css` (the loading screen and the start screen) now point at the .jpg; the .png is gone from the repo.
+- Later the same day Danny sent a 3000px version; it's saved scaled to 2560x1440 (q88, 2.2MB). The start screen's slow push-in (`#start-bg`, `@keyframes start-bg-zoom`) is stronger to use the extra resolution: scale 1.0 → 1.4 over 45s (was 1.0 → 1.2 over 50s), with a slight drift (`translate(-2%, -1.5%)`, `transform-origin: 55% 45%`), holding at the end.
 
 ## Status / roadmap
 
