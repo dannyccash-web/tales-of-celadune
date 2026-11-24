@@ -1921,6 +1921,10 @@ Danny painted B4B (south half only), B4C, B4D, B4E and B4F (**yellow = blocked, 
 - **Exit bands re-fitted to the new edge runs:** B4C bottom 708-762 / 2068-2142; B4D top 618-815 / 2118-2182, bottom 1418-1582; B4E top 1428-1592, bottom 1328-1462; B4F top 1328-1412 (toBands on both sides updated).
 - **Verified:** sim2 ALL OK (every ambush/retreat, chest, ore, NPC and patrol point reachable; aggro and chaseTalk still fire), every crossing lands on clear ground, the royals' hall check unchanged, headless Chrome: B4B's Tunnel Down lands in B4C, all four levels load, walking east across the B4D cavern stops at the ruin. No console errors.
 
+## Home screen art is a JPG (2026-11-24)
+
+- Danny replaced `tales_of_celadune_homescreen.png` with `tales_of_celadune_homescreen.jpg` (1672x941; `background-size: cover` scales it to the screen). Both references in `css/style.css` (the loading screen and the start screen) now point at the .jpg; the .png is gone from the repo.
+
 ## Status / roadmap
 
 - ⏳ **REMINDER — Dame Elspeth Varrick goes in the King's castle.** Taken out of B4 on 2026-11-17 (Danny), not deleted: her full npc entry is in `js/data/reserve.js` (nothing imports it), her art (`dame_elspeth_varrick*.png`) and voice (`audio.js` `elspeth_varrick`) are still in the repo. When B2's keep / the King's scene is built, move her entry in and rewrite her lines (they're about hiding from the barricade).
