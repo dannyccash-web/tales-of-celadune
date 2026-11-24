@@ -1913,6 +1913,14 @@ Danny painted B4B (south half only), B4C, B4D, B4E and B4F (**yellow = blocked, 
 - **Orris enchants with it:** `ENCHANTS.embercore` in items.js → **Blazing** weapons (`dagger_blazing`, `short_sword_blazing`, `longsword_blazing`, generated like the others), glow `#ff7a2a`. 50% chance on a hit to set the foe alight (`kind: 'burn'`, handled in main.js `playerAttack` next to ensnare/poison): it burns for 1 at the start of each player turn (the existing `tickBurns`) until it dies, 2 against `wood` foes. **Fire creatures (`fire: true`) can't burn**, and the hit line says so. The status glow + "Burning" tag come from the 2026-11-20 status work. Orris's explanation is `ORRIS_EXPLAIN.embercore`.
 - Verified in headless Chrome: Blazing Longsword sets a Cave Spider alight (1/turn) and a Rootweaver (2/turn), bounces off a Slagkin Stalker; a 4000-roll Brute loot sample drops embercore 25.5%. No console errors.
 
+## Molten Deep (B4C-B4F) re-rendered art (2026-11-24)
+
+- **Danny replaced all four backgrounds** with re-renders of the same layouts (B4C's southern tunnels are now dirt rather than lava; B4D's burnt cabin is a much smaller ruin and the pool a small spring). Recompressed q92 4:4:4 (~6.5MB → ~3MB each).
+- **Collision carried over by optical flow** (same method as Kingsreach 2026-11-14): TV-L1 flow new→old at 750px, smoothed, scaled to 3000; the old collision (incl. Danny's 2026-11-20 markup) warped along it at 10px cells. All point data (spawns, NPCs, patrols, interactables, chests, ambushes + retreats, fires, smoke, aggro zones) moved by the inverted flow; cross-scene `exitTo`s left alone. Scripts were in the session scratch (`/home/claude/b4n/flow.py`, `warp.py`, `apply.py`), not kept.
+- **B4D cavern:** the floor round the shrunken cabin ruin is opened (x1550-2240, y880-1340) and the ruin blocked (x1800-2120, y970-1240). Its four fires and the big smoke column were moved onto the ruin.
+- **Exit bands re-fitted to the new edge runs:** B4C bottom 708-762 / 2068-2142; B4D top 618-815 / 2118-2182, bottom 1418-1582; B4E top 1428-1592, bottom 1328-1462; B4F top 1328-1412 (toBands on both sides updated).
+- **Verified:** sim2 ALL OK (every ambush/retreat, chest, ore, NPC and patrol point reachable; aggro and chaseTalk still fire), every crossing lands on clear ground, the royals' hall check unchanged, headless Chrome: B4B's Tunnel Down lands in B4C, all four levels load, walking east across the B4D cavern stops at the ruin. No console errors.
+
 ## Status / roadmap
 
 - ⏳ **REMINDER — Dame Elspeth Varrick goes in the King's castle.** Taken out of B4 on 2026-11-17 (Danny), not deleted: her full npc entry is in `js/data/reserve.js` (nothing imports it), her art (`dame_elspeth_varrick*.png`) and voice (`audio.js` `elspeth_varrick`) are still in the repo. When B2's keep / the King's scene is built, move her entry in and rewrite her lines (they're about hiding from the barricade).
