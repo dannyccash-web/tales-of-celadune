@@ -80,7 +80,7 @@ html, body {
      image + the same vignette-overlay treatment via ::after below), so the
      loading screen reads as a continuation of the start screen rather than
      a different placeholder look. */
-  background: url('../assets/images/tales_of_celadune_homescreen.png') center / cover no-repeat;
+  background: url('../assets/images/tales_of_celadune_homescreen.jpg') center / cover no-repeat;
 }
 
 .loading-bg::after {
@@ -1176,7 +1176,7 @@ html, body {
 }
 
 /* ---- Start screen (2026-09-13: real homescreen art + the game's own vignette) ---- */
-/* Danny's tales_of_celadune_homescreen.png (1920x1080, matches the design res
+/* Danny's tales_of_celadune_homescreen.jpg (1920x1080, matches the design res
    exactly) replaces the old radial-gradient placeholder. The game's actual
    Vignette.jpg is layered on top via ::before (same multiply/opacity as the
    live #vignette layer, so the start screen reads consistently with the rest
@@ -1207,7 +1207,7 @@ html, body {
 #start-bg {
   position: absolute;
   inset: 0;
-  background: url('../assets/images/tales_of_celadune_homescreen.png') center / cover no-repeat;
+  background: url('../assets/images/tales_of_celadune_homescreen.jpg') center / cover no-repeat;
   animation: start-bg-zoom 50s ease-out forwards;
   z-index: 0;
 }
