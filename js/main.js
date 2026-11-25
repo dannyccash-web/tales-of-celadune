@@ -497,6 +497,8 @@ async function boot() {
     'assets/images/orris_fenwick_1.png', // his dialog opens on approach, so preload BOTH portraits (same as Edras)
     'assets/images/orris_fenwick_2.png',
     'assets/images/Edras Holloweye.png', // D4B hermit — dialog auto-opens on approach, so preload the portrait
+    'assets/images/osric_graymantle.png', // D2 graveyard ghost — appears the instant his headstone is read
+    'assets/images/Corn.png', // the D3 cornfield's dialog picture
     'assets/images/kazharoth_unburnt.png', // Molten Deep royals — their dialogs open on approach too
     'assets/images/sythra_embercoil.png',
     'assets/images/vargoth_ashcleaver.png',
@@ -1012,7 +1014,7 @@ async function boot() {
         inventory: inventory.map((e) => ({ ...e })),
         equipment: { ...equipment },
         quests: quests.map((q) => ({ ...q })),
-        flags: { campQuestDone, campHostile, campTollTier, gafferHappy, thrumhornFed, clucksworthFed, eggathaFed, orrisRescued, orrisDeparted, wellDrinks, vegetableDeliveredToTavern, mirelleStage, mirelleOutcome, calderToldStory, calderToldDangers, maraMet, maraToldTruth, lilyGullThanked, magicRevealed, maraHollowmastRescued, maraCutlassGiven, lockboxAcceptedFrom, lockboxGivenTo , ferrySide, lakewardenPaid, arjunMet, adeMet, b4bBridgeFixed, dessaMet, hagenMet, nkemiStone, nkemiStaff, horsesFed: [...horsesFed], visitedTowns: [...visitedTowns] },
+        flags: { campQuestDone, campHostile, campTollTier, gafferHappy, thrumhornFed, clucksworthFed, eggathaFed, orrisRescued, orrisDeparted, wellDrinks, cornPicked, vegetableDeliveredToTavern, mirelleStage, mirelleOutcome, calderToldStory, calderToldDangers, maraMet, maraToldTruth, lilyGullThanked, magicRevealed, maraHollowmastRescued, maraCutlassGiven, lockboxAcceptedFrom, lockboxGivenTo , ferrySide, lakewardenPaid, arjunMet, adeMet, b4bBridgeFixed, dessaMet, hagenMet, nkemiStone, nkemiStaff, horsesFed: [...horsesFed], visitedTowns: [...visitedTowns] },
         caveReturn, // where to exit to if saved inside a cave/dungeon
         // Per-visit gates (reset on every scene entry): saved so a reload in
         // the temple can't hand out a second blessing.
@@ -1046,7 +1048,7 @@ async function boot() {
     quests.length = 0;
     campTollPaid = false; campEntered = false; campQuestDone = false;
     campHostile = false; campEntryGate = null; campTollTier = 0;
-    gafferHappy = false; thrumhornFed = false; clucksworthFed = false; eggathaFed = false; orrisRescued = false; orrisDeparted = false; orrisLeaving = false; wellDrinks = 0; vegetableDeliveredToTavern = false; mirelleStage = 1; mirelleOutcome = null;
+    gafferHappy = false; thrumhornFed = false; clucksworthFed = false; eggathaFed = false; orrisRescued = false; orrisDeparted = false; orrisLeaving = false; wellDrinks = 0; cornPicked = 0; vegetableDeliveredToTavern = false; mirelleStage = 1; mirelleOutcome = null;
     ferrySide = 'mainland'; // the C3 raft starts moored on the near shore
     lakewardenPaid = false;
     calderToldStory = false; calderToldDangers = false; maraMet = false; maraToldTruth = null;
@@ -1096,6 +1098,7 @@ async function boot() {
     ferrySide = f.ferrySide === 'island' ? 'island' : 'mainland';
     lakewardenPaid = !!f.lakewardenPaid;
     wellDrinks = f.wellDrinks || 0;
+    cornPicked = f.cornPicked || 0;
     calderToldStory = !!f.calderToldStory; calderToldDangers = !!f.calderToldDangers;
     maraMet = !!f.maraMet;
     maraToldTruth = f.maraToldTruth ?? null;
@@ -1433,6 +1436,8 @@ async function boot() {
   // (2026-07-28, Danny). Persisted in the save flags so the total carries across
   // sessions ("after drinking 5 times in the game").
   let wellDrinks = 0;
+  // Ears picked from the D3 cornfield (2026-11-24), capped at CORN_MAX; persisted.
+  let cornPicked = 0;
 
   // A response can carry an optional effect (dialog.responseEffects, parallel
   // to dialog.responses) — damage (Gaffer's bite), a plain toast message,
@@ -4486,7 +4491,7 @@ async function boot() {
   // sleepy) live in the three stalls at Tamsin Brackenhorn's stables. Same
   // shape as the chickens: two flavor options, a treat option that's ALWAYS on
   // the list, Leave. Each horse eats ONE treat (2026-11-15, Danny): Baron an
-  // apple, Biscuit a carrot, Pewter soft bread (old teeth). Tamsin tells you
+  // apple, Biscuit a carrot, Pewter wheat (2026-11-24; was bread). Tamsin tells you
   // which. Feeding plays the horse snort; talking plays the neigh
   // (DIALOGUE_SFX), which also sounds around the stables (`call`).
   const HORSE_SNORT = 'assets/audio/dragon-studio-horse-snort-364469.mp3';
@@ -4517,9 +4522,9 @@ async function boot() {
         ['Scratch behind her ears.', 'You scratch behind her ears. Pewter’s eyes slide shut, her head grows heavier and heavier on your shoulder, and within a minute she is asleep standing up, snoring gently into your collar. You stay where you are. It seems rude to move.'],
         ['Ask how old she is.', 'Pewter doesn’t answer, being a horse. But the grey round her eyes and the white in her mane say plenty. Tamsin will tell you she’s twenty-four, that she taught half the children in West Kingsreach to ride, and that she has never once been in a hurry about anything.'],
       ],
-      feed: 'Give Pewter some bread.', treat: 'bread',
-      fed: (t) => `Pewter takes the ${t} very gently, with her soft whiskery lips, and eats it slowly, savouring every bite. When it’s gone she breathes warm air into your palm, as if to say thank you, and goes back to sleep on your shoulder.`,
-      none: 'No bread. Pewter noses your empty palm, finds nothing, and gives you a look of such gentle, grandmotherly disappointment that you briefly consider becoming a baker. Then she falls asleep on your shoulder anyway, snoring.',
+      feed: 'Give Pewter some wheat.', treat: 'wheat',
+      fed: (t) => `Pewter’s ears go up at the smell of the ${t}. She takes it very gently, with her soft whiskery lips, and eats it slowly, stalk by stalk, savouring every bite. When it’s gone she breathes warm air into your palm, as if to say thank you, and goes back to sleep on your shoulder.`,
+      none: 'No wheat. Pewter noses your empty palm, finds nothing, and gives you a look of such gentle, grandmotherly disappointment that you briefly consider taking up farming. Then she falls asleep on your shoulder anyway, snoring.',
     },
   };
   // Simplified 2026-11-19 (Danny): each horse wants ONE treat. Have it = fed
@@ -4586,8 +4591,8 @@ async function boot() {
   // ---- Tamsin Brackenhorn's quest: a treat for each horse (B1, 2026-11-19) ----
   const TAMSIN_GOLD = 15;
   const TAMSIN_ASK = 'Need a hand with the horses?';
-  const TAMSIN_OFFER = 'A hand? You could, as it happens. With the roads shut I’ve had no riders, and those three have gone sulky with boredom. A treat would lift them. But they’re fussy. Baron eats apples and nothing else, he thinks carrots are for peasants. Biscuit is a carrot horse through and through. Pewter’s teeth are going, so it’s soft bread for her. Give each of them their own treat and I’ll make it worth your while.';
-  const TAMSIN_ACCEPT = 'Good. Apples for Baron, carrots for Biscuit, bread for Pewter. And mind your fingers with the tan one.';
+  const TAMSIN_OFFER = 'A hand? You could, as it happens. With the roads shut I’ve had no riders, and those three have gone sulky with boredom. A treat would lift them. But they’re fussy. Baron eats apples and nothing else, he thinks carrots are for peasants. Biscuit is a carrot horse through and through. Pewter was raised on a farm and won’t touch anything but good wheat, straight off the stalk. Give each of them their own treat and I’ll make it worth your while.';
+  const TAMSIN_ACCEPT = 'Good. Apples for Baron, carrots for Biscuit, wheat for Pewter. And mind your fingers with the tan one.';
   const TAMSIN_THANKS = `All three? Baron is practically smiling, which for him is a scandal, and Pewter hasn’t been this awake in a month. Here, for your trouble. ${TAMSIN_GOLD} gold and a health potion. I keep a few for the horses, but I reckon you’ll need it more than they do.`;
   const HORSE_NAMES = { baron: 'Baron', biscuit: 'Biscuit', pewter: 'Pewter' };
   function horsesLeft() { return Object.keys(HORSES).filter((h) => !horsesFed.includes(h)); }
@@ -6006,6 +6011,83 @@ async function boot() {
     }, null, () => {});
   }
 
+  // The cornfield beside D3's main road (2026-11-24, Danny): walking past it
+  // offers to pick corn. Capped at CORN_MAX ears for the whole game
+  // (cornPicked, persisted), so it can't be farmed.
+  const CORN_MAX = 3;
+  const CORN_LINE = 'Tall rows of corn crowd right up to the road, the ears fat and golden in their husks. Mirelle surely wouldn’t miss one or two.';
+  const CORN_DONE = 'You’ve picked every ripe ear within reach of the road. The rest are deep in the rows, and Mirelle would definitely notice.';
+  function openCornfield() {
+    const opts = () => (cornPicked < CORN_MAX ? ['Pick an ear of corn.', 'Leave.'] : ['Leave.']);
+    ui.openDialog({
+      id: 'd3_cornfield', name: 'Cornfield', role: '',
+      portrait: 'assets/images/Corn.png',
+      dialog: { line: cornPicked < CORN_MAX ? CORN_LINE : CORN_DONE, responses: opts() },
+    }, null, (v, index) => {
+      if (cornPicked >= CORN_MAX || index !== 0) return; // Leave
+      cornPicked += 1;
+      addItem('corn', 1);
+      ui.showReceivedItem(ITEMS.corn);
+      const line = cornPicked < CORN_MAX
+        ? 'You twist an ear of corn off its stalk and tuck it into your bag.'
+        : 'You twist an ear of corn off its stalk. That’s the last ripe one within reach of the road.';
+      ui.updateDialogContent({ line, responses: opts() });
+      return true;
+    });
+  }
+
+  // ---- Osric Graymantle's ghost (D2 graveyard, 2026-11-24, Danny) ----
+  // Reading his headstone drops straight into a frantic conversation (with
+  // Maelis's ghostly reverb). He gives the player a locket for "her" and starts
+  // osric_locket. Who "she" is is never said; the quest has no turn-in yet
+  // (Danny will finish it, and it'll go to Maelis then). Later visits get a
+  // shorter plea. Beat machine like openEdrasDialog.
+  const OSRIC_VIEW = { id: 'osric_graymantle', name: 'Osric Graymantle', role: 'RESTLESS SPIRIT', portrait: 'assets/images/osric_graymantle.png' };
+  const OSRIC_OPEN = 'You bend to read the stone, and the air turns to ice. A man is standing on the grave. You can see the fence through him. ...You. You! You SEE me? Nobody sees. Nobody, not in, not since... how long? Where is she?! WHERE IS SHE?!';
+  const OSRIC_WHO = 'Osric. Osric Graymantle. The stone says. The stone remembers better than I do now. She should be here. Here, beside me. The ground beside me is empty. Empty! She can’t rest if we’re not together! Can’t. Neither of us. Neither.';
+  const OSRIC_WHERE = 'Her! Her. You know her, you... no. No, you don’t. Nobody does. They laid me here and she, she wasn’t, she never... She can’t rest if we’re not together! I wait. I wait and wait. The waiting is so cold.';
+  const OSRIC_GIVE = 'No time. No time to understand. Here, take it. Take it! Cold hands, I know, I know. It was hers. Always hers. Give it to her. Her! Only her. She’ll know it. She’ll know me by it. Promise me. Promise!';
+  const OSRIC_SHE = 'She’s... she is... The name. The name is gone, it went with the rest of me. But she’ll know the locket. She’ll know. Promise me!';
+  const OSRIC_FADE = 'His outline wavers like heat over a summer road. “Her... only her...” And then there is nothing but the headstone. OSRIC GRAYMANTLE. Beloved husband. Below his name the stone has been left smooth and blank, as if waiting for a second one.';
+  const OSRIC_AGAIN = 'He’s there again the moment you lean in, frantic, flickering. You came back. Is she, did you... no. No, you still have it. I can feel it, cold. Her. Give it to her. Hurry. She’s waiting. She’s always waiting.';
+  function openOsricGhost() {
+    audio.sfx(audio.DIALOGUE_SFX.osric_graymantle);
+    const met = questStatus('osric_locket') !== 'none';
+    let beat = met ? 'again' : 'open';
+    const giveLocket = () => {
+      if (questStatus('osric_locket') !== 'none') return;
+      addItem('osric_locket', 1, true);
+      ui.showReceivedItem(ITEMS.osric_locket);
+      startQuest('osric_locket');
+    };
+    ui.openDialog({ ...OSRIC_VIEW, dialog: met
+      ? { line: OSRIC_AGAIN, responses: ['I’m still looking.', 'Who is she?'] }
+      : { line: OSRIC_OPEN, responses: ['Who are you?', 'Where is who?'] } }, null, (v, index) => {
+      if (beat === 'open') {
+        beat = 'mid';
+        ui.updateDialogContent({ line: index === 0 ? OSRIC_WHO : OSRIC_WHERE, responses: ['How can I help you?', 'I don’t understand.'] });
+        return true;
+      }
+      if (beat === 'mid') {
+        beat = 'give';
+        giveLocket();
+        ui.updateDialogContent({ line: OSRIC_GIVE, responses: ['I promise.', 'Who is “she”?'] });
+        return true;
+      }
+      if ((beat === 'give' || beat === 'again') && index === 1) {
+        beat = 'she';
+        ui.updateDialogContent({ line: OSRIC_SHE, responses: ['I promise.'] });
+        return true;
+      }
+      if (beat !== 'fade') {
+        beat = 'fade';
+        ui.updateDialogContent({ line: OSRIC_FADE, responses: ['Step back.'] });
+        return true;
+      }
+      return; // Step back.
+    });
+  }
+
   function openWellDialog() {
     const buildActs = () => {
       const responses = [];
@@ -6085,6 +6167,8 @@ async function boot() {
       // toss a coin), so intercept it before any reward/collect handling.
       if (item.well) { openWellDialog(); return; }
       if (item.headstone) { openHeadstone(item); return; }
+      if (item.ghost === 'osric') { openOsricGhost(); return; }
+      if (item.cornfield) { openCornfield(); return; }
       if (item.cave) { enterCave(item.cave, item.enterAt); return; }   // overworld -> cave (enterAt: a specific mouth)
       if (item.caveExit) { exitCave(item.exitTo); return; } // cave -> overworld (or a fixed exitTo)
       // Already-collected interactables with an emptyMessage (e.g. the silo

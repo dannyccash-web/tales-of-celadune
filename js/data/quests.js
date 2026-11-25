@@ -163,11 +163,18 @@ export default {
   // West Kingsreach (B1, 2026-11-19): Tamsin's horses.
   b1_horse_treats: {
     name: 'Treats for the Stable',
-    description: 'Tamsin Brackenhorn’s horses are fussy. Give Baron an apple, Biscuit a carrot and Pewter some bread, then tell Tamsin.',
+    description: 'Tamsin Brackenhorn’s horses are fussy. Give Baron an apple, Biscuit a carrot and Pewter some wheat, then tell Tamsin.',
   },
   // Cairnfolk Cave (B4B, 2026-11-17): Ketta Slatebrook's bridge.
   b4b_bridge: {
     name: 'Mending the Span',
     description: 'Someone took apart the bridge over the chasm in Cairnfolk Cave a hundred years ago and scattered the parts through the tunnels below: the winch gear, the iron pins and the haul rope. Ketta Slatebrook wants it working again, just in case. Find all three and bring them back to her.',
+  },
+  // Millmere's graveyard (D2, 2026-11-24): Osric Graymantle's ghost. Left
+  // unfinished on purpose (Danny will finish it): no turn-in exists yet, and
+  // the quest text never says who "her" is.
+  osric_locket: {
+    name: 'A Locket for “Her”',
+    description: 'In Millmere’s graveyard, the restless spirit of Osric Graymantle pressed a cold silver locket into your hands and begged you to give it to “her.” Only “her.” He could not say who “she” is, only that neither of them can rest apart.',
   },
 };

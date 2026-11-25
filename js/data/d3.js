@@ -229,7 +229,7 @@ export default {
     // (drink / toss a coin — see the interactable below), so its label rides on
     // that object, same as the silo — label shows exactly when you can press
     // space to interact.
-    // No standalone 'Silo' label here: the silo IS interactable (the corn
+    // No standalone 'Silo' label here: the silo IS interactable (the wheat
     // interactable below), so its label rides on that object instead — same
     // anchor + range, so the label appears exactly when you can press space
     // (2026-07-20, Danny: a visible label must always mean "interactable").
@@ -266,8 +266,8 @@ export default {
       label: 'Well',
       well: true,
     },
-    // The silo hands out exactly ONE ear of corn (the thrumhorn's favourite
-    // since 2026-10-12, when Gaffer switched to cabbage), then reports empty forever after
+    // The silo hands out exactly ONE bundle of wheat (was an ear of corn until
+    // 2026-11-24), then reports empty forever after
     // (2026-07-10, Danny's spec — replaced the earlier infinitely-repeatable
     // version). Its single 'Silo' label rides on THIS interactable (there is no
     // separate 'Silo' building label — verified 2026-07-28; one label per thing).
@@ -278,13 +278,27 @@ export default {
     // from the pen corridor (east), the path above, and the player-only
     // pocket west of the silo (range 130 covers all three approaches).
     {
-      id: 'silo-corn',
+      // 2026-11-24 (Danny): the silo holds WHEAT now (Pewter's treat in B1);
+      // corn comes from the cornfield below. New id so saves that already
+      // emptied the old corn silo find the wheat waiting.
+      id: 'silo-wheat',
       x: 1985, y: 2030,
       range: 204,
       label: 'Silo',
-      reward: { item: 'corn' },
-      message: 'You take an ear of corn from the silo.',
+      reward: { item: 'wheat' },
+      message: 'You take a bundle of wheat from the silo.',
       emptyMessage: 'The silo is empty.',
+    },
+    // The cornfield east of the silo (2026-11-24, Danny): walking past it on
+    // the main road offers to pick corn (main.js openCornfield). Anchored on
+    // the field's top edge; range 280 covers the road (y~1500-1575) along the
+    // whole field (x~2100-2700). Picking is capped (CORN_MAX, persisted).
+    {
+      id: 'd3_cornfield',
+      x: 2400, y: 1610,
+      range: 280,
+      label: 'Cornfield',
+      cornfield: true,
     },
   ],
 

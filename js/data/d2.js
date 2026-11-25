@@ -1364,7 +1364,27 @@ export default {
     { label: 'Malik’s House', x: 2420, y: 1444, r: 235, door: { x: 2420, y: 1475 } },
   ],
   entrances: [],
-  interactables: [],
+  // Readable headstones in the graveyard beside the temple (2026-11-24, Danny),
+  // same as B1's (`headstone: true` + `inscription`, main.js openHeadstone).
+  // Anchors sit on alternate stones (so two labels never show at once); each is
+  // read from the grass in front of it (~35-40px away). The top-right stone is
+  // Osric Graymantle's: `ghost: 'osric'` opens his dialogue instead of an
+  // inscription (main.js openOsricGhost) and starts the osric_locket quest.
+  interactables: [
+    { id: 'd2_grave_toller', x: 1655, y: 2655, range: 70, label: 'Headstone', headstone: true,
+      inscription: 'AGNES TOLLER, miller of Millmere. Ground the village’s flour for fifty-two years and never once gave short weight. At her own insistence, her scales are buried with her, “so nobody can say otherwise.”' },
+    { id: 'd2_grave_toller_boys', x: 1773, y: 2625, range: 70, label: 'Headstone', headstone: true,
+      inscription: 'JEM AND HOB TOLLER, the miller’s boys. Taken by the river in the flood year, nine and seven. Lie quiet. Your mother is only a few stones away.' },
+    { id: 'd2_grave_bale', x: 1898, y: 2598, range: 70, label: 'Headstone', headstone: true,
+      inscription: 'HUMPHREY BALE. Farmer, neighbour, optimist. His last words were: “He’s friendly, he just wants a scratch.” The bull has since been sold.' },
+    { id: 'd2_grave_osric', x: 2024, y: 2587, range: 70, label: 'Headstone', ghost: 'osric' },
+    { id: 'd2_grave_merrin', x: 1733, y: 2815, range: 70, label: 'Headstone', headstone: true,
+      inscription: 'TOBIAS MERRIN. A generous man who lent his ladder to everyone in Millmere. It has still not come back. If you have it, please return it to his widow.' },
+    { id: 'd2_grave_dunmore', x: 1870, y: 2795, range: 70, label: 'Headstone', headstone: true,
+      inscription: 'ELLA DUNMORE. Four summers. A little wooden horse stands at the foot of the stone, its paint long faded. However often the wind knocks it over, someone always sets it upright again.' },
+    { id: 'd2_grave_fenn', x: 2023, y: 2760, range: 70, label: 'Headstone', headstone: true,
+      inscription: 'GARETH FENN, thatcher. Sixty-eight years. Every roof in Millmere that doesn’t leak is his.' },
+  ],
   battles: [],
 
   // Chimney smoke rising from every home/business (code-drawn, World.drawSmoke

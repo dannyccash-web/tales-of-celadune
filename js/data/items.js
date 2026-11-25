@@ -200,6 +200,25 @@ const ITEMS = {
     questItem: false,
     price: 2,
   },
+  // Wheat (2026-11-24, Danny): the farm silo's one bundle (replaced the ear of
+  // corn). Pewter, the old mare at West Kingsreach's stables, eats nothing else.
+  wheat: {
+    id: 'wheat',
+    name: 'Wheat',
+    image: 'assets/images/wheat.png',
+    description: 'A bundle of golden wheat from the silo on Mirelle’s farm, still smelling of summer.',
+    questItem: false,
+    price: 2,
+  },
+  // Osric Graymantle's locket (2026-11-24): pressed on the player by his ghost
+  // in Millmere's graveyard for "her" (quest osric_locket, unfinished on purpose).
+  osric_locket: {
+    id: 'osric_locket',
+    name: 'Silver Locket',
+    image: 'assets/images/locket.png',
+    description: 'A tarnished silver locket, cold no matter how long you hold it. The clasp won’t open. Osric wants “her” to have it.',
+    questItem: true,
+  },
   health_potion: {
     id: 'health_potion',
     name: 'Health Potion',

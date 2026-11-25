@@ -99,6 +99,7 @@ export const DIALOGUE_SFX = {
   ambrose_lacey: 'assets/audio/mrstokes302-hmmm-sound-male-sfx-mrstokes302-420028.mp3',
   ade_thornwick: 'assets/audio/universfield-muffled-reaction-242214.mp3',
   maelis_graymantle: 'assets/audio/freesound_community-reverb-89603.mp3', // the ghostly enemy-death reverb
+  osric_graymantle: 'assets/audio/freesound_community-reverb-89603.mp3', // Millmere's ghost (D2 headstone, 2026-11-24): same shock as Maelis
   // The King's Castle town (B2, 2026-11-17)
   bastian_crowe: 'assets/audio/mrstokes302-hmmm-sound-male-sfx-mrstokes302-420028.mp3',
   folasade_okoro: 'assets/audio/freesound_community-mmm-hmm-36292.mp3',
