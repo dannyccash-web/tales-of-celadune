@@ -14,12 +14,13 @@ concurrency:
   group: pages
   cancel-in-progress: true
 
+# Two jobs (2026-11-25): uploading the ~340MB site and publishing it in the
+# SAME job kept failing with "No artifacts named github-pages were found"
+# (the upload wasn't registered yet when deploy-pages looked for it). Now the
+# upload finishes in its own job first, and the publish step retries once.
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
@@ -28,5 +29,19 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: .
-      - id: deployment
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy1.outputs.page_url || steps.deploy2.outputs.page_url }}
+    steps:
+      - id: deploy1
+        uses: actions/deploy-pages@v4
+        continue-on-error: true
+      - if: steps.deploy1.outcome == 'failure'
+        run: sleep 60
+      - id: deploy2
+        if: steps.deploy1.outcome == 'failure'
         uses: actions/deploy-pages@v4
